@@ -177,6 +177,35 @@ button.card:hover{border-color:var(--cc)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;z-index:60;font-size:.92rem;max-width:calc(100vw - 32px);box-shadow:var(--shadow)}
 .busy{position:fixed;inset:0;z-index:55;background:rgba(10,14,20,.45);display:grid;place-items:center;color:#fff;font-family:var(--display);font-size:1.3rem}
 
+/* rules */
+.rules-wrap{display:grid;grid-template-columns:250px minmax(0,1fr);gap:28px;align-items:start;margin-top:18px}
+.rtoc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 76px);max-height:calc(100vh - 100px);overflow:auto;display:flex;flex-direction:column;gap:8px}
+.rtoc-list{display:flex;flex-direction:column;gap:1px}
+.rtoc-list button{text-align:left;border:0;background:none;padding:5px 8px;border-radius:6px;color:var(--muted);font-size:.9rem}
+.rtoc-list button:hover{background:var(--sunk);color:var(--ink)}
+.rtoc-sel{display:none;width:100%}
+.rules{max-width:78ch;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px 32px 32px}
+.rules h2{font-size:1.45rem;margin:26px 0 8px;padding-top:18px;border-top:1px solid var(--line)}
+.rules .rsec:first-child h2{border-top:0;padding-top:8px}
+.rules h3{font-size:1.12rem;margin:22px 0 6px}
+.rules p,.rules li{line-height:1.6}
+.rules p{margin:8px 0}
+.rules ul,.rules ol{padding-left:1.4em;margin:8px 0}
+.rules li{margin:3px 0}
+.rules em{color:var(--muted)}
+.rsec{scroll-margin-top:calc(env(safe-area-inset-top,0px) + 84px)}
+.tblwrap{overflow-x:auto;margin:12px 0}
+.rules table{border-collapse:collapse;width:100%;font-size:.93rem}
+.rules th,.rules td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+.rules th{background:var(--sunk);font-weight:700}
+@media (max-width:900px){
+  .rules-wrap{grid-template-columns:minmax(0,1fr)}
+  .rtoc{position:static;max-height:none}
+  .rtoc-list{display:none}
+  .rtoc-sel{display:block}
+  .rules{padding:4px 16px 22px}
+}
+
 @media (max-width:900px){
   .split{grid-template-columns:minmax(0,1fr)}
   .deckpanel{position:static;max-height:none;order:-1}
@@ -198,6 +227,7 @@ button.card:hover{border-color:var(--cc)}
     <a href="#catalog" data-view="catalog">Catalog</a>
     <a href="#build" data-view="build">Deck Builder</a>
     <a href="#decks" data-view="decks">My Decks</a>
+    <a href="#rules" data-view="rules">Rules</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
 </div></header>

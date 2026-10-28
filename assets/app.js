@@ -224,6 +224,7 @@ function render(){
   if(S.view==="catalog")v.innerHTML=viewCatalog();
   else if(S.view==="build")v.innerHTML=viewBuild();
   else if(S.view==="account")v.innerHTML=viewAccount();
+  else if(S.view==="rules"){v.innerHTML=viewRules();if(!S.rules)loadRules()}
   else v.innerHTML=viewDecks();
 }
 function viewCatalog(){
@@ -551,6 +552,57 @@ FULL DECK WITH CARD NAMES (saved object)
 async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(msg||"Deck list copied.")}catch(e){
   const l=$("#layer");const m=document.createElement("div");m.className="modal";m.innerHTML=`<div class="box"><h2>Deck list</h2><textarea id="copy-box" style="width:100%;min-height:220px"></textarea><button type="button" class="btn" data-act="close">Close</button></div>`;l.appendChild(m);const ta=m.querySelector("textarea");ta.value=t;ta.select()}}
 
+
+/* ---------- rules ---------- */
+S.rules=null;S.rulesErr=false;
+function mdInline(t){return esc(t).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>")}
+function mdToHtml(md){
+  const lines=md.split(/\r?\n/),toc=[];let html="",i=0,open=false,title="",sub=[];
+  const slug=t=>"r-"+t.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  while(i<lines.length){const l=lines[i];let m;
+    if(!l.trim()){i++;continue}
+    if((m=l.match(/^(#{1,3})\s+(.*)$/))){const lv=m[1].length,t=m[2];i++;
+      if(lv===1){title=t;continue}
+      if(lv===2){if(open)html+="</section>";const id=slug(t);toc.push({id,t});html+=`<section class="rsec" id="${id}">`;open=true}
+      html+=`<h${lv}>${mdInline(t)}</h${lv}>`;continue}
+    if(/^\|/.test(l)){const rows=[];while(i<lines.length&&/^\|/.test(lines[i]))rows.push(lines[i++]);
+      const cells=r=>r.replace(/^\||\|$/g,"").split("|").map(c=>c.trim());
+      const head=cells(rows[0]),body=rows.slice(2).map(cells);
+      html+=`<div class="tblwrap"><table><thead><tr>${head.map(c=>`<th>${mdInline(c)}</th>`).join("")}</tr></thead><tbody>${body.map(r=>`<tr>${r.map(c=>`<td>${mdInline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;continue}
+    if(/^- /.test(l)){let li="";while(i<lines.length&&/^- /.test(lines[i]))li+=`<li>${mdInline(lines[i++].slice(2))}</li>`;html+=`<ul>${li}</ul>`;continue}
+    if(/^\d+\. /.test(l)){let li="";while(i<lines.length&&/^\d+\. /.test(lines[i]))li+=`<li>${mdInline(lines[i++].replace(/^\d+\.\s/,""))}</li>`;html+=`<ol>${li}</ol>`;continue}
+    if(!open&&title){sub.push(mdInline(l));i++;continue}
+    html+=`<p>${mdInline(l)}</p>`;i++}
+  if(open)html+="</section>";
+  return{html,toc,title,sub};
+}
+async function loadRules(){
+  try{const r=await fetch("assets/rules.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.rules=mdToHtml(await r.text());S.rulesErr=false}
+  catch(e){S.rulesErr=true}
+  if(S.view==="rules")render();
+}
+function viewRules(){
+  if(!S.rules)return`<h1>Rules</h1><p class="lede">${S.rulesErr?"The rules didn't load. Check your connection and reload the page.":"Loading the rules…"}</p>`;
+  const R=S.rules;
+  return`<h1>${R.title||"Rules"}</h1>${R.sub.map(x=>`<p class="lede">${x}</p>`).join("")}
+  <div class="rules-wrap">
+    <nav class="rtoc" aria-label="Rules sections">
+      <label class="field col" for="rules-q">Search the rules<input type="search" id="rules-q" data-act="rules-q" placeholder="e.g. Hidden, Guard, Town"></label>
+      <span class="count" id="rules-count"></span>
+      <select class="rtoc-sel" data-act="rules-sel" aria-label="Jump to section"><option value="">Jump to section…</option>${R.toc.map(t=>`<option value="${t.id}">${esc(t.t)}</option>`).join("")}</select>
+      <div class="rtoc-list">${R.toc.map(t=>`<button type="button" data-act="rules-jump" data-id="${t.id}">${esc(t.t)}</button>`).join("")}</div>
+    </nav>
+    <article class="rules">${R.html}</article>
+  </div>`;
+}
+function rulesFilter(q){
+  q=q.trim().toLowerCase();let n=0;
+  document.querySelectorAll(".rules .rsec").forEach(sec=>{const hit=!q||sec.textContent.toLowerCase().includes(q);sec.hidden=!hit;if(hit)n++;
+    const b=document.querySelector(`.rtoc-list [data-id="${sec.id}"]`);if(b)b.hidden=!hit});
+  const c=document.getElementById("rules-count");if(c)c.textContent=q?`${n} section${n===1?"":"s"} mention “${q}”`:"";
+}
+function rulesJump(id){const el=document.getElementById(id);if(el){el.hidden=false;el.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})}}
+
 /* ---------- events ---------- */
 function go(v){if(location.hash==="#"+v){S.view=v;render();scrollTo(0,0)}else location.hash=v}
 function setDeck(fn){fn(S.deck);S.dirty=true;saveDraft();render()}
@@ -590,11 +642,13 @@ document.addEventListener("click",async e=>{
   else if(a==="migrate"){b.disabled=true;await migrateLocal()}
   else if(a==="auth-mode"){S.authMode=v;render()}
   else if(a==="signout"){await signOut()}
+  else if(a==="rules-jump"){rulesJump(id)}
   else if(a==="share"){const d=deckBySrc(b.dataset.src);if(d)copyText(shareURL(d),"Share link copied. Anyone with it can open this deck.")}
 });
 let qT;
 document.addEventListener("input",e=>{const t=e.target,a=t.dataset&&t.dataset.act;if(!a)return;
   if(a==="deck-name"){S.deck.name=t.value;S.dirty=true;saveDraft();return}
+  if(a==="rules-q"){rulesFilter(t.value);return}
   if(a==="cat-q"||a==="b-q"){clearTimeout(qT);qT=setTimeout(()=>{(a==="cat-q"?S.cat:S.b).q=t.value;if(a==="cat-q")store.set("cq.cat",S.cat);const pos=t.selectionStart;render();const n=document.getElementById(a);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}},180)}
 });
 document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.act;if(!a)return;
@@ -602,9 +656,10 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
   else if(a==="cat-sort"){S.cat.sort=t.value;store.set("cq.cat",S.cat);render()}
   else if(a==="b-type"){S.b.type=t.value;render()}
   else if(a==="b-sort"){S.b.sort=t.value;render()}
+  else if(a==="rules-sel"&&t.value){rulesJump(t.value);t.value=""}
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const m=document.querySelector(".modal");if(m)m.remove()}});
-function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

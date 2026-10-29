@@ -323,6 +323,7 @@ function deckPanel(d){
     <div class="prog${total>DECK_SIZE?" over":""}"><i style="width:${Math.min(100,total/DECK_SIZE*100)}%"></i></div>
     <div><div class="curve-l">Aura curve</div><div class="curve">${curve.map((n,i)=>`<div><span>${n||""}</span><span class="b" style="height:${n/cmax*48}px"></span><span>${i===7?"7+":i}</span></div>`).join("")}</div></div>
     <ul class="issues ${iss.length?"bad":"good"}">${iss.length?iss.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Deck is legal and ready to play.</li>"}</ul>
+    <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 2 copies of a card, and 1 of each Legendary.</p>`}
     <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i><span class="n${e.c&&allowed(e.c,d)?"":" bad"}">${esc(e.c?e.c.name:e.id)}</span><span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
     ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><span class="n">${esc(t.c.name)}</span><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward the 30. Print &amp; Play includes them.</p></div>`:""})()}
@@ -330,9 +331,6 @@ function deckPanel(d){
     <div class="actions">
       <button type="button" class="btn primary" data-act="save">Save deck</button>
       <button type="button" class="btn" data-act="new-deck">New deck</button>
-    </div>
-    <div class="actions">
-      <button type="button" class="btn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"}>Draw starting hand</button>
     </div>
     <div class="actions">
       <button type="button" class="btn" data-act="pnp" data-src="current">Print &amp; Play PDF</button>

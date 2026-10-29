@@ -260,10 +260,12 @@ function viewCatalog(){
   </div>
   <div class="grid">${gridWithGroups(list,f,c=>cardHTML(c,{button:"inspect"}))}</div>`;
 }
+const HSTATS=[["STR","str"],["DEF","def"],["AURA","aura"],["HP","hp"]];
+function heroStatsHTML(h,cls="hstats"){return`<span class="${cls}">${HSTATS.map(([k,f])=>`<span><b>${esc(h[f])}</b><i>${k}</i></span>`).join("")}</span>`}
 function partySlots(d){
   const names=["Lead","Center","Closer"];
   return`<div class="party">${names.map((n,i)=>{const h=BYID.get(d.heroes[i]);
-    return h?`<div class="slot full" style="--cc:${cc(h.cls)}"><small>${i+1} · ${n}</small><span class="nm">${esc(h.name)}</span><span class="cl"><i class="dot"></i>${h.cls}</span><button type="button" class="x" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div>`
+    return h?`<div class="slot full" style="--cc:${cc(h.cls)}"><small>${i+1} · ${n}</small><span class="nm">${esc(h.name)}</span><span class="cl"><i class="dot"></i>${h.cls}</span>${heroStatsHTML(h)}<button type="button" class="x" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div>`
       :`<div class="slot"><small>${i+1} · ${n}</small><span class="cl">Empty</span></div>`}).join("")}</div>`;
 }
 function stepsHTML(){
@@ -280,7 +282,7 @@ function viewBuild(){
     <p class="lede">Pick three Heroes for your party, in order. Their classes decide which cards you can add next: cards of those classes plus Generic cards.</p>
     ${partySlots(d)}
     <div class="bar">${classChips(S.b.heroCls,"hero-cls",CLASSES)}</div>
-    <div class="bar"><button type="button" class="btn primary" data-act="to-cards" ${d.heroes.length===3?"":"disabled"}>Continue to cards →</button>
+    <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${d.heroes.length===3?"":"disabled"}>Continue to cards →</button>
       <span class="count">${d.heroes.length}/3 Heroes chosen</span>
       ${d.heroes.length||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
     <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
@@ -325,6 +327,7 @@ function deckPanel(d){
     <ul class="issues ${iss.length?"bad":"good"}">${iss.length?iss.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Deck is legal and ready to play.</li>"}</ul>
     <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 2 copies of a card, and 1 of each Legendary.</p>`}
+    ${d.heroes.length?`<div class="dl heroes"><h4><span>Heroes</span><span>${d.heroes.length}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><span class="n" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)}">${esc(h.name)}</span>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
     <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i><span class="n${e.c&&allowed(e.c,d)?"":" bad"}">${esc(e.c?e.c.name:e.id)}</span><span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
     ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><span class="n">${esc(t.c.name)}</span><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward the 30. Print &amp; Play includes them.</p></div>`:""})()}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}

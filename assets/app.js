@@ -332,6 +332,9 @@ function deckPanel(d){
       <button type="button" class="btn" data-act="new-deck">New deck</button>
     </div>
     <div class="actions">
+      <button type="button" class="btn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"}>Draw starting hand</button>
+    </div>
+    <div class="actions">
       <button type="button" class="btn" data-act="pnp" data-src="current">Print &amp; Play PDF</button>
       <button type="button" class="btn" data-act="tts" data-src="current">Tabletop Simulator</button>
       <button type="button" class="btn" data-act="copylist" data-src="current">Copy list</button>
@@ -352,6 +355,7 @@ function viewDecks(){
     <div class="note">${t}/${DECK_SIZE} cards${d.updated?" · saved "+new Date(d.updated).toLocaleDateString():""}</div>
     <span class="status ${iss.length?"no":"ok"}">${iss.length?iss.length+" issue"+(iss.length>1?"s":""):"Legal deck"}</span>
     <div class="actions"><button type="button" class="btn sm primary" data-act="open" data-id="${d.id}">Edit</button>
+      <button type="button" class="btn sm" data-act="hand" data-src="${d.id}">Test hand</button>
       <button type="button" class="btn sm" data-act="pnp" data-src="${d.id}">Print &amp; Play</button>
       <button type="button" class="btn sm" data-act="tts" data-src="${d.id}">TTS</button>
       <button type="button" class="btn sm" data-act="share" data-src="${d.id}">Share</button>
@@ -372,6 +376,46 @@ function inspect(c){
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});
   l.appendChild(m);m.querySelector("[data-act=close]").focus();
 }
+
+/* ---------- test draw: starting hand + draw a card ---------- */
+function rint(n){try{const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n}catch(e){return Math.floor(Math.random()*n)}}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=rint(i+1);[a[i],a[j]]=[a[j],a[i]]}return a}
+const HAND_SIZE=4;
+function libraryOf(d){const l=[];for(const[id,q]of Object.entries(d.cards)){if(BYID.get(id))for(let i=0;i<q;i++)l.push(id)}return l}
+function dealHand(d){const lib=shuffle(libraryOf(d));const hand=lib.splice(0,HAND_SIZE);
+  S.hand={d,lib,hand,mull:false,extra:0,fresh:new Set()}}
+function handAura(d){return d.heroes.map(h=>BYID.get(h)).filter(Boolean).reduce((a,h)=>a+(+h.aura||0),0)}
+function handBody(){
+  const H=S.hand,d=H.d,total=deckTotal(d);
+  const heroes=d.heroes.map(h=>BYID.get(h)).filter(Boolean);
+  const canMull=!H.mull&&H.extra===0;
+  return`<div class="hand-h"><div><h2>${H.extra?"Hand":"Starting hand"}</h2><p class="note">${esc(d.name)}${heroes.length?" · "+heroes.map(h=>esc(h.name)).join(", ")+" · "+handAura(d)+" Aura at Dawn":""}</p></div>
+    <button type="button" class="btn sm" data-act="close">Close</button></div>
+  ${total!==DECK_SIZE?`<p class="note warn">This deck has ${total} cards, not ${DECK_SIZE}, so the odds won't match a legal deck.</p>`:""}
+  <div class="hand-stats"><span class="pill">In hand <b>${H.hand.length}</b></span><span class="pill">Library <b>${H.lib.length}</b></span>${H.extra?`<span class="pill">Drawn <b>${H.extra}</b></span>`:""}${H.mull?`<span class="pill">Mulliganed</span>`:""}
+    <span class="pill">Aura costs <b>${H.hand.map(id=>BYID.get(id).cost).sort((a,b)=>costNum({cost:a})-costNum({cost:b})).map(esc).join(", ")||"—"}</b></span></div>
+  <div class="actions">
+    <button type="button" class="btn primary" data-act="hand-draw" ${H.lib.length?"":"disabled"}>Draw a card</button>
+    <button type="button" class="btn" data-act="hand-mull" ${canMull?"":"disabled"} title="Once, before you draw any extra cards">Mulligan</button>
+    <button type="button" class="btn" data-act="hand-new">New hand</button>
+  </div>
+  <p class="note">${H.lib.length?(canMull?"Setup: draw 4, then you may mulligan once (shuffle your hand back and draw 4 new cards). Draw a card works like the Dawn draw.":"Draw a card works like the Dawn draw. Press D to draw, N for a new hand."):"Your library is empty."}</p>
+  <div class="grid hand-grid">${H.hand.map((id,i)=>cardHTML(BYID.get(id),{button:"inspect-hand",slot:H.fresh.has(i)?"NEW":""})).join("")}</div>`;
+}
+function renderHand(){const m=document.getElementById("handm");if(!m||!S.hand)return;m.querySelector(".box").innerHTML=handBody()}
+function openHand(d){
+  if(!d)return;const n=deckTotal(d);
+  if(n<HAND_SIZE){toast(`Add at least ${HAND_SIZE} cards to draw a hand.`);return}
+  dealHand(d);
+  document.getElementById("handm")?.remove();
+  const m=document.createElement("div");m.className="modal";m.id="handm";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Test hand");
+  m.innerHTML=`<div class="box wide"></div>`;m.addEventListener("click",e=>{if(e.target===m)m.remove()});
+  $("#layer").appendChild(m);renderHand();m.querySelector("[data-act=hand-draw]")?.focus();
+}
+function handDraw(){const H=S.hand;if(!H||!H.lib.length){toast("Your library is empty.");return}
+  H.hand.push(H.lib.shift());H.extra++;H.fresh=new Set([H.hand.length-1]);renderHand()}
+function handMull(){const H=S.hand;if(!H||H.mull||H.extra)return;
+  const lib=shuffle(H.lib.concat(H.hand));H.hand=lib.splice(0,HAND_SIZE);H.lib=lib;H.mull=true;H.fresh=new Set();renderHand();toast("Mulligan taken. This is your hand.")}
 
 /* ---------- deck list text ---------- */
 function deckText(d,withTokens=true){
@@ -662,6 +706,11 @@ document.addEventListener("click",async e=>{
   else if(a==="del"){const box=document.querySelector(`[data-confirm="${id}"]`);if(box)box.hidden=false}
   else if(a==="del-no"){const box=document.querySelector(`[data-confirm="${id}"]`);if(box)box.hidden=true}
   else if(a==="del-yes"){await removeDeck(id)}
+  else if(a==="hand"){openHand(deckBySrc(b.dataset.src))}
+  else if(a==="hand-draw"){handDraw()}
+  else if(a==="hand-mull"){handMull()}
+  else if(a==="hand-new"){if(S.hand){dealHand(S.hand.d);renderHand()}}
+  else if(a==="inspect-hand"){const c=BYID.get(id);if(c){const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);m.innerHTML=`<div class="box">${cardHTML(c)}<div class="actions"><button type="button" class="btn" data-act="close">Close</button></div></div>`;m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m);m.querySelector("[data-act=close]").focus()}}
   else if(a==="pnp"){const d=deckBySrc(b.dataset.src);if(d)exportPnP(d)}
   else if(a==="tts"){const d=deckBySrc(b.dataset.src);if(d)exportTTS(d)}
   else if(a==="copylist"){const d=deckBySrc(b.dataset.src);if(d)copyText(deckText(d))}
@@ -687,7 +736,9 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
   else if(a==="b-sort"){S.b.sort=t.value;render()}
   else if(a==="rules-sel"&&t.value){rulesJump(t.value);t.value=""}
 });
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){const m=document.querySelector(".modal");if(m)m.remove()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.querySelectorAll(".modal");if(ms.length)ms[ms.length-1].remove();return}
+  const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+  if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
 function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");

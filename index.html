@@ -182,13 +182,20 @@ button.card:hover{border-color:var(--cc)}
 .handbtn{justify-content:center}
 .btn.primary.handbtn{background:var(--ok);border-color:var(--ok);color:var(--accent-ink)}
 .btn.primary.handbtn:hover{filter:brightness(1.08)}
-.hand-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.hand-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.hand-t{min-width:0;flex:1 1 220px}
+.hand-r{display:flex;align-items:flex-start;gap:10px;margin-left:auto}
+.aura-box{display:flex;align-items:center;gap:12px;padding:8px 16px 8px 12px;border:1.5px solid var(--accent);border-radius:12px;background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.aura-gem{width:30px;height:38px;background:var(--accent);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);flex:none}
+.aura-box b{display:block;font-family:var(--display);font-size:2.4rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.aura-box small{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-top:2px}
+.aura-src{display:block;font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .hand-stats{display:flex;flex-wrap:wrap;gap:6px}
 .hand-stats b{font-variant-numeric:tabular-nums}
 .hand-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
 .hand-grid .slotbadge{top:auto;bottom:9px;right:10px}
 .note.warn{color:var(--warn)}
-@media (max-width:560px){.grid.hand-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.hand-grid .c-rules{font-size:.82rem}.modal .box.wide{padding:14px}}
+@media (max-width:560px){.hand-r{width:100%;margin-left:0}.hand-r .aura-box{flex:1}.grid.hand-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.hand-grid .c-rules{font-size:.82rem}.modal .box.wide{padding:14px}}
 
 /* rules */
 .rules-wrap{display:grid;grid-template-columns:250px minmax(0,1fr);gap:28px;align-items:start;margin-top:18px}
@@ -251,7 +258,7 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261028d"></script>
-<script src="assets/app.js?v=20261028d"></script>
+<script src="assets/cards-data.js?v=20261028e"></script>
+<script src="assets/app.js?v=20261028e"></script>
 </body>
 </html>

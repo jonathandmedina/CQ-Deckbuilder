@@ -180,6 +180,16 @@ button.card:hover{border-color:var(--cc)}
 /* test hand */
 .modal .box.wide{max-width:980px}
 .handbtn{justify-content:center}
+.btn.primary.go{background:var(--ok);border-color:var(--ok);color:var(--accent-ink)}
+.btn.primary.go:hover:not(:disabled){filter:brightness(1.08)}
+.hstats{display:flex;gap:4px;margin:6px 0 4px}
+.hstats>span{flex:1;text-align:center;border:1px solid var(--line);border-radius:6px;padding:1px 0;background:var(--sunk);font-variant-numeric:tabular-nums;line-height:1.15}
+.hstats b{display:block;font-size:.95rem}
+.hstats i{display:block;font-style:normal;font-size:.62rem;letter-spacing:.08em;color:var(--muted)}
+.hstats.sm{margin:0;gap:3px;flex:none}
+.hstats.sm>span{flex:none;min-width:30px;padding:0 3px}
+.hstats.sm b{font-size:.82rem}
+.hstats.sm i{font-size:.55rem}
 .btn.primary.handbtn{background:var(--ok);border-color:var(--ok);color:var(--accent-ink)}
 .btn.primary.handbtn:hover{filter:brightness(1.08)}
 .hand-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
@@ -258,7 +268,7 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261028e"></script>
-<script src="assets/app.js?v=20261028e"></script>
+<script src="assets/cards-data.js?v=20261028f"></script>
+<script src="assets/app.js?v=20261028f"></script>
 </body>
 </html>

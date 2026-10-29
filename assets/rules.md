@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: October 28, 2026*
+*Version: October 28, 2026 (update 2)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -103,6 +103,32 @@ Tokens are cards created by effects rather than drawn from your library, such as
 - Pillar tokens and summon tokens go on the battlefield. They don’t use inventory slots.
 - Equipment tokens (such as Daggers) and item tokens (such as the Doll) go into an empty inventory slot.
 - A token has an Aura cost of 0 unless it says otherwise, so equipping an equipment token costs 0 Aura.
+- A token that leaves play (destroyed, discarded or exiled) is removed from the game.
+- **Dagger** means any equipment with “Dagger” in its name, including Dagger tokens.
+
+**Token list.** Summon stats are written STR/HP.
+
+| Token | Kind | Stats | Aura to equip | Text | Made by |
+|---|---|---|---|---|---|
+| Dagger | Equipment (Rogue, One-Handed) | +1 STR | 0 | Equipped Hero gains +1 STR. | Armed, Quick Inventory, Blademaster’s Choice |
+| Viper Fang Dagger | Equipment (Rogue, One-Handed) | +1 STR | 1 | Equipped Hero gains +1 STR and Poisonous 1. | Ritual of Fang |
+| Doll | Item | 0 STR, 0 DEF, 5 HP | — | Takes an inventory slot. It can be targeted and dealt damage like a Hero. At 0 HP it is destroyed. | Mocking Doll |
+| Soldier | Summon | 2/2 | — | | Conscript, Noble Choice, Rally the Troops |
+| Eliazar | Summon (Soldier) | 3/5 | — | | Sword of Eliazar |
+| Beast | Summon | 3/3 | — | | Beast, Out of the Woods |
+| Heavy Beast | Summon (Beast) | 4/5 | — | | Heavy Beast |
+| Woods Beast | Summon (Beast) | 3/5 | — | When this deals damage, draw a card. | Elk of the Woods |
+| Elk | Summon | 2/2 | — | | Elk, Nature’s Choice |
+| Wolf | Summon | 2/3 | — | | Wolf |
+| Aurawing Familiar | Summon (Familiar) | 3/3 | — | When this is destroyed, gain 1 Aura. | Aurawing |
+| Drawwing Familiar | Summon (Familiar) | 3/3 | — | When this is destroyed, draw a card. | Drawwing |
+| Spore | Summon | 0/1 | — | When this is destroyed, discard a card. | Spore Calling |
+| Spirit | Summon | 2/2 | — | | Warden of the Woods |
+| Spectral Elk | Summon (Spirit) | 5/8 | — | | Verdant Sage |
+| Spell Damage Pillar | Pillar | — | — | Your spells deal +1 damage. | Boost Ritual, Volt Jab, Lightning Lance, Lightning Rod, Ritual of Power, Chain Lightning |
+| Pain Pillar | Pillar | — | — | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. | Dark Insight, Ritual of Pain |
+
+Splitting Ritual and Doubling Ritual copy whichever Pillars you sacrifice.
 
 ### Supertypes
 
@@ -498,6 +524,7 @@ Some equipment has a **Gold Upgrade Cost** and an **Upgrade** effect. At the Bla
 
 | Keyword | Meaning |
 |---|---|
+| **Banding** | Lets Heroes and summons group together for one attack. When a Hero or summon with Banding attacks, any number of other ready friendly Heroes and summons with Banding may join it. Add their STR to the attack, then exhaust every attacker. Nothing has Banding naturally; only cards grant it. |
 | **Combo** | When a Combo card is played, reveal the top card of your library. If its subtype is Combo, you may play it, or a Combo card from your hand, by paying its Aura cost. This doesn’t use another action. |
 | **Conjure** | Create a Pillar token on the battlefield. |
 | **Echo** | At your next Dawn, play this card again for free (no Aura cost). Any of your Heroes of the card’s class plays the copy, and you may choose new targets. The copy doesn’t have Echo, so it only repeats once. Set the card aside until then, and discard it after. |
@@ -516,7 +543,7 @@ Some equipment has a **Gold Upgrade Cost** and an **Upgrade** effect. At the Bla
 | **Stealth** | This Hero can’t be targeted by enemy attacks, cards or abilities. |
 | **+1/+1 counter** | +1 STR and +1 DEF while on the Hero. |
 
-**Damage types.** Fire, Lightning, Light and Dark damage work like normal damage for now. They will matter in a future update.
+**Damage types.** Fire, Ice, Lightning, Light and Dark damage work like normal damage for now. They will matter in a future update.
 
 ## 18. Other Rules
 
@@ -598,7 +625,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Aura**: Main resource. Pays to play cards, activate abilities and equip equipment.
 - **Aura pool**: The total of your Heroes' Aura stats, not counting dead Heroes. It refreshes each Dawn Phase and empties in the Dusk Phase.
 - **Aura cost**: What a card or ability costs to play. On cards it is shown as a number plus the Aura icon. For equipment, it’s also what you pay each time you equip it.
-- **Generate Aura**: Add Aura to your pool right away.
+- **Gain Aura**: Add Aura to your pool right away. (Older cards say “generate”.)
 - **Gold**: Second resource. Earned in the Dusk Phase (1 per living Hero), kept between rounds, spent only in the Town Phase.
 - **Gold Upgrade Cost**: Gold paid at the Blacksmith to upgrade a piece of equipment.
 
@@ -620,7 +647,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Enchantment**: Card attached to a Hero that changes it. Card text says “Enchanted ally”.
 - **Curse**: Enchantment subtype (Warlock) that weakens the Hero it's attached to.
 - **Summon**: Card type that creates a creature, and the creature itself. Playing a summon card exhausts the Hero that played it. A summon has STR/HP, enters exhausted, can attack whenever you have priority, can't be equipped. At 0 HP it dies and is destroyed. It can't be revived.
-- **Token**: A card created by an effect. Pillars and summons go on the battlefield. Equipment and item tokens (Dagger, Doll) take an inventory slot. A token’s Aura cost is 0 unless it says otherwise.
+- **Token**: A card created by an effect. Pillars and summons go on the battlefield. Equipment and item tokens (Dagger, Viper Fang Dagger, Doll) take an inventory slot. A token’s Aura cost is 0 unless it says otherwise (Viper Fang Dagger costs 1 to equip). Tokens that leave play are removed from the game. See the token list in The Cards.
 - **Hidden**: Supertype. Set face down in an inventory slot as an action. To trigger it, exhaust a ready Hero of its class (any Hero for Generic) and pay its cost. Resolves before the action that triggered it.
 - **Legendary**: Supertype. Only 1 copy per deck.
 - **Inventory slot**: One of 4 shared slots for items, Hidden cards, equipment tokens and unequipped equipment.
@@ -681,8 +708,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: draw a card; gain 2 Aura; target ally +2 STR this turn; deal 2 damage; gain 3 Gold; or target ally +2 DEF this turn. That Hero can’t be revived. Once per dead Hero.
 - **Surrendered**: A dead Hero whose soul was surrendered. Face down and sideways. Still counts as dead.
 - **STR/HP (e.g. 3/3)**: Shorthand for a summon's Strength and Health.
-- **Summon types**: Named creatures from cards: Beast, Familiar, Soldier, Spirit, Spectral Elk.
-- **Damage types**: Fire, Lightning, Light and Dark appear on cards. They have no rules effect yet but will later.
+- **Summon types**: Named creatures from cards: Beast, Elk, Familiar, Soldier, Spirit, Spore, Wolf. See the token list in The Cards for every summon’s STR/HP.
+- **Damage types**: Fire, Ice, Lightning, Light and Dark appear on cards. They have no rules effect yet but will later.
 
 ### Card keywords
 
@@ -699,6 +726,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Lifelink (Cleric)**: When this Hero deals damage, heal it that much.
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.
 - **Conjure (Mage, Warlock)**: Create a Pillar token in play.
+- **Banding (Druid)**: Granted by cards only. Heroes and summons with Banding can attack together: add their STR, then exhaust them all.
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Each one gives your spells +1 Spell Damage.

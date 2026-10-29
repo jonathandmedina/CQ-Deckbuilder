@@ -11,12 +11,25 @@ const CARDS=[
   ...RAW_CARDS.map(r=>({id:r[1],kind:"card",name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7]})),
   ...RAW_EQUIP.map(r=>({id:r[0],kind:"equip",name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:+r[7]||0,pdef:+r[8]||0}))
 ];
-const BYID=new Map([...HEROES,...CARDS].map(c=>[c.id,c]));
+const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?" · "+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],sup:""}));
+const TOKEN_BY_NAME=new Map(TOKENS.map(t=>[t.name,t]));
+const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
+const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
+const hasGem=c=>c.kind!=="hero"&&!(c.kind==="token"&&c.tkind!=="Equipment");
+function tokenStats(c){if(c.tkind==="Summon")return[["STR",c.str],["HP",c.hp]];if(c.tkind==="Item")return[["STR",c.str],["DEF",c.def],["HP",c.hp]];return null}
+function tokenStatLine(c){if(c.tkind==="Summon")return c.str+"/"+c.hp;if(c.tkind==="Item")return c.str+" STR, "+c.def+" DEF, "+c.hp+" HP";if(c.tkind==="Equipment")return"+"+c.str+" STR";return"Pillar"}
 const sortName=n=>n.replace(/^"|"$/g,"").toLowerCase();
 const costNum=c=>c.cost==="X"?99:(c.cost===""?-1:+c.cost);
 const maxCopies=c=>c.sup==="Legendary"?1:2;
 const clsOrder=c=>c==="Generic"?99:CLASSES.indexOf(c);
 const DECK_SIZE=30;
+/* tokens a deck can make: one entry per token, count = what every copy of every source makes */
+function tokensFor(d){
+  const m=new Map();const add=(name,q)=>{for(const[t,n]of(TOKEN_SRC[name]||[]))m.set(t,(m.get(t)||0)+n*q)};
+  d.heroes.forEach(h=>{const c=BYID.get(h);if(c)add(c.name,1)});
+  for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(c&&q>0)add(c.name,q)}
+  return[...m].map(([n,q])=>({c:TOKEN_BY_NAME.get(n),q})).filter(x=>x.c).sort((a,b)=>clsOrder(a.c.cls)-clsOrder(b.c.cls)||a.c.name.localeCompare(b.c.name));
+}
 
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
@@ -173,11 +186,14 @@ function shareURL(d){return location.origin+location.pathname+"?deck="+shareCode
 /* ---------- rendering: card tile ---------- */
 function typeLine(c){
   if(c.kind==="hero")return`<span>Hero</span><span>${esc(c.cls)}</span>`;
+  if(c.kind==="token")return`<span>Token — ${esc(c.sub)}</span><span>${esc(c.cls)}</span>`;
   const left=(c.sup?`<span class="leg">${esc(c.sup)}</span> `:"")+esc(c.type)+(c.sub?" — "+esc(c.sub):"");
   return`<span>${left}</span><span>${esc(c.cls)}</span>`;
 }
 function footHTML(c){
   if(c.kind==="hero")return`<div class="stats">${[["STR",c.str],["DEF",c.def],["AURA",c.aura],["HP",c.hp]].map(([k,v])=>`<div class="stat"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
+  if(c.kind==="token"){const st=tokenStats(c);if(st)return`<div class="stats">${st.map(([k,v])=>`<div class="stat"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
+    return c.tkind==="Equipment"?[esc(c.region),"+"+esc(c.str)+" STR","Token"].join(" · "):"Pillar token"}
   if(c.kind==="equip"){const b=[esc(c.region)];if(c.pstr)b.push("+"+c.pstr+" STR");if(c.pdef)b.push("+"+c.pdef+" DEF");return b.join(" · ")}
   return c.sup==="Legendary"?"1 copy per deck":"Up to 2 copies";
 }
@@ -185,7 +201,7 @@ function cardHTML(c,o={}){
   const tag=o.button?"button":"article";
   const attrs=o.button?` type="button" data-act="${o.button}" data-id="${esc(c.id)}"`:"";
   return`<${tag} class="card${o.picked?" picked":""}" style="--cc:${cc(c.cls)};--ct:${ct(c.cls)}"${attrs}>
-  <div class="c-head"><span class="c-name">${esc(c.name)}</span>${c.kind!=="hero"?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
+  <div class="c-head"><span class="c-name">${esc(c.name)}</span>${hasGem(c)?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
   <div class="c-rules">${rulesHTML(c.rules||"")}</div>
   <div class="c-foot">${footHTML(c)}</div>
@@ -193,11 +209,12 @@ function cardHTML(c,o={}){
   ${o.ctrl||""}
 </${tag}>`;
 }
+const kindRank=c=>c.kind==="hero"?0:c.kind==="token"?2:1;
 function filterSort(list,f){
   const q=f.q.trim().toLowerCase();
   let l=list.filter(c=>(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
   const byName=(a,b)=>sortName(a.name).localeCompare(sortName(b.name));
-  const s={class:(a,b)=>(a.kind==="hero"?0:1)-(b.kind==="hero"?0:1)||clsOrder(a.cls)-clsOrder(b.cls)||byName(a,b),
+  const s={class:(a,b)=>kindRank(a)-kindRank(b)||clsOrder(a.cls)-clsOrder(b.cls)||byName(a,b),
     name:byName,cost:(a,b)=>costNum(a)-costNum(b)||byName(a,b),type:(a,b)=>a.type.localeCompare(b.type)||byName(a,b)}[f.sort]||byName;
   return l.sort(s);
 }
@@ -205,8 +222,9 @@ function gridWithGroups(list,f,tile){
   if(!list.length)return`<div class="empty">No cards match these filters.</div>`;
   if(f.sort!=="class")return list.map(tile).join("");
   let out="",last=null;
-  const counts={};list.forEach(c=>{const k=(c.kind==="hero"?"Heroes · ":"")+c.cls;counts[k]=(counts[k]||0)+1});
-  for(const c of list){const k=(c.kind==="hero"?"Heroes · ":"")+c.cls;
+  const gk=c=>(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
+  const counts={};list.forEach(c=>{const k=gk(c);counts[k]=(counts[k]||0)+1});
+  for(const c of list){const k=gk(c);
     if(k!==last){out+=`<div class="group-h" style="--cc:${cc(c.cls)}"><i class="dot"></i>${esc(k)} <span>${counts[k]}</span></div>`;last=k}
     out+=tile(c)}
   return out;
@@ -229,14 +247,14 @@ function render(){
 }
 function viewCatalog(){
   const f=S.cat;
-  const all=[...HEROES,...CARDS];
+  const all=[...HEROES,...CARDS,...TOKENS];
   const list=filterSort(all,f);
   return`<h1>Card Catalog</h1>
-  <p class="lede">Every Hero, card and piece of equipment in Crystal Quest. ${HEROES.length} Heroes, ${CARDS.length} deck cards.</p>
+  <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.length} Heroes, ${CARDS.length} deck cards, ${TOKENS.length} tokens.</p>
   <div class="bar">${classChips(f.cls,"cat-cls",[...CLASSES,"Generic"])}</div>
   <div class="bar">
     <label class="field" for="cat-q">Search <input type="search" id="cat-q" data-act="cat-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
-    <label class="field" for="cat-type">Type ${selectHTML("cat-type","cat-type",f.type,[["all","All"],["Hero","Heroes"],...TYPES.map(t=>[t,t])])}</label>
+    <label class="field" for="cat-type">Type ${selectHTML("cat-type","cat-type",f.type,[["all","All"],["Hero","Heroes"],...TYPES.map(t=>[t,t]),["Token","Tokens"]])}</label>
     <label class="field" for="cat-sort">Sort by ${selectHTML("cat-sort","cat-sort",f.sort,SORTS)}</label>
     <span class="count">${list.length} shown</span>
   </div>
@@ -307,6 +325,7 @@ function deckPanel(d){
     <ul class="issues ${iss.length?"bad":"good"}">${iss.length?iss.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Deck is legal and ready to play.</li>"}</ul>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 2 copies of a card, and 1 of each Legendary.</p>`}
     <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i><span class="n${e.c&&allowed(e.c,d)?"":" bad"}">${esc(e.c?e.c.name:e.id)}</span><span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
+    ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><span class="n">${esc(t.c.name)}</span><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward the 30. Print &amp; Play includes them.</p></div>`:""})()}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}
     <div class="actions">
       <button type="button" class="btn primary" data-act="save">Save deck</button>
@@ -346,19 +365,20 @@ function viewDecks(){
   <div class="actions"><button type="button" class="btn" data-act="import">Import into builder</button></div></div>`;
 }
 function inspect(c){
-  const d=S.deck,can=c.kind!=="hero"&&d.heroes.length===3&&allowed(c,d);
+  const d=S.deck,can=c.kind!=="hero"&&c.kind!=="token"&&d.heroes.length===3&&allowed(c,d);
   const q=d.cards[c.id]||0;
   const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);
-  m.innerHTML=`<div class="box">${cardHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)||deckTotal(d)>=DECK_SIZE?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind!=="hero"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
+  m.innerHTML=`<div class="box">${cardHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)||deckTotal(d)>=DECK_SIZE?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});
   l.appendChild(m);m.querySelector("[data-act=close]").focus();
 }
 
 /* ---------- deck list text ---------- */
-function deckText(d){
+function deckText(d,withTokens=true){
   const lines=[`# ${d.name}`,`Heroes: ${d.heroes.map(h=>BYID.get(h)?.name||h).join(", ")}`];
   const e=Object.entries(d.cards).filter(([,q])=>q>0).sort((a,b)=>{const A=BYID.get(a[0]),B=BYID.get(b[0]);return(A&&B?clsOrder(A.cls)-clsOrder(B.cls)||costNum(A)-costNum(B):0)||a[0].localeCompare(b[0])});
   for(const[id,q]of e)lines.push(`${q} ${BYID.get(id)?.name||id}`);
+  const tk=tokensFor(d);if(withTokens&&tk.length)lines.push(`Tokens: ${tk.map(t=>t.q+" "+t.c.name).join(", ")}`);
   return lines.join("\n");
 }
 function parseDeck(txt){
@@ -367,6 +387,7 @@ function parseDeck(txt){
   const find=(n,pool)=>pool.find(c=>norm(c.name)===norm(n))||pool.find(c=>sortName(c.name)===norm(n).replace(/^"|"$/g,""));
   for(let line of txt.split(/\r?\n/)){line=line.trim();if(!line)continue;
     if(line.startsWith("#")){d.name=line.replace(/^#+\s*/,"")||d.name;continue}
+    if(/^tokens?\s*:/i.test(line))continue;
     const hm=line.match(/^heroes?\s*:\s*(.*)$/i);
     if(hm){for(const n of hm[1].split(",")){if(!n.trim())continue;const h=find(n,HEROES);if(h&&d.heroes.length<3&&!d.heroes.includes(h.id))d.heroes.push(h.id);else if(!h)miss.push(n.trim())}continue}
     const m=line.match(/^(\d+)\s*x?\s+(.+)$/i);const q=m?+m[1]:1,n=m?m[2]:line;
@@ -409,18 +430,19 @@ function drawCard(ctx,c,W,H){
   ctx.fillStyle="#FBFBF8";rr(ctx,ix,iy,iw,ih,18*s);ctx.fill();
   // header band
   const hb=120*s;ctx.save();rr(ctx,ix,iy,iw,ih,18*s);ctx.clip();ctx.fillStyle=col;ctx.fillRect(ix,iy,iw,hb);ctx.restore();
-  const gemR=52*s,hasGem=c.kind!=="hero";
-  const nameMax=iw-40*s-(hasGem?gemR*2+10*s:0);
+  const gemR=52*s,gem=hasGem(c);
+  const nameMax=iw-40*s-(gem?gemR*2+10*s:0);
   ctx.fillStyle=tcol;const ns=fitText(ctx,c.name,F_DISP,58*s,nameMax,700);ctx.font=`700 ${ns}px ${F_DISP}`;ctx.fillText(c.name,ix+22*s,iy+hb/2+ns*0.34);
-  if(hasGem){const gx=ix+iw-gemR-16*s,gy=iy+hb/2;ctx.fillStyle="#FBFBF8";hex(ctx,gx,gy,gemR);ctx.fill();ctx.strokeStyle="rgba(0,0,0,.25)";ctx.lineWidth=3*s;hex(ctx,gx,gy,gemR-6*s);ctx.stroke();
+  if(gem){const gx=ix+iw-gemR-16*s,gy=iy+hb/2;ctx.fillStyle="#FBFBF8";hex(ctx,gx,gy,gemR);ctx.fill();ctx.strokeStyle="rgba(0,0,0,.25)";ctx.lineWidth=3*s;hex(ctx,gx,gy,gemR-6*s);ctx.stroke();
     ctx.fillStyle="#1C232E";ctx.font=`800 ${52*s}px ${F_DISP}`;ctx.textAlign="center";ctx.fillText(String(c.cost),gx,gy+18*s);ctx.textAlign="left"}
   // type line
   let ty=iy+hb+50*s;ctx.font=`italic 400 ${32*s}px ${F_BODY}`;ctx.fillStyle="#4C5563";
-  const tl=c.kind==="hero"?"Hero":(c.sup?c.sup+" ":"")+c.type+(c.sub?" — "+c.sub:"");
+  const tl=c.kind==="hero"?"Hero":c.kind==="token"?"Token — "+c.sub:(c.sup?c.sup+" ":"")+c.type+(c.sub?" — "+c.sub:"");
   ctx.fillText(tl,ix+22*s,ty);ctx.textAlign="right";ctx.font=`700 ${30*s}px ${F_BODY}`;ctx.fillStyle=col==="#D4AE3A"?"#8A6D10":col;ctx.fillText(c.cls.toUpperCase(),ix+iw-22*s,ty);ctx.textAlign="left";
   ctx.strokeStyle="#D9DCD6";ctx.lineWidth=2*s;ctx.beginPath();ctx.moveTo(ix+22*s,ty+20*s);ctx.lineTo(ix+iw-22*s,ty+20*s);ctx.stroke();
   // footer
-  const hasFoot=c.kind!=="card"||c.sup==="Legendary";const footH=c.kind==="hero"?150*s:(hasFoot?80*s:30*s),footY=iy+ih-footH;
+  const stats=c.kind==="hero"?[["STR",c.str],["DEF",c.def],["AURA",c.aura],["HP",c.hp]]:c.kind==="token"?tokenStats(c):null;
+  const hasFoot=c.kind!=="card"||c.sup==="Legendary";const footH=stats?150*s:(hasFoot?80*s:30*s),footY=iy+ih-footH;
   // rules
   const rx=ix+30*s,rw=iw-60*s,ry=ty+50*s,rh=footY-ry-16*s;
   let size=40*s,L;do{L=layoutRules(ctx,c.rules||"",rw,size);if(L.h<=rh)break;size-=1*s}while(size>16*s);
@@ -432,12 +454,12 @@ function drawCard(ctx,c,W,H){
       x+=it.w+ctx.measureText(" ").width}
     y+=L.lh}
   if(hasFoot){ctx.strokeStyle="#D9DCD6";ctx.lineWidth=2*s;ctx.beginPath();ctx.moveTo(ix+22*s,footY);ctx.lineTo(ix+iw-22*s,footY);ctx.stroke()}
-  if(c.kind==="hero"){
-    const st=[["STR",c.str],["DEF",c.def],["AURA",c.aura],["HP",c.hp]];const bw=(iw-44*s-3*14*s)/4;
+  if(stats){
+    const st=stats,nb=st.length;const bw=(iw-44*s-(nb-1)*14*s)/nb;
     st.forEach(([k,v],i)=>{const bx=ix+22*s+i*(bw+14*s),by=footY+18*s,bh=footH-40*s;ctx.strokeStyle=col;ctx.lineWidth=4*s;rr(ctx,bx,by,bw,bh,12*s);ctx.stroke();
       ctx.textAlign="center";ctx.fillStyle="#1C232E";ctx.font=`800 ${50*s}px ${F_DISP}`;ctx.fillText(String(v),bx+bw/2,by+bh*0.55);ctx.font=`700 ${22*s}px ${F_BODY}`;ctx.fillStyle="#5A6474";ctx.fillText(k,bx+bw/2,by+bh-14*s);ctx.textAlign="left"});
   }else{
-    let ft=c.kind==="equip"?[c.region,c.pstr?"+"+c.pstr+" STR":"",c.pdef?"+"+c.pdef+" DEF":""].filter(Boolean).join("  ·  "):(c.sup==="Legendary"?"Legendary · 1 per deck":"");
+    let ft=c.kind==="token"?(c.tkind==="Equipment"?[c.region,"+"+c.str+" STR","Token"].join("  ·  "):"Pillar token"):c.kind==="equip"?[c.region,c.pstr?"+"+c.pstr+" STR":"",c.pdef?"+"+c.pdef+" DEF":""].filter(Boolean).join("  ·  "):(c.sup==="Legendary"?"Legendary · 1 per deck":"");
     ctx.font=`700 ${30*s}px ${F_BODY}`;ctx.fillStyle="#4C5563";ctx.fillText(ft,ix+22*s,footY+50*s);
   }
   ctx.font=`700 ${20*s}px ${F_DISP}`;ctx.fillStyle=tcol;ctx.globalAlpha=.85;ctx.textAlign="center";ctx.fillText("CRYSTAL QUEST",W/2,H-6*s);ctx.globalAlpha=1;ctx.textAlign="left";
@@ -480,8 +502,11 @@ async function exportPnP(d){
     let y=2.1;pdf.setFont("helvetica","bold");pdf.text("Heroes",0.75,y);pdf.setFont("helvetica","normal");y+=0.25;
     d.heroes.forEach((h,i)=>{const c=BYID.get(h);pdf.text(`${["Lead","Center","Closer"][i]}: ${c?c.name+" ("+c.cls+")":h}`,0.9,y);y+=0.22});
     y+=0.15;pdf.setFont("helvetica","bold");pdf.text("Deck",0.75,y);pdf.setFont("helvetica","normal");y+=0.25;
-    const rows=deckText(d).split("\n").slice(2);const half=Math.ceil(rows.length/2);
+    const rows=deckText(d,false).split("\n").slice(2);const half=Math.ceil(rows.length/2);
     rows.forEach((r,i)=>pdf.text(r.replace(/[“”]/g,'"'),i<half?0.9:4.5,y+(i%half)*0.22));
+    const toks=tokensFor(d);
+    if(toks.length){y+=half*0.22+0.2;pdf.setFont("helvetica","bold");pdf.text("Tokens to print",0.75,y);pdf.setFont("helvetica","normal");y+=0.25;
+      const th=Math.ceil(toks.length/2);toks.forEach((t,i)=>pdf.text(`${t.q} ${t.c.name} (${tokenStatLine(t.c)})`,i<th?0.9:4.5,y+(i%th)*0.22));}
     pdf.setFontSize(9);pdf.setTextColor(90);pdf.text("Print at 100% (no scaling). Cut on the gray lines. Cards are 2.5 x 3.5 in, standard sleeve size. The last page has optional card backs.",0.75,10.4,{maxWidth:7});pdf.setTextColor(0);
     const cards=exportList(d),cache=new Map();
     const W=750,H=1050,mx=0.5,my=0.25,cw=2.5,ch=3.5;
@@ -489,6 +514,8 @@ async function exportPnP(d){
     const page=(items,getImg)=>{pdf.addPage();items.forEach((c,i)=>{const x=mx+(i%3)*cw,yy=my+Math.floor(i/3)*ch;pdf.addImage(getImg(c),"JPEG",x,yy,cw,ch,undefined,"FAST")});
       pdf.setDrawColor(170);pdf.setLineWidth(0.005);for(let i=0;i<=3;i++){pdf.line(mx+i*cw,0,mx+i*cw,11);pdf.line(0,my+i*ch,8.5,my+i*ch)}};
     for(let i=0;i<cards.length;i+=9){page(cards.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
+    const tokCards=[];toks.forEach(t=>{for(let i=0;i<t.q;i++)tokCards.push(t.c)});
+    for(let i=0;i<tokCards.length;i+=9){page(tokCards.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
     const back=cardCanvas(null,W,H).toDataURL("image/jpeg",0.9);page(Array(9).fill({}),()=>back);
     const blob=pdf.output("blob");busy(false);
     await offer(safeName(d.name)+"_print_and_play.pdf",blob);
@@ -501,7 +528,8 @@ async function exportTTS(d){
   try{
     const heroes=d.heroes.map(h=>BYID.get(h)).filter(Boolean);
     const uniq=Object.entries(d.cards).filter(([,q])=>q>0).map(([id,q])=>({c:BYID.get(id),q})).filter(x=>x.c).sort((a,b)=>sortName(a.c.name).localeCompare(sortName(b.c.name)));
-    const faces=[...heroes,...uniq.map(u=>u.c)];
+    const toks=tokensFor(d);
+    const faces=[...heroes,...uniq.map(u=>u.c),...toks.map(t=>t.c)];
     const CW=500,CH=700,cols=10,rows=Math.max(2,Math.ceil(faces.length/cols));
     const sheet=document.createElement("canvas");sheet.width=CW*cols;sheet.height=CH*rows;const sx=sheet.getContext("2d");
     sx.fillStyle="#14202A";sx.fillRect(0,0,sheet.width,sheet.height);
@@ -514,15 +542,16 @@ async function exportTTS(d){
     const deckObj=(nick,list,x)=>list.length===1?{...cardObj(list[0].c,list[0].i,x,0),Nickname:list[0].c.name}:({Name:"Deck",Transform:T(x,0),Nickname:nick,Description:"",DeckIDs:list.map(o=>100+o.i),CustomDeck:custom,ContainedObjects:list.map(o=>cardObj(o.c,o.i,x,0)),ColorDiffuse:{r:0.71,g:0.71,b:0.71},Locked:false,Grid:true,Snap:true,Autoraise:true,Sticky:true,Tooltip:true,HideWhenFaceDown:true,SidewaysCard:false});
     const heroList=heroes.map((c,i)=>({c,i}));
     const deckList=[];uniq.forEach((u,k)=>{for(let j=0;j<u.q;j++)deckList.push({c:u.c,i:heroes.length+k})});
-    const objs=[];if(heroList.length)objs.push(deckObj(d.name+" — Heroes",heroList,-4));if(deckList.length)objs.push(deckObj(d.name,deckList,0));
+    const tokList=[];toks.forEach((t,k)=>{for(let j=0;j<t.q;j++)tokList.push({c:t.c,i:heroes.length+uniq.length+k})});
+    const objs=[];if(tokList.length)objs.push(deckObj(d.name+" — Tokens",tokList,4));if(heroList.length)objs.push(deckObj(d.name+" — Heroes",heroList,-4));if(deckList.length)objs.push(deckObj(d.name,deckList,0));
     const save={SaveName:d.name,GameMode:"",Gravity:0.5,PlayArea:0.5,Date:new Date().toLocaleString(),Table:"",Sky:"",Note:"",Rules:"",XmlUI:"",LuaScript:"",LuaScriptState:"",ObjectStates:objs,TabStates:{},VersionNumber:""};
     const base=safeName(d.name);
     const readme=`Crystal Quest - ${d.name}
 Tabletop Simulator files
 
-face_sheet.png  : all ${faces.length} card faces in a ${cols} x ${rows} grid (Heroes first, then one of each deck card)
+face_sheet.png  : all ${faces.length} card faces in a ${cols} x ${rows} grid (Heroes first, then one of each deck card, then tokens)
 card_back.png   : the shared card back
-${base}_saved_object.json : a saved object with your Heroes and your ${deckTotal(d)}-card deck as two named decks
+${base}_saved_object.json : a saved object with your Heroes, your ${deckTotal(d)}-card deck${toks.length?" and your tokens":""} as named decks
 deck_list.txt   : the plain deck list
 
 QUICK WAY (no hosting needed)

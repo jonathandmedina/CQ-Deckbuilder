@@ -387,8 +387,9 @@ function handBody(){
   const H=S.hand,d=H.d,total=deckTotal(d);
   const heroes=d.heroes.map(h=>BYID.get(h)).filter(Boolean);
   const canMull=!H.mull&&H.extra===0;
-  return`<div class="hand-h"><div><h2>${H.extra?"Hand":"Starting hand"}</h2><p class="note">${esc(d.name)}${heroes.length?" · "+heroes.map(h=>esc(h.name)).join(", ")+" · "+handAura(d)+" Aura at Dawn":""}</p></div>
-    <button type="button" class="btn sm" data-act="close">Close</button></div>
+  return`<div class="hand-h"><div class="hand-t"><h2>${H.extra?"Hand":"Starting hand"}</h2><p class="note">${esc(d.name)}${heroes.length?" · "+heroes.map(h=>esc(h.name)).join(", "):""}</p></div>
+    <div class="hand-r">${heroes.length?`<div class="aura-box" title="${esc(heroes.map(h=>h.name+" "+(+h.aura||0)).join(", "))}"><span class="aura-gem" aria-hidden="true"></span><div><b>${handAura(d)}</b><small>Starting Aura</small><span class="aura-src">${heroes.map(h=>esc(String(+h.aura||0))).join(" + ")}</span></div></div>`:""}
+    <button type="button" class="btn sm" data-act="close">Close</button></div></div>
   ${total!==DECK_SIZE?`<p class="note warn">This deck has ${total} cards, not ${DECK_SIZE}, so the odds won't match a legal deck.</p>`:""}
   <div class="hand-stats"><span class="pill">In hand <b>${H.hand.length}</b></span><span class="pill">Library <b>${H.lib.length}</b></span>${H.extra?`<span class="pill">Drawn <b>${H.extra}</b></span>`:""}${H.mull?`<span class="pill">Mulliganed</span>`:""}
     <span class="pill">Aura costs <b>${H.hand.map(id=>BYID.get(id).cost).sort((a,b)=>costNum({cost:a})-costNum({cost:b})).map(esc).join(", ")||"—"}</b></span></div>

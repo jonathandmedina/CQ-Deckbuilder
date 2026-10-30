@@ -244,13 +244,14 @@ function render(){
   else if(S.view==="account")v.innerHTML=viewAccount();
   else if(S.view==="rules"){v.innerHTML=viewRules();if(!S.rules)loadRules()}
   else if(S.view==="play"){if(window.CQPlay)window.CQPlay.mount(v);else v.innerHTML='<p class="lede">Loading the game…</p>'}
+  else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
   else v.innerHTML=viewDecks();
 }
 function viewCatalog(){
   const f=S.cat;
   const all=[...HEROES,...CARDS,...TOKENS];
   const list=filterSort(all,f);
-  return`<h1>Card Catalog</h1>
+  return`<h1>Cards</h1>
   <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.length} Heroes, ${CARDS.length} deck cards, ${TOKENS.length} tokens.</p>
   <div class="bar">${classChips(f.cls,"cat-cls",[...CLASSES,"Generic"])}</div>
   <div class="bar">
@@ -345,6 +346,39 @@ function deckPanel(d){
     <p class="note">${S.mode==="account"?"Saved decks sync to your account.":"You're not signed in, so saved decks stay in this browser."+(SB?' <a href="#account">Sign in</a>':"")}${S.dirty?" Unsaved changes.":""}</p>
   </aside>`;
 }
+/* ---------- best decks (win rates from finished Play-tab games) ---------- */
+const BEST_MIN_GAMES=5,BEST_MIN_PCT=60;
+async function loadBest(){if(!SB){S.best={at:Date.now(),rows:[],err:"off"};render();return}
+  S.best=Object.assign({},S.best||{},{loading:true,at:Date.now()});
+  const{data,error}=await SB.from("deck_leaderboard").select("*").gt("win_pct",BEST_MIN_PCT).order("win_pct",{ascending:false}).order("games",{ascending:false}).limit(200);
+  S.best={at:Date.now(),rows:error?[]:(data||[]),err:error?error.message:null,loading:false};if(S.view==="best")render()}
+function bestDeck(r){return{id:"best:"+r.deck_key,name:r.deck_name||"Untitled deck",heroes:(r.heroes||[]).slice(0,3),cards:r.cards||{}}}
+function bestCard(r,rank){const d=bestDeck(r);const hs=d.heroes.map(h=>BYID.get(h)).filter(Boolean);
+  const players=(r.players||[]).filter(Boolean);const pl=players.slice(0,3).map(esc).join(", ")+(players.length>3?` +${players.length-3} more`:"");
+  return`<article class="deck best">
+    <div class="best-h">${rank?`<span class="rank">#${rank}</span>`:""}<h3>${esc(d.name)}</h3><span class="pct" title="Win percentage">${Number(r.win_pct).toFixed(0)}%</span></div>
+    <div class="pips">${hs.map(h=>`<button type="button" class="pill" style="--cc:${cc(h.cls)}" data-act="inspect" data-id="${esc(h.id)}"><i class="dot"></i>${esc(h.name)}</button>`).join("")}</div>
+    <div class="best-rec"><b>${r.wins}–${r.losses}${r.draws?`–${r.draws}`:""}</b> in ${r.games} game${r.games===1?"":"s"} · vs AI ${r.ai_wins}/${r.ai_games} · online ${r.online_wins}/${r.online_games}</div>
+    <div class="note">Played by ${pl||"Guest"} · last game ${esc(new Date(r.last_played).toLocaleDateString())}</div>
+    <div class="actions"><button type="button" class="btn sm" data-act="best-view" data-id="${esc(r.deck_key)}">View list</button><button type="button" class="btn sm primary" data-act="best-open" data-id="${esc(r.deck_key)}">Open in Deck Builder</button></div>
+  </article>`}
+function viewBest(){const b=S.best;
+  const head=`<h1>Best Decks</h1><p class="lede">Decks with the highest win rate in finished Play-tab games (vs AI and online). A deck needs at least ${BEST_MIN_GAMES} games and over ${BEST_MIN_PCT}% wins to be listed. The same Heroes and 30 cards count as one deck, whoever plays it.</p>
+    <div class="bar"><button type="button" class="btn sm" data-act="best-refresh">Refresh</button><a class="btn sm" href="#play">Play a game</a></div>`;
+  if(!SB)return head+`<div class="empty">Win tracking needs the site's account service, which isn't reachable right now.</div>`;
+  if(!b||b.loading&&!b.rows)return head+`<div class="empty">Loading results…</div>`;
+  if(b.err)return head+`<div class="empty">Couldn't load results: ${esc(b.err)}</div>`;
+  const top=b.rows.filter(r=>r.games>=BEST_MIN_GAMES),soon=b.rows.filter(r=>r.games<BEST_MIN_GAMES);
+  return head+(top.length?`<div class="decks">${top.map((r,i)=>bestCard(r,i+1)).join("")}</div>`:`<div class="empty">No deck has ${BEST_MIN_GAMES}+ games above ${BEST_MIN_PCT}% yet. Finish games in the Play tab to fill this list.</div>`)
+    +(soon.length?`<h2 style="margin-top:28px">On the rise</h2><p class="lede">Over ${BEST_MIN_PCT}% wins but fewer than ${BEST_MIN_GAMES} games so far.</p><div class="decks">${soon.slice(0,24).map(r=>bestCard(r,0)).join("")}</div>`:"")}
+function bestListModal(r){const d=bestDeck(r);const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",d.name);
+  const rows=Object.entries(d.cards).map(([id,q])=>({c:BYID.get(id),id,q})).sort((a,b)=>(a.c?costNum(a.c):99)-(b.c?costNum(b.c):99)||a.id.localeCompare(b.id));
+  m.innerHTML=`<div class="box"><h2>${esc(d.name)}</h2><p class="note">${r.wins}–${r.losses}${r.draws?`–${r.draws}`:""} · ${Number(r.win_pct).toFixed(1)}% wins in ${r.games} games</p>
+    <div class="dl"><h4><span>Heroes</span><span>3</span></h4><ul>${d.heroes.map(h=>{const c=BYID.get(h);return c?`<li style="--cc:${cc(c.cls)}"><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(c.id)}">${esc(c.name)}</button></li>`:""}).join("")}</ul>
+    <h4><span>Cards</span><span>${rows.reduce((a,e)=>a+e.q,0)}</span></h4><ul>${rows.map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink" data-act="inspect" data-id="${esc(e.id)}">${esc(e.c.name)}</button><span class="cst">${esc(e.c.cost)}</span>`:`<span class="n bad">${esc(e.id)}</span>`}</li>`).join("")}</ul></div>
+    <div class="actions"><button type="button" class="btn primary" data-act="best-open" data-id="${esc(r.deck_key)}">Open in Deck Builder</button><button type="button" class="btn" data-act="close">Close</button></div></div>`;
+  m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m)}
+function confirmReplace(){return window.confirm("Replace your unsaved draft in the Deck Builder with this deck?")}
 function viewDecks(){
   const ds=S.decks;
   return`<h1>My Decks</h1>
@@ -745,6 +779,10 @@ document.addEventListener("click",async e=>{
   else if(a==="auth-mode"){S.authMode=v;render()}
   else if(a==="signout"){await signOut()}
   else if(a==="rules-jump"){rulesJump(id)}
+  else if(a==="best-refresh"){S.best=null;loadBest();render()}
+  else if(a==="best-view"){const r=(S.best&&S.best.rows||[]).find(x=>x.deck_key===id);if(r)bestListModal(r)}
+  else if(a==="best-open"){const r=(S.best&&S.best.rows||[]).find(x=>x.deck_key===id);if(!r)return;b.closest(".modal")?.remove();const d=bestDeck(r);
+    if(S.dirty&&!confirmReplace())return;S.deck={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=true;S.b.step="cards";saveDraft();go("build");toast("Deck copied into the Deck Builder. Press Save deck to keep it.")}
   else if(a==="share"){const d=deckBySrc(b.dataset.src);if(d)copyText(shareURL(d),"Share link copied. Anyone with it can open this deck.")}
 });
 let qT;
@@ -763,7 +801,7 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.querySelectorAll(".modal");if(ms.length)ms[ms.length-1].remove();return}
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
-function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","play"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","play","best"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

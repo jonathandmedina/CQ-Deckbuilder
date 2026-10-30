@@ -136,20 +136,36 @@ function deckChoices(){const out=[];
 function deckById(id){const c=deckChoices().find(d=>d.id===id);return c&&c.ok?c.deck:null}
 
 /* ---------- persistence ---------- */
-function saveLocal(){if(U.vsAI&&U.s)store2.set("cq.play.local",{s:U.s,me:U.me});if(U.net&&U.net.role==="host"&&U.s)store2.set("cq.play.host",{code:U.net.code,s:U.s,guest:U.net.guest||null});}
+function saveLocal(){if(U.vsAI&&U.s)store2.set("cq.play.local",{s:U.s,me:U.me,meta:U.meta||null});if(U.net&&U.net.role==="host"&&U.s)store2.set("cq.play.host",{code:U.net.code,s:U.s,guest:U.net.guest||null,meta:U.meta||null});}
+/* ---------- win tracking for Best Decks ---------- */
+const newGid=()=>"g"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+function deckMeta(d){return{name:(d.name||"Untitled deck").replace(/ \(starter\)$/,"").slice(0,80),heroes:d.heroes.slice(0,3),cards:Object.assign({},d.cards)}}
+async function deckKey(d){const txt=d.heroes.slice().sort().join("|")+"#"+Object.entries(d.cards).filter(([,q])=>q>0).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,q])=>k+":"+q).join("|");
+  const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(txt));return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32)}
+async function maybeRecord(){const s=U.s,m=U.meta;if(!s||!s.over||!m||!m.gid||m.recorded)return;
+  const done=store2.get("cq.play.recorded",[]);if(done.includes(m.gid)){m.recorded=true;return}
+  const c=sb();if(!c)return;m.recorded=true;saveLocal();
+  const sides=m.mode==="ai"?[0]:[0,1];const rows=[];
+  for(const side of sides){const d=m.decks[side];if(!d||E.validateDeck(d).length)continue;
+    rows.push({game_id:m.gid,side,deck_key:await deckKey(d),deck_name:d.name,heroes:d.heroes,cards:d.cards,player_name:(s.p[side].name||"Guest").slice(0,40),mode:m.mode,result:s.winner<0?"draw":(s.winner===side?"win":"loss"),rounds:s.round})}
+  if(!rows.length)return;
+  const{error}=await c.from("deck_results").insert(rows);
+  if(error&&!/duplicate/i.test(error.message)){m.recorded=false;saveLocal();console.warn("Couldn't save the result:",error.message);return}
+  store2.set("cq.play.recorded",done.concat([m.gid]).slice(-300));toast("Result recorded for Best Decks.")}
 function myName(){return(AS()&&S.me&&S.me.name)||store2.get("cq.play.name","")||"Player"}
 
 /* ---------- game control ---------- */
 function startAI(){const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, 30 cards) for yourself.");return}
   if(!da){toast("Choose a deck for the AI.");return}
   U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
+  U.meta={gid:newGid(),mode:"ai",decks:[deckMeta(dm),deckMeta(da)]};
   U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.net=null;U.mode="game";U.tgt=null;U.man=null;saveLocal();render();pumpAI()}
 function view(){return U.s}
 function send(a){
   if(U.net&&U.net.role==="guest"){U.net.ch.send({type:"broadcast",event:"act",payload:{a,cid}});U.busy=true;U.tgt=null;render();return}
   const r=E.act(U.s,U.me,a);if(!r.ok){toast(r.err||"Not legal.");render();return}
   U.tgt=null;afterChange()}
-function afterChange(){saveLocal();if(U.net&&U.net.role==="host")broadcast();render();pumpAI()}
+function afterChange(){saveLocal();if(U.net&&U.net.role==="host")broadcast();render();pumpAI();if(U.s&&U.s.over&&(U.vsAI||(U.net&&U.net.role==="host")))maybeRecord()}
 function pumpAI(){clearTimeout(U.aiT);if(!U.vsAI||!U.s||U.s.over)return;
   const a=AI.choose(U.s,1);if(!a)return;
   U.aiT=setTimeout(()=>{const a2=AI.choose(U.s,1);if(!a2)return;const r=E.act(U.s,1,a2);if(!r.ok){const f=E.options(U.s,1).find(o=>["pass","decline","dawnDone","leave","keep","manDone"].includes(o.type));if(f)E.act(U.s,1,f)}afterChange()},U.fast?0:(U.s.phase==="battle"&&!U.s.pend.length?650:350))}
@@ -167,7 +183,7 @@ function openChannel(code,role,onReady){const c=sb();if(!c){toast("Online play n
   ch.subscribe(async status=>{if(status==="SUBSCRIBED"){await ch.track({name:myName(),role});onReady&&onReady()}else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){toast("Couldn't reach the game server. Check your connection.")}});
   return ch}
 function hostRoom(resume){U.gameKey="g"+Date.now();const dm=deckById(U.lobby.deck);if(!resume&&!dm){toast("Choose a legal deck first.");return}
-  const code=resume?resume.code:newCode();U.vsAI=false;U.s=resume?resume.s:null;U.me=0;
+  const code=resume?resume.code:newCode();U.vsAI=false;U.s=resume?resume.s:null;U.me=0;U.meta=resume?resume.meta||null:null;
   U.net={role:"host",code,deck:dm,guest:resume?resume.guest:null,peers:0};U.mode=U.s?"game":"room";
   U.net.ch=openChannel(code,"host",()=>{if(U.s)broadcast()});render()}
 function joinRoom(code,resume){U.gameKey="g"+Date.now();code=(code||"").trim().toUpperCase();if(!/^[A-Z0-9]{5}$/.test(code)){toast("Room codes are 5 letters/numbers.");return}
@@ -176,10 +192,10 @@ function joinRoom(code,resume){U.gameKey="g"+Date.now();code=(code||"").trim().t
   U.net.ch=openChannel(code,"guest",()=>{U.net.ch.send({type:"broadcast",event:"hello",payload:{cid,name:myName(),deck:dm}})});render()}
 function onHello(p){
   if(!U.s){if(!p.deck){return}const bad=E.validateDeck(p.deck);if(bad.length){U.net.ch.send({type:"broadcast",event:"state",payload:{to:p.cid,s:null,me:1,err:"Your deck isn't legal: "+bad[0]}});return}
-    U.net.guest=p.cid;let gn=(p.name||"Guest").slice(0,24);if(gn===myName())gn+=" 2";U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:U.net.deck},{name:gn,deck:p.deck}]});U.mode="game";toast(`${p.name||"A player"} joined. Good luck!`);afterChange();return}
+    U.net.guest=p.cid;let gn=(p.name||"Guest").slice(0,24);if(gn===myName())gn+=" 2";U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:U.net.deck},{name:gn,deck:p.deck}]});U.meta={gid:newGid(),mode:"online",decks:[deckMeta(U.net.deck),deckMeta(p.deck)]};U.mode="game";toast(`${p.name||"A player"} joined. Good luck!`);afterChange();return}
   if(U.net.guest&&p.cid!==U.net.guest){U.net.ch.send({type:"broadcast",event:"full",payload:{to:p.cid}});return}
   U.net.guest=p.cid;broadcast()}
-function onGuestAct(p){if(!U.s||p.cid!==U.net.guest)return;const r=E.act(U.s,1,p.a);saveLocal();broadcast(r.ok?null:r.err);render()}
+function onGuestAct(p){if(!U.s||p.cid!==U.net.guest)return;const r=E.act(U.s,1,p.a);saveLocal();broadcast(r.ok?null:r.err);render();if(U.s.over)maybeRecord()}
 function broadcast(err){if(!U.net||!U.net.ch||!U.s||!U.net.guest)return;U.net.ch.send({type:"broadcast",event:"state",payload:{to:U.net.guest,s:E.redact(U.s,1),me:1,err:err||null}})}
 function leaveGame(){U.gameKey=null;clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
   if(U.net&&U.net.role==="guest")store2.del("cq.play.guest");if(U.net&&U.net.role==="host")store2.del("cq.play.host");
@@ -464,7 +480,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="leave"){leaveGame();return}
   if(k==="leave-ask"){if(s&&s.over){leaveGame();return}modal(`<h2>Leave this game?</h2><p>${U.vsAI?"Your game is saved in this browser; you can resume it from the Play tab.":U.net&&U.net.role==="host"?"The room closes for your opponent. You can reopen it from the Play tab.":"You can rejoin with the same code while the host keeps the room open."}</p><div class="actions"><button class="btn primary" data-pa="leave-soft">Leave</button><button class="btn" data-pa="close">Stay</button></div>`);return}
   if(k==="leave-soft"){U.gameKey=null;closeModal();clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(err){}}U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";render();return}
-  if(k==="resume-local"){const r=store2.get("cq.play.local",null);if(r){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.vsAI=true;U.net=null;U.mode="game";render();pumpAI()}return}
+  if(k==="resume-local"){const r=store2.get("cq.play.local",null);if(r){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.meta=r.meta||null;U.vsAI=true;U.net=null;U.mode="game";render();pumpAI()}return}
   if(k==="drop-local"){store2.del("cq.play.local");render();return}
   if(k==="resume-host"){const r=store2.get("cq.play.host",null);if(r)hostRoom(r);return}
   if(k==="drop-host"){store2.del("cq.play.host");render();return}

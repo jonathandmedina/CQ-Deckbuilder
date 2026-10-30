@@ -5,7 +5,7 @@ html[data-skin="retro"]{
   --bg:#070b26; --surface:#1d2c96; --sunk:#14206e; --ink:#F4F5FF; --muted:#B4BCF2; --line:#7C88D8;
   --accent:#FFD447; --accent-ink:#17123A; --legend:#FFD447; --warn:#FF7B6B; --ok:#73E98A;
   --card-paper:#1a2884; --card-ink:#F4F5FF; --card-line:#6C79CF;
-  --display:"Pixelify Sans","Courier New",monospace; --body:"Pixelify Sans","Courier New",monospace;
+  --display:"Pixelify Sans","Courier New",monospace; --body:"DotGothic16","Pixelify Sans",system-ui,sans-serif;
   --win:linear-gradient(180deg,#3c58cf 0,#2338a8 36px,#1b2b90 150px,#121c6c 100%);
   --frame:#E4E6F6; --frame-dark:#0A0C24;
   --winshadow:inset 0 0 0 1px #8C96D8,0 0 0 2px var(--frame-dark),0 4px 0 2px rgba(0,0,0,.35);
@@ -17,7 +17,10 @@ html[data-skin="retro"] body{background:radial-gradient(120% 80% at 50% 0%,#1620
   font-size:15px;letter-spacing:.01em;text-shadow:1px 1px 0 rgba(0,0,0,.55);-webkit-font-smoothing:none}
 html[data-skin="retro"] body::before{background:#0b1038}
 html[data-skin="retro"] h1,html[data-skin="retro"] h2,html[data-skin="retro"] h3{font-weight:600;letter-spacing:.02em}
-html[data-skin="retro"] h1{font-size:1.75rem;color:#fff;text-shadow:2px 2px 0 #000}
+html[data-skin="retro"] h1{font-size:2.1rem;font-weight:700;color:#fff;text-shadow:2px 2px 0 #000}
+/* title, menu and buttons: Pixelify Sans, bigger and bold; everything else uses the cleaner DotGothic16 pixel font */
+html[data-skin="retro"] :is(.brand,.tabs a,.btn,.chip,.step,.group-h,.ph-n,.pl-phase .ph-n,.c-name,.ph-name,.slotbadge){font-family:var(--display);font-weight:700}
+html[data-skin="retro"] h2,html[data-skin="retro"] h3{font-weight:700}
 html[data-skin="retro"] .lede,html[data-skin="retro"] .note,html[data-skin="retro"] .count{color:var(--muted)}
 html[data-skin="retro"] a{color:var(--accent)}
 html[data-skin="retro"] :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -26,9 +29,11 @@ html[data-skin="retro"] :focus-visible{outline:2px solid var(--accent);outline-o
 html[data-skin="retro"] :where(.top,.card,.deck,.panel,.deckpanel,.modal .box,.pl-zone,.pl-mid,.slot:not(.hero-full),.empty,.ph,.ps,.pi,.issues,.pl-man,.rules){
   background:var(--win);color:var(--ink);border:3px solid var(--frame);border-radius:8px;box-shadow:var(--winshadow)}
 html[data-skin="retro"] .top{border-width:0 0 3px;border-radius:0;box-shadow:0 2px 0 var(--frame-dark),0 6px 0 rgba(0,0,0,.25)}
-html[data-skin="retro"] .brand{font-size:1.3rem;color:#fff;text-shadow:2px 2px 0 #000}
+html[data-skin="retro"] .brand{font-size:1.45rem;color:#fff;text-shadow:2px 2px 0 #000}
 html[data-skin="retro"] .brand small{font-family:var(--display);color:var(--accent);letter-spacing:.12em}
-html[data-skin="retro"] .tabs a{position:relative;color:var(--muted);border-radius:4px;padding:6px 12px 6px 22px}
+html[data-skin="retro"] .tabs a{position:relative;color:var(--muted);border-radius:4px;padding:5px 9px 5px 21px;font-size:1.04rem}
+html[data-skin="retro"] .top .wrap{gap:14px}
+html[data-skin="retro"] .tabs{gap:2px}
 html[data-skin="retro"] .tabs a:hover{color:#fff;background:rgba(255,255,255,.08)}
 html[data-skin="retro"] .tabs a[aria-current="page"]{color:#fff;background:rgba(0,0,0,.25);box-shadow:none}
 html[data-skin="retro"] .tabs a[aria-current="page"]::before,html[data-skin="retro"] .tabs a:hover::before{content:"";position:absolute;left:2px;top:50%;width:18px;height:13px;transform:translateY(-50%);background:var(--hand) center/contain no-repeat}
@@ -38,7 +43,8 @@ html[data-skin="retro"] .modal{background:rgba(2,3,16,.66)}
 
 /* ---------- controls ---------- */
 html[data-skin="retro"] :is(.btn,.chip,.mini,.pill,.tg,.pp,.posm,.posm span,.res){border-radius:4px}
-html[data-skin="retro"] .btn{background:linear-gradient(180deg,#2c42b6,#17227a);border:2px solid var(--frame);color:#fff;box-shadow:0 0 0 1px var(--frame-dark);font-weight:500;text-shadow:1px 1px 0 #000}
+html[data-skin="retro"] .btn{background:linear-gradient(180deg,#2c42b6,#17227a);border:2px solid var(--frame);color:#fff;box-shadow:0 0 0 1px var(--frame-dark);font-size:1rem;text-shadow:1px 1px 0 #000}
+html[data-skin="retro"] .btn.sm{font-size:.92rem}
 html[data-skin="retro"] .btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
 html[data-skin="retro"] .btn.primary{background:linear-gradient(180deg,#ffe27a,#e2a91e);border-color:#fff3c4;color:#1d1300;text-shadow:none}
 html[data-skin="retro"] .btn.primary:hover:not(:disabled){color:#1d1300;filter:brightness(1.08)}
@@ -80,8 +86,11 @@ html[data-skin="retro"] .card.picked,html[data-skin="retro"] .pl-hand .hc.ok .ca
 html[data-skin="retro"] .card .slotbadge{background:var(--accent);color:var(--accent-ink);border-radius:3px;text-shadow:none}
 
 /* Aura cost: the Aura gem icon with the number on it */
-html[data-skin="retro"] .gem{clip-path:none;background:url(ico-aura.png) center/contain no-repeat;image-rendering:pixelated;width:30px;height:36px;color:#fff;font-size:1rem;font-weight:700;text-shadow:-1px 0 #000,1px 0 #000,0 -1px #000,0 1px #000,2px 2px 0 #000;padding-top:2px}
-html[data-skin="retro"] .aura{clip-path:none;background:url(ico-aura.png) center/contain no-repeat;image-rendering:pixelated;width:.85em;height:1.05em;vertical-align:-2px}
+html[data-skin="retro"] .gem{clip-path:none;background:url(ico-fire.png) center/contain no-repeat;image-rendering:pixelated;width:38px;height:44px;margin:-4px -2px -4px 0;padding-top:8px;color:#fff;font-family:var(--display);font-size:1.3rem;font-weight:700;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.65));
+  text-shadow:-2px 0 #000,2px 0 #000,0 -2px #000,0 2px #000,-2px -2px #000,2px -2px #000,-2px 2px #000,2px 2px #000,3px 3px 0 #000}
+html[data-skin="retro"] .aura{clip-path:none;background:url(ico-fire.png) center/contain no-repeat;image-rendering:pixelated;width:.9em;height:1.08em;vertical-align:-2px}
+/* the Aura pool and Hero Aura stats use the diamond */
+html[data-skin="retro"] .res.au .aura{background-image:url(ico-aura.png)}
 
 /* Legendary */
 html[data-skin="retro"] .c-type .leg{color:var(--legend)}
@@ -112,7 +121,8 @@ html[data-skin="retro"] .hpbar{height:18px;border:2px solid #fff;border-radius:3
 html[data-skin="retro"] .hpbar::before{content:"";position:absolute;left:-20px;top:50%;transform:translateY(-50%);width:20px;height:18px;background:url(ico-hp.png) center/contain no-repeat;image-rendering:pixelated}
 html[data-skin="retro"] .hpbar i{background:linear-gradient(180deg,#9df7a8,#2fb34f);opacity:1}
 html[data-skin="retro"] .hpbar.low i{background:linear-gradient(180deg,#ffb0a0,#d6402c)}
-html[data-skin="retro"] .hpbar span{color:#fff;text-shadow:-1px 0 #000,1px 0 #000,0 -1px #000,0 1px #000;line-height:14px}
+html[data-skin="retro"] .hpbar span{line-height:14px;font-weight:700;text-shadow:none;color:#06210d;background:linear-gradient(90deg,#06210d var(--p,100%),#fff var(--p,100%));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+html[data-skin="retro"] .hpbar.low span{background:linear-gradient(90deg,#2a0500 var(--p,100%),#fff var(--p,100%));-webkit-background-clip:text;background-clip:text}
 html[data-skin="retro"] .pl-mid{background:var(--win);border-color:var(--accent)}
 html[data-skin="retro"] .pl-mid.wait{border-color:var(--frame)}
 html[data-skin="retro"] .posm{border:2px solid var(--frame)}
@@ -134,7 +144,9 @@ html[data-skin="retro"] .pl-hand .hc .cb span{background:#0d1452;border-radius:3
 html[data-skin="retro"] .pl-zone.op{background:linear-gradient(180deg,#46307e 0%,#2e1f63 40%,#1c1346 100%)}
 
 /* ---------- misc ---------- */
-html[data-skin="retro"] .skin-btn{font-size:.8rem}
+html[data-skin="retro"] .skin-btn{font-size:.85rem}
+html[data-skin="retro"] .btn[data-pa=concede-yes],html[data-skin="retro"] .pl-acts .btn.pl-concede{background:linear-gradient(180deg,#e8483a,#a4160e);border-color:#ffd6cf;color:#fff}
+html[data-skin="retro"] :is(.btn[data-pa=concede-yes],.pl-acts .btn.pl-concede):hover:not(:disabled){color:#fff;border-color:#fff;filter:brightness(1.1)}
 html[data-skin="retro"] img,html[data-skin="retro"] .pixel{image-rendering:pixelated}
 @media (max-width:720px){html[data-skin="retro"] .ph.actor::before{display:none}}
 @media (max-width:480px){html[data-skin="retro"] .brand{font-size:1.1rem}html[data-skin="retro"] .brand small{font-size:.7rem}html[data-skin="retro"] .skin-btn{padding:3px 7px;font-size:.7rem}}

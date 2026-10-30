@@ -10,7 +10,7 @@ const CLASS_COLOR_RETRO={Barbarian:"#BE1029",Bard:"#A9327C",Cleric:"#CAAF65",Dru
 const CLASS_TEXT_RETRO={Cleric:"#1A1206",Monk:"#06222E",Paladin:"#1E1000"};
 const CLASS_COLOR=SKIN==="retro"?CLASS_COLOR_RETRO:CLASS_COLOR_CLEAN, CLASS_TEXT=SKIN==="retro"?CLASS_TEXT_RETRO:CLASS_TEXT_CLEAN;
 const cc=c=>CLASS_COLOR[c]||"#777", ct=c=>CLASS_TEXT[c]||"#FFFFFF";
-const ICON_CLS=new Set(["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock","Artificer","Blacksmith","Necromancer"]);
+const ICON_CLS=new Set(["Generic","Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock","Artificer","Blacksmith","Necromancer"]);
 const ICON_BASE=new URL("assets/",document.baseURI).href;
 const ci=c=>ICON_CLS.has(c)?`url(${ICON_BASE}ico-${c.toLowerCase()}.png)`:"none";
 const TYPES=["Spell","Tactic","Song","Item","Equipment","Enchantment","Summon"];

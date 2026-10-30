@@ -64,6 +64,8 @@ const CSS=`
 .pl-counts{display:flex;flex-wrap:wrap;gap:6px;font-size:.78rem}
 .pl-counts .res{font-variant-numeric:tabular-nums}
 .pl-concede{margin-left:auto}
+.pl-acts .btn.pl-concede,.btn[data-pa=concede-yes]{background:#C0392B;border-color:#C0392B;color:#fff;font-weight:700}
+.pl-acts .btn.pl-concede:hover,.btn[data-pa=concede-yes]:hover{filter:brightness(1.1)}
 .pl-hand .hc .cb{position:absolute;left:8px;right:8px;bottom:36px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
 .pl-hand .hc .cb span{font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:999px;background:var(--surface);color:var(--accent);border:1px solid var(--accent);font-variant-numeric:tabular-nums}
 .pl-hand .hc .cb span.cost{color:var(--ok);border-color:var(--ok)} .tg.good{border-color:var(--ok);color:var(--ok)}
@@ -378,7 +380,7 @@ function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id
   return`<div role="button" tabindex="0" class="ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
     <span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>
     <span class="ph-name">${esc(h.name)}</span><span class="ph-cls"><span class="dot"></span>${esc(h.cls)}</span>
-    <span class="hpbar${low?" low":""}"><i style="width:${Math.max(0,Math.min(100,st.hp/st.max*100))}%"></i><span>${h.dead?"0":st.hp} / ${st.max} HP</span></span>
+    <span class="hpbar${low?" low":""}" style="--p:${Math.max(0,Math.min(100,st.hp/st.max*100))}%"><i style="width:${Math.max(0,Math.min(100,st.hp/st.max*100))}%"></i><span>${h.dead?"0":st.hp} / ${st.max} HP</span></span>
     <span class="ph-stats"><span class="s-str">${statB(st.str,d.str)}STR</span><span class="s-def">${statB(st.def,d.def)}DEF</span><span class="s-aura">${statB(st.aura,d.aura)}AURA</span></span>
     ${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}
   </div>`}

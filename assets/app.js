@@ -24,6 +24,13 @@ const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[
 const TOKEN_BY_NAME=new Map(TOKENS.map(t=>[t.name,t]));
 const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
 const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
+/* Renamed cards (cards-data.js CARD_RENAMES): old saved decks, share links, imports and Best Decks lists still find the card. */
+const RENAMES=(typeof CARD_RENAMES!=="undefined")?CARD_RENAMES:{};
+function fixRenames(d){if(!d)return false;let ch=false;const c=d.cards||{};
+  for(const o in RENAMES){if(c[o]!=null){const n=RENAMES[o];c[n]=Math.min(2,(c[n]||0)+c[o]);delete c[o];ch=true}}
+  if(Array.isArray(d.heroes))d.heroes=d.heroes.map(h=>{const nm=String(h).replace(/^h:/,"");if(RENAMES[nm]){ch=true;return"h:"+RENAMES[nm]}return h});
+  return ch}
+function localDecks(){const l=store.get("cq.decks",[]);let ch=false;l.forEach(d=>{if(fixRenames(d))ch=true});if(ch)store.set("cq.decks",l);return l}
 const hasGem=c=>c.kind!=="hero"&&!(c.kind==="token"&&c.tkind!=="Equipment");
 function tokenStats(c){if(c.tkind==="Summon")return[["STR",c.str],["HP",c.hp]];if(c.tkind==="Item")return[["STR",c.str],["DEF",c.def],["HP",c.hp]];return null}
 function tokenStatLine(c){if(c.tkind==="Summon")return c.str+"/"+c.hp;if(c.tkind==="Item")return c.str+" STR, "+c.def+" DEF, "+c.hp+" HP";if(c.tkind==="Equipment")return"+"+c.str+" STR";return"Pillar"}
@@ -66,6 +73,7 @@ const S={
 };
 function blankDeck(){return{id:newId(),name:"Untitled deck",heroes:[],cards:{}}}
 function saveDraft(){store.set("cq.draft",S.deck)}
+if(fixRenames(S.deck))saveDraft();
 const deckTotal=d=>Object.values(d.cards).reduce((a,b)=>a+b,0);
 const partyClasses=d=>[...new Set(d.heroes.map(h=>BYID.get(h)?.cls).filter(Boolean))];
 function allowed(c,d){return c.cls==="Generic"||partyClasses(d).includes(c.cls)}
@@ -87,7 +95,7 @@ const SB=(CFG.supabaseUrl&&CFG.supabaseAnonKey&&!/YOUR_/.test(CFG.supabaseUrl+CF
   ?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 S.authMode="signin"; // signin | signup | reset | newpass
 async function initAccount(){
-  if(!SB){S.decks=store.get("cq.decks",[]);renderAcct();render();return}
+  if(!SB){S.decks=localDecks();renderAcct();render();return}
   SB.auth.onAuthStateChange((ev,session)=>{
     if(ev==="PASSWORD_RECOVERY"){S.authMode="newpass";go("account")}
     setSession(session);
@@ -102,13 +110,15 @@ function setSession(session){
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
   lastUid=S.uid;
-  if(u)loadDecks();else{S.decks=store.get("cq.decks",[]);}
+  if(u)loadDecks();else{S.decks=localDecks();}
   renderAcct();render();
 }
 async function loadDecks(){
   const{data,error}=await SB.from("decks").select("id,name,heroes,cards,updated_at").order("updated_at",{ascending:false});
   if(error){toast("Couldn't load your decks. Check your connection and reload.");return}
   S.decks=data.map(r=>({id:r.id,name:r.name,heroes:r.heroes||[],cards:r.cards||{},updated:Date.parse(r.updated_at)||0}));
+  const fixed=S.decks.filter(fixRenames);
+  if(fixed.length)SB.from("decks").upsert(fixed.map(d=>({...toRow(d),updated_at:new Date(d.updated||Date.now()).toISOString()}))).then(({error})=>{if(!error)toast(`Updated ${fixed.length} saved deck${fixed.length===1?"":"s"} for renamed cards.`)});
   if(S.view==="decks")render();
 }
 const toRow=d=>({id:d.id,user_id:S.uid,name:(d.name||"Untitled deck").slice(0,80),heroes:d.heroes.slice(0,3),cards:d.cards,updated_at:new Date().toISOString()});
@@ -119,17 +129,17 @@ async function persistDeck(d){
     const i=S.decks.findIndex(x=>x.id===d.id);const rec={...d,cards:{...d.cards},heroes:d.heroes.slice(),updated:Date.now()};
     if(i>=0)S.decks.splice(i,1);S.decks.unshift(rec);return "account";
   }
-  const list=store.get("cq.decks",[]).filter(x=>x.id!==d.id);
+  const list=localDecks().filter(x=>x.id!==d.id);
   list.unshift({...d,cards:{...d.cards},heroes:d.heroes.slice(),updated:Date.now()});
   store.set("cq.decks",list);S.decks=list;return "local";
 }
 async function removeDeck(id){
   if(S.mode==="account"){const{error}=await SB.from("decks").delete().eq("id",id);if(error){toast("Couldn't delete that deck. Try again.");return}S.decks=S.decks.filter(d=>d.id!==id)}
-  else{const l=store.get("cq.decks",[]).filter(x=>x.id!==id);store.set("cq.decks",l);S.decks=l}
+  else{const l=localDecks().filter(x=>x.id!==id);store.set("cq.decks",l);S.decks=l}
   toast("Deck deleted.");render();
 }
 async function migrateLocal(){
-  const l=store.get("cq.decks",[]);if(!l.length)return;
+  const l=localDecks();if(!l.length)return;
   const rows=l.map(d=>({...toRow(d),updated_at:new Date(d.updated||Date.now()).toISOString()}));
   const{error}=await SB.from("decks").upsert(rows);
   if(error){toast("Couldn't move those decks: "+error.message);return}
@@ -167,7 +177,7 @@ document.addEventListener("submit",async e=>{
   const fd=Object.fromEntries(new FormData(f));const btn=f.querySelector("[type=submit]");btn.disabled=true;
   const redirect=location.origin+location.pathname;
   try{
-    if(f.dataset.form==="signin"){const{error}=await SB.auth.signInWithPassword({email:fd.email,password:fd.password});if(error)throw error;toast("Signed in.");if(store.get("cq.decks",[]).length)toast("Signed in. You can move your browser decks into your account from My Decks.");go("decks")}
+    if(f.dataset.form==="signin"){const{error}=await SB.auth.signInWithPassword({email:fd.email,password:fd.password});if(error)throw error;toast("Signed in.");if(localDecks().length)toast("Signed in. You can move your browser decks into your account from My Decks.");go("decks")}
     if(f.dataset.form==="signup"){const{data,error}=await SB.auth.signUp({email:fd.email,password:fd.password,options:{data:{display_name:fd.display_name},emailRedirectTo:redirect}});if(error)throw error;
       if(data.session){toast("Account created.");go("decks")}else{f.outerHTML=`<div class="panel"><p>Check <b>${esc(fd.email)}</b> for a confirmation link, then come back and sign in.</p></div>`}}
     if(f.dataset.form==="reset"){const{error}=await SB.auth.resetPasswordForEmail(fd.email,{redirectTo:redirect});if(error)throw error;f.outerHTML=`<div class="panel"><p>If an account exists for <b>${esc(fd.email)}</b>, a reset link is on its way.</p></div>`}
@@ -186,8 +196,8 @@ function shareCode(d){
 function readShare(code){
   try{const o=JSON.parse(decodeURIComponent(escape(atob(code.replace(/-/g,"+").replace(/_/g,"/")))));
     const d=blankDeck();d.name=String(o.n||"Shared deck").slice(0,80);
-    d.heroes=(o.h||[]).map(n=>"h:"+n).filter(id=>BYID.has(id)).slice(0,3);
-    for(const[id,q]of o.c||[])if(BYID.has(id)&&q>0)d.cards[id]=Math.min(+q,2);
+    d.heroes=(o.h||[]).map(n=>"h:"+(RENAMES[n]||n)).filter(id=>BYID.has(id)).slice(0,3);
+    for(let[id,q]of o.c||[]){id=RENAMES[id]||id;if(BYID.has(id)&&q>0)d.cards[id]=Math.min(+q,2)}
     return d}catch(e){return null}
 }
 function shareURL(d){return location.origin+location.pathname+"?deck="+shareCode(d)+"#build"}
@@ -362,7 +372,7 @@ async function loadBest(){if(!SB){S.best={at:Date.now(),rows:[],err:"off"};rende
   S.best=Object.assign({},S.best||{},{loading:true,at:Date.now()});
   const{data,error}=await SB.from("deck_leaderboard").select("*").gt("win_pct",BEST_MIN_PCT).order("win_pct",{ascending:false}).order("games",{ascending:false}).limit(200);
   S.best={at:Date.now(),rows:error?[]:(data||[]),err:error?error.message:null,loading:false};if(S.view==="best")render()}
-function bestDeck(r){return{id:"best:"+r.deck_key,name:r.deck_name||"Untitled deck",heroes:(r.heroes||[]).slice(0,3),cards:r.cards||{}}}
+function bestDeck(r){const d={id:"best:"+r.deck_key,name:r.deck_name||"Untitled deck",heroes:(r.heroes||[]).slice(0,3),cards:{...(r.cards||{})}};fixRenames(d);return d}
 function bestCard(r,rank){const d=bestDeck(r);const hs=d.heroes.map(h=>BYID.get(h)).filter(Boolean);
   const players=(r.players||[]).filter(Boolean);const pl=players.slice(0,3).map(esc).join(", ")+(players.length>3?` +${players.length-3} more`:"");
   return`<article class="deck best">
@@ -394,7 +404,7 @@ function viewDecks(){
   return`<h1>My Decks</h1>
   <p class="lede">${S.mode==="account"?`Signed in${S.me&&S.me.name?" as "+esc(S.me.name):""}. Decks you save are stored in your account and follow you to any device.`:"You're browsing as a guest, so decks are saved in this browser only."+(SB?' <a href="#account">Create a free account</a> to keep decks on any device.':"")}</p>
   <div class="bar"><button type="button" class="btn primary" data-act="new-deck-go">New deck</button>
-  ${S.mode==="account"&&store.get("cq.decks",[]).length?`<button type="button" class="btn" data-act="migrate">Move ${store.get("cq.decks",[]).length} browser deck(s) into my account</button>`:""}</div>
+  ${S.mode==="account"&&localDecks().length?`<button type="button" class="btn" data-act="migrate">Move ${localDecks().length} browser deck(s) into my account</button>`:""}</div>
   <div class="decks">${ds.length?ds.map(d=>{const iss=issues(d);const t=deckTotal(d);
     return`<div class="deck"><h3>${esc(d.name)}</h3>
     <div class="pips">${d.heroes.map(h=>BYID.get(h)).filter(Boolean).map(h=>`<span class="pill" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><i class="dot"></i>${esc(h.name)}</span>`).join("")||'<span class="note">No Heroes yet</span>'}</div>
@@ -475,7 +485,8 @@ function deckText(d,withTokens=true){
 function parseDeck(txt){
   const d=blankDeck();const miss=[];
   const norm=s=>s.trim().toLowerCase().replace(/[“”]/g,'"');
-  const find=(n,pool)=>pool.find(c=>norm(c.name)===norm(n))||pool.find(c=>sortName(c.name)===norm(n).replace(/^"|"$/g,""));
+  const find0=(n,pool)=>pool.find(c=>norm(c.name)===norm(n))||pool.find(c=>sortName(c.name)===norm(n).replace(/^"|"$/g,""));
+  const find=(n,pool)=>{const c=find0(n,pool);if(c)return c;const old=Object.keys(RENAMES).find(k=>norm(k)===norm(n)||sortName(k)===norm(n).replace(/^"|"$/g,""));return old?find0(RENAMES[old],pool):undefined};
   for(let line of txt.split(/\r?\n/)){line=line.trim();if(!line)continue;
     if(line.startsWith("#")){d.name=line.replace(/^#+\s*/,"")||d.name;continue}
     if(/^tokens?\s*:/i.test(line))continue;

@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: October 30, 2026 (update 7)*
+*Version: October 30, 2026 (update 8)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -125,6 +125,7 @@ Tokens are cards created by effects rather than drawn from your library, such as
 | Spore | Summon | 0/1 | — | When this is destroyed, discard a card. | Spore Calling |
 | Spirit | Summon | 2/2 | — | | Warden of the Woods |
 | Spectral Elk | Summon (Spirit) | 5/8 | — | | Verdant Sage |
+| Sapling | Summon | 0/2 | — | At Dawn, gain 1 Aura. | Heartwood Seed |
 | Spell Damage Pillar | Pillar | — | — | Your spells deal +1 damage. | Boost Ritual, Volt Jab, Lightning Lance, Lightning Rod, Ritual of Power, Chain Lightning |
 | Pain Pillar | Pillar | — | — | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. | Dark Insight, Ritual of Pain |
 
@@ -458,7 +459,7 @@ There are five status counters. At Dawn, each damaging status deals its damage, 
 
 ### Other Counters
 
-Some cards use other counters, such as +1/+1 counters, Petal counters and Campfire counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
+Some cards use other counters, such as +1/+1 counters, Petal counters, Campfire counters and Fury counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
 
 ## 16. Equipment
 
@@ -703,7 +704,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 
 ### Statuses, death and summons
 
-- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF and Guard. +1/+1, Petal and Campfire counters are not status counters.
+- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF and Guard. +1/+1, Petal, Campfire and Fury counters are not status counters.
 - **Burned**: Status. 1 damage each Dawn Phase.
 - **Poisoned**: Status. 1 damage each Dawn Phase. Cards add “Poison counters”.
 - **Wounded**: Status. 1 damage each Dawn Phase. Cards say “wound that target”.
@@ -715,7 +716,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: draw a card; gain 2 Aura; target ally +2 STR this turn; deal 2 damage; gain 3 Gold; or target ally +2 DEF this turn. That Hero can’t be revived. Once per dead Hero.
 - **Surrendered**: A dead Hero whose soul was surrendered. Face down and sideways. Still counts as dead.
 - **STR/HP (e.g. 3/3)**: Shorthand for a summon's Strength and Health.
-- **Summon types**: Named creatures from cards: Beast, Elk, Familiar, Soldier, Spirit, Spore, Wolf. See the token list in The Cards for every summon’s STR/HP.
+- **Summon types**: Named creatures from cards: Beast, Elk, Familiar, Sapling, Soldier, Spirit, Spore, Wolf. See the token list in The Cards for every summon’s STR/HP.
 - **Damage types**: Fire, Ice, Lightning, Light and Dark appear on cards. They have no rules effect yet but will later.
 
 ### Card keywords

@@ -63,14 +63,14 @@ def("Boost Ritual",{run(c){pillar(c,"Spell Damage Pillar");exMe(c)}});
 def("Ritual of Power",{run(c){pillar(c,"Spell Damage Pillar",3);exMe(c)}});
 def("Levitate",{t:[HERO],x:{label:"New position (0 Lead, 1 Center, 2 Closer)",max:()=>2,free:true},run(c){const h=c.t[0];if(!h)return;const pl=c.s.p[h.owner];pl.heroes.splice(pl.heroes.indexOf(h),1);pl.heroes.splice(Math.min(2,c.x||0),0,h);log(c,`${h.name} moves to ${E.POS[pl.heroes.indexOf(h)]}.`)}});
 /* ===== Warlock ===== */
-def("Dark Jab",dmgCard(3,{type:"Dark",st:"confuse"}));def("Dark Lance",dmgCard(5,{type:"Dark",st:"confuse"}));
-def("Night Terror",allDmg(4,{type:"Dark",st:"confuse",ex:1}));
+const lifeCard=(pay,n)=>({t:[t("enemy","target enemy")],run(c){if(c.actor)E.loseHp(c.s,c.actor,pay,c.def.name+" cost");const o=c.t[0];if(o&&!o.dead){E.loseHp(c.s,o,n,c.def.name);st(c,o,"confuse")}}});
+def("Dark Jab",lifeCard(2,3));def("Dark Lance",lifeCard(3,4));
+def("Night Terror",{run(c){if(c.actor)E.loseHp(c.s,c.actor,4,"Night Terror cost");enemies(c).forEach(e=>{if(!e.dead){E.loseHp(c.s,e,3,"Night Terror");st(c,e,"confuse")}});exMe(c)}});
 def("Siphon Life",{t:[t("any","damage target")],run(c){const d=D(c,c.t[0],2,{type:"Dark"});heal(c,c.actor,d)}});
 def("Dark Arts",{t:[EN],x:{label:"HP to lose (up to 6)",max:(s,pid,a)=>Math.min(6,a?E.hp(s,a)-1:6),free:true},run(c){const n=Math.min(6,c.x||0);if(n<=0)return;E.loseHp(c.s,c.actor,n,"Dark Arts");if(c.t[0])E.loseHp(c.s,c.t[0],n,"Dark Arts")}});
 def("Blood Offering",{run(c){E.loseHp(c.s,c.actor,3,"Blood Offering");c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)}});
 def("Disorient",{t:[ANY],run(c){st(c,c.t[0],"confuse")}});
 def("Frailty",{t:[HERO],run(c){buff(c.t[0],{zeroDef:1});log(c,`${c.t[0].name}'s DEF is 0 until Dusk.`)}});
-def("Arrested Development",{t:[HERO],run(c){if(c.t[0])c.t[0].fl.noLevel=c.s.round}});
 def("Ritual of Pain",{run(c){pillar(c,"Pain Pillar");exMe(c)}});
 def("Dark Insight",{run(c){draw(c,1);pillar(c,"Pain Pillar");exMe(c)}});
 def("Splitting Ritual",{t:[t("allyPillar","your Pillar")],run(c){const p=c.t[0];if(!p)return;destroy(c,p);pillar(c,p.name,2);exMe(c)}});
@@ -80,7 +80,7 @@ def("Power Vacuum",{t:[t("enemyPlayer","target party")],run(c){const pl=c.op;con
 def("Bewilder",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Bewilder: you may discard one card from their hand",cards:c.op.hand.map(x=>x.uid),min:0,max:1,op:"opDiscard",target:1-c.pid})}});
 def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic or Spell",cards:c.op.hand.filter(x=>/Tactic|Spell/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:1-c.pid})}});
 const curse=(name)=>def(name,{t:[HERO],run(c){const h=c.t[0];if(!h)return"stay";h.ench.push({uid:c.inst.uid,id:c.def.id,name:c.def.name,kind:"card",owner:c.pid,ctrl:c.pid,cardUid:c.inst.uid});log(c,`${c.def.name} is attached to ${h.name}.`);return"stay"}});
-["Aura Leech","Blood Aura","Burden","Distract","Mark of Doom","Memory Loss","Weaken","Life Boost","Sanctuary"].forEach(curse);
+["Aura Leech","Blood Aura","Burden","Distract","Mark of Doom","Memory Loss","Weaken","Life Boost","Sanctuary","Arrested Development"].forEach(curse);
 /* ===== Cleric ===== */
 def("Healing Beam",{t:[t("any","heal target")],run(c){heal(c,c.t[0],5)}});
 def("Healing Touch",{t:[t("hero","Hero to heal")],run(c){heal(c,c.t[0],2)}});
@@ -89,6 +89,8 @@ def("All Play",{run(c){c.s.p.forEach(pl=>living(pl).forEach(h=>heal(c,h,2)));con
 def("Light Blast",dmgCard(2,{type:"Light",pierce:2}));
 def("Light Helix",{t:[t("hero","Hero to heal"),t("any","damage target")],run(c){heal(c,c.t[0],2);D(c,c.t[1],2,{type:"Light"})}});
 def("Healing Blast",{t:[t("any","heal target"),t("any","damage target")],run(c){const x=c.x||0;heal(c,c.t[0],x);D(c,c.t[1],Math.ceil(x/2),{type:"Light"});exMe(c)}});
+def("Bulwark Prayer",{t:[t("ally","ally to protect"),t("enemy","enemy to strike (if you control a Paladin)")],run(c){const a=c.t[0];buff(a,{def:2});
+  if(a&&living(c.me).some(h=>E.heroIs(h,"Paladin"))&&c.t[1])E.damage(c.s,a,c.t[1],dfn(c,a),{card:true,type:"Light"});exMe(c)}});
 def("Carry Radiance",{t:[cls("Cleric")],run(c){buff(c.t[0],{lifelink:1})}});
 def("Medical Visit",{t:[ANY],run(c){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}});
 def("Purify",{t:[AL],run(c){if(c.t[0]){E.removeStatus(c.s,c.t[0],1);heal(c,c.t[0],1)}}});
@@ -98,7 +100,7 @@ def("Righteous Rage",{run(c){buff(c.actor,{str:2,lifelink:1});const tg=enemies(c
 def("Withdrawal Ailments",{t:[ANY],run(c){let n=0;living(c.me).forEach(h=>E.STATUS.forEach(k=>{n+=h.st[k];h.st[k]=0}));log(c,`${n} status counters removed.`);D(c,c.t[0],n,{type:"Light"})}});
 def("Healer's Choice",M(2,[{label:"Heal 2 HP",t:[ANY],run:c=>heal(c,c.t[0],2)},{label:"Remove 1 status counter",t:[ANY],run:c=>c.t[0]&&E.removeStatus(c.s,c.t[0],1)},{label:"Deal 2 Light damage",t:[ANY],run:c=>D(c,c.t[0],2,{type:"Light"})}]));
 /* ===== Paladin ===== */
-def("Power Thrust",dmgCard(5));
+def("Power Thrust",{t:[DMG],run(c){D(c,c.t[0],(c.actor?str(c,c.actor):0)+2);exMe(c)}});
 def("Shield Bash",{t:[ANY],run(c){D(c,c.t[0],dfn(c,c.actor))}});
 def("Radiant Strike",{t:[ANY],run(c){const sw=E.eqList(c.actor).some(e=>/Sword/.test(e.name+" "+(E.DB[e.id]||{}).rules));D(c,c.t[0],5+(sw?3:0));exMe(c)}});
 def("Divine Judgment",{run(c){const d=dfn(c,c.actor);enemies(c).forEach(e=>D(c,e,d));exMe(c)}});
@@ -110,7 +112,7 @@ def("Pull Together",{run(c){living(c.me).forEach(h=>h.guard+=(c.x||0));log(c,`${
 def("Conscript",summonCard("Soldier"));
 def("Rally the Troops",{run(c){summon(c,"Soldier");summon(c,"Soldier");exMe(c)}});
 def("Coordinated Attack",{run(c){c.me.pm.soldier=(c.me.pm.soldier||0)+2;log(c,"Soldiers gain +2 STR this turn.");exMe(c)}});
-def("Wild Defense",{run(c){summons(c.me).forEach(o=>buff(o,{def:1}))}});
+def("Shield Wall",{run(c){summons(c.me).filter(o=>/Soldier/.test(o.sub||o.name)).forEach(o=>buff(o,{def:1}));log(c,"Soldiers gain +1 DEF this turn.")}});
 def("Divine Smite",{t:[t("summon","non-Legendary summon")],run(c){destroy(c,c.t[0])}});
 def("Unburden",{run(c){const d=dfn(c,c.actor);buff(c.actor,{str:d,zeroDef:1});log(c,`${c.actor.name} trades ${d} DEF for STR.`)}});
 def("Charged Barrage",{run(c){exMe(c);buff(c.actor,{def:4});c.actor.fl.chargedRound=c.s.round;c.actor.fl.chargedHit=null}});
@@ -187,7 +189,8 @@ song("Dazzling Melody",{run(c){c.actor.fl.tauntRound=c.s.round;log(c,`${c.actor.
 song("Lullaby",{t:[t("any","target with 2 or less STR",(s,o)=>E.str(s,o)<=2)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
 song("Peace",{t:[HERO],run(c){st(c,c.t[0],"stun");if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
 song("Rousing Chorus",{t:[AL],run(c){buff(c.t[0],{str:1})}});
-song("Song of Healing",{run(c){allies(c).forEach(o=>heal(c,o,2))}});
+song("Song of Healing",{run(c){living(c.me).filter(h=>E.heroIs(h,"Bard")).forEach(o=>heal(c,o,2))}});
+song("Call and Response",{can:(s,pid,a)=>s.p[pid].heroes.some(h=>!h.dead&&!h.ex&&h!==a),run(c){const h=living(c.me).find(h=>!h.ex&&h!==c.actor);if(!h){log(c,"No ready Hero to Harmonize.");return}h.ex=true;log(c,`Harmonize: ${h.name} is exhausted.`);draw(c,2)}});
 song("Solo Act",{can:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length>=2,run(c){living(c.me).filter(h=>!h.ex&&h!==c.actor).slice(0,2).forEach(h=>h.ex=true);c.me.fl.songDisc=true;log(c,"Songs cost 2 less this turn.")}});
 song("Understanding",{modes:{n:1,opts:[{label:"Scry 3"},{label:"Scry 3, Harmonize 1: draw a card"}]},run(c){scry(c,3);if((c.modes||[])[0]===1){const h=living(c.me).find(h=>!h.ex&&h!==c.actor)||c.actor;h.ex=true;draw(c,1)}}});
 song("Opening Act",{run(c){const first=(c.me.t.cards||0)===1;const top=c.me.lib.splice(-3);log(c,`Revealed: ${top.map(x=>E.DB[x.id].name).join(", ")}.`);const si=top.findIndex(x=>E.DB[x.id].type==="Song");if(si>=0){c.me.hand.push(top.splice(si,1)[0]);log(c,"A Song goes to hand.")}c.me.disc.push(...top);if(first){c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)}}});
@@ -222,6 +225,8 @@ def("Beast",summonCard("Beast"));def("Elk",summonCard("Elk"));def("Wolf",summonC
 def("Aurawing",summonCard("Aurawing Familiar"));def("Drawwing",summonCard("Drawwing Familiar"));
 def("Elk of the Woods",{run(c){summon(c,"Woods Beast",true);exMe(c)}});
 def("Spore Calling",{run(c){summon(c,"Spore");draw(c,1);exMe(c)}});
+def("Heartwood Seed",{run(c){summon(c,"Sapling")}});
+def("Bloom",{run(c){const r=summons(c.me).filter(o=>!o.ex);r.forEach(o=>o.ex=true);c.me.aura+=r.length;log(c,`Bloom: ${r.length} summon${r.length===1?"":"s"} exhausted, ${c.me.name} gains ${r.length} Aura.`);exMe(c)}});
 def("Tooth",{run(c){c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}});
 def("Horn",{run(c){c.me.pm.sdef=(c.me.pm.sdef||0)+1;log(c,"Summons gain +1 DEF this turn.")}});
 def("Tooth or Horn",M(1,[{label:"+3 STR",t:[t("allySummon","your summon")],run:c=>buff(c.t[0],{str:3})},{label:"+3 DEF",t:[t("allySummon","your summon")],run:c=>buff(c.t[0],{def:3})}]));
@@ -259,7 +264,7 @@ def("Hero's Choice",M(2,[{label:"Scry 2",run:c=>scry(c,2)},{label:"Destroy targe
 /* items with activations */
 const item=(cost,t2,run,o)=>({act:Object.assign({cost,t:t2,run},o||{})});
 def("Antidote",item(2,[ANY],c=>{if(c.t[0])E.removeStatus(c.s,c.t[0],3)},{exile:true}));
-def("Potion",item(2,[t("hero","Hero to heal")],c=>heal(c,c.t[0],4),{exile:true}));
+def("Potion",item(2,[t("hero","Hero to heal")],c=>heal(c,c.t[0],3),{exile:true}));
 def("Revitalize",item(2,[],c=>{c.me.aura+=4;log(c,`${c.me.name} gains 4 Aura.`)},{exile:true}));
 def("Smoke Bomb",item(1,[AHERO],c=>buff(c.t[0],{stealth:1}),{exile:true}));
 def("Vial of Venom",item(1,[ANY],c=>st(c,c.t[0],"poison",2),{exile:true}));
@@ -279,11 +284,11 @@ def("Silver Bar",item(3,[],c=>{c.me.pm.str=(c.me.pm.str||0)+1;log(c,"Your party 
 def("Dynamite",item(3,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Sleeping Potion",item(2,[HERO],c=>{if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}},{exile:true,ex:true}));
 def("Amnesia Puzzle Box",item(0,[t("player","target player")],c=>{const p=c.s.p[c.t[0].pid];p.lib.push(...p.disc.splice(0));E.shuffle(c.s,p.lib);log(c,`${p.name} shuffles their discard pile into their library.`)},{exile:true}));
-def("Energy Stone",item(0,[],c=>{summons(c.me).filter(o=>!o.ex).slice(0,3).forEach(o=>o.ex=true);c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=3}));
+def("Energy Stone",item(0,[],c=>{summons(c.me).filter(o=>!o.ex).slice(0,2).forEach(o=>o.ex=true);c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=2}));
 def("Song Book",item(1,[],c=>{c.inst.exh=true;E.pushChoose(c.s,c.pid,{title:"Song Book: choose a Song",cards:c.me.lib.filter(x=>E.DB[x.id].type==="Song").map(x=>x.uid),min:1,max:1,op:"tutor"})},{can:(s,pid,a,o)=>!o.exh}));
 def("Instrument Bag",item(2,[],c=>{E.pushChoose(c.s,c.pid,{title:"Instrument Bag: choose an Instrument",cards:c.me.lib.filter(x=>E.DB[x.id].sub==="Instrument").map(x=>x.uid),min:1,max:1,op:"tutor"})}));
 /* passive items: handled in the engine by name (no script needed beyond entering play) */
-["Aura Crystal","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
+["Aura Crystal","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
 S["Almandine"].gem=c=>{c.actor=null;enemies(c).forEach(e=>E.damage(c.s,{name:"Almandine"},e,2,{card:true}))};
 S["Rose Quartz"].gem=c=>{living(c.me).forEach(h=>E.heal(c.s,null,h,3))};
 S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};

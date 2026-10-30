@@ -13,6 +13,7 @@ const _RC=typeof RAW_CARDS!=="undefined"?RAW_CARDS:root.RAW_CARDS,_RE=typeof RAW
 (_RC||[]).forEach(r=>{DB[r[1]]={id:r[1],name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7],kind:"card"}});
 (_RE||[]).forEach(r=>{DB[r[0]]={id:r[0],name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:num(r[7]),pdef:num(r[8]),kind:"equip"}});
 (_RH||[]).forEach(r=>{DB["h:"+r[0]]={id:"h:"+r[0],name:r[0],cls:r[1],str:num(r[2]),def:num(r[3]),aura:num(r[4]),hp:num(r[5]),rules:r[6],type:"Hero",kind:"hero"}});
+{const RN=typeof CARD_RENAMES!=="undefined"?CARD_RENAMES:(root.CARD_RENAMES||{});for(const o in RN){if(DB[RN[o]]&&!DB[o])DB[o]=DB[RN[o]];if(DB["h:"+RN[o]]&&!DB["h:"+o])DB["h:"+o]=DB["h:"+RN[o]]}}
 (_RT||[]).forEach(r=>{TOK[r[0]]={name:r[0],tkind:r[1],sub:r[2],cls:r[3],str:num(r[4]),def:num(r[5]),hp:num(r[6]),cost:num(r[7]),region:r[8],rules:r[9]}});
 const CLASSES=["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock"];E.CLASSES=CLASSES;
 const STATUS=["burn","poison","wound","confuse","stun"];E.STATUS=STATUS;
@@ -112,6 +113,7 @@ function strOf(s,o,vs){
     if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?5:3;
     if(o.name==="Radiant Sentinel"&&defOf(s,o)>=5)v+=2;
     if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2;
+    if(heroIs(o,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre")v+=(x.ctr&&x.ctr.fury)||0});
     o.ench.forEach(e=>{if(e.name==="Weaken")v-=1});
     const op=P(s,opp(o.owner));if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
     if(op)v-=(op.pm.enemyStr||0);
@@ -129,7 +131,7 @@ const auraStat=h=>h.base.aura+h.bon.aura;
 function spellDmg(s,pid,actor){const pl=P(s,pid);let n=pl.bf.filter(o=>o.name==="Spell Damage Pillar").length;
   if(actor){if(actor.name==="Ember Mage")n+=1;if(hasEqN(actor,"Apprentice's Wand"))n+=1;if(hasEqN(actor,"Ring of Power"))n+=2}return n}
 E.spellDmg=spellDmg;
-function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth"))return true;if((o.name==="Night Stalker"||o.name==="Shadow Ranger")&&o.ex)return true;return false}
+function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
 function cardProof(s,o){return o.kind==="hero"&&(hasEqN(o,"Cloak of Shadow")||modHas(o,"untarget"))}
 function poisonous(s,h){if(h.kind!=="hero")return 0;let n=0;if(h.name==="Dark Fang")n=Math.max(n,h.lvl>=3?3:1);
   eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger"||(e.x&&e.x.poison))n=Math.max(n,1)});
@@ -230,6 +232,7 @@ function die(s,h){const pl=P(s,h.owner);
   if(pil){s.pillage=null;gear.forEach(e=>{e.ctrl=pil.pid;toInv(s,pil.pid,e)});log(s,`Pillage the Dead: ${P(s,pil.pid).name} takes ${h.name}'s equipment.`)}
   else gear.forEach(e=>toInv(s,h.owner,e));
   if(h.name==="Verdant Sage")makeSummon(s,h.owner,"Spectral Elk");
+  if(heroIs(h,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre"){x.ctr=x.ctr||{};if((x.ctr.fury||0)<3){x.ctr.fury=(x.ctr.fury||0)+1;log(s,`Warrior's Pyre gets a Fury counter (${x.ctr.fury}).`,h.owner)}}});
   s.p.forEach((_,i)=>overflow(s,i));
 }
 function toDisc(s,o){const owner=o.owner;if(o.tok)return;const pl=P(s,owner);pl.disc.push({uid:o.uid,id:o.id,owner})}
@@ -394,7 +397,7 @@ function battleOptions(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,
     pl.hand.forEach(c=>{const d=DB[c.id];if(seen.has(c.id))return;
       if(canPlayCard(s,pid,a,c)){seen.add(c.id);out.push({type:"play",uid:c.uid})}});
     if(!a.fl.noAttack)out.push({type:"attack",att:a.uid});
-    if(a.lvl<6&&a.fl.leveled!==s.round&&a.fl.noLevel!==s.round){const st=(a.lvl+1)%2===0;
+    if(a.lvl<6&&a.fl.leveled!==s.round&&a.fl.noLevel!==s.round&&!arrested(a)){const st=(a.lvl+1)%2===0;
       if(st)["str","def","aura"].forEach(k=>out.push({type:"level",stat:k}));else out.push({type:"level"})}
     if(a.fl.stepped!==s.round)out.push({type:"step"});
     const hs=HS()[a.name];
@@ -412,7 +415,7 @@ function battleOptions(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,
   out.push({type:"pass"});
   return out}
 function abilityCost(s,pid,a,ab){return(ab.cost||0)+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Resistance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Resistance"),0):0)}
-function itemCost(s,pid,a,o){const isc=SC()[o.name];return((isc&&isc.act&&isc.act.cost)||0)+(a?burden(a):0)}
+function itemCost(s,pid,a,o){const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);return c+(a?burden(a):0)}
 E.abilityCost=abilityCost;E.itemCost=itemCost;
 function promptOptions(s,pid,pr){
   if(pr.type==="window"){const out=[{type:"decline"}];
@@ -428,7 +431,7 @@ function findCardAnywhere(s,pid,uid){const pl=P(s,pid);return pl.hand.find(c=>c.
 
 /* ---------- hidden cards ---------- */
 function hiddenScript(o){const sc=SC()[def(o).name];return sc&&sc.hidden}
-function hiddenCost(s,pid,o){const m=/^(\d+)\{A\}/.exec(def(o).rules||"");let c=m?+m[1]:0;if(def(o).sub==="Trap"&&living(P(s,pid)).some(h=>h.name==="Beast Tracker"&&h.lvl>=3))c-=1;return Math.max(0,c)}
+function hiddenCost(s,pid,o){const m=/^(\d+)\{A\}/.exec(def(o).rules||"");let c=m?+m[1]:0;if(def(o).sub==="Trap"&&living(P(s,pid)).some(h=>h.name==="Beast Tracker"&&h.lvl>=3))c-=1;if(def(o).sub==="Trap"&&living(P(s,pid)).some(h=>h.name==="Shadow Ranger"&&h.ex))c-=1;return Math.max(0,c)}
 E.hiddenCost=hiddenCost;
 function revealHero(s,pid,o){const d=def(o);return living(P(s,pid)).find(h=>!h.ex&&(d.cls==="Generic"||heroIs(h,d.cls)))}
 function canReveal(s,pid,o,pr){if(pr.noHidden)return false;const d=def(o);if(d.sup!=="Hidden")return false;
@@ -536,7 +539,8 @@ function doAct(s,pid,a){const pl=P(s,pid);
     if(a.ch===0)draw(s,pid,1);else if(a.ch===1)pl.aura+=2;else if(a.ch===2&&t)addMod(t,{str:2});else if(a.ch===3&&t)damage(s,{name:h.name+"'s soul",kind:"soul"},t,2,{card:true});
     else if(a.ch===4)pl.gold+=3;else if(a.ch===5&&t)addMod(t,{def:2});return}
 }
-function levelUp(s,h,stat,announce){if(h.lvl>=6)return;h.lvl++;log(s,`${h.name} reaches Level ${h.lvl}.`,h.owner);
+function arrested(h){return(h.ench||[]).some(e=>e.name==="Arrested Development")}
+function levelUp(s,h,stat,announce){if(h.lvl>=6)return;if(arrested(h)){log(s,`${h.name} can't level up (Arrested Development).`,h.owner);return}h.lvl++;log(s,`${h.name} reaches Level ${h.lvl}.`,h.owner);
   if(h.lvl%2===0){const k=stat||"str";h.bon[k]++;log(s,`${h.name} gains +1 ${k.toUpperCase()}.`,h.owner)}
   if(h.ench.some(e=>e.name==="Memory Loss")){const pl=P(s,h.owner);if(pl.hand.length){const x=pl.hand.splice(ri(s,pl.hand.length),1)[0];pl.disc.push(x);log(s,`Memory Loss: ${pl.name} discards ${DB[x.id].name}.`)}}}
 E.levelUp=levelUp;
@@ -607,7 +611,6 @@ function resolveCont(s,pid,cont,mods){
     if(cont.arrow)ctx.arrowBonus=arrowBonus(s,pid,actor);
     isc.act.run(ctx);
     if(cont.arrow){const pl=P(s,pid);pl.t.arrows=(pl.t.arrows||0)+1;pl.fl.arrowNext=null;
-      if(invHas(pl,"Mystic Quiver")||living(pl).some(h=>hasEqN(h,"Mystic Quiver"))){pl.aura+=1;log(s,`Mystic Quiver: ${pl.name} gains 1 Aura.`,pid)}
       if(actor&&actor.name==="Wild Archer"&&(actor.lvl>=3||pl.t.arrows===1)){actor.ex=false;log(s,"Wild Archer readies.",pid)}}
     checkDeaths(s);return}
   const d=DB[cont.card.id];const sc=SC()[d.name];const pl=P(s,pid);
@@ -802,6 +805,8 @@ function doDawn(s){
   /* At Dawn effects (active player first) */
   [s.init,opp(s.init)].forEach(pid=>{const pl=P(s,pid);
     if(invHas(pl,"Aura Crystal")){pl.aura+=invCount(pl,"Aura Crystal");log(s,`Aura Crystal: ${pl.name} gains 1 Aura.`,pid)}
+    if(invHas(pl,"Ley Grove")){const g=Math.floor(pl.bf.filter(o=>o.kind==="summon").length/2)*invCount(pl,"Ley Grove");if(g){pl.aura+=g;log(s,`Ley Grove: ${pl.name} gains ${g} Aura.`,pid)}}
+    {const sp=pl.bf.filter(o=>o.kind==="summon"&&o.name==="Sapling").length;if(sp){pl.aura+=sp;log(s,`Sapling: ${pl.name} gains ${sp} Aura.`,pid)}}
     pl.inv.filter(o=>o.name==="Campfire"&&!o.fd).forEach(o=>{o.ctr=o.ctr||{};if(o.ctr.camp==null)o.ctr.camp=3;o.ctr.camp--;log(s,"Campfire burns down (heals the party 1 HP).",pid);living(pl).forEach(h=>heal(s,null,h,1,pid));if(o.ctr.camp<=0){pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,"Campfire is exiled.",pid)}});
     if(invHas(pl,"Brute's Banner")){const b=living(pl).filter(h=>h.cls==="Barbarian").sort((a,b)=>strOf(s,b)-strOf(s,a))[0];if(b){b.fl.bannerRound=s.round;log(s,`Brute's Banner: ${b.name} +2 STR this turn.`,pid)}}
     living(pl).forEach(h=>{if(h.name==="Lightbringer"){const lt=living(pl).filter(o=>o!==h&&o.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(lt)heal(s,h,lt,1)}

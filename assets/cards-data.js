@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-30 (update 4: card versions + Hero changes).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-30 (update 8: class identity fixes + 11 new cards).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -13,7 +13,7 @@ const RAW_CARDS=[
 [2, "Antidote", "0", "", "Item", "", "Generic", "2{A}, Exile: Remove up to 3 status counters.", 1],
 [2, "Arcane Study", "2", "", "Spell", "", "Mage", "Draw a card. Scry 2.", 1],
 [2, "Armed", "1", "", "Tactic", "", "Rogue", "Create a Dagger token and equip it to target Rogue.", 1],
-[2, "Arrested Development", "1", "", "Spell", "", "Warlock", "Target Hero can't level up this turn.", 1],
+[2, "Arrested Development", "3", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero can't level up.", 2],
 [1, "Arrow of Hope", "0", "Legendary", "Item", "Arrow", "Ranger", "3{A}: Deal 2 damage. Draw 2 cards.", 1],
 [2, "Arrow of Persuasion", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. The defender must attack a target of your choice during its next action.", 1],
 [2, "Ascend", "1", "", "Tactic", "Combo", "Monk", "Target Hero gains +2 STR this turn. Combo.", 1],
@@ -51,7 +51,7 @@ const RAW_CARDS=[
 [2, "Burden", "4", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. Cards that Hero plays and abilities it activates cost 1 more Aura.", 1],
 [2, "Call of Nature", "0", "", "Tactic", "", "Druid", "Exile a Summon card from your discard pile. You may play it this turn.", 1],
 [2, "Camouflage", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: Prevent all damage from a Spell or Tactic that would target a friendly Hero. That Hero can't be targeted for the rest of this turn.", 1],
-[2, "Campfire", "1", "", "Item", "", "Barbarian", "This enters with 3 Campfire counters. At Dawn, remove a Campfire counter and heal each Hero in your party for 1 HP. When the last counter is removed, exile this.", 1],
+[2, "Campfire", "2", "", "Item", "", "Barbarian", "This enters with 3 Campfire counters. At Dawn, remove a Campfire counter and heal each Hero in your party for 1 HP. When the last counter is removed, exile this.", 2],
 [2, "Cancel", "0", "Hidden", "Spell", "", "Warlock", "3{A}: Cancel target card or ability.", 1],
 [2, "Captain's Banner", "3", "", "Item", "Relic", "Paladin", "Soldiers you control have +1 STR and +1 HP.", 1],
 [2, "Carry Radiance", "0", "", "Tactic", "", "Cleric", "Target Cleric gains Lifelink this turn.", 1],
@@ -59,15 +59,15 @@ const RAW_CARDS=[
 [2, "Charged Barrage", "3", "", "Tactic", "", "Paladin", "Exhaust this Hero. It gains +4 DEF this turn. If no damage is dealt to this Hero this turn, at Dusk it deals damage equal to its STR to each enemy.", 1],
 [2, "\"Choices\"", "3", "", "Song", "", "Bard", "Choose two:\n- Mill 2 (move the top 2 cards of your library to your discard pile).\n- Equip an Equipment from your hand or inventory to this Hero without paying its Aura cost.\n- Return a Song from your discard pile to your hand.", 2],
 [2, "\"Come Together\"", "3", "", "Song", "", "Bard", "Harmonize X: Reveal the top X cards of your library. You may play a revealed Bard card without paying its Aura cost.", 1],
-[2, "Conscript", "1", "", "Tactic", "", "Paladin", "Summon a 2/2 Soldier. Exhaust this Hero.", 1],
+[2, "Conscript", "2", "", "Tactic", "", "Paladin", "Summon a 2/2 Soldier. Exhaust this Hero.", 2],
 [2, "Coordinated Attack", "3", "", "Tactic", "", "Paladin", "Soldiers you control gain +2 STR this turn. Exhaust this Hero.", 1],
 [2, "\"Crescendo\"", "4", "", "Song", "", "Bard", "Deal 3 damage. Harmonize 2: Deal 3 damage to each enemy instead.", 1],
 [1, "Curse of Exhaustion", "5", "Legendary", "Spell", "", "Warlock", "Exhaust all Heroes in target party. Exhaust this Hero.", 1],
 [2, "Cut Off", "3", "", "Tactic", "", "Rogue", "Move target enemy Hero to the Closer position. This Hero attacks it.", 1],
 [2, "Dark Arts", "2", "", "Spell", "", "Warlock", "Lose up to 6 HP, target enemy loses that much HP.", 2],
 [2, "Dark Insight", "3", "", "Spell", "", "Warlock", "Draw a card. Conjure a Pain Pillar. Exhaust this Hero.", 1],
-[2, "Dark Jab", "3", "", "Spell", "", "Warlock", "Deal 3 Dark damage. The target is Confused.", 1],
-[2, "Dark Lance", "4", "", "Spell", "", "Warlock", "Deal 5 Dark damage. The target is Confused.", 1],
+[2, "Dark Jab", "3", "", "Spell", "", "Warlock", "As an additional cost, this Hero loses 2 HP. Target enemy loses 3 HP. It is Confused.", 2],
+[2, "Dark Lance", "4", "", "Spell", "", "Warlock", "As an additional cost, this Hero loses 3 HP. Target enemy loses 4 HP. It is Confused.", 2],
 [2, "\"Dazzling Melody\"", "2", "", "Song", "", "Bard", "This turn, enemies can only attack this Hero, and enemy cards and abilities that target one of your Heroes or summons must target this Hero.", 2],
 [2, "Death by a Thousand Cuts", "5", "", "Tactic", "", "Rogue", "Deal damage to target equal to the number of Poison counters on all enemies plus the number of Daggers your Rogues have equipped. Exhaust this Hero.", 1],
 [2, "Deep Contemplation", "2", "", "Tactic", "", "Monk", "Draw a card. Put a +1/+1 counter on target Meditating Hero.", 1],
@@ -88,7 +88,7 @@ const RAW_CARDS=[
 [1, "Elk of the Woods", "6", "Legendary", "Summon", "", "Druid", "Summon a 3/5 Woods Beast with \"When this deals damage, draw a card.\" Ready it. Exhaust this Hero.", 1],
 [2, "Embolden", "2", "", "Tactic", "", "Bard", "Target Hero gains +2 STR for the rest of the turn. Echo.", 1],
 [2, "Energizing Ale", "0", "", "Item", "", "Bard", "2{A}, Exile: Ready target Bard.", 1],
-[2, "Energy Stone", "3", "", "Item", "", "Druid", "Exhaust three summons you control: Gain 1 Aura.", 1],
+[2, "Energy Stone", "3", "", "Item", "", "Druid", "Exhaust two summons you control: Gain 1 Aura.", 2],
 [2, "Enfeeble", "3", "", "Tactic", "", "Generic", "Set a Hero's DEF to 0 until Dusk.", 1],
 [2, "Entangling Roots", "2", "", "Tactic", "", "Druid", "Exhaust target enemy Hero or summon. If you control three or more summons, it is also Stunned.", 1],
 [2, "Envenom", "1", "", "Tactic", "", "Rogue", "Rogues you control gain Poisonous 1 this turn.", 1],
@@ -169,7 +169,7 @@ const RAW_CARDS=[
 [2, "Narrow Escape", "0", "Hidden", "Tactic", "", "Rogue", "1{A}: If a Rogue would be targeted by a card that costs 3 Aura or more, cancel that card.", 1],
 [2, "Naturalize", "2", "", "Tactic", "", "Generic", "Destroy target item.", 1],
 [2, "Nature's Choice", "3", "", "Tactic", "", "Druid", "Choose two: Summon a 2/2 Elk; a summon gains +2 STR; or ready a summon.", 1],
-[2, "Night Terror", "7", "", "Spell", "", "Warlock", "Deal 4 Dark damage to all enemies. They are Confused. Exhaust this Hero.", 1],
+[2, "Night Terror", "7", "", "Spell", "", "Warlock", "As an additional cost, this Hero loses 4 HP. Each enemy loses 3 HP. They are Confused. Exhaust this Hero.", 2],
 [2, "Noble Choice", "3", "", "Tactic", "", "Paladin", "Choose two: Summon a 2/2 Soldier; target Hero gains Guard 2; or draw a card.", 1],
 [2, "Noble Promotion", "2", "", "Tactic", "", "Paladin", "At this turn's Dusk, you gain initiative instead of it passing normally.", 1],
 [2, "Null Stone", "2", "", "Item", "", "Generic", "As Null Stone enters, name a card. Activated abilities of that card can't be activated.", 1],
@@ -178,7 +178,7 @@ const RAW_CARDS=[
 [2, "Out of the Woods", "0", "Hidden", "Tactic", "", "Druid", "2{A}: When a friendly Hero is attacked, summon a 3/3 Beast.", 1],
 [2, "Overdose", "2", "", "Tactic", "", "Rogue", "Exhaust a Poisoned target.", 1],
 [2, "Palm Strike", "1", "", "Tactic", "Combo", "Monk", "Deal 1 damage. If this card was Comboed, Stun the target. Combo.", 1],
-[2, "\"Peace\"", "1", "", "Song", "", "Bard", "Stun target Hero. If \"Understanding\" is in your discard pile, draw a card.", 1],
+[2, "\"Peace\"", "2", "", "Song", "", "Bard", "Stun target Hero. If \"Understanding\" is in your discard pile, draw a card.", 2],
 [1, "Petal Shrine", "2", "Legendary", "Item", "", "Monk", "Whenever Combo triggers, add a Petal counter to Petal Shrine. When it has three or more Petal counters, remove them all, and your next Combo card costs 1 less Aura.", 2],
 [2, "Petty Theft", "0", "", "Tactic", "", "Rogue", "Gain control of target Consumable item.", 1],
 [1, "Phoenix Down", "0", "Legendary", "Item", "", "Generic", "3{A}, Exile: Revive a Hero, exhaust it and heal it 3 HP. It gains Stealth this turn.", 1],
@@ -188,8 +188,8 @@ const RAW_CARDS=[
 [2, "Poison Dart", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 1 damage to any target. Poisonous.", 3],
 [2, "Pop Rocks", "6", "", "Spell", "", "Mage", "Deal 1 damage to all enemies three times. Exhaust this Hero.", 1],
 [2, "Populate", "1", "", "Tactic", "", "Druid", "Duplicate a summon with 3 or less STR.", 1],
-[2, "Potion", "0", "", "Item", "", "Generic", "2{A}, Exile: Heal target Hero for 4 HP.", 1],
-[2, "Power Thrust", "3", "", "Tactic", "", "Paladin", "Deal 5 damage.", 1],
+[2, "Potion", "0", "", "Item", "", "Generic", "2{A}, Exile: Heal target Hero for 3 HP.", 2],
+[2, "Power Thrust", "3", "", "Tactic", "", "Paladin", "Deal damage equal to this Hero's STR +2. Exhaust this Hero.", 2],
 [2, "Power Vacuum", "X", "", "Spell", "", "Warlock", "Remove X Aura from target opposing party. Exhaust this Hero.", 1],
 [2, "Precognition", "1", "", "Tactic", "", "Generic", "Scry 2. Draw a card.", 1],
 [2, "Primal Energy", "0", "", "Tactic", "", "Druid", "As an additional cost, exhaust two ready summons you control. Ready target Hero.", 1],
@@ -238,7 +238,7 @@ const RAW_CARDS=[
 [2, "Siphon Life", "3", "", "Spell", "", "Warlock", "Deal 2 Dark damage. Heal this Hero for the damage dealt.", 1],
 [2, "Sleep", "2", "", "Spell", "", "Mage", "Exhaust target Hero.", 1],
 [2, "Sleeping Potion", "0", "", "Item", "", "Generic", "2{A}, Exhaust a Hero you control, Exile: Exhaust target Hero.", 1],
-[2, "Smash and Grab", "4", "", "Tactic", "", "Barbarian", "Destroy target item that costs 2 or less. Gain control of another item that costs 2 or less. Exhaust this Hero.\n{L3} Instead, destroy target item and gain control of another item. Exhaust this Hero.", 2],
+[2, "Smash and Grab", "4", "", "Tactic", "", "Barbarian", "Destroy up to two target items that each cost 2 or less. Exhaust this Hero.\n{L3} Instead, destroy up to two target items. Exhaust this Hero.", 3],
 [2, "Smash to Smithereens", "4", "", "Tactic", "", "Generic", "Destroy all Pillars. Exhaust this Hero.", 1],
 [2, "Smoke Bomb", "0", "", "Item", "", "Generic", "1{A}, Exile: Target Hero gains Stealth this turn.", 1],
 [2, "Smoke Trail Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. Prevent all damage from the next source that would target a Hero in your party.", 2],
@@ -246,7 +246,7 @@ const RAW_CARDS=[
 [2, "Snuff Out", "1", "", "Tactic", "", "Generic", "Destroy target summon with 3 or less HP.", 1],
 [2, "\"Solo Act\"", "5", "", "Song", "", "Bard", "Exhaust two other ready Heroes you control. Song cards you play cost 2 less Aura this turn.", 1],
 [1, "Song Book", "0", "Legendary", "Item", "", "Bard", "1{A}, Exhaust Song Book: Search your library for a Song and put it into your hand.", 1],
-[2, "\"Song of Healing\"", "3", "", "Song", "", "Bard", "Heal all allies for 2 HP.", 1],
+[2, "\"Song of Healing\"", "3", "", "Song", "", "Bard", "Heal each Bard you control for 2 HP.", 2],
 [2, "Sonic Recall", "4", "", "Tactic", "", "Bard", "Shuffle X Songs from your discard pile into your library. Deal X damage to target Hero. Exhaust this Hero.", 1],
 [2, "Spark", "0", "", "Spell", "", "Mage", "Deal 1 Lightning damage.", 1],
 [2, "Sphere of Resistance", "3", "", "Item", "", "Warlock", "Non-Warlock cards cost 1 more Aura to play or activate.", 1],
@@ -293,9 +293,20 @@ const RAW_CARDS=[
 [2, "Weaken", "1", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero has -1 STR.", 1],
 [2, "Weakening Dirge", "3", "", "Tactic", "", "Bard", "All enemies get -1 STR for the rest of the turn. Echo.", 1],
 [2, "Well Trained", "1", "", "Tactic", "", "Monk", "If you have played 3 Combo cards this turn, target Hero gains a level.", 1],
-[2, "Wild Defense", "1", "", "Tactic", "", "Paladin", "All summons you control gain +1 DEF this turn.", 1],
+[2, "Shield Wall", "1", "", "Tactic", "", "Paladin", "Soldiers you control gain +1 DEF this turn.", 2],
 [2, "Withdrawal Ailments", "3", "", "Tactic", "", "Cleric", "Remove all status counters from all friendly Heroes. Deal Light damage to target equal to the number removed.", 1],
-[2, "Wolf", "2", "", "Summon", "", "Druid", "Summon a 2/3 Wolf. Exhaust this Hero.", 1]
+[2, "Wolf", "2", "", "Summon", "", "Druid", "Summon a 2/3 Wolf. Exhaust this Hero.", 1],
+[2, "Die Swinging", "0", "Hidden", "Tactic", "", "Barbarian", "0{A}: When a Barbarian you control would die, it first attacks target enemy. That attack ignores DEF.", 1],
+[2, "Blood Price", "1", "", "Tactic", "", "Barbarian", "As an additional cost, target Barbarian loses X HP. It gains +X STR this turn. If this makes it Enraged, ready it.", 1],
+[2, "Warrior's Pyre", "2", "", "Item", "Relic", "Barbarian", "Whenever a Barbarian you control dies, put a Fury counter on Warrior's Pyre (max 3). Barbarians you control have +1 STR for each Fury counter.", 1],
+[2, "\"Marching Cadence\"", "3", "", "Song", "", "Bard", "Heroes in your party gain Banding this turn. Exhaust this Hero.", 1],
+[2, "\"Duet\"", "2", "", "Song", "", "Bard", "This Hero and target ally Hero gain Banding this turn. If you played another Song this turn, their banded attack gets +2 STR.", 1],
+[2, "\"Call and Response\"", "1", "", "Song", "", "Bard", "Harmonize 1: Draw 2 cards.", 1],
+[2, "Rebuke", "2", "", "Tactic", "", "Cleric", "This Cleric attacks using its DEF instead of STR. The damage is Light damage. This Hero can't heal until Dusk.", 1],
+[2, "Bulwark Prayer", "3", "", "Tactic", "", "Cleric", "Target ally gains +2 DEF this turn. If you control a Paladin, that ally also deals damage equal to its DEF to target enemy. Exhaust this Hero.", 1],
+[2, "Ley Grove", "3", "", "Item", "", "Druid", "At Dawn, gain 1 Aura for every two summons you control.", 1],
+[2, "Bloom", "1", "", "Tactic", "", "Druid", "Exhaust any number of ready summons you control. Gain 1 Aura for each. Exhaust this Hero.", 1],
+[2, "Heartwood Seed", "0", "", "Summon", "", "Druid", "Summon a 0/2 Sapling with \"At Dawn, gain 1 Aura.\"", 1]
 ];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],
@@ -335,7 +346,7 @@ const RAW_HEROES=[
 ["Sage Monk", "Monk", "1", "1", "1", "15", "Whenever Sage Monk plays its first Combo card each turn, you may Scry 1.\n{L3} Whenever you Scry, Sage Monk gains +1 STR this turn for each card you Scry.", 2],
 ["Sanctifier", "Cleric", "1", "1", "1", "16", "Whenever this Hero deals damage, remove 1 status counter from any target.", 2],
 ["Savage Raider", "Barbarian", "3", "0", "1", "14", "Enraged: This Hero's attacks ignore DEF.", 1],
-["Shadow Ranger", "Ranger", "0", "0", "2", "16", "While exhausted, this Hero gains Stealth.", 2],
+["Shadow Ranger", "Ranger", "0", "0", "2", "16", "While exhausted, Traps you activate cost 1 less Aura.", 3],
 ["Valdo Sticky Fingers", "Rogue", "0", "1", "1", "16", "Exhaust: Gain control of target item an opponent controls with an Aura cost of 2 or less.\n{L3} Exhaust: Gain control of target item an opponent controls.", 2],
 ["Skullcrusher", "Barbarian", "2", "0", "1", "16", "This Hero gains +3 STR on its second attack each turn.", 1],
 ["Songweaver", "Bard", "1", "1", "1", "16", "Exhaust: Target ally gains +2 STR this turn.", 1],
@@ -379,7 +390,7 @@ const RAW_EQUIP=[
 ["Long Sword", "", "Weapon", "Generic", "Equipped Hero gains +4 STR.", "3", "Two-Handed", "4", "0", 1],
 ["Longbow", "", "Weapon", "Ranger", "Equipped Hero gains +2 STR. Arrows it activates deal +1 damage.", "3", "Two-Handed", "2", "0", 1],
 ["Mace of Dawn", "", "Weapon", "Cleric", "Equipped Hero gains +1 STR. Whenever it attacks, heal any target for 1 HP.", "2", "One-Handed", "1", "0", 1],
-["Mystic Quiver", "", "Accessory", "Ranger", "Whenever you activate an Arrow, gain 1 Aura.", "3", "Accessory", "0", "0", 1],
+["Mystic Quiver", "", "Accessory", "Ranger", "Arrows the equipped Hero activates cost 1 less Aura to activate.", "3", "Accessory", "0", "0", 2],
 ["Poison-Tipped Dagger", "", "Weapon", "Rogue", "When this Hero deals combat damage, add two Poison counters to the defending target.", "2", "One-Handed", "0", "0", 1],
 ["Ring of Power", "", "Accessory", "Mage", "Equipped Hero gains +2 Spell Damage.", "3", "Accessory", "0", "0", 1],
 ["Ring of Radiance", "Legendary", "Accessory", "Cleric", "Equipped Hero gains Lifelink.", "2", "Accessory", "0", "0", 1],
@@ -411,8 +422,12 @@ const RAW_TOKENS=[
 ["Spore", "Summon", "Spore", "Druid", "0", "", "1", "0", "", "When this is destroyed, discard a card.", "Spore Calling", 1],
 ["Spirit", "Summon", "Spirit", "Druid", "2", "", "2", "0", "", "", "Warden of the Woods", 1],
 ["Spectral Elk", "Summon", "Spirit", "Druid", "5", "", "8", "0", "", "", "Verdant Sage", 1],
+["Sapling", "Summon", "Sapling", "Druid", "0", "", "2", "0", "", "At Dawn, gain 1 Aura.", "Heartwood Seed", 1],
 ["Eliazar", "Summon", "Soldier", "Paladin", "3", "", "5", "0", "", "", "Sword of Eliazar", 1],
 ["Spell Damage Pillar", "Pillar", "", "Mage", "", "", "", "0", "", "Your spells deal +1 damage.", "Boost Ritual; Volt Jab; Lightning Lance; Lightning Rod; Ritual of Power; Chain Lightning; Splitting Ritual; Doubling Ritual", 1],
 ["Pain Pillar", "Pillar", "", "Warlock", "", "", "", "0", "", "At Dusk, target loses X HP, where X is the number of Pain Pillars you control.", "Dark Insight; Ritual of Pain; Splitting Ritual; Doubling Ritual", 1]
 ];
-const TOKEN_SOURCES={"Armed": [["Dagger", 1]], "Quick Inventory": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolf": [["Wolf", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Spirit", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Chain Lightning": [["Spell Damage Pillar", 1]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
+const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Quick Inventory": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolf": [["Wolf", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Spirit", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Chain Lightning": [["Spell Damage Pillar", 1]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
+
+/* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
+const CARD_RENAMES={"Wild Defense":"Shield Wall"};

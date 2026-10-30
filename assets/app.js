@@ -253,6 +253,7 @@ function render(){
   else if(S.view==="account")v.innerHTML=viewAccount();
   else if(S.view==="rules"){v.innerHTML=viewRules();if(!S.rules)loadRules()}
   else if(S.view==="play"){if(window.CQPlay)window.CQPlay.mount(v);else v.innerHTML='<p class="lede">Loading the game…</p>'}
+  else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
   else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
   else v.innerHTML=viewDecks();
 }
@@ -810,7 +811,7 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.querySelectorAll(".modal");if(ms.length)ms[ms.length-1].remove();return}
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
-function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","play","best"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","play","best","changelog"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

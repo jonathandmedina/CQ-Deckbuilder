@@ -32,7 +32,7 @@ html[data-skin="retro"] .top{border-width:0 0 3px;border-radius:0;box-shadow:0 2
 html[data-skin="retro"] .brand{font-size:1.45rem;color:#fff;text-shadow:2px 2px 0 #000}
 html[data-skin="retro"] .brand small{font-family:var(--display);color:var(--accent);letter-spacing:.12em}
 html[data-skin="retro"] .tabs a{position:relative;color:var(--muted);border-radius:4px;padding:5px 9px 5px 21px;font-size:1.04rem}
-html[data-skin="retro"] .top .wrap{gap:14px}
+html[data-skin="retro"] .top .wrap{gap:10px}
 html[data-skin="retro"] .tabs{gap:2px}
 html[data-skin="retro"] .tabs a:hover{color:#fff;background:rgba(255,255,255,.08)}
 html[data-skin="retro"] .tabs a[aria-current="page"]{color:#fff;background:rgba(0,0,0,.25);box-shadow:none}
@@ -158,7 +158,7 @@ html[data-skin="retro"] h3{font-size:1.45rem}
 html[data-skin="retro"] .rules h2{font-size:1.9rem} html[data-skin="retro"] .rules h3{font-size:1.5rem}
 html[data-skin="retro"] .brand{font-size:1.9rem;font-weight:400}
 html[data-skin="retro"] .brand small{font-size:1.05rem}
-html[data-skin="retro"] .tabs a{font-size:1.35rem;padding:2px 9px 2px 22px}
+html[data-skin="retro"] .tabs a{font-size:1.35rem;padding:2px 4px 2px 21px}
 html[data-skin="retro"] .btn{font-size:1.2rem;padding:3px 13px;line-height:1.2}
 html[data-skin="retro"] .btn.sm{font-size:1.08rem;padding:2px 10px}
 html[data-skin="retro"] .chip{font-size:1.12rem;padding:2px 11px}

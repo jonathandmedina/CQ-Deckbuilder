@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: October 30, 2026 (update 4)*
+*Version: October 30, 2026 (update 6)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -531,7 +531,7 @@ Some equipment has a **Gold Upgrade Cost** and an **Upgrade** effect. At the Bla
 | Keyword | Meaning |
 |---|---|
 | **Banding** | Lets Heroes and summons group together for one attack. When a Hero or summon with Banding attacks, any number of other ready friendly Heroes and summons with Banding may join it. Add their STR to the attack, then exhaust every attacker. Nothing has Banding naturally; only cards grant it. |
-| **Combo** | When a Combo card is played, reveal the top card of your library. If its subtype is Combo, you may play it, or a Combo card from your hand, by paying its Aura cost. This doesn’t use another action. |
+| **Combo** | When a card with Combo finishes resolving (including any Scry it makes), reveal the top card of your library. If its subtype is Combo, you may play it, or a Combo card from your hand, by paying its Aura cost. This doesn’t use another action. A Hidden card with Combo triggers it when revealed. A **Combo card** is a card with the Combo subtype; only those count as “Combo cards you have played this turn.” |
 | **Conjure** | Create a Pillar token on the battlefield. |
 | **Echo** | At your next Dawn, play this card again for free (no Aura cost). Any of your Heroes of the card’s class plays the copy, and you may choose new targets. The copy doesn’t have Echo, so it only repeats once. Set the card aside until then, and discard it after. |
 | **Enraged** | A Hero is Enraged while it is at or below half its maximum HP. |
@@ -720,8 +720,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 
 ### Card keywords
 
-- **Combo (Monk)**: When a Combo card is played, reveal the top card of your library. If it’s a Combo card, you may play it or a Combo card from your hand, paying its Aura cost.
-- **Petal counter (Monk)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card costs 1 less.
+- **Combo (Monk)**: When a card with Combo finishes resolving (after any Scry), reveal the top card of your library. If it’s a Combo card, you may play it or a Combo card from your hand, paying its Aura cost. A Combo card is a card with the Combo subtype.
+- **Petal counter (Monk)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
 - **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn you may keep it exhausted and give it a +1/+1 counter. When it readies, its counters come off at the next Dusk.
 - **+1/+1 counter (Monk)**: +1 STR and +1 DEF. Meditating Heroes gain them, and some Monk Tactics add more.
 - **Piercing X (Monk)**: The attack ignores X points of the target's DEF.

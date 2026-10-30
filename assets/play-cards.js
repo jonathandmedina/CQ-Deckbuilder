@@ -174,7 +174,7 @@ def("Defend Prayer",{t:[t("any","damage target"),t("meditating","Meditating Hero
 def("Look Ahead",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){if(c.t[0])c.t[0].plus++;scry(c,2)}});
 def("Awakened Fist",{t:[t("meditating","Meditating Hero"),t("enemy","attack target")],can:(s,pid)=>s.p[pid].heroes.some(h=>h.med&&!h.dead),run(c){const h=c.t[0];if(!h)return;h.med=false;h.fl.medEnd=true;h.ex=false;attack(c,h,c.t[1],{pierce:1})}});
 def("Balanced Choice",M(2,[{label:"Scry 2",run:c=>scry(c,2)},{label:"Target Hero gains +2 STR",t:[HERO],run:c=>buff(c.t[0],{str:2})},{label:"This Hero Meditates",run:c=>{c.actor.ex=true;c.actor.med=true;c.actor.keepMed=true}}]));
-def("Well Trained",{t:[HERO],run(c){if(combosPlayed(c)>=3&&c.t[0])E.levelUp(c.s,c.t[0],"str")}});
+def("Well Trained",{t:[HERO],modes:{n:1,opts:[{label:"If it reaches an even Level, gain +1 STR"},{label:"If it reaches an even Level, gain +1 DEF"},{label:"If it reaches an even Level, gain +1 AURA"}]},run(c){if(combosPlayed(c)>=3&&c.t[0])E.levelUp(c.s,c.t[0],["str","def","aura"][(c.modes||[])[0]||0])}});
 def("Stunner",{run(c){c.me.fl.stunner=true}});
 /* ===== Bard ===== */
 def("Ballad of Blades",{t:[ANY],run(c){D(c,c.t[0],(c.me.t.songs||0)>1?3:2)}});S['"Ballad of Blades"']=S["Ballad of Blades"];
@@ -305,7 +305,7 @@ const hab=(name,arr)=>{H[name]=arr};
 const enemyItem=max=>t("item",max==null?"enemy item":"enemy item (cost 2 or less)",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner&&(max==null||(o.tok?0:(parseInt((E.DB[o.id]||{}).cost,10)||0))<=max));
 hab("Valdo Sticky Fingers",[{label:"Take an enemy item (cost 2 or less)",can:(s,pid,a)=>a.lvl<3&&s.p[1-pid].inv.some(o=>!o.fd&&(o.kind==="doll"||(o.kind==="card"&&(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2))),t:[enemyItem(2)],run:c=>steal(c,c.t[0])},{label:"Take an enemy item",lvl:3,can:(s,pid)=>s.p[1-pid].inv.some(o=>!o.fd&&(o.kind==="doll"||o.kind==="card")),t:[enemyItem(null)],run:c=>steal(c,c.t[0])}]);
 hab("Arcane Scholar",[{label:"Next Mage card costs 2 less",run:c=>{c.me.fl.mageNext=true}},{label:"Mage cards cost 1 less this turn",lvl:3,run:c=>{c.me.fl.mageAll=true}}]);
-hab("Arnett Lifebinder",[{label:"Heal any target 3",cost:1,t:[ANY],run:c=>heal(c,c.t[0],3)},{label:"Heal any target 5",lvl:3,cost:2,t:[ANY],run:c=>heal(c,c.t[0],5)}]);
+hab("Arnett Lifebinder",[{label:"Heal another target 2",cost:1,t:[t("anyOther","another target")],run:c=>heal(c,c.t[0],2)},{label:"Heal another target 5",lvl:3,cost:2,t:[t("anyOther","another target")],run:c=>heal(c,c.t[0],5)}]);
 hab("Battle Minstrel",[{label:"Return a Song from discard to hand",can:(s,pid)=>s.p[pid].disc.some(x=>E.DB[x.id].type==="Song"),run:c=>E.pushChoose(c.s,c.pid,{title:"Return a Song to hand",cards:c.me.disc.filter(x=>E.DB[x.id].type==="Song").map(x=>x.uid),min:1,max:1,op:"fromDisc"})}]);
 hab("Dark Channeler",[{label:"Lose 4 HP: gain 3 Aura",can:(s,pid,a)=>a.lvl<3,run:c=>{E.loseHp(c.s,c.actor,4,"Dark Channeler");c.me.aura+=3;log(c,`${c.me.name} gains 3 Aura.`)}},{label:"Lose 2 HP: gain 3 Aura",lvl:3,run:c=>{E.loseHp(c.s,c.actor,2,"Dark Channeler");c.me.aura+=3;log(c,`${c.me.name} gains 3 Aura.`)}}]);
 hab("Divine Knight",[{label:"Ally +2 DEF this turn",t:[AL],run:c=>buff(c.t[0],{def:2})},{label:"Ally +5 DEF this turn",lvl:3,cost:2,t:[AL],run:c=>buff(c.t[0],{def:5})}]);

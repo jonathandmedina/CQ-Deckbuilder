@@ -59,7 +59,14 @@ const CSS=`
 .ph-stats b.up{color:var(--ok)} .ph-stats b.dn{color:var(--warn)}
 .tags{display:flex;flex-wrap:wrap;gap:3px}
 .tg{font-size:.68rem;padding:0 6px;border-radius:999px;background:var(--sunk);border:1px solid var(--card-line);white-space:nowrap}
-.tg.bad{border-color:var(--warn);color:var(--warn)} .tg.good{border-color:var(--ok);color:var(--ok)}
+.tg.bad{border-color:var(--warn);color:var(--warn)}
+.tg.cnt{border-color:var(--accent);color:var(--accent);font-variant-numeric:tabular-nums}
+.pl-counts{display:flex;flex-wrap:wrap;gap:6px;font-size:.78rem}
+.pl-counts .res{font-variant-numeric:tabular-nums}
+.pl-concede{margin-left:auto}
+.pl-hand .hc .cb{position:absolute;left:8px;right:8px;bottom:36px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
+.pl-hand .hc .cb span{font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:999px;background:var(--surface);color:var(--accent);border:1px solid var(--accent);font-variant-numeric:tabular-nums}
+.pl-hand .hc .cb span.cost{color:var(--ok);border-color:var(--ok)} .tg.good{border-color:var(--ok);color:var(--ok)}
 .tg.eq{border-color:var(--cc,var(--card-line));cursor:pointer;background:none}
 .pl-row{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
 .pl-row .lbl{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);align-self:center;width:92px;flex:none}
@@ -289,7 +296,7 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const inv=[];for(let i=0;i<slots;i++){const o=pl.inv[i];if(!o){inv.push('<span class="pi">Empty slot</span>');continue}
     const c=o.kind==="equip"?(o.cls||"Generic"):o.kind==="doll"?"Generic":((E.DB[o.id]||{}).cls||"Generic");
     if(o.fd)inv.push(`<button class="pi full fd${U.man&&U.manT===o.uid?" mansel":""}" data-pa="obj" data-u="${o.uid}">${mine&&o.id?esc(E.DB[o.id].name)+" (set)":"Face-down card"}</button>`);
-    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}</button>`)}
+    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${invCounts(s,o,pid)}</button>`)}
   const isInit=s.init===pid;
   const turnTag=s.phase==="battle"&&s.prio===pid&&!s.pend.length?'<span class="res init">Acting</span>':"";
   const pc=[0,1].map(p=>`P${p}`).filter(u=>cands.has(u)&&u==="P"+pid).length;
@@ -298,12 +305,59 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
       <span class="res au" title="Aura pool"><i class="aura"></i> <b>${pl.aura}</b> Aura</span><span class="res" title="Gold">● <b>${pl.gold}</b> Gold</span>
       <span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
       <button class="res" data-pa="disc" data-p="${pid}">Discard <b>${pl.disc.length}</b></button>${pl.exile.length?`<button class="res" data-pa="exile" data-p="${pid}">Exile <b>${pl.exile.length}</b></button>`:""}
-      ${pl.echo.length?`<span class="res">Echo <b>${pl.echo.length}</b></span>`:""}${s.passed[pid]&&s.phase==="battle"?'<span class="res">Passed</span>':""}
+      ${pl.echo.length?`<span class="res">Echo <b>${pl.echo.length}</b></span>`:""}${mine?"":turnCounts(s,pid).join("")}${s.passed[pid]&&s.phase==="battle"?'<span class="res">Passed</span>':""}
       ${pc?`<button class="btn sm" data-pa="pick" data-u="P${pid}" style="outline:3px solid var(--warn)">Target ${esc(pl.name)}'s party</button>`:""}</div>
     <div class="pl-heroes">${heroes}</div>
     <div class="pl-row"><span class="lbl">Battlefield</span>${bf}</div>
     <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div>
   </section>`}
+/* ---------- running counts (display only) ---------- */
+function deckNames(pl){const n=new Set();const add=c=>{const d=c&&E.DB[c.id];if(d)n.add(d.name)};
+  ["hand","lib","disc","exile"].forEach(z=>(pl[z]||[]).forEach(add));(pl.inv||[]).forEach(o=>{if(o.id)add(o);else if(o.name)n.add(o.name)});
+  pl.heroes.forEach(h=>{n.add(h.name);E.eqList(h).forEach(e=>n.add(e.name))});return n}
+function deckSub(pl,sub){const has=c=>{const d=c&&E.DB[c.id];return d&&(d.sub===sub||d.type===sub)};return["hand","lib","disc"].some(z=>(pl[z]||[]).some(has))||(pl.inv||[]).some(o=>o.id&&has(o))}
+function turnCounts(s,pid){const pl=s.p[pid];const t=pl.t||{};const mine=pid===U.me;const names=deckNames(pl);const out=[];
+  const show=(rel,v)=>v>0||(mine&&rel);
+  const monk=pl.heroes.some(h=>h.cls==="Monk");
+  if(show(monk||deckSub(pl,"Combo"),t.combos||0))out.push(`<span class="res" title="Cards with the Combo subtype played this turn">Combo cards <b>${t.combos||0}</b></span>`);
+  if(show(deckSub(pl,"Song"),t.songs||0))out.push(`<span class="res" title="Songs played this turn">Songs <b>${t.songs||0}</b></span>`);
+  if(show(deckSub(pl,"Arrow"),t.arrows||0))out.push(`<span class="res" title="Arrows activated this turn">Arrows <b>${t.arrows||0}</b></span>`);
+  if((names.has("Opening Act")||names.has('"Opening Act"'))&&(mine||t.cards))out.push(`<span class="res" title="Cards played this turn">Cards played <b>${t.cards||0}</b></span>`);
+  if(show(names.has("Timely Heals"),t.took||0))out.push(`<span class="res" title="Damage your party has taken this turn">Party damage <b>${t.took||0}</b>${names.has("Timely Heals")?"/10":""}</span>`);
+  if(pl.fl&&pl.fl.petalDisc)out.push('<span class="res" title="Petal Shrine">Next Combo card <b>−1</b></span>');
+  return out}
+function heroCounts(s,h){if(h.dead)return[];const out=[];const r=s.round;const pl=s.p[h.owner];
+  const combos=h.fl&&h.fl.combosRound===r?h.fl.combos||0:0;
+  if(h.name==="Grandmaster Reece"){if(h.lvl>=3){const m=combos%3;out.push(`<span class="tg cnt" title="Every third Combo card he plays this turn: +2 STR">Combo ${m}/3${combos>=3?` · ${combos} total`:""}</span>`)}else out.push(`<span class="tg cnt" title="His third Combo card this turn: +2 STR">Combo ${Math.min(combos,3)}/3${combos>=3?" ✓":""}</span>`)}
+  if(h.name==="Sage Monk")out.push(`<span class="tg cnt" title="Scry 1 on its first Combo card each turn">First Combo: ${h.fl&&h.fl.sageRound===r?"used":"ready"}</span>`);
+  const atks=h.atkRound===r?h.attacks||0:0;
+  if(h.name==="Skullcrusher")out.push(`<span class="tg cnt" title="+3 STR on its second attack each turn">Attacks ${atks}${atks>=2?" ✓":"/2"}</span>`);
+  else if(h.fl&&h.fl.twiceRound===r)out.push(`<span class="tg cnt" title="May attack twice this turn">Attacks ${atks}/2</span>`);
+  if(h.name==="Wild Archer"&&h.lvl<3)out.push(`<span class="tg cnt" title="Readies after your first Arrow each turn">First Arrow: ${(pl.t&&pl.t.arrows)?"used":"ready"}</span>`);
+  if(h.fl&&h.fl.chargedRound===r)out.push(`<span class="tg cnt" title="Charged Barrage strikes at Dusk if no damage is dealt to this Hero">Charged: ${h.fl.chargedHit===r?"hit, fizzles":"ready"}</span>`);
+  if(h.fl&&h.fl.runBackRound===r)out.push(`<span class="tg cnt">Run It Back: ${h.fl.runBackUsed?"used":"ready"}</span>`);
+  E.eqList(h).forEach(e=>{if(e.name==="Antler Crown")out.push(`<span class="tg cnt" title="First Summon card each turn costs 1 less">Antler Crown: ${h.fl&&h.fl.antler===r?"used":"ready"}</span>`);
+    if(e.name==="Celestial Harp")out.push(`<span class="tg cnt" title="Second Song each turn heals your party 1">Songs ${Math.min((pl.t&&pl.t.songs)||0,2)}/2</span>`)});
+  return out}
+function cardCounts(s,c){const d=E.DB[c.id];if(!d)return[];const pl=s.p[U.me];const t=pl.t||{};const out=[];const a=E.actorFor(s,U.me);
+  const op=s.p[1-U.me];const liv=p=>p.heroes.filter(h=>!h.dead);
+  try{const cost=E.cardCost(s,U.me,a,d,0);const base=d.cost==="X"?0:(+d.cost||0);if(d.cost!=="X"&&cost!==base)out.push(`<span class="cost" title="Current Aura cost">Costs ${cost}</span>`)}catch(e){}
+  const n=d.name.replace(/"/g,"");const cb=t.combos||0;
+  if(n==="Well Trained")out.push(`<span title="Combo cards played this turn">Combo ${Math.min(cb,3)}/3${cb>=3?" ✓":""}</span>`);
+  if(n==="Finisher")out.push(`<span>X = ${cb}</span>`);
+  if(n==="Rising Dragon")out.push(`<span title="2 + Combo cards played before it">Deals ${2+cb}</span>`);
+  if(n==="Ballad of Blades")out.push(`<span>${(t.songs||0)>0?"Deals 3":"Deals 2"}</span>`);
+  if(n==="Opening Act")out.push(`<span>${(t.cards||0)>0?"Not first card":"First card: +1 Aura"}</span>`);
+  if(n==="Timely Heals")out.push(`<span>Party damage ${t.took||0}/10</span>`);
+  if(n==="Death by a Thousand Cuts"){let x=0;liv(op).forEach(h=>x+=h.st.poison||0);op.bf.forEach(o=>{if(o.st)x+=o.st.poison||0});liv(pl).filter(h=>h.cls==="Rogue").forEach(h=>x+=E.eqList(h).filter(e=>/Dagger/.test(e.name)).length);out.push(`<span>X = ${x}</span>`)}
+  if(n==="Withdrawal Ailments"){let x=0;liv(pl).forEach(h=>E.STATUS.forEach(k=>x+=h.st[k]||0));out.push(`<span>X = ${x}</span>`)}
+  if(n==="Pummel"&&a){const b=liv(pl).filter(h=>h.cls==="Barbarian").length;out.push(`<span title="${esc(a.name)}'s STR × Barbarians">${E.str(s,a)} × ${b}</span>`)}
+  return out}
+function invCounts(s,o,pid){const out=[];if(o.fd||!o.name)return out;const pl=s.p[pid];const t=pl.t||{};
+  if(o.name==="Petal Shrine"&&pl.fl&&pl.fl.petalDisc)out.push("next Combo −1");
+  if(o.name==="Level Shot")out.push(`Arrow #${(t.arrows||0)+1} this turn${(t.arrows||0)===2?" ✓ levels":""}`);
+  if(o.name==="Trophy Rack"&&o.ctr&&o.ctr.trophy)out.push(`${o.ctr.trophy} Trophy`);
+  return out.map(x=>` <span>${esc(x)}</span>`).join("")}
 function statB(v,base){return`<b class="${v>base?"up":v<base?"dn":""}">${v}</b>`}
 function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id];const tags=[];
   if(h.dead)tags.push(`<span class="tg bad">${h.surr?"Surrendered":"Dead"}</span>`);
@@ -316,6 +370,7 @@ function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id
   if(E.enraged(s,h)&&!h.dead&&h.cls==="Barbarian")tags.push('<span class="tg">Enraged</span>');
   if(E.lifelink(s,h))tags.push('<span class="tg good">Lifelink</span>');
   const pz=E.poisonous(s,h);if(pz)tags.push(`<span class="tg">Poisonous ${pz}</span>`);
+  heroCounts(s,h).forEach(x=>tags.push(x));
   (h.mods||[]).forEach(m=>{if(m.str)tags.push(`<span class="tg ${m.str>0?"good":"bad"}">${m.str>0?"+":""}${m.str} STR</span>`);if(m.def)tags.push(`<span class="tg ${m.def>0?"good":"bad"}">${m.def>0?"+":""}${m.def} DEF</span>`);if(m.zeroDef)tags.push('<span class="tg bad">DEF 0</span>');if(m.zeroStr)tags.push('<span class="tg bad">STR 0</span>');if(m.mulStr)tags.push('<span class="tg good">STR ×2</span>')});
   const gear=E.eqList(h).map(e=>`<button class="tg eq${U.man&&U.manT===e.uid?" mansel":""}${cands.has(e.uid)?" cand":""}" style="--cc:${cc(e.cls||"Generic")}" data-pa="obj" data-u="${e.uid}">⚔ ${esc(e.name)}</button>`).concat(h.ench.map(e=>`<button class="tg eq${cands.has(e.uid)?" cand":""}" style="--cc:${cc((E.DB[e.id]||{}).cls||"Warlock")}" data-pa="obj" data-u="${e.uid}">✦ ${esc(e.name)}</button>`)).join("");
   const low=st.hp*3<=st.max;
@@ -332,7 +387,7 @@ function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tag
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
 function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false;
   const mineTurn=opts.length>0;
-  if(s.over){prompt=s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`;acts=`<button class="btn primary" data-pa="leave">Back to lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}`}
+  if(s.over){prompt=(s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`)+(s.conceded!=null?(s.conceded===me?" You conceded.":` ${esc(s.p[s.conceded].name)} conceded.`):"");acts=`<button class="btn primary" data-pa="leave">Back to lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}`}
   else if(U.tgt){const sl=U.tgt.slots[U.tgt.i];prompt=`Choose ${esc(sl.label)} for ${esc(U.tgt.label)}${U.tgt.slots.length>1?` (${U.tgt.i+1}/${U.tgt.slots.length})`:""}. Click a highlighted ${sl.k==="player"||sl.k==="enemyPlayer"?"party button":"target"}.`;
     acts=`${sl.opt?'<button class="btn" data-pa="skip">Skip</button>':""}<button class="btn" data-pa="cancel">Cancel</button>`}
   else if(pr&&pr.pid===me){
@@ -357,7 +412,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const posm=`<span class="posm" title="Position marker">${E.POS.map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}">${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
-    <div class="pl-prompt">${prompt}</div>${acts?`<div class="pl-acts">${acts}</div>`:""}${man}</section>`}
+    <div class="pl-prompt">${prompt}</div>${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${acts||!s.over?`<div class="pl-acts">${acts}${s.over?"":'<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>'}</div>`:""}${man}</section>`}
 function lvBtn(o,label,cls){return`<button class="btn ${cls}" data-pa="do" data-a='${esc(JSON.stringify(o))}'><span class="plus" aria-hidden="true">+</span>${esc(label)}</button>`}
 function btn(o,label,cls){return`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(label)}</button>`}
 function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
@@ -376,7 +431,7 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"fix"}\' title="Open the manual panel to correct something the engine missed">Rules fix</button>');
   return out.join("")}
 function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(o=>o.type==="play").map(o=>{const c=pl.hand.find(x=>x.uid===o.uid);return c&&c.id}));
-  const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}">${cardHTML(card)}${autoTag(c.id)}</button>`}).join("");
+  const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
   return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · green outline = playable now</span></div><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div></section>`}
 function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1,k:"burn",name:"Soldier"});
   const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","+STR this turn"],["nstr","−STR this turn"],["def","+DEF this turn"],["ndef","−DEF this turn"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"]];
@@ -478,6 +533,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="host"){hostRoom();return}
   if(k==="join"){joinRoom(U.lobby.code);return}
   if(k==="leave"){leaveGame();return}
+  if(k==="concede-ask"){if(!U.s||U.s.over)return;modal(`<h2>Concede?</h2><p>Are you sure you want to concede? The game ends and your opponent wins.</p><div class="actions"><button class="btn primary danger" data-pa="concede-yes">Concede</button><button class="btn" data-pa="close">Cancel</button></div>`);return}
+  if(k==="concede-yes"){closeModal();if(U.s&&!U.s.over)send({type:"concede"});return}
   if(k==="leave-ask"){if(s&&s.over){leaveGame();return}modal(`<h2>Leave this game?</h2><p>${U.vsAI?"Your game is saved in this browser; you can resume it from the Play tab.":U.net&&U.net.role==="host"?"The room closes for your opponent. You can reopen it from the Play tab.":"You can rejoin with the same code while the host keeps the room open."}</p><div class="actions"><button class="btn primary" data-pa="leave-soft">Leave</button><button class="btn" data-pa="close">Stay</button></div>`);return}
   if(k==="leave-soft"){U.gameKey=null;closeModal();clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(err){}}U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";render();return}
   if(k==="resume-local"){const r=store2.get("cq.play.local",null);if(r){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.meta=r.meta||null;U.vsAI=true;U.net=null;U.mode="game";render();pumpAI()}return}

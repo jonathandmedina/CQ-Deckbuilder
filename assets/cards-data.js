@@ -17,7 +17,7 @@ const RAW_CARDS=[
 [1, "Arrow of Hope", "0", "Legendary", "Item", "Arrow", "Ranger", "3{A}: Deal 2 damage. Draw 2 cards.", 1],
 [2, "Arrow of Persuasion", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. The defender must attack a target of your choice during its next action.", 1],
 [2, "Ascend", "1", "", "Tactic", "Combo", "Monk", "Target Hero gains +2 STR this turn. Combo.", 1],
-[2, "Attack Reversal", "0", "Hidden", "Tactic", "Combo", "Monk", "Prevent the current attack. Combo.", 1],
+[2, "Attack Reversal", "0", "Hidden", "Tactic", "", "Monk", "Prevent the current attack. Combo.", 2],
 [1, "Aura Crystal", "3", "Legendary", "Item", "", "Generic", "At Dawn, gain 1 Aura.", 1],
 [2, "Aura Leech", "4", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero adds 1 less Aura to its party's pool each Dawn.", 1],
 [2, "Aurawing", "4", "", "Summon", "", "Druid", "Summon a 3/3 Aurawing Familiar. When it is destroyed, gain 1 Aura. Exhaust this Hero.", 1],
@@ -98,7 +98,7 @@ const RAW_CARDS=[
 [2, "Fade the Fury", "0", "Hidden", "Tactic", "", "Rogue", "1{A}: If a Rogue would be attacked by a Hero with 3 or more STR, cancel that attack.", 1],
 [2, "False Cure", "0", "", "Item", "Consumable", "Cleric", "1{A}: If target Hero would be healed, it loses that much HP instead.", 1],
 [1, "Farewell", "4", "Legendary", "Tactic", "", "Generic", "Destroy all non-Hero objects. Exhaust your party.", 1],
-[2, "Finisher", "1", "", "Tactic", "Combo", "Monk", "Deal X damage, where X is the number of Combo cards you have played this turn.", 1],
+[2, "Finisher", "1", "", "Tactic", "", "Monk", "Deal X damage, where X is the number of Combo cards you have played this turn.", 2],
 [2, "Flame Bolt", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage to target Hero. The target is Burned.", 1],
 [2, "Flame Jab", "3", "", "Spell", "", "Mage", "Deal 3 Fire damage. The target is Burned.", 1],
 [2, "Flame Lance", "4", "", "Spell", "", "Mage", "Deal 4 Fire damage. The target is Burned.", 1],
@@ -299,7 +299,7 @@ const RAW_CARDS=[
 ];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],
-["Arnett Lifebinder", "Cleric", "1", "1", "1", "16", "1{A}, Exhaust: Heal any target for 3 HP.\n{L3} 2{A}, Exhaust: Heal any target for 5 HP.", 2],
+["Arnett Lifebinder", "Cleric", "1", "1", "1", "16", "1{A}, Exhaust: Heal another target for 2 HP.\n{L3} 2{A}, Exhaust: Heal another target for 5 HP.", 3],
 ["Battle Minstrel", "Bard", "1", "1", "1", "16", "Exhaust: Return a Song from your discard pile to your hand.\n{L3} 1{A}, Exhaust: Play a Song in your discard pile without paying its Aura cost.", 1],
 ["Beast Tracker", "Ranger", "0", "0", "2", "16", "Whenever you activate a Trap, gain 1 Gold.\n{L3} All Traps cost 1 less Aura to activate.", 2],
 ["Blessed Champion", "Paladin", "0", "2", "1", "16", "Equipment that Blessed Champion plays or equips costs 1 less Aura.\n{L3} Equipment that Blessed Champion plays or equips costs 2 less Aura.", 3],

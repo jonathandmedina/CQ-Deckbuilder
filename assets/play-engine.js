@@ -305,22 +305,23 @@ function consumeCostFlags(s,pid,actor,d){const pl=P(s,pid);
   if(d.cls==="Mage"&&pl.fl.mageNext)pl.fl.mageNext=false;
   if(d.sub==="Trap"&&pl.fl.trapNext)pl.fl.trapNext=false;
   if(d.type==="Summon"&&actor&&hasEqN(actor,"Antler Crown"))actor.fl.antler=s.round;
-  if(d.sub==="Combo"&&pl.fl.petalDisc)pl.fl.petalDisc=false}
+  /* Petal Shrine waits for a Combo card it can actually make cheaper */
+  if(d.sub==="Combo"&&pl.fl.petalDisc&&(d.cost==="X"||num(d.cost)>0))pl.fl.petalDisc=false}
 
 /* ---------- targeting ---------- */
 /* spec: {k:kind,f:filter(s,o,ctx),opt,label,self} kinds: any enemy ally hero enemyHero allyHero summon enemySummon allySummon
-   item equip enemyEquip allyEquip ench pillar allyPillar nonHero player enemyPlayer deadAlly meditating allyHeroOther */
+   item equip enemyEquip allyEquip ench pillar allyPillar nonHero player enemyPlayer deadAlly meditating allyHeroOther anyOther */
 function inPlayTargets(s){const out=[];s.p.forEach((pl,pid)=>{pl.heroes.forEach(h=>{if(!h.dead)out.push(h)});pl.bf.forEach(o=>{if(o.kind==="summon")out.push(o)});pl.inv.forEach(o=>{if(o.kind==="doll")out.push(o)})});return out}
 function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let list=[];const k=spec.k;
   const isEnemy=o=>ctrl(s,o)!==pid;
   if(k==="player"||k==="enemyPlayer"||k==="allyPlayer"){return[0,1].filter(p=>k==="player"||(k==="enemyPlayer"?p!==pid:p===pid)).map(p=>"P"+p)}
-  if(["any","enemy","ally","hero","enemyHero","allyHero","summon","enemySummon","allySummon","allyHeroOther","meditating"].includes(k)){
+  if(["any","enemy","ally","hero","enemyHero","allyHero","summon","enemySummon","allySummon","allyHeroOther","anyOther","meditating"].includes(k)){
     list=inPlayTargets(s).filter(o=>{
       if(k.includes("Hero")||k==="hero"||k==="meditating"){if(o.kind!=="hero")return false}
       if(/[sS]ummon/.test(k)&&o.kind!=="summon")return false;
       if(k.startsWith("enemy")&&!isEnemy(o))return false;
       if(k.startsWith("ally")&&isEnemy(o))return false;
-      if(k==="allyHeroOther"&&ctx.actor&&o.uid===ctx.actor.uid)return false;
+      if((k==="allyHeroOther"||k==="anyOther")&&ctx.actor&&o.uid===ctx.actor.uid)return false;
       if(k==="meditating"&&(isEnemy(o)||!o.med))return false;
       return true})}
   else if(k==="deadAlly"){list=P(s,pid).heroes.filter(h=>h.dead&&!h.surr)}
@@ -442,12 +443,14 @@ E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
   return[]};
 function specsFor(sc,modes){let t=(sc.t||[]).slice();if(sc.modes&&modes)modes.forEach(i=>{const m=sc.modes.opts[i];if(m&&m.t)t=t.concat(m.t)});return t}
 E.specsFor=specsFor;
-function labelFor(k){return({any:"any target",enemy:"enemy",ally:"ally",hero:"Hero",enemyHero:"enemy Hero",allyHero:"your Hero",summon:"summon",enemySummon:"enemy summon",allySummon:"your summon",item:"item",equip:"equipment",anyEquip:"equipment",enemyEquip:"enemy equipment",allyEquip:"your equipment",ench:"enchantment",pillar:"Pillar",allyPillar:"your Pillar",nonHero:"non-Hero object",player:"player",enemyPlayer:"opponent",deadAlly:"dead Hero",deadAny:"dead Hero",meditating:"Meditating Hero",allyHeroOther:"another of your Heroes"})[k]||k}
+function labelFor(k){return({any:"any target",enemy:"enemy",ally:"ally",hero:"Hero",enemyHero:"enemy Hero",allyHero:"your Hero",summon:"summon",enemySummon:"enemy summon",allySummon:"your summon",item:"item",equip:"equipment",anyEquip:"equipment",enemyEquip:"enemy equipment",allyEquip:"your equipment",ench:"enchantment",pillar:"Pillar",allyPillar:"your Pillar",nonHero:"non-Hero object",player:"player",enemyPlayer:"opponent",deadAlly:"dead Hero",deadAny:"dead Hero",meditating:"Meditating Hero",allyHeroOther:"another of your Heroes",anyOther:"another target"})[k]||k}
 
 /* ---------- act() ---------- */
 function same(a,b){if(a.type!==b.type)return false;for(const k of["uid","att","stat","idx","hero","ch","i"])if(a[k]!==undefined&&a[k]!==b[k])return false;return true}
 E.act=function(s,pid,a){
   if(s.over)return{ok:false,err:"The game is over."};
+  if(a.type==="concede"){if(pid!==0&&pid!==1)return{ok:false,err:"Not a player."};s.seq++;s.over=true;s.winner=opp(pid);s.conceded=pid;s.pend=[];s.cur=null;s.qatk=null;
+    log(s,`${P(s,pid).name} concedes.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`);return{ok:true}}
   const opts=E.options(s,pid);
   if(a.type==="play"){const ok=opts.some(o=>o.type==="play"&&findCardAnywhere(s,pid,o.uid)&&findCardAnywhere(s,pid,o.uid).id===(findCardAnywhere(s,pid,a.uid)||{}).id);if(!ok)return{ok:false,err:"You can't play that card now."}}
   else if(!["fix","man","manDone","scry","choose","wake"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
@@ -536,8 +539,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   log(s,`${actor?actor.name:pl.name} plays ${d.name}${o.combo?" (Combo)":""}${cost?` for ${cost} Aura`:""}${targets.filter(Boolean).length?" → "+targets.filter(Boolean).map(t=>{const r=resolveTarget(s,t);return r?r.name:"?"}).join(", "):""}.`,pid);
   s.lastCard={id:c.id,pid,targets,modes:a.modes,x};
   if(d.type==="Song")pl.t.songs=(pl.t.songs||0)+1;
-  if(d.sub==="Combo"||E.hasCombo(d))pl.t.combos=(pl.t.combos||0)+1;
-  if(actor&&(E.hasCombo(d)))actor.fl.combos=(actor.fl.combosRound===s.round?actor.fl.combos:0)+1,actor.fl.combosRound=s.round;
+  if(d.sup!=="Hidden")countCombo(s,pid,actor,d);
   /* permanents */
   if(d.kind==="equip"){equipTo(s,actor,eqObjFromCard(s,pid,c));return}
   if(d.sup==="Hidden"){pl.inv.push(Object.assign({kind:"card",fd:true,name:d.name},c));log(s,`${pl.name} sets a Hidden card face down.`,pid);overflow(s,pid);
@@ -549,6 +551,12 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   queueResolve(s,pid,{k:"card",actor:actor&&actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},targets,modes:a.modes||[],x,combo:!!o.combo,echo:!!o.echo},trig);
 }
 E.playCard=playCard;
+/* Combo cards played = cards with the Combo subtype (Hidden ones count when revealed, not when set) */
+function countCombo(s,pid,actor,d){if(!d||d.sub!=="Combo")return;const pl=P(s,pid);pl.t.combos=(pl.t.combos||0)+1;
+  if(!actor||actor.kind!=="hero")return;actor.fl.combos=(actor.fl.combosRound===s.round?actor.fl.combos:0)+1;actor.fl.combosRound=s.round;
+  if(actor.name==="Grandmaster Reece"&&!actor.dead&&(actor.lvl>=3?actor.fl.combos%3===0:actor.fl.combos===3)){const t=autoTarget(s,pid,"strAlly")||actor;addMod(t,{str:2});log(s,`Grandmaster Reece: ${t.name} gains +2 STR this turn.`,pid)}}
+E.countCombo=countCombo;
+E.combosThisTurn=(s,pid)=>P(s,pid).t.combos||0;
 /* opens a Hidden-card window for the opponent if one can respond, else resolves now */
 function queueResolve(s,pid,cont,trig){const op=opp(pid);trig.pid=pid;
   if(!trig.noHidden&&windowFor(s,op,trig)){s.pend.unshift({type:"window",pid:op,trig,cont,mods:{}});log(s,`${P(s,op).name} may respond with a Hidden card…`);return}
@@ -561,9 +569,11 @@ function doReveal(s,pid,o,pr){const pl=P(s,pid);const d=def(o);const h=revealHer
   const hs=hiddenScript(o);
   if(hs){const ctx=mkCtx(s,pid,h,d,o,[],{trig:pr.trig,mods:pr.mods});hs.run(ctx);
     const keep=hs.keep?hs.keep(ctx):false;if(keep)pl.inv.push(o);else if(d.type==="Item"||d.sup==="Hidden")toDisc(s,o);
-    if(E.hasCombo(d)&&!pr.mods.cancel){pl.t.combos=(pl.t.combos||0)+1}
-    if(pr.mods.cancel){s.pend.shift();log(s,"The action is canceled.");afterCancel(s,pr);return}
-  }else{toDisc(s,o);s.pend.splice(1,0,{type:"manual",pid,title:d.name,text:d.rules,hidden:true})}
+    countCombo(s,pid,h,d);
+    if(pr.mods.cancel){s.pend.shift();log(s,"The action is canceled.");afterCancel(s,pr)}
+    if(E.hasCombo(d))comboTrigger(s,pid,h);
+    return
+  }else{countCombo(s,pid,h,d);toDisc(s,o);s.pend.splice(1,0,{type:"manual",pid,title:d.name,text:d.rules,hidden:true})}
 }
 function trapGold(s,pid,d){if(d.sub!=="Trap")return;const n=living(P(s,pid)).filter(h=>h.name==="Beast Tracker").length;if(n){P(s,pid).gold+=n;log(s,`Beast Tracker: ${P(s,pid).name} gains ${n} Gold.`,pid)}}
 function afterCancel(s,pr){const c=pr.cont;if(c.k==="card"){const pl=P(s,pr.trig.pid);pl.disc.push(c.card)}}
@@ -581,7 +591,7 @@ function resolveCont(s,pid,cont,mods){
     checkDeaths(s);return}
   const d=DB[cont.card.id];const sc=SC()[d.name];const pl=P(s,pid);
   const ctx=mkCtx(s,pid,actor,d,cont.card,cont.targets,{mods,modes:cont.modes,x:cont.x,comboed:cont.combo});
-  let stays=false;
+  let stays=false;const pend0=s.pend.length;
   if(sc){const r=sc.run(ctx);stays=r==="stay"}
   else{s.pend.unshift({type:"manual",pid,title:d.name,text:d.rules,card:cont.card.id});}
   if(d.type==="Enchantment"&&sc){stays=true}
@@ -593,7 +603,10 @@ function resolveCont(s,pid,cont,mods){
   if(d.type==="Song"){if(invHas(pl,"The Forbidden Tuner")){const t=bestDamageTarget(s,pid,1,{pierce:1});if(t)damage(s,{name:"The Forbidden Tuner"},t,1,{pierce:1,card:true})}
     if(actor&&hasEqN(actor,"War Lute")){const t=autoTarget(s,pid,"strAlly");if(t)addMod(t,{str:1})}
     if(actor&&hasEqN(actor,"Celestial Harp")&&pl.t.songs===2)living(pl).forEach(h=>heal(s,actor,h,1))}
-  if(E.hasCombo(d))comboTrigger(s,pid,actor);
+  if(d.sub==="Combo"&&actor&&actor.name==="Sage Monk"&&!actor.dead&&actor.fl.sageRound!==s.round&&pl.lib.length){actor.fl.sageRound=s.round;log(s,"Sage Monk: first Combo card this turn, Scry 1.",pid);pushScry(s,pid,1)}
+  if(E.hasCombo(d)){const added=s.pend.length-pend0;
+    /* Combo waits until the card's own Scry/choice prompts are answered */
+    if(added>0)s.pend.splice(added,0,{type:"comboGo",pid,actor:actor&&actor.uid});else comboTrigger(s,pid,actor)}
   checkDeaths(s)}
 function arrowBonus(s,pid,actor){const pl=P(s,pid);let b=0,ign=false,pierce=0;
   if(actor){if(actor.name==="Hawkeye")b+=actor.lvl>=6?2:actor.lvl>=3?1:0;if(hasEqN(actor,"Longbow"))b+=1}
@@ -601,7 +614,6 @@ function arrowBonus(s,pid,actor){const pl=P(s,pid);let b=0,ign=false,pierce=0;
   if(pl.fl.rapidPierce)pierce=1;return{dmg:b,ignoreDef:ign,pierce}}
 function comboTrigger(s,pid,actor){const pl=P(s,pid);if(!actor||actor.dead)return;
   living(pl).forEach(h=>{if(h.name==="Monastery Stalwart")addMod(h,{def:1})});
-  if(actor.name==="Grandmaster Reece"&&(actor.lvl>=3?actor.fl.combos%3===0:actor.fl.combos===3)){const t=autoTarget(s,pid,"strAlly")||actor;addMod(t,{str:2});log(s,`Grandmaster Reece: ${t.name} gains +2 STR this turn.`,pid)}
   const shrine=pl.inv.find(o=>o.name==="Petal Shrine"&&!o.fd);if(shrine){shrine.ctr=shrine.ctr||{};shrine.ctr.petal=(shrine.ctr.petal||0)+1;if(shrine.ctr.petal>=3){shrine.ctr.petal=0;pl.fl.petalDisc=true;log(s,"Petal Shrine: next Combo card costs 1 less.",pid)}}
   const look=hasEqN(actor,"Jun Lao's Headband")?2:1;
   if(!pl.lib.length)return;
@@ -651,12 +663,13 @@ function postAttack(s,pid,cont,dealt){const f=find(s,cont.att);const o=cont.o||{
 function pushScry(s,pid,n,then){const pl=P(s,pid);n=Math.min(n,pl.lib.length);if(n<=0){if(then)runThen(s,pid,then);return}
   s.pend.unshift({type:"scry",pid,cards:pl.lib.slice(-n).reverse().map(c=>c.uid),then:then||null})}
 E.pushScry=pushScry;
-function finishScry(s,pid,pr,a){const pl=P(s,pid);const ids=pr.cards;const bottom=(a.bottom||[]).filter(u=>ids.includes(u));
+function finishScry(s,pid,pr,a){const pl=P(s,pid);const ids=pr.cards.filter(u=>pl.lib.some(c=>c.uid===u));/* skip cards that left the library meanwhile */const bottom=(a.bottom||[]).filter(u=>ids.includes(u));
   let top=(a.order||ids).filter(u=>ids.includes(u)&&!bottom.includes(u));ids.forEach(u=>{if(!top.includes(u)&&!bottom.includes(u))top.push(u)});
   const pick=u=>{const i=pl.lib.findIndex(c=>c.uid===u);return pl.lib.splice(i,1)[0]};
   const topCards=top.map(pick),botCards=bottom.map(pick);
   pl.lib.unshift(...botCards);pl.lib.push(...topCards.reverse());
   log(s,`${pl.name} scries ${ids.length}${bottom.length?` (${bottom.length} to the bottom)`:""}.`,pid);
+  living(pl).filter(h=>h.name==="Sage Monk"&&h.lvl>=3).forEach(h=>{addMod(h,{str:ids.length});log(s,`Sage Monk gains +${ids.length} STR this turn.`,pid)});
   if(pr.then)runThen(s,pid,pr.then)}
 function runThen(s,pid,t){if(t.draw)draw(s,pid,t.draw)}
 /* choose: {pid,title,cards:[uid],from:'hand'|'lib'|'opHand'|'disc',min,max,op} */
@@ -695,7 +708,7 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
     if(cost>pl.aura){log(s,`${who}: not enough Aura to reveal ${d.name} (costs ${cost}).`,pid);break}
     pay(s,pid,hh,cost);if(hh)hh.ex=true;(from==="inv"?pl.inv:pl.hand).splice((from==="inv"?pl.inv:pl.hand).indexOf(o),1);pl.disc.push({uid:o.uid,id:o.id,owner:o.owner});
     log(s,`${who} reveals ${d.name} from ${from==="inv"?"inventory":"hand"}${cost?` (${cost} Aura)`:""}${hh?`, exhausting ${hh.name}`:""}: ${d.rules.replace(/\{A\}/g," Aura").replace(/\{L(\d)\}/g,"[Level $1]")}`,pid);
-    trapGold(s,pid,d);const pr=s.pend[0];if(pr&&pr.type==="manual")pr.revealed=(pr.revealed||[]).concat([{name:d.name,text:d.rules}]);break}
+    trapGold(s,pid,d);countCombo(s,pid,hh,d);const pr=s.pend[0];if(pr&&pr.type==="manual")pr.revealed=(pr.revealed||[]).concat([{name:d.name,text:d.rules}]);break}
   case"cancelAction":log(s,`${who} cancels the action.`,pid);break;
   }
   checkDeaths(s)}
@@ -712,7 +725,8 @@ E.autoTarget=autoTarget;
 /* ---------- flow ---------- */
 function settle(s){let guard=0;
   while(!s.over&&guard++<200){
-    if(s.pend.length){/* AI-free auto answers handled by controller */return}
+    if(s.pend.length){if(s.pend[0].type==="comboGo"){const pr=s.pend.shift();comboTrigger(s,pr.pid,pr.actor?heroByUid(s,pr.actor):null);continue}
+      /* AI-free auto answers handled by controller */return}
     if(s.trig10&&s.trig10.length){const v=s.trig10.shift();const trig={kind:"party10",pid:opp(v)};if(windowFor(s,v,trig)){s.pend.unshift({type:"window",pid:v,trig,cont:{k:"none"},mods:{}});log(s,`${P(s,v).name}'s party has taken 10 damage this turn and may respond with a Hidden card…`)}continue}
     if(s.qatk){const q=s.qatk;s.qatk=null;const f=find(s,q.att);const t=resolveTarget(s,q.tgt);if(f&&t&&!t.dead&&!f.o.dead){startAttack(s,q.pid,q.att,q.tgt,q.o||{});continue}}
     if(s.cur){const pid=s.cur.pid;s.cur=null;if(s.phase==="battle"){

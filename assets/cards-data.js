@@ -299,7 +299,7 @@ const RAW_CARDS=[
 ];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],
-["Arnett Lifebinder", "Cleric", "1", "1", "1", "16", "Exhaust: Heal any target for 3 HP.\n{L3} 2{A}, Exhaust: Heal any target for 5 HP.", 1],
+["Arnett Lifebinder", "Cleric", "1", "1", "1", "16", "1{A}, Exhaust: Heal any target for 3 HP.\n{L3} 2{A}, Exhaust: Heal any target for 5 HP.", 2],
 ["Battle Minstrel", "Bard", "1", "1", "1", "16", "Exhaust: Return a Song from your discard pile to your hand.\n{L3} 1{A}, Exhaust: Play a Song in your discard pile without paying its Aura cost.", 1],
 ["Beast Tracker", "Ranger", "0", "0", "2", "16", "Whenever you activate a Trap, gain 1 Gold.\n{L3} All Traps cost 1 less Aura to activate.", 2],
 ["Blessed Champion", "Paladin", "0", "2", "1", "16", "Equipment that Blessed Champion plays or equips costs 1 less Aura.\n{L3} Equipment that Blessed Champion plays or equips costs 2 less Aura.", 3],
@@ -324,7 +324,7 @@ const RAW_HEROES=[
 ["Holy Guardian", "Paladin", "0", "1", "1", "16", "The Hero to the right of Holy Guardian has +1 DEF.", 2],
 ["Inspiration Herald", "Bard", "1", "1", "1", "16", "Exhaust: Ready another ally.", 1],
 ["King of Curses", "Warlock", "X", "0", "2", "16", "This Hero's STR is equal to the number of Curses in play.", 2],
-["Lightbringer", "Cleric", "1", "0", "1", "15", "At Dawn, heal each other friendly Hero for 1 HP.\n{L3} Whenever you heal, deal that much Light damage to any target.", 3],
+["Lightbringer", "Cleric", "1", "0", "1", "15", "At Dawn, heal another friendly Hero for 1 HP.\n{L6} Whenever you heal, deal that much Light damage to any target.", 4],
 ["Monastery Stalwart", "Monk", "1", "1", "1", "15", "Whenever Combo triggers, this Hero gains +1 DEF until Dusk.", 1],
 ["Night Stalker", "Rogue", "2", "0", "1", "16", "While exhausted, this Hero gains Stealth.", 1],
 ["Precision Fighter", "Monk", "1", "1", "1", "15", "While this Hero has 3 or more STR, it gains Piercing 1.", 1],

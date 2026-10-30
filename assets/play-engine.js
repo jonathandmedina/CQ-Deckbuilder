@@ -164,8 +164,8 @@ function heal(s,healer,o,n,pid){
   if(src!=null&&oc!==src&&invHas(P(s,src),"Inversion Stone")){log(s,`Inversion Stone turns the heal on ${o.name} into ${n} Light damage.`);damage(s,{name:"Inversion Stone"},o,n,{card:true,type:"Light",noTrig:true});return 0}
   const h=Math.min(n,o.dmg||0);o.dmg-=h;if(h>0)log(s,`${o.name} heals ${h} HP.`);
   if(h>0&&healer&&healer.kind==="hero"&&!healer.dead&&healer.name==="Radiant Oracle"&&h>=3)draw(s,healer.owner,1);
-  /* Lightbringer L3: whenever you heal (any heal your side makes, not the Inn), deal that much Light damage */
-  if(h>0&&src!=null&&!s._lb){const lb=living(P(s,src)).find(x=>x.name==="Lightbringer"&&x.lvl>=3);
+  /* Lightbringer L6: whenever you heal (any heal your side makes, not the Inn), deal that much Light damage */
+  if(h>0&&src!=null&&!s._lb){const lb=living(P(s,src)).find(x=>x.name==="Lightbringer"&&x.lvl>=6);
     if(lb){const t=bestDamageTarget(s,src,h,{type:"Light"});if(t){s._lb=true;try{damage(s,lb,t,h,{type:"Light",card:true,noTrig:true})}finally{s._lb=false}}else log(s,"Lightbringer: no enemy it can hurt.",src)}}
   return h}
 /* picks the enemy the damage hurts most (skips targets Guard/DEF would block, Stealth, Cloak); prefers kills */
@@ -754,7 +754,7 @@ function doDawn(s){
     if(invHas(pl,"Aura Crystal")){pl.aura+=invCount(pl,"Aura Crystal");log(s,`Aura Crystal: ${pl.name} gains 1 Aura.`,pid)}
     pl.inv.filter(o=>o.name==="Campfire"&&!o.fd).forEach(o=>{o.ctr=o.ctr||{};if(o.ctr.camp==null)o.ctr.camp=3;o.ctr.camp--;log(s,"Campfire burns down (heals the party 1 HP).",pid);living(pl).forEach(h=>heal(s,null,h,1,pid));if(o.ctr.camp<=0){pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,"Campfire is exiled.",pid)}});
     if(invHas(pl,"Brute's Banner")){const b=living(pl).filter(h=>h.cls==="Barbarian").sort((a,b)=>strOf(s,b)-strOf(s,a))[0];if(b){b.fl.bannerRound=s.round;log(s,`Brute's Banner: ${b.name} +2 STR this turn.`,pid)}}
-    living(pl).forEach(h=>{if(h.name==="Lightbringer")living(pl).forEach(o=>{if(o!==h)heal(s,h,o,1)});
+    living(pl).forEach(h=>{if(h.name==="Lightbringer"){const lt=living(pl).filter(o=>o!==h&&o.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(lt)heal(s,h,lt,1)}
       if(hasEqN(h,"Chalice of Life"))living(pl).forEach(o=>heal(s,h,o,1));
       h.ench.forEach(e=>{if(e.name==="Sanctuary")heal(s,null,h,1,e.owner)})});
     /* Echo */

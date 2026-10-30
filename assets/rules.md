@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: October 28, 2026 (update 2)*
+*Version: October 30, 2026 (update 3)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -243,13 +243,13 @@ All players do these steps together:
 
 ### 4. Town Phase
 
-Your party heads into Town. The player with initiative visits first, then Town passes clockwise. On your visit, go to any location in any order, as many times as you can pay. Say “I leave Town” when you’re done.
+Your party heads into Town. The player with initiative visits first, then Town passes clockwise. On your visit, go to the locations in any order. You may use the Inn and the Shop once each per visit, and the Blacksmith as many times as you can pay. Say “I leave Town” when you’re done.
 
 | Location | Cost | What you get |
 |---|---|---|
 | **Blacksmith** | Upgrade cost | Upgrade one piece of your equipment (see Upgrading Equipment). |
-| **Inn** | 5 Gold | One of your Heroes that isn’t dead heals 5 HP. |
-| **Shop** | 4 Gold | Draw a card. |
+| **Inn** | 5 Gold | One of your Heroes that isn’t dead heals 3 HP. Once per visit. |
+| **Shop** | 4 Gold | Draw a card. Once per visit. |
 
 Heroes can’t heal above their maximum HP, and dead Heroes can’t heal at the Inn.
 
@@ -388,6 +388,8 @@ On-hit effects that apply a status still apply, even if DEF reduces the damage t
 ### Healing
 
 HP never heals on its own. Heroes heal only from cards, abilities and the Inn. A Hero can’t heal above its maximum HP, which includes level bonuses.
+
+**Inverted heals.** If an effect turns a heal into damage or HP loss instead (such as Inversion Stone), that heal doesn’t happen and doesn’t count as healing. Nothing that triggers on healing (such as Radiant Oracle, Lightbringer or Healing Relic) triggers from it.
 
 ### Death
 
@@ -591,8 +593,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Dusk Phase**: Third phase. Resolve “At Dusk” effects, end round-long effects, lose unspent Aura, collect Gold, then pass initiative.
 - **Town Phase (Enter Town)**: Each player may spend Gold at the Blacksmith, Inn and Shop. The player with initiative goes first.
 - **Blacksmith**: Town location. Pay an equipment's Gold Upgrade Cost to turn on its Upgrade effect. Once per piece.
-- **Inn**: Town location. 5 Gold: one Hero that isn’t dead heals 5 HP.
-- **Shop**: Town location. 4 Gold: draw a card.
+- **Inn**: Town location. 5 Gold: one Hero that isn’t dead heals 3 HP. Once per Town visit.
+- **Shop**: Town location. 4 Gold: draw a card. Once per Town visit.
 - **Initiative**: Who acts first. Set by a die roll at setup, then passed at the end of each Dusk Phase: to the other player (2 players) or clockwise (multiplayer). The player who receives it goes first in Town and in the next round.
 - **Priority**: The right to take the next action. Starts with the initiative player and passes clockwise after each action.
 - **Party order / Position**: Left-to-right order of your Heroes: Lead (Position 1), Center (2), Closer (3).
@@ -703,7 +705,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Confused**: Status. The Hero's attacks and targets are random.
 - **Stunned**: Status. The Hero can't activate abilities or play cards. It can still attack and equip from inventory. Cards say “Stun”.
 - **Dies / Dead**: At 0 HP a Hero dies and is turned face down. Its equipment goes to your inventory. It can’t act, make Aura, earn Gold or be healed until revived.
-- **Heal**: Restore HP, never above max. Only from cards, abilities or the Inn.
+- **Heal**: Restore HP, never above max. Only from cards, abilities or the Inn. A heal turned into damage or HP loss (such as by Inversion Stone) isn’t a heal.
 - **Revive**: Bring a dead Hero back to life. The card says how much HP and whether it is ready. It returns with no equipment. A surrendered Hero can’t be revived.
 - **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: draw a card; gain 2 Aura; target ally +2 STR this turn; deal 2 damage; gain 3 Gold; or target ally +2 DEF this turn. That Hero can’t be revived. Once per dead Hero.
 - **Surrendered**: A dead Hero whose soul was surrendered. Face down and sideways. Still counts as dead.

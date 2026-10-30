@@ -36,7 +36,8 @@ const combosPlayed=c=>c.me.t.combos||0;
 const destroy=(c,o,ex)=>{if(o)E.destroyObj(c.s,o,ex)};
 function M(n,opts){return{modes:{n,opts},run(c){const base=(this.t||[]).length;let i=base;(c.modes||[]).forEach(mi=>{const m=opts[mi];if(!m)return;const k=(m.t||[]).length;m.run(Object.assign({},c,{t:c.t.slice(i,i+k)}));i+=k})}}}
 const def=(name,o)=>{S[name]=o};
-const dmgCard=(n,o)=>({t:[(o&&o.tg)||ANY],run(c){const d=D(c,c.t[0],n,o);if(o&&o.st)st(c,c.t[0],o.st);if(o&&o.ex)exMe(c);if(o&&o.pil)pillar(c,o.pil);return d}});
+const DMG=t("any","damage target");
+const dmgCard=(n,o)=>({t:[(o&&o.tg)||DMG],run(c){const d=D(c,c.t[0],n,o);if(o&&o.st)st(c,c.t[0],o.st);if(o&&o.ex)exMe(c);if(o&&o.pil)pillar(c,o.pil);return d}});
 const allDmg=(n,o)=>({run(c){const L=c.actor&&o&&o.l6&&c.actor.lvl>=6?o.l6:n;const times=(o&&o.times)||1;for(let k=0;k<times;k++)enemies(c).forEach(e=>{D(c,e,L,o);if(o&&o.st)st(c,e,o.st)});if(o&&o.pil)pillar(c,o.pil);if(o&&o.ex)exMe(c)}});
 const summonCard=(name,ready)=>({run(c){summon(c,name,ready);exMe(c)}});
 
@@ -64,7 +65,7 @@ def("Levitate",{t:[HERO],x:{label:"New position (0 Lead, 1 Center, 2 Closer)",ma
 /* ===== Warlock ===== */
 def("Dark Jab",dmgCard(3,{type:"Dark",st:"confuse"}));def("Dark Lance",dmgCard(5,{type:"Dark",st:"confuse"}));
 def("Night Terror",allDmg(4,{type:"Dark",st:"confuse",ex:1}));
-def("Siphon Life",{t:[ANY],run(c){const d=D(c,c.t[0],2,{type:"Dark"});heal(c,c.actor,d)}});
+def("Siphon Life",{t:[t("any","damage target")],run(c){const d=D(c,c.t[0],2,{type:"Dark"});heal(c,c.actor,d)}});
 def("Dark Arts",{t:[EN],x:{label:"HP to lose (up to 6)",max:(s,pid,a)=>Math.min(6,a?E.hp(s,a)-1:6),free:true},run(c){const n=Math.min(6,c.x||0);if(n<=0)return;E.loseHp(c.s,c.actor,n,"Dark Arts");if(c.t[0])E.loseHp(c.s,c.t[0],n,"Dark Arts")}});
 def("Blood Offering",{run(c){E.loseHp(c.s,c.actor,3,"Blood Offering");c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)}});
 def("Disorient",{t:[ANY],run(c){st(c,c.t[0],"confuse")}});
@@ -81,18 +82,18 @@ def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name}
 const curse=(name)=>def(name,{t:[HERO],run(c){const h=c.t[0];if(!h)return"stay";h.ench.push({uid:c.inst.uid,id:c.def.id,name:c.def.name,kind:"card",owner:c.pid,ctrl:c.pid,cardUid:c.inst.uid});log(c,`${c.def.name} is attached to ${h.name}.`);return"stay"}});
 ["Aura Leech","Blood Aura","Burden","Distract","Mark of Doom","Memory Loss","Weaken","Life Boost","Sanctuary"].forEach(curse);
 /* ===== Cleric ===== */
-def("Healing Beam",{t:[ANY],run(c){heal(c,c.t[0],5)}});
-def("Healing Touch",{t:[HERO],run(c){heal(c,c.t[0],2)}});
+def("Healing Beam",{t:[t("any","heal target")],run(c){heal(c,c.t[0],5)}});
+def("Healing Touch",{t:[t("hero","Hero to heal")],run(c){heal(c,c.t[0],2)}});
 def("Full Heal",{run(c){living(c.me).forEach(h=>heal(c,h,3))}});
-def("All Play",{run(c){const e=c.actor&&c.actor.lvl>=3?3:0;c.s.p.forEach(pl=>living(pl).forEach(h=>heal(c,h,2+e)));living(c.me).forEach(h=>heal(c,h,2+e))}});
+def("All Play",{run(c){c.s.p.forEach(pl=>living(pl).forEach(h=>heal(c,h,2)));const f=c.actor&&c.actor.lvl>=3?5:2;living(c.me).forEach(h=>heal(c,h,f))}});
 def("Light Blast",dmgCard(2,{type:"Light",pierce:2}));
-def("Light Helix",{t:[HERO,ANY],run(c){heal(c,c.t[0],2);D(c,c.t[1],2,{type:"Light"})}});
-def("Healing Blast",{t:[ANY,ANY],run(c){const x=c.x||0;heal(c,c.t[0],x);D(c,c.t[1],Math.ceil(x/2),{type:"Light"});exMe(c)}});
+def("Light Helix",{t:[t("hero","Hero to heal"),t("any","damage target")],run(c){heal(c,c.t[0],2);D(c,c.t[1],2,{type:"Light"})}});
+def("Healing Blast",{t:[t("any","heal target"),t("any","damage target")],run(c){const x=c.x||0;heal(c,c.t[0],x);D(c,c.t[1],Math.ceil(x/2),{type:"Light"});exMe(c)}});
 def("Carry Radiance",{t:[cls("Cleric")],run(c){buff(c.t[0],{lifelink:1})}});
 def("Medical Visit",{t:[ANY],run(c){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}});
 def("Purify",{t:[AL],run(c){if(c.t[0]){E.removeStatus(c.s,c.t[0],1);heal(c,c.t[0],1)}}});
 def("Resurrection",{t:[t("deadAlly","dead Hero")],can:(s,pid)=>s.p[pid].heroes.some(h=>h.dead&&!h.surr),run(c){const h=c.t[0];if(h){h.dead=false;h.dmg=Math.max(0,E.maxHp(c.s,h)-8);h.ex=true;log(c,`${h.name} is revived with ${E.hp(c.s,h)} HP.`)}exMe(c)}});
-def("Wave of Life",{t:[ANY],run(c){heal(c,c.t[0],3)}});
+def("Wave of Life",{t:[t("any","heal target")],run(c){heal(c,c.t[0],3)}});
 def("Righteous Rage",{run(c){buff(c.actor,{str:2,lifelink:1});const tg=enemies(c).filter(e=>!E.stealth(c.s,e)).sort((a,b)=>hp(c,b)-hp(c,a))[0];c.actor.ex=false;attack(c,c.actor,tg)}});
 def("Withdrawal Ailments",{t:[ANY],run(c){let n=0;living(c.me).forEach(h=>E.STATUS.forEach(k=>{n+=h.st[k];h.st[k]=0}));log(c,`${n} status counters removed.`);D(c,c.t[0],n,{type:"Light"})}});
 def("Healer's Choice",M(2,[{label:"Heal 2 HP",t:[ANY],run:c=>heal(c,c.t[0],2)},{label:"Remove 1 status counter",t:[ANY],run:c=>c.t[0]&&E.removeStatus(c.s,c.t[0],1)},{label:"Deal 2 Light damage",t:[ANY],run:c=>D(c,c.t[0],2,{type:"Light"})}]));
@@ -169,9 +170,9 @@ def("Focus",{run(c){c.me.pm.pierce=1;log(c,"Attacks gain Piercing 1 this turn.")
 def("Glimpse the Future",{run(c){scry(c,3)}});
 def("Meditate",{run(c){c.actor.ex=true;c.actor.med=true;c.actor.keepMed=true;log(c,`${c.actor.name} is Meditating.`)}});
 def("Deep Contemplation",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){draw(c,1);if(c.t[0])c.t[0].plus++}});
-def("Defend Prayer",{t:[ANY,t("meditating","Meditating Hero",null,{opt:true})],run(c){D(c,c.t[0],2);if(c.t[1])c.t[1].plus++}});
+def("Defend Prayer",{t:[t("any","damage target"),t("meditating","Meditating Hero for the counter",null,{opt:true})],run(c){D(c,c.t[0],2);if(c.t[1])c.t[1].plus++}});
 def("Look Ahead",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){if(c.t[0])c.t[0].plus++;scry(c,2)}});
-def("Awakened Fist",{t:[t("meditating","Meditating Hero"),EN],can:(s,pid)=>s.p[pid].heroes.some(h=>h.med&&!h.dead),run(c){const h=c.t[0];if(!h)return;h.med=false;h.fl.medEnd=true;h.ex=false;attack(c,h,c.t[1],{pierce:1})}});
+def("Awakened Fist",{t:[t("meditating","Meditating Hero"),t("enemy","attack target")],can:(s,pid)=>s.p[pid].heroes.some(h=>h.med&&!h.dead),run(c){const h=c.t[0];if(!h)return;h.med=false;h.fl.medEnd=true;h.ex=false;attack(c,h,c.t[1],{pierce:1})}});
 def("Balanced Choice",M(2,[{label:"Scry 2",run:c=>scry(c,2)},{label:"Target Hero gains +2 STR",t:[HERO],run:c=>buff(c.t[0],{str:2})},{label:"This Hero Meditates",run:c=>{c.actor.ex=true;c.actor.med=true;c.actor.keepMed=true}}]));
 def("Well Trained",{t:[HERO],run(c){if(combosPlayed(c)>=3&&c.t[0])E.levelUp(c.s,c.t[0],"str")}});
 def("Stunner",{run(c){c.me.fl.stunner=true}});
@@ -201,16 +202,18 @@ const arrowNext=(c,o)=>{c.me.fl.arrowNext=Object.assign(c.me.fl.arrowNext||{},o)
 def("Bullseye",{run(c){arrowNext(c,{ign:true});log(c,"The next Arrow ignores DEF.")}});
 def("Full Draw",{run(c){const n=c.me.fl.arrowNext;arrowNext(c,{dmg:((n&&n.dmg)||0)+4});log(c,"The next Arrow gains +4 damage.")}});
 def("Spotters",{run(c){const r=living(c.me).filter(h=>h.cls==="Ranger").length;const n=c.me.fl.arrowNext;arrowNext(c,{dmg:((n&&n.dmg)||0)+r});log(c,`The next Arrow gains +${r} damage.`)}});
-def("Reload",{run(c){const top=c.me.lib[c.me.lib.length-1];if(top&&E.DB[top.id].sub==="Arrow"&&c.me.inv.length<E.slots(c.s,c.pid)){c.me.lib.pop();c.me.inv.push(Object.assign({kind:"card",fd:false,name:E.DB[top.id].name,ctr:{}},top));log(c,`${E.DB[top.id].name} goes into inventory.`)}else log(c,"The top card isn't an Arrow.")}});
+def("Reload",{run(c){const top=c.me.lib[c.me.lib.length-1];if(!top)return;const d=E.DB[top.id];
+  if(d.sub==="Arrow"&&c.me.inv.length<E.slots(c.s,c.pid)){c.me.lib.pop();c.me.inv.push(Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},top));log(c,`${d.name} goes into inventory.`)}
+  else{log(c,d.sub==="Arrow"?"The top card is an Arrow, but the inventory is full.":"The top card isn't an Arrow.");E.pushChoose(c.s,c.pid,{title:"Reload: put this card on the bottom of your library?",cards:[top.uid],min:0,max:1,op:"bottom",pickLabel:"Bottom"})}}});
 def("Quickdraw",{run(c){const top=c.me.lib.splice(-3);top.slice().forEach(x=>{if(E.DB[x.id].sub==="Arrow"&&c.me.inv.length<E.slots(c.s,c.pid)){top.splice(top.indexOf(x),1);c.me.inv.push(Object.assign({kind:"card",fd:false,name:E.DB[x.id].name,ctr:{}},x));log(c,`${E.DB[x.id].name} goes into inventory.`)}});c.me.lib.push(...top);exMe(c)}});
 const arrow=(cost,t2,run,o)=>({act:Object.assign({cost,t:t2,run},o||{})});
 def("Arrow of Hope",arrow(3,[ANY],c=>{D(c,c.t[0],2);draw(c,2)}));
 def("Arrow of Persuasion",arrow(1,[ANY],c=>{D(c,c.t[0],3)}));
 def("Blunt-Point Force",arrow(1,[ANY],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){const pl=c.s.p[E.ctrl(c.s,c.t[0])];if(pl.hand.length){const x=pl.hand.splice(E.ri(c.s,pl.hand.length),1)[0];pl.disc.push(x);log(c,`${pl.name} discards ${E.DB[x.id].name}.`)}}}));
-def("Dual Shot",arrow(1,[ANY,t("any","second target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
+def("Dual Shot",arrow(1,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"burn")}));
 def("Level Shot",arrow(1,[ANY],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
-def("Poison Dart",arrow(1,[ANY],c=>{st(c,c.t[0],"poison",2)}));
+def("Poison Dart",arrow(1,[t("any","target to poison")],c=>{st(c,c.t[0],"poison",2+((c.arrowBonus&&c.arrowBonus.dmg)||0))}));
 def("Serrated Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3);st(c,c.t[0],"wound")}));
 def("Smoke Trail Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3);c.me.fl.preventNext=true}));
 def("Tri-Shot",arrow(4,[t("enemyPlayer","target party")],c=>{const p=c.t[0];if(!p)return;const hs=c.s.p[p.pid].heroes;[5,3,1].forEach((n,i)=>{if(hs[i]&&!hs[i].dead)D(c,hs[i],n,{ignoreDef:true})})}));
@@ -256,7 +259,7 @@ def("Hero's Choice",M(2,[{label:"Scry 2",run:c=>scry(c,2)},{label:"Destroy targe
 /* items with activations */
 const item=(cost,t2,run,o)=>({act:Object.assign({cost,t:t2,run},o||{})});
 def("Antidote",item(2,[ANY],c=>{if(c.t[0])E.removeStatus(c.s,c.t[0],3)},{exile:true}));
-def("Potion",item(2,[HERO],c=>heal(c,c.t[0],4),{exile:true}));
+def("Potion",item(2,[t("hero","Hero to heal")],c=>heal(c,c.t[0],4),{exile:true}));
 def("Revitalize",item(2,[],c=>{c.me.aura+=4;log(c,`${c.me.name} gains 4 Aura.`)},{exile:true}));
 def("Smoke Bomb",item(1,[AHERO],c=>buff(c.t[0],{stealth:1}),{exile:true}));
 def("Vial of Venom",item(1,[ANY],c=>st(c,c.t[0],"poison",2),{exile:true}));
@@ -266,7 +269,7 @@ def("Phoenix Down",item(3,[t("deadAny","dead Hero")],c=>{const h=c.t[0];if(!h)re
 def("Platinum Bar",item(2,[],c=>draw(c,1)));
 def("Gold Bar",item(3,[],c=>{c.me.pm.def=(c.me.pm.def||0)+1;log(c,"Your party gains +1 DEF this turn.")}));
 def("Silver Bar",item(3,[],c=>{c.me.pm.str=(c.me.pm.str||0)+1;log(c,"Your party gains +1 STR this turn.")}));
-def("Dynamite",item(3,[ANY,t("any","second target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
+def("Dynamite",item(3,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Sleeping Potion",item(2,[HERO],c=>{if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}},{exile:true,ex:true}));
 def("Amnesia Puzzle Box",item(0,[t("player","target player")],c=>{const p=c.s.p[c.t[0].pid];p.lib.push(...p.disc.splice(0));E.shuffle(c.s,p.lib);log(c,`${p.name} shuffles their discard pile into their library.`)},{exile:true}));
 def("Energy Stone",item(0,[],c=>{summons(c.me).filter(o=>!o.ex).slice(0,3).forEach(o=>o.ex=true);c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=3}));
@@ -294,13 +297,12 @@ hid("Fade the Fury","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);const
 hid("Cancel","card",null,c=>{c.mods.cancel=true});
 hid("Narrow Escape","card",(s,pid,trig)=>trig.card&&trig.cost>=3&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"&&E.heroIs(f.o,"Rogue")}),c=>{c.mods.cancel=true});
 hid("Camouflage","card",(s,pid,trig)=>/Spell|Tactic/.test(trig.type||"")&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"}),c=>{const hs=(c.trig.targets||[]).map(u=>E.find(c.s,u)).filter(f=>f&&f.pid===c.pid&&f.o.kind==="hero");c.mods.prevent=(c.mods.prevent||[]).concat(hs.map(f=>f.o.uid));hs.forEach(f=>E.addMod(f.o,{untarget:1}))});
-hid("Miscalculation","card",()=>false,c=>{});
+hid("Timely Heals",["party10","attack","card"],(s,pid)=>(s.p[pid].t.took||0)>=10,c=>{living(c.me).forEach(h=>E.heal(c.s,c.actor,h,4,c.pid))});
 /* Hidden cards still go to inventory via Hidden play; scripts above make them automatic. */
 
 /* ===== Hero abilities ===== */
 const hab=(name,arr)=>{H[name]=arr};
 hab("Arcane Scholar",[{label:"Next Mage card costs 2 less",run:c=>{c.me.fl.mageNext=true}},{label:"Mage cards cost 1 less this turn",lvl:3,run:c=>{c.me.fl.mageAll=true}}]);
-hab("Beast Tracker",[{label:"Next Trap costs 2 less",run:c=>{c.me.fl.trapNext=true}},{label:"Traps cost 1 less this turn",lvl:3,run:c=>{c.me.fl.trapAll=true}}]);
 hab("Arnett Lifebinder",[{label:"Heal any target 3",t:[ANY],run:c=>heal(c,c.t[0],3)},{label:"Heal any target 5",lvl:3,cost:2,t:[ANY],run:c=>heal(c,c.t[0],5)}]);
 hab("Battle Minstrel",[{label:"Return a Song from discard to hand",can:(s,pid)=>s.p[pid].disc.some(x=>E.DB[x.id].type==="Song"),run:c=>E.pushChoose(c.s,c.pid,{title:"Return a Song to hand",cards:c.me.disc.filter(x=>E.DB[x.id].type==="Song").map(x=>x.uid),min:1,max:1,op:"fromDisc"})}]);
 hab("Dark Channeler",[{label:"Lose 4 HP: gain 3 Aura",can:(s,pid,a)=>a.lvl<3,run:c=>{E.loseHp(c.s,c.actor,4,"Dark Channeler");c.me.aura+=3;log(c,`${c.me.name} gains 3 Aura.`)}},{label:"Lose 2 HP: gain 3 Aura",lvl:3,run:c=>{E.loseHp(c.s,c.actor,2,"Dark Channeler");c.me.aura+=3;log(c,`${c.me.name} gains 3 Aura.`)}}]);
@@ -314,6 +316,7 @@ hab("Storm Caller",[{label:"Deal 2 damage to all enemies",cost:2,can:(s,pid,a)=>
 hab("Warden of the Woods",[{label:"Summon a 2/2 Spirit",cost:1,run:c=>summon(c,"Spirit")},{label:"Exhaust a summon: +2 STR",ex:false,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&!o.ex),t:[t("allySummon","ready summon",(s,o)=>!o.ex)],run:c=>{if(c.t[0])c.t[0].ex=true;buff(c.actor,{str:2})}}]);
 
 /* ===== choose ops ===== */
+OPS.bottom=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){const c=pl.lib.splice(i,1)[0];pl.lib.unshift(c);E.log(s,`${pl.name} puts the card on the bottom of their library.`,pid)}})};
 OPS.discard=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.hand.findIndex(c=>c.uid===u);if(i>=0){const c=pl.hand.splice(i,1)[0];pl.disc.push(c);E.log(s,`${pl.name} discards ${E.DB[c.id].name}.`,pid)}})};
 OPS.opDiscard=(s,pid,pr,picks)=>{const pl=s.p[pr.target];picks.forEach(u=>{const i=pl.hand.findIndex(c=>c.uid===u);if(i>=0){const c=pl.hand.splice(i,1)[0];pl.disc.push(c);E.log(s,`${pl.name} discards ${E.DB[c.id].name}.`,pid)}})};
 OPS.tutor=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){const c=pl.lib.splice(i,1)[0];pl.hand.push(c);E.log(s,`${pl.name} searches for ${E.DB[c.id].name}.`,pid)}});E.shuffle(s,pl.lib)};

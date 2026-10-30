@@ -18,6 +18,7 @@ const CLASSES=["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Rang
 const STATUS=["burn","poison","wound","confuse","stun"];E.STATUS=STATUS;
 E.STATUS_NAME={burn:"Burned",poison:"Poisoned",wound:"Wounded",confuse:"Confused",stun:"Stunned"};
 const POS=["Lead","Center","Closer"];E.POS=POS;
+E.INN_HEAL=3;E.INN_COST=5;E.SHOP_COST=4;
 const SOULS=["Draw a card","Gain 2 Aura","Ally +2 STR this turn","Deal 2 damage","Gain 3 Gold","Ally +2 DEF this turn"];E.SOULS=SOULS;
 const SC=()=>root.CQ_SCRIPTS||{};
 const HS=()=>root.CQ_HERO_SCRIPTS||{};
@@ -142,7 +143,7 @@ E.guardEq=guardEq;E.hasEq=hasEqN;E.living=living;E.invHas=invHas;E.invCount=invC
 function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
   for(let i=0;i<n;i++){if(!pl.lib.length){if(!pl.disc.length)break;pl.lib=shuffle(s,pl.disc.splice(0));log(s,`${pl.name} shuffles the discard pile into a new library.`,pid)}
     pl.hand.push(pl.lib.pop());got++;
-    if(s.phase==="battle"&&invHas(pl,"Healing Relic")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,null,t,1,pid)}}
+    if(s.phase==="battle"&&invHas(pl,"Healing Relic")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,{name:"Healing Relic",ctrl:pid},t,1,pid)}}
   if(!quiet&&got)log(s,`${pl.name} draws ${got} card${got===1?"":"s"}.`,pid);return got}
 E.draw=draw;
 function addStatus(s,o,k,n){if(!o||o.dead||!o.st)return;o.st[k]=(o.st[k]||0)+(n||1);log(s,`${o.name} is ${E.STATUS_NAME[k]}${n>1?` (+${n})`:""}.`)}
@@ -155,16 +156,26 @@ function pay(s,pid,actor,amt){const pl=P(s,pid);pl.aura-=amt;if(amt<=0||!actor||
 E.pay=pay;
 function loseHp(s,o,n,why){if(!o||o.dead||n<=0)return;o.dmg=(o.dmg||0)+n;log(s,`${o.name} loses ${n} HP${why?` (${why})`:""}.`);checkDeaths(s)}
 E.loseHp=loseHp;
+/* heal: pid = player whose source makes the heal (null for the Inn). An inverted heal is not a heal. */
 function heal(s,healer,o,n,pid){
   if(!o||o.dead||n<=0)return 0;if(o.kind!=="hero"&&o.kind!=="summon")return 0;
   if(healer&&healer.kind==="hero"&&hasEqN(healer,"Sacred Vestments"))n+=1;
-  const oc=ctrl(s,o);const op=P(s,opp(oc));
-  if(invHas(op,"Inversion Stone")){loseHp(s,o,n,"Inversion Stone");return 0}
+  const src=pid!=null?pid:(healer&&healer.kind==="hero"?healer.owner:(healer&&healer.ctrl!=null?healer.ctrl:null));
+  const oc=ctrl(s,o);
+  if(src!=null&&oc!==src&&invHas(P(s,src),"Inversion Stone")){log(s,`Inversion Stone turns the heal on ${o.name} into ${n} Light damage.`);damage(s,{name:"Inversion Stone"},o,n,{card:true,type:"Light",noTrig:true});return 0}
   const h=Math.min(n,o.dmg||0);o.dmg-=h;if(h>0)log(s,`${o.name} heals ${h} HP.`);
-  if(healer&&healer.kind==="hero"&&!healer.dead){
-    if(healer.name==="Radiant Oracle"&&h>=3)draw(s,healer.owner,1);
-    if(healer.name==="Lightbringer"&&healer.lvl>=3&&h>0){const t=autoTarget(s,healer.owner,"enemy");if(t)damage(s,healer,t,h,{type:"Light",card:true})}}
+  if(h>0&&healer&&healer.kind==="hero"&&!healer.dead&&healer.name==="Radiant Oracle"&&h>=3)draw(s,healer.owner,1);
+  /* Lightbringer L3: whenever you heal (any heal your side makes, not the Inn), deal that much Light damage */
+  if(h>0&&src!=null&&!s._lb){const lb=living(P(s,src)).find(x=>x.name==="Lightbringer"&&x.lvl>=3);
+    if(lb){const t=bestDamageTarget(s,src,h,{type:"Light"});if(t){s._lb=true;try{damage(s,lb,t,h,{type:"Light",card:true,noTrig:true})}finally{s._lb=false}}else log(s,"Lightbringer: no enemy it can hurt.",src)}}
   return h}
+/* picks the enemy the damage hurts most (skips targets Guard/DEF would block, Stealth, Cloak); prefers kills */
+function bestDamageTarget(s,pid,n,o){o=o||{};const op=P(s,opp(pid));let best=null,bv=0;
+  [...living(op),...op.bf.filter(x=>x.kind==="summon")].forEach(t=>{if(stealth(s,t)||cardProof(s,t))return;
+    const g=t.kind==="hero"?t.guard+t.eqGuard:0;const eff=Math.max(0,n-g-(o.ignoreDef?0:Math.max(0,defOf(s,t)-(o.pierce||0))));const hp=hpOf(s,t);
+    const v=eff<=0?0:Math.min(eff,hp)+(eff>=hp?50:0)+(t.kind==="hero"?5:0)-hp*0.01;if(v>bv){bv=v;best=t}});
+  return best}
+E.bestDamageTarget=bestDamageTarget;
 E.heal=heal;
 /* damage: o={combat,spell,pierce,ignoreDef,card,actor,type,noTrig} returns damage dealt */
 function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
@@ -179,7 +190,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   tgt.dmg=(tgt.dmg||0)+dealt;
   const tn=tgt.name+(tgt.kind==="summon"?" (summon)":"");
   log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before Guard/DEF)`:""}.`);
-  if(dealt>0&&tgt.kind==="hero"){const tp=P(s,tgt.owner);tp.t.took=(tp.t.took||0)+dealt;if(tgt.fl.loseCtrlRound===s.round){if(hpOf(s,tgt)<1)tgt.dmg=maxHp(s,tgt)-1;tgt.ex=false}}
+  if(dealt>0&&tgt.kind==="hero"){const tp=P(s,tgt.owner);const before=tp.t.took||0;tp.t.took=before+dealt;if(before<10&&tp.t.took>=10&&s.phase==="battle"){s.trig10=(s.trig10||[]).concat([tgt.owner])}if(tgt.fl.loseCtrlRound===s.round){if(hpOf(s,tgt)<1)tgt.dmg=maxHp(s,tgt)-1;tgt.ex=false}}
   if(src&&!o.noTrig){
     if(dealt>0&&lifelink(s,src))heal(s,src,src,dealt);
     const pz=poisonous(s,src);if(pz&&(tgt.st&&!tgt.st.poison))addStatus(s,tgt,"poison",pz);
@@ -363,8 +374,9 @@ E.options=function(s,pid){
     pl.heroes.forEach(h=>{if(h.med&&!h.dead)out.push({type:"wake",hero:h.uid,v:!h.keepMed})});
     out.push({type:"dawnDone"});return out}
   if(s.phase==="town"){if(!s.town||s.town.order[s.town.i]!==pid)return[];const pl=P(s,pid);const out=[];
-    if(pl.gold>=5)living(pl).forEach(h=>{if(h.dmg>0)out.push({type:"inn",hero:h.uid})});
-    if(pl.gold>=4)out.push({type:"shop"});out.push({type:"leave"});return out}
+    const used=s.town.used||{};
+    if(pl.gold>=5&&!used.inn)living(pl).forEach(h=>{if(h.dmg>0)out.push({type:"inn",hero:h.uid})});
+    if(pl.gold>=4&&!used.shop)out.push({type:"shop"});out.push({type:"leave"});return out}
   if(s.phase!=="battle"||s.prio!==pid)return[];
   return battleOptions(s,pid)};
 function battleOptions(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,pid);
@@ -407,11 +419,12 @@ function findCardAnywhere(s,pid,uid){const pl=P(s,pid);return pl.hand.find(c=>c.
 
 /* ---------- hidden cards ---------- */
 function hiddenScript(o){const sc=SC()[def(o).name];return sc&&sc.hidden}
-function hiddenCost(s,pid,o){const m=/^(\d+)\{A\}/.exec(def(o).rules||"");return m?+m[1]:0}
+function hiddenCost(s,pid,o){const m=/^(\d+)\{A\}/.exec(def(o).rules||"");let c=m?+m[1]:0;if(def(o).sub==="Trap"&&living(P(s,pid)).some(h=>h.name==="Beast Tracker"&&h.lvl>=3))c-=1;return Math.max(0,c)}
+E.hiddenCost=hiddenCost;
 function revealHero(s,pid,o){const d=def(o);return living(P(s,pid)).find(h=>!h.ex&&(d.cls==="Generic"||heroIs(h,d.cls)))}
 function canReveal(s,pid,o,pr){if(pr.noHidden)return false;const d=def(o);if(d.sup!=="Hidden")return false;
   if(!revealHero(s,pid,o))return false;if(hiddenCost(s,pid,o)>P(s,pid).aura)return false;
-  const h=hiddenScript(o);if(!h)return true;return h.when===pr.trig.kind&&(!h.ok||h.ok(s,pid,pr.trig))}
+  const h=hiddenScript(o);if(!h)return true;return[].concat(h.when).includes(pr.trig.kind)&&(!h.ok||h.ok(s,pid,pr.trig))}
 E.canReveal=canReveal;
 function windowFor(s,pid,trig){if(trig.noHidden)return false;const pl=P(s,pid);return pl.inv.some(o=>o.fd&&canReveal(s,pid,o,{trig}))}
 
@@ -462,9 +475,9 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"gem":{const o=find(s,a.uid).o;const h=heroByUid(s,a.hero);h.ex=true;pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,`${pl.name} exiles ${o.name}, exhausting ${h.name}.`,pid);SC()[o.name].gem(mkCtx(s,pid,h,DB[o.id],o,[]));return}
   case"wake":{const h=heroByUid(s,a.hero);if(h)h.keepMed=!a.v;return}
   case"dawnDone":s.dawnDone[pid]=true;if(s.dawnDone.every(Boolean))startBattle(s);return;
-  case"inn":{const h=heroByUid(s,a.hero);pl.gold-=5;log(s,`${pl.name} stays at the Inn (5 Gold).`,pid);heal(s,null,h,5);return}
-  case"shop":pl.gold-=4;log(s,`${pl.name} visits the Shop (4 Gold).`,pid);draw(s,pid,1);return;
-  case"leave":log(s,`${pl.name} leaves Town.`,pid);s.town.i++;if(s.town.i>=s.town.order.length){s.town=null;startRound(s)}return;
+  case"inn":{const h=heroByUid(s,a.hero);pl.gold-=5;s.town.used=Object.assign({},s.town.used,{inn:true});log(s,`${pl.name} stays at the Inn (5 Gold).`,pid);heal(s,null,h,E.INN_HEAL);return}
+  case"shop":pl.gold-=4;s.town.used=Object.assign({},s.town.used,{shop:true});log(s,`${pl.name} visits the Shop (4 Gold).`,pid);draw(s,pid,1);return;
+  case"leave":log(s,`${pl.name} leaves Town.`,pid);s.town.i++;s.town.used={};if(s.town.i>=s.town.order.length){s.town=null;startRound(s)}return;
   case"pass":log(s,`${pl.name} passes.`,pid);s.passed[pid]=true;s.bonus=null;advance(s,pid);return;
   case"decline":{const pr=s.pend.shift();if(pr.type==="window")closeWindow(s,pr);else if(pr.type==="combo")log(s,"Combo: no card played.",pid);return}
   case"reveal":{const pr=s.pend[0];const o=find(s,a.uid).o;doReveal(s,pid,o,pr);return}
@@ -545,6 +558,7 @@ function closeWindow(s,pr){resolveCont(s,pr.trig.pid,pr.cont,pr.mods||{})}
 function doReveal(s,pid,o,pr){const pl=P(s,pid);const d=def(o);const h=revealHero(s,pid,o);const cost=hiddenCost(s,pid,o);
   h.ex=true;pay(s,pid,h,cost);o.fd=false;pl.inv.splice(pl.inv.indexOf(o),1);
   log(s,`${pl.name} reveals ${d.name}${cost?` (${cost} Aura)`:""}, exhausting ${h.name}.`,pid);
+  trapGold(s,pid,d);
   const hs=hiddenScript(o);
   if(hs){const ctx=mkCtx(s,pid,h,d,o,[],{trig:pr.trig,mods:pr.mods});hs.run(ctx);
     const keep=hs.keep?hs.keep(ctx):false;if(keep)pl.inv.push(o);else if(d.type==="Item"||d.sup==="Hidden")toDisc(s,o);
@@ -552,8 +566,10 @@ function doReveal(s,pid,o,pr){const pl=P(s,pid);const d=def(o);const h=revealHer
     if(pr.mods.cancel){s.pend.shift();log(s,"The action is canceled.");afterCancel(s,pr);return}
   }else{toDisc(s,o);s.pend.splice(1,0,{type:"manual",pid,title:d.name,text:d.rules,hidden:true})}
 }
+function trapGold(s,pid,d){if(d.sub!=="Trap")return;const n=living(P(s,pid)).filter(h=>h.name==="Beast Tracker").length;if(n){P(s,pid).gold+=n;log(s,`Beast Tracker: ${P(s,pid).name} gains ${n} Gold.`,pid)}}
 function afterCancel(s,pr){const c=pr.cont;if(c.k==="card"){const pl=P(s,pr.trig.pid);pl.disc.push(c.card)}}
 function resolveCont(s,pid,cont,mods){
+  if(cont.k==="none")return;
   if(cont.k==="attack"){resolveAttack(s,pid,cont,mods);return}
   const actor=cont.actor?heroByUid(s,cont.actor):null;
   if(cont.k==="ability"){const ab=HS()[actor.name][cont.idx];ab.run(mkCtx(s,pid,actor,DB[actor.id],null,cont.targets,{mods}));checkDeaths(s);return}
@@ -574,7 +590,7 @@ function resolveCont(s,pid,cont,mods){
     else pl.disc.push(cont.card)}
   /* triggers on card played */
   if(d.type==="Spell"){living(pl).forEach(h=>{if(h.name==="Diviner Mage")pushScry(s,pid,1)})}
-  if(d.type==="Song"){if(invHas(pl,"The Forbidden Tuner")){const t=autoTarget(s,pid,"enemy");if(t)damage(s,{name:"The Forbidden Tuner"},t,1,{pierce:1,card:true})}
+  if(d.type==="Song"){if(invHas(pl,"The Forbidden Tuner")){const t=bestDamageTarget(s,pid,1,{pierce:1});if(t)damage(s,{name:"The Forbidden Tuner"},t,1,{pierce:1,card:true})}
     if(actor&&hasEqN(actor,"War Lute")){const t=autoTarget(s,pid,"strAlly");if(t)addMod(t,{str:1})}
     if(actor&&hasEqN(actor,"Celestial Harp")&&pl.t.songs===2)living(pl).forEach(h=>heal(s,actor,h,1))}
   if(E.hasCombo(d))comboTrigger(s,pid,actor);
@@ -655,7 +671,7 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
   switch(a.op){
   case"dmg":if(t){log(s,`${who} (by hand):`,pid);damage(s,{name:"Manual effect"},t,n,{card:true,noTrig:true})}break;
   case"lose":if(t)loseHp(s,t,n,"by hand");break;
-  case"heal":if(t){log(s,`${who} heals ${t.name} by hand.`,pid);heal(s,null,t,n)}break;
+  case"heal":if(t){log(s,`${who} heals ${t.name} by hand.`,pid);heal(s,null,t,n,pid)}break;
   case"status":if(t&&a.k&&STATUS.includes(a.k)){if(a.neg){t.st[a.k]=Math.max(0,t.st[a.k]-1);log(s,`${who} removes a ${E.STATUS_NAME[a.k]} counter from ${t.name}.`,pid)}else{log(s,`${who}:`,pid);addStatus(s,t,a.k,1)}}break;
   case"str":case"def":if(t&&t.mods){addMod(t,{[a.op]:a.neg?-n:n});log(s,`${who}: ${t.name} ${a.neg?"-":"+"}${n} ${a.op.toUpperCase()} this turn.`,pid)}break;
   case"guard":if(t&&t.kind==="hero"){t.guard+=n;log(s,`${who}: ${t.name} gains Guard ${n}.`,pid)}break;
@@ -674,6 +690,12 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
   case"revive":if(t&&t.kind==="hero"&&t.dead&&!t.surr&&t.owner===pid){t.dead=false;t.dmg=Math.max(0,maxHp(s,t)-Math.max(1,n));t.ex=true;log(s,`${who} revives ${t.name} with ${maxHp(s,t)-t.dmg} HP.`,pid)}break;
   case"unequip":if(t&&t.kind==="equip")unequip(s,t);break;
   case"move":if(t&&t.kind==="hero"){const op=P(s,t.owner);const i=op.heroes.indexOf(t);const j=Math.max(0,Math.min(2,a.n|0));op.heroes.splice(i,1);op.heroes.splice(j,0,t);log(s,`${who}: ${t.name} moves to ${POS[j]}.`,pid)}break;
+  case"reveal":{let o=pl.inv.find(x=>x.uid===a.card&&x.fd),from="inv";if(!o){o=pl.hand.find(x=>x.uid===a.card&&DB[x.id]&&DB[x.id].sup==="Hidden");from="hand"}
+    if(!o)break;const d=DB[o.id];const cost=hiddenCost(s,pid,o);const hh=revealHero(s,pid,o);
+    if(cost>pl.aura){log(s,`${who}: not enough Aura to reveal ${d.name} (costs ${cost}).`,pid);break}
+    pay(s,pid,hh,cost);if(hh)hh.ex=true;(from==="inv"?pl.inv:pl.hand).splice((from==="inv"?pl.inv:pl.hand).indexOf(o),1);pl.disc.push({uid:o.uid,id:o.id,owner:o.owner});
+    log(s,`${who} reveals ${d.name} from ${from==="inv"?"inventory":"hand"}${cost?` (${cost} Aura)`:""}${hh?`, exhausting ${hh.name}`:""}: ${d.rules.replace(/\{A\}/g," Aura").replace(/\{L(\d)\}/g,"[Level $1]")}`,pid);
+    trapGold(s,pid,d);const pr=s.pend[0];if(pr&&pr.type==="manual")pr.revealed=(pr.revealed||[]).concat([{name:d.name,text:d.rules}]);break}
   case"cancelAction":log(s,`${who} cancels the action.`,pid);break;
   }
   checkDeaths(s)}
@@ -691,6 +713,7 @@ E.autoTarget=autoTarget;
 function settle(s){let guard=0;
   while(!s.over&&guard++<200){
     if(s.pend.length){/* AI-free auto answers handled by controller */return}
+    if(s.trig10&&s.trig10.length){const v=s.trig10.shift();const trig={kind:"party10",pid:opp(v)};if(windowFor(s,v,trig)){s.pend.unshift({type:"window",pid:v,trig,cont:{k:"none"},mods:{}});log(s,`${P(s,v).name}'s party has taken 10 damage this turn and may respond with a Hidden card…`)}continue}
     if(s.qatk){const q=s.qatk;s.qatk=null;const f=find(s,q.att);const t=resolveTarget(s,q.tgt);if(f&&t&&!t.dead&&!f.o.dead){startAttack(s,q.pid,q.att,q.tgt,q.o||{});continue}}
     if(s.cur){const pid=s.cur.pid;s.cur=null;if(s.phase==="battle"){
         if(s.bonus&&s.bonus.pid===pid){s.bonus.n--;if(s.bonus.n<=0||!actorFor(s,pid))s.bonus=null;if(s.bonus){s.prio=pid;continue}}
@@ -729,11 +752,11 @@ function doDawn(s){
   /* At Dawn effects (active player first) */
   [s.init,opp(s.init)].forEach(pid=>{const pl=P(s,pid);
     if(invHas(pl,"Aura Crystal")){pl.aura+=invCount(pl,"Aura Crystal");log(s,`Aura Crystal: ${pl.name} gains 1 Aura.`,pid)}
-    pl.inv.filter(o=>o.name==="Campfire"&&!o.fd).forEach(o=>{o.ctr=o.ctr||{};if(o.ctr.camp==null)o.ctr.camp=3;o.ctr.camp--;log(s,"Campfire burns down (heals the party 1 HP).",pid);living(pl).forEach(h=>heal(s,null,h,1));if(o.ctr.camp<=0){pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,"Campfire is exiled.",pid)}});
+    pl.inv.filter(o=>o.name==="Campfire"&&!o.fd).forEach(o=>{o.ctr=o.ctr||{};if(o.ctr.camp==null)o.ctr.camp=3;o.ctr.camp--;log(s,"Campfire burns down (heals the party 1 HP).",pid);living(pl).forEach(h=>heal(s,null,h,1,pid));if(o.ctr.camp<=0){pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,"Campfire is exiled.",pid)}});
     if(invHas(pl,"Brute's Banner")){const b=living(pl).filter(h=>h.cls==="Barbarian").sort((a,b)=>strOf(s,b)-strOf(s,a))[0];if(b){b.fl.bannerRound=s.round;log(s,`Brute's Banner: ${b.name} +2 STR this turn.`,pid)}}
     living(pl).forEach(h=>{if(h.name==="Lightbringer")living(pl).forEach(o=>{if(o!==h)heal(s,h,o,1)});
       if(hasEqN(h,"Chalice of Life"))living(pl).forEach(o=>heal(s,h,o,1));
-      h.ench.forEach(e=>{if(e.name==="Sanctuary")heal(s,null,h,1)})});
+      h.ench.forEach(e=>{if(e.name==="Sanctuary")heal(s,null,h,1,e.owner)})});
     /* Echo */
     const ech=pl.echo.splice(0);ech.forEach(e=>{const d=DB[e.card.id];const actor=living(pl).find(h=>heroIs(h,d.cls)||d.cls==="Generic");
       if(!actor){pl.disc.push(e.card);return}
@@ -770,7 +793,7 @@ function doDusk(s){s.phase="dusk";log(s,`— Dusk —`);
     const g=living(pl).length;pl.gold+=g;log(s,`${pl.name} collects ${g} Gold (now ${pl.gold}).`,pid);
     pl.heroes.forEach(h=>{if(h.fl.h2h&&!h.dead){(h.fl.h2h||[]).forEach(e=>{const idx=pl.inv.findIndex(o=>o.uid===e);if(idx>=0){const o=pl.inv.splice(idx,1)[0];equipTo(s,h,o)}})}h.fl.h2h=null});
   });
-  s.pillage=null;
+  s.pillage=null;s.trig10=null;
   s.init=nextInit;log(s,`Initiative passes to ${s.p[s.init].name}.`);
   s.phase="town";s.town={order:[s.init,opp(s.init)],i:0};log(s,`— Town —`)}
 

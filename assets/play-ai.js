@@ -2,15 +2,18 @@
 "use strict";
 (function(root){
 const E=root.CQE;const AI={};root.CQAI=AI;
-const W={alive:22,hp:1,str:1.6,def:1.2,aura:2.4,lvl:1.4,guard:.6,sum:4,sumStr:1.2,sumHp:.5,pillar:3,inv:1.2,hand:.7,gold:.3,aura0:0,status:1.1,stun:2};
+const W={alive:22,hp:1,str:1.6,def:1.2,aura:2.4,lvl:1.4,guard:.6,sum:4,sumStr:1.2,sumHp:.5,pillar:3,inv:1.2,hand:.4,gold:.12,aura0:0,tmpStr:.8,status:1.1,stun:2};
 AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e4;
   let sc=0;s.p.forEach((pl,p)=>{let v=0;
     pl.heroes.forEach(h=>{if(h.dead){v+=h.surr?0:1;return}const st=E.heroStats(s,h);
-      v+=W.alive+W.hp*st.hp+W.str*Math.min(st.str,12)+W.def*Math.min(st.def,8)+W.aura*st.aura+W.lvl*h.lvl+W.guard*(h.guard+h.eqGuard)+h.plus*.5;
+      /* temporary STR only matters while the Hero can still attack this turn */
+      const tmp=(h.mods||[]).reduce((n,m)=>n+(m.until==="dusk"&&m.str>0?m.str:0),0)+(pl.pm.str||0);
+      const tv=s.phase==="battle"&&!h.ex?W.tmpStr*tmp:0;
+      v+=W.alive+W.hp*st.hp+W.str*Math.min(Math.max(0,st.str-tmp),12)+tv+W.def*Math.min(st.def,8)+W.aura*st.aura+W.lvl*h.lvl+W.guard*(h.guard+h.eqGuard)+h.plus*.5;
       v-=W.status*(h.st.burn+h.st.poison+h.st.wound+h.st.confuse)+W.stun*h.st.stun;
       v+=E.eqList(h).length*.6+h.ench.reduce((n,e)=>n+(e.owner===p?1:-1.5),0)});
     pl.bf.forEach(o=>{if(o.kind==="summon")v+=W.sum+W.sumStr*E.str(s,o)+W.sumHp*E.hp(s,o);else v+=W.pillar});
-    v+=W.inv*pl.inv.length+W.hand*Math.min(pl.hand.length,8)+W.gold*Math.min(pl.gold,12)+W.aura0*pl.aura;
+    v+=pl.inv.reduce((n,o)=>n+(o.kind==="card"&&!o.fd&&(E.DB[o.id]||{}).sub==="Arrow"?(pl.heroes.some(h=>!h.dead&&h.cls==="Ranger")?1.1:.2):o.fd?1.4:W.inv),0)+W.hand*Math.min(pl.hand.length,8)+W.gold*Math.min(pl.gold,12)+W.aura0*pl.aura;
     sc+=p===pid?v:-1.15*v});
   return sc};
 /* answer prompts in simulations without search */
@@ -47,6 +50,11 @@ AI.expand=function(s,pid,o,cap){cap=cap||24;let bases=[o];
       tl=next.slice(0,cap)}
     tl.forEach(tg=>out.push(Object.assign({},b,{targets:tg})))}
   return out.slice(0,cap*2)};
+function castable(s,pid,h){const pl=s.p[pid];let aura=pl.aura,sum=0;
+  pl.hand.map(c=>E.DB[c.id]).filter(d=>d&&(d.cls==="Generic"||E.heroIs(h,d.cls))&&E.isScripted(d.name)&&d.sup!=="Hidden").map(d=>parseInt(d.cost,10)||0).sort((a,b)=>a-b).forEach(c=>{if(c<=aura&&c>0){aura-=c;sum+=c}});return sum}
+function laterUse(s,pid){const pl=s.p[pid];const a=E.actorFor(s,pid);
+  const others=pl.heroes.filter(h=>!h.dead&&!h.ex&&h!==a);if(!others.length)return false;
+  return pl.hand.some(c=>{const d=E.DB[c.id];if(!d)return false;const cost=parseInt(d.cost,10)||0;return cost<=pl.aura&&others.some(h=>d.cls==="Generic"||E.heroIs(h,d.cls))})||pl.inv.some(o=>!o.fd&&(E.DB[o.id]||{}).sub==="Arrow"&&others.some(h=>h.cls==="Ranger"))}
 AI.choose=function(s,pid){if(s.over)return null;
   if(s.pend.length){const pr=s.pend[0];if(pr.pid!==pid)return null;
     if(pr.type==="window"||pr.type==="combo"){const opts=E.options(s,pid);let best={type:"decline"},bv=-1e9;
@@ -62,14 +70,16 @@ AI.choose=function(s,pid){if(s.over)return null;
   if(s.phase==="dawn"){if(s.dawnDone[pid])return null;const base=AI.evaluate(s,pid);let best={type:"dawnDone"},bv=base+1.5;
     E.options(s,pid).filter(o=>o.type==="gem").forEach(o=>{const c=E.clone(s);E.act(c,pid,o);const v=AI.evaluate(c,pid);if(v>bv){bv=v;best=o}});return best}
   if(s.phase==="town"){const opts=E.options(s,pid);if(!opts.length)return null;
-    const inn=opts.filter(o=>o.type==="inn").map(o=>({o,h:E.find(s,o.hero).o})).sort((a,b)=>b.h.dmg-a.h.dmg)[0];
-    if(inn&&inn.h.dmg>=4)return inn.o;
-    if(inn&&inn.h.dmg>=3&&pl.gold>=9)return inn.o;
-    if(opts.some(o=>o.type==="shop")&&pl.hand.length<8&&(!inn||pl.gold>=9))return{type:"shop"};
-    return{type:"leave"}}
+    /* simulate each Town choice and keep the best real improvement */
+    const base=AI.evaluate(s,pid);let best={type:"leave"},bv=base+0.3;
+    for(const o of opts){if(o.type==="leave")continue;const c=E.clone(s);const r=E.act(c,pid,o);if(!r.ok)continue;settleSim(c,pid);
+      let v=AI.evaluate(c,pid);if(o.type==="inn"){const h0=E.find(s,o.hero).o,h1=E.find(c,o.hero).o;const gain=(h0.dmg||0)-(h1.dmg||0);if(gain<=0||h1.dead)continue}
+      if(v>bv){bv=v;best=o}}
+    return best}
   if(s.phase!=="battle"||s.prio!==pid)return null;
   const opts=E.options(s,pid).filter(o=>!["clear","manualAbility","fix"].includes(o.type));
-  const base=AI.evaluate(s,pid);let best={type:"pass"},bv=base+0.4;
+  const actor0=E.actorFor(s,pid);
+  const base=AI.evaluate(s,pid);let best={type:"pass"},bv=base+0.4;let alt=null,av=-1e9;
   pl.t.aiActs=(pl.t.aiActs||0);
   if(pl.t.aiActs>30)return{type:"pass"};
   for(const o of opts){if(o.type==="pass")continue;
@@ -79,10 +89,15 @@ AI.choose=function(s,pid){if(s.over)return null;
     for(const a of acts){const c=E.clone(s);const r=E.act(c,pid,a);if(!r.ok)continue;settleSim(c,pid);
       let v=AI.evaluate(c,pid);
       if(a.type==="soul")v-=6;
+      /* exhausting the acting Hero while it could still spend Aura on cards wastes that Aura */
+      if(actor0&&!actor0.ex){const a1=E.find(c,actor0.uid);if(a1&&a1.o.ex&&!a1.o.dead)v-=0.7*castable(c,pid,a1.o)}
       if(a.type==="step")v-=1;
-      if(a.type==="play"){const d=E.DB[(pl.hand.find(x=>x.uid===a.uid)||{}).id]||{};if(d.sup==="Hidden")v+=1.2;if(d.type==="Item")v+=1}
+      if(a.type==="play"){const d=E.DB[(pl.hand.find(x=>x.uid===a.uid)||{}).id]||{};if(d.sup==="Hidden")v+=.6;if(d.type==="Item"&&d.sub!=="Arrow")v+=.6}
       v+=E.rnd({rng:(s.seq*7919+v*1000)|0})*0.3;
-      if(v>bv){bv=v;best=a}}}
+      if(v>bv){bv=v;best=a}
+      if(a.type!=="soul"&&a.type!=="step"&&v>av){av=v;alt=a}}}
+  /* passing ends your round: if another ready Hero could still use Aura later, take the least-bad action instead */
+  if(best.type==="pass"&&alt&&av>=base-1.5&&laterUse(s,pid))best=alt;
   if(best.type!=="pass")pl.t.aiActs++;
   return best};
 })(typeof window!=="undefined"?window:globalThis);

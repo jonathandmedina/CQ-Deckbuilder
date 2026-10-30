@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-28 (update 2).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-30 (update 3: playtest fixes).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules]
    Heroes: [name, class, STR, DEF, Aura, HP, rules]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF]
@@ -7,7 +7,7 @@
    {A} = Aura icon, {L3}/{L6} = Level 3 / Level 6 frame */
 const RAW_CARDS=[
 [2, "Acceleration Agent", "6", "", "Tactic", "", "Rogue", "Triple the Poison counters on any target."],
-[2, "All Play", "3", "", "Tactic", "", "Cleric", "Heal each Hero for 2 HP, then heal friendly Heroes for 2 HP.\n{L3} Heal an additional 3 HP each time."],
+[2, "All Play", "3", "", "Tactic", "", "Cleric", "Heal each Hero for 2 HP, then heal friendly Heroes for 2 HP.\n{L3} Heal friendly Heroes for 5 HP instead of 2."],
 [2, "Almandine", "3", "", "Item", "Gemstone", "Generic", "At Dawn, you may exile this and exhaust a Hero to deal 2 damage to all enemies."],
 [2, "Amnesia Puzzle Box", "2", "", "Item", "", "Generic", "Exile: Shuffle target player's discard pile into their library."],
 [2, "Antidote", "0", "", "Item", "", "Generic", "2{A}, Exile: Remove up to 3 status counters."],
@@ -138,7 +138,7 @@ const RAW_CARDS=[
 [2, "Ice Ray", "1", "", "Spell", "", "Mage", "Stun any target. If it is already Stunned, you may add another Stun counter."],
 [2, "Inspiration", "3", "", "Spell", "", "Generic", "Draw 2 cards."],
 [1, "Instrument Bag", "0", "Legendary", "Item", "", "Bard", "2{A}: Search your library for an Instrument, put it into your hand, then shuffle your library."],
-[2, "Inversion Stone", "4", "", "Item", "Relic", "Cleric", "Whenever an enemy would be healed, it loses that much HP instead."],
+[1, "Inversion Stone", "4", "Legendary", "Item", "Relic", "Cleric", "Whenever an enemy would be healed from a source you control, it takes that much Light damage instead."],
 [2, "Jab", "1", "", "Tactic", "Combo", "Monk", "Deal 2 damage. Piercing 1. Combo."],
 [2, "Larceny", "3", "", "Tactic", "", "Rogue", "Gain control of target item."],
 [2, "Level Shot", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. If this is the third Arrow you have activated this turn, the Hero activating it gains a level."],
@@ -185,7 +185,7 @@ const RAW_CARDS=[
 [2, "Pillage the Dead", "0", "Hidden", "Tactic", "", "Rogue", "2{A}: When a Hero dies, its Equipment comes to you instead of going to its owner's inventory. Equip any of it to Heroes you control that can use it, without paying its Aura cost. Put the rest in your inventory or discard it."],
 [2, "Pitfall", "0", "Hidden", "Item", "Trap", "Ranger", "4{A}: When an enemy Hero attacks, cancel that attack. Move the attacker to the Closer position. It loses 1 level."],
 [2, "Platinum Bar", "0", "", "Item", "Precious Metal", "Generic", "2{A}: Draw a card."],
-[2, "Poison Dart", "0", "", "Item", "Arrow", "Ranger", "1{A}: Poison any target. You may add another Poison counter to it."],
+[2, "Poison Dart", "0", "", "Item", "Arrow", "Ranger", "1{A}: Put 2 Poison counters on any target. Bonuses to Arrow damage add that many more Poison counters instead."],
 [2, "Pop Rocks", "6", "", "Spell", "", "Mage", "Deal 1 damage to all enemies three times. Exhaust this Hero."],
 [2, "Populate", "1", "", "Tactic", "", "Druid", "Duplicate a summon with 3 or less STR."],
 [2, "Potion", "0", "", "Item", "", "Generic", "2{A}, Exile: Heal target Hero for 4 HP."],
@@ -208,7 +208,7 @@ const RAW_CARDS=[
 [2, "Redirect", "0", "Hidden", "Spell", "", "Mage", "2{A}: Change the target of target card or ability."],
 [2, "Refire", "1", "", "Tactic", "", "Ranger", "Activate an Arrow. If it resolves, put it back into your inventory."],
 [2, "Refrain", "0", "Hidden", "Item", "Trap", "Bard", "Exhaust a Bard: Prevent all damage from target attack or Tactic."],
-[2, "Reload", "0", "", "Tactic", "", "Ranger", "Look at the top card of your library. If it's an Arrow, put it into your inventory."],
+[2, "Reload", "0", "", "Tactic", "", "Ranger", "Look at the top card of your library. If it's an Arrow, put it into your inventory. If it isn't, you may put it on the bottom of your library."],
 [2, "Resistance Shield", "3", "", "Item", "", "Warlock", "Each enemy must pay 1{A} to attack or target your Heroes."],
 [2, "Resourceful Maneuver", "1", "", "Tactic", "", "Rogue", "Equip a Dagger from your discard pile to target Rogue."],
 [2, "Resurrection", "5", "", "Tactic", "", "Cleric", "Revive target dead friendly Hero with 8 HP. It is exhausted. Exhaust this Hero."],
@@ -269,7 +269,7 @@ const RAW_CARDS=[
 [2, "Tempo Change", "2", "", "Tactic", "", "Bard", "After this resolves, take two additional actions with this Hero."],
 [2, "The Forbidden Tuner", "3", "", "Item", "Relic", "Bard", "Whenever you play a Song, deal 1 damage to any target. Piercing 1."],
 [1, "The Monolith", "8", "Legendary", "Item", "", "Warlock", "Whenever an enemy Hero spends Aura, it loses that much HP."],
-[2, "Timely Heals", "0", "Hidden", "Tactic", "", "Cleric", "3{A}: If your party took 10 or more damage this turn, heal each friendly Hero for 4 HP."],
+[2, "Timely Heals", "0", "Hidden", "Tactic", "", "Cleric", "3{A}: When your party has taken 10 or more damage this turn, heal each friendly Hero for 4 HP."],
 [2, "To the Armory", "1", "", "Tactic", "", "Paladin", "Search your library for an Equipment card, put it into your hand, then shuffle your library."],
 [2, "Tome of Gim", "2", "", "Item", "", "Mage", "At Dusk, you may put a card from your hand under Tome of Gim.\n1{A}: Put a card from under Tome of Gim into your hand."],
 [2, "Tooth", "2", "", "Tactic", "", "Druid", "Friendly summons gain +1 STR this turn."],
@@ -301,7 +301,7 @@ const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn."],
 ["Arnett Lifebinder", "Cleric", "1", "1", "1", "16", "Exhaust: Heal any target for 3 HP.\n{L3} 2{A}, Exhaust: Heal any target for 5 HP."],
 ["Battle Minstrel", "Bard", "1", "1", "1", "16", "Exhaust: Return a Song from your discard pile to your hand.\n{L3} 1{A}, Exhaust: Play a Song in your discard pile without paying its Aura cost."],
-["Beast Tracker", "Ranger", "0", "0", "2", "16", "Exhaust: The next Trap card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Trap cards you play cost 1 less Aura this turn."],
+["Beast Tracker", "Ranger", "0", "0", "2", "16", "Whenever you activate a Trap, gain 1 Gold.\n{L3} All Traps cost 1 less Aura to activate."],
 ["Blessed Champion", "Paladin", "0", "2", "1", "16", "Equipment costs 1 less Aura to equip to Blessed Champion.\n{L3} Equipment costs 2 less Aura to equip to Blessed Champion."],
 ["Bloodhowl", "Barbarian", "2", "0", "1", "14", "Enraged: This Hero has +3 STR.\n{L3} Enraged: This Hero has +5 STR."],
 ["Dark Channeler", "Warlock", "0", "0", "2", "13", "Exhaust, lose 4 HP: Gain 3 Aura.\n{L3} Exhaust, lose 2 HP: Gain 3 Aura."],

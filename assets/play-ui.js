@@ -81,6 +81,13 @@ const CSS=`
 .pl-acts{display:flex;flex-wrap:wrap;gap:6px}
 .pl-acts .btn{font-size:.88rem;padding:5px 11px}
 .pl-acts .btn.go{background:var(--ok);border-color:var(--ok);color:#fff}
+.pl-acts .btn.atk{background:#C0392B;border-color:#C0392B;color:#fff;font-weight:700}
+.pl-acts .btn.lv{background:#6B6F78;border-color:#6B6F78;color:#fff;font-weight:700}
+.pl-acts .btn.lv-str{background:#C0392B;border-color:#C0392B}
+.pl-acts .btn.lv-def{background:#2E7D4F;border-color:#2E7D4F}
+.pl-acts .btn.lv-aura{background:#2C66C4;border-color:#2C66C4}
+.pl-acts .btn .plus{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#F2C230;color:#3A2A00;font-weight:900;font-size:.95rem;line-height:1;margin-right:2px}
+.pl-acts .btn.atk:hover,.pl-acts .btn.lv:hover{filter:brightness(1.1)}
 .pl-acts .sep{width:1px;background:var(--line);margin:0 2px}
 .pl-hand{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 10px;scroll-snap-type:x proximity}
 .pl-hand .hc{flex:0 0 190px;scroll-snap-align:start;border:0;background:none;padding:0;text-align:left;position:relative}
@@ -300,7 +307,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   else if(U.tgt){const sl=U.tgt.slots[U.tgt.i];prompt=`Choose ${esc(sl.label)} for ${esc(U.tgt.label)}${U.tgt.slots.length>1?` (${U.tgt.i+1}/${U.tgt.slots.length})`:""}. Click a highlighted ${sl.k==="player"||sl.k==="enemyPlayer"?"party button":"target"}.`;
     acts=`${sl.opt?'<button class="btn" data-pa="skip">Skip</button>':""}<button class="btn" data-pa="cancel">Cancel</button>`}
   else if(pr&&pr.pid===me){
-    if(pr.type==="window"){const tr=pr.trig;const w=tr.kind==="attack"?`${esc(nameOf(tr.attacker))} attacks ${esc(nameOf(tr.target))}`:`${esc(s.p[tr.pid].name)} plays ${esc(tr.name||"a card")}${(tr.targets||[]).length?" targeting "+tr.targets.map(nameOf).map(esc).join(", "):""}`;
+    if(pr.type==="window"){const tr=pr.trig;const w=tr.kind==="party10"?"Your party has now taken 10 or more damage this turn":tr.kind==="attack"?`${esc(nameOf(tr.attacker))} attacks ${esc(nameOf(tr.target))}`:`${esc(s.p[tr.pid].name)} plays ${esc(tr.name||"a card")}${(tr.targets||[]).length?" targeting "+tr.targets.map(nameOf).map(esc).join(", "):""}`;
       prompt=`⚡ ${w}. Reveal a Hidden card?`;acts=opts.filter(o=>o.type==="reveal").map(o=>{const f=E.find(s,o.uid);return`<button class="btn go" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Reveal ${esc(E.DB[f.o.id].name)}</button>`}).join("")+'<button class="btn" data-pa="do" data-a=\'{"type":"decline"}\'>Don\'t reveal</button>'}
     else if(pr.type==="manual")prompt=`✋ Resolve by hand: ${esc(pr.title)}`;
     else if(pr.type==="combo")prompt="Combo! Play a Combo card without using an action?";
@@ -312,7 +319,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
     if(!s.p[me].mullDone)acts='<button class="btn go" data-pa="do" data-a=\'{"type":"keep"}\'>Keep</button><button class="btn" data-pa="do" data-a=\'{"type":"mull"}\'>Mulligan</button>'}
   else if(s.phase==="dawn"){if(s.dawnDone[me]){wait=true;prompt="Waiting for your opponent to finish Dawn…"}else{prompt="Dawn: you may use Gemstones (exhausting a Hero) before battle.";
     acts=opts.filter(o=>o.type==="gem").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(nameOf(o.uid))} (exhaust ${esc(nameOf(o.hero))})</button>`).join("")+opts.filter(o=>o.type==="wake").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${o.v?"Keep":"Wake"} ${esc(nameOf(o.hero))} ${o.v?"Meditating":"next Dawn"}</button>`).join("")+'<button class="btn go" data-pa="do" data-a=\'{"type":"dawnDone"}\'>Start battle</button>'}}
-  else if(s.phase==="town"){const t=s.town&&s.town.order[s.town.i];if(t!==me){wait=true;prompt=`${esc(s.p[t].name)} is in Town…`}else{prompt=`Town: you have ${s.p[me].gold} Gold. Inn 5 Gold (heal a Hero 5) · Shop 4 Gold (draw a card).`;
+  else if(s.phase==="town"){const t=s.town&&s.town.order[s.town.i];if(t!==me){wait=true;prompt=`${esc(s.p[t].name)} is in Town…`}else{const used=(s.town&&s.town.used)||{};prompt=`Town: you have ${s.p[me].gold} Gold. Inn ${E.INN_COST} Gold (a Hero heals ${E.INN_HEAL})${used.inn?" ✓ used":""} · Shop ${E.SHOP_COST} Gold (draw a card)${used.shop?" ✓ used":""}. Each once per visit.`;
     acts=opts.filter(o=>o.type==="inn").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Inn: heal ${esc(nameOf(o.hero))}</button>`).join("")+(opts.some(o=>o.type==="shop")?'<button class="btn" data-pa="do" data-a=\'{"type":"shop"}\'>Shop: draw a card</button>':"")+'<button class="btn go" data-pa="do" data-a=\'{"type":"leave"}\'>Leave Town</button>'}}
   else if(s.phase==="battle"){if(s.prio!==me){wait=true;prompt=`${esc(s.p[s.prio].name)} is acting…`}else{const a=E.actorFor(s,me);
       prompt=a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}. Play a highlighted card, or choose an action:`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
@@ -322,10 +329,12 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
     <div class="pl-prompt">${prompt}</div>${acts?`<div class="pl-acts">${acts}</div>`:""}${man}</section>`}
+function lvBtn(o,label,cls){return`<button class="btn ${cls}" data-pa="do" data-a='${esc(JSON.stringify(o))}'><span class="plus" aria-hidden="true">+</span>${esc(label)}</button>`}
 function btn(o,label,cls){return`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(label)}</button>`}
 function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
-  const atk=opts.filter(o=>o.type==="attack");atk.forEach(o=>out.push(btn(o,o.att===(a&&a.uid)?"Attack":`${nameOf(o.att)} attacks`,o.att===(a&&a.uid)?"go":"")));
-  const lv=opts.filter(o=>o.type==="level");if(lv.length===1)out.push(btn(lv[0],"Level up (draw)"));else lv.forEach(o=>out.push(btn(o,`Level up +1 ${o.stat.toUpperCase()}`)));
+  const atk=opts.filter(o=>o.type==="attack");atk.forEach(o=>out.push(btn(o,o.att===(a&&a.uid)?"Attack":`${nameOf(o.att)} attacks`,"atk")));
+  const lv=opts.filter(o=>o.type==="level");const LV={str:"STR",def:"DEF",aura:"AURA"};
+  if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
   opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
   opts.filter(o=>o.type==="ability").forEach(o=>{const ab=window.CQ_HERO_SCRIPTS[a.name][o.idx];const c=E.abilityCost(s,me,a,ab);out.push(btn(o,`${ab.label}${c?` (${c} Aura)`:""}`))});
   opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
@@ -341,8 +350,8 @@ function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(
   const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}">${cardHTML(card)}${autoTag(c.id)}</button>`}).join("");
   return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · green outline = playable now</span></div><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div></section>`}
 function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1,k:"burn",name:"Soldier"});
-  const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","+STR this turn"],["nstr","−STR this turn"],["def","+DEF this turn"],["ndef","−DEF this turn"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"]];
-  const needT=!["draw","aura","naura","gold","summon","pillar","dagger","doll","discard","fromDisc"].includes(m.op);
+  const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","+STR this turn"],["nstr","−STR this turn"],["def","+DEF this turn"],["ndef","−DEF this turn"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"]];
+  const needT=!["draw","aura","naura","gold","summon","pillar","dagger","doll","discard","fromDisc","reveal"].includes(m.op);
   const needN=["dmg","lose","heal","str","nstr","def","ndef","guard","draw","aura","naura","gold","revive","move"].includes(m.op);
   let extra="";
   if(m.op==="status"||m.op==="unstatus")extra=`<select data-pa="man-k">${E.STATUS.map(k=>`<option value="${k}" ${m.k===k?"selected":""}>${E.STATUS_NAME[k]}</option>`).join("")}</select>`;
@@ -351,8 +360,9 @@ function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1
   if(m.op==="dagger")extra=`<select data-pa="man-name"><option>Dagger</option><option ${m.name==="Viper Fang Dagger"?"selected":""}>Viper Fang Dagger</option></select>`;
   if(m.op==="discard")extra=`<select data-pa="man-card">${pl.hand.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`;
   if(m.op==="fromDisc")extra=`<select data-pa="man-card">${pl.disc.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`;
+  if(m.op==="reveal"){const hc=[...pl.inv.filter(o=>o.fd&&o.id),...pl.hand.filter(c=>E.DB[c.id]&&E.DB[c.id].sup==="Hidden")];extra=hc.length?`<select data-pa="man-card">${hc.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)} (${pl.inv.includes(c)?"set":"in hand"}, ${E.hiddenCost(s,U.me,c)} Aura)</option>`).join("")}</select>`:'<span class="pl-note">You have no Hidden cards set or in hand.</span>'}
   if(m.op==="level")extra=`<select data-pa="man-k">${["str","def","aura"].map(k=>`<option value="${k}" ${m.k===k?"selected":""}>if even: +1 ${k.toUpperCase()}</option>`).join("")}</select>`;
-  return`<div class="pl-man"><div class="txt"><b>${esc(pr.title)}</b>${pr.text?`<br>${rulesHTML(pr.text)}`:""}</div>
+  return`<div class="pl-man"><div class="txt"><b>${esc(pr.title)}</b>${pr.text?`<br>${rulesHTML(pr.text)}`:""}</div>${(pr.revealed||[]).map(r=>`<div class="txt"><b>Revealed: ${esc(r.name)}</b><br>${rulesHTML(r.text)}</div>`).join("")}
     <div class="row"><select data-pa="man-op">${ops.map(([k,l])=>`<option value="${k}" ${m.op===k?"selected":""}>${l}</option>`).join("")}</select>
     ${needN?`<input type="number" min="0" max="99" value="${m.n}" data-pa="man-n" aria-label="Amount">`:""}${extra}
     ${needT?`<span class="pl-note">Target: <b>${U.manT?esc(nameOf(U.manT)):"click a Hero, summon or item on the board"}</b></span>${U.manT?"":""}`:""}
@@ -380,7 +390,7 @@ function scryHTML(s,pr){const sc=U.scry;
 function chooseHTML(s,pr){const pk=U.pick;
   return`<h2>${esc(pr.title||"Choose")}</h2><p class="pl-note">Choose ${pr.min===pr.max?pr.max:`${pr.min||0} to ${pr.max}`} card${pr.max===1?"":"s"}.</p>
   <div class="pick-list">${pr.cards.map(u=>{const id=cardById(s,u,pr);return`<button class="pk${pk.on.includes(u)?" on":""}" data-pa="pick-card" data-u="${u}">${cardHTML(cardOf(id))}</button>`}).join("")}</div>
-  <div class="actions"><button class="btn primary go" data-pa="choose-done" ${pk.on.length<(pr.min||0)?"disabled":""}>Confirm (${pk.on.length})</button></div>`}
+  <div class="actions"><button class="btn primary go" data-pa="choose-done" ${pk.on.length<(pr.min||0)?"disabled":""}>${pr.pickLabel?(pk.on.length?pr.pickLabel:"Leave it on top"):`Confirm (${pk.on.length})`}</button></div>`}
 function comboHTML(s,pr){const opts=legal().filter(o=>o.type==="comboPlay");
   return`<h2>Combo</h2><p class="pl-note">You revealed a Combo card. You may play it, or a Combo card from your hand, by paying its Aura cost (no action used).</p>
   <div class="pick-list">${pr.cands.map(u=>{const id=cardById(s,u,pr);const ok=opts.some(o=>o.uid===u);const inLib=s.p[U.me].lib.some(c=>c.uid===u);return`<div class="pk">${cardHTML(cardOf(id))}<span class="badge">${inLib?"Revealed":"In hand"}</span><div class="actions" style="margin-top:6px"><button class="btn sm${ok?" primary":""}" data-pa="combo-play" data-u="${u}" ${ok?"":"disabled"}>${ok?"Play":"Can't afford"}</button></div></div>`}).join("")}</div>
@@ -479,7 +489,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="man-apply"){const m=U.man;const map={unstatus:["status",1],nstr:["str",1],ndef:["def",1],naura:["aura",1],ready:["exhaust",1],delevel:["level",1],exileobj:["destroy",1]};
     const [op,neg]=map[m.op]||[m.op,0];const sel=document.querySelector("[data-pa=man-card]");
     const a={type:"man",op,neg:!!neg,n:m.n,k:m.k,name:m.name,target:U.manT||null,card:sel?sel.value:null};
-    if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc"].includes(op)&&!a.target){toast("Click a target on the board first.");return}
+    if(op==="reveal"&&!a.card){toast("No Hidden card to reveal.");return}
+    if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc","reveal"].includes(op)&&!a.target){toast("Click a target on the board first.");return}
     send(a);return}
 });
 function redrawPrompt(){const m=document.getElementById("pl-modal");if(m)delete m.dataset.k;const s=view();if(m)m.remove();modals(s)}

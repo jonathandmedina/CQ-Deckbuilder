@@ -5,7 +5,7 @@ html[data-skin="retro"]{
   --bg:#070b26; --surface:#1d2c96; --sunk:#14206e; --ink:#F4F5FF; --muted:#B4BCF2; --line:#7C88D8;
   --accent:#FFD447; --accent-ink:#17123A; --legend:#FFD447; --warn:#FF7B6B; --ok:#73E98A;
   --card-paper:#1a2884; --card-ink:#F4F5FF; --card-line:#6C79CF;
-  --display:"Pixelify Sans","Courier New",monospace; --body:"DotGothic16","Pixelify Sans",system-ui,sans-serif;
+  --display:"Jersey 10","Pixelify Sans","Courier New",monospace; --body:Arial,"Helvetica Neue",Helvetica,sans-serif;
   --win:linear-gradient(180deg,#3c58cf 0,#2338a8 36px,#1b2b90 150px,#121c6c 100%);
   --frame:#E4E6F6; --frame-dark:#0A0C24;
   --winshadow:inset 0 0 0 1px #8C96D8,0 0 0 2px var(--frame-dark),0 4px 0 2px rgba(0,0,0,.35);
@@ -14,13 +14,13 @@ html[data-skin="retro"]{
   color-scheme:dark;
 }
 html[data-skin="retro"] body{background:radial-gradient(120% 80% at 50% 0%,#162068 0%,#0b1038 45%,#05071c 100%) fixed var(--bg);
-  font-size:15px;letter-spacing:.01em;text-shadow:1px 1px 0 rgba(0,0,0,.55);-webkit-font-smoothing:none}
+  font-size:15px;letter-spacing:.01em;text-shadow:1px 1px 0 rgba(0,0,0,.55)}
 html[data-skin="retro"] body::before{background:#0b1038}
 html[data-skin="retro"] h1,html[data-skin="retro"] h2,html[data-skin="retro"] h3{font-weight:600;letter-spacing:.02em}
 html[data-skin="retro"] h1{font-size:2.1rem;font-weight:700;color:#fff;text-shadow:2px 2px 0 #000}
-/* title, menu and buttons: Pixelify Sans, bigger and bold; everything else uses the cleaner DotGothic16 pixel font */
-html[data-skin="retro"] :is(.brand,.tabs a,.btn,.chip,.step,.group-h,.ph-n,.pl-phase .ph-n,.c-name,.ph-name,.slotbadge){font-family:var(--display);font-weight:700}
-html[data-skin="retro"] h2,html[data-skin="retro"] h3{font-weight:700}
+/* title, headings, menu and buttons: Jersey 10 (a tall pixel face, so it is set larger); rules, card text and lists: Arial */
+html[data-skin="retro"] :is(.brand,.tabs a,.btn,.chip,.step,.group-h,.ph-n,.pl-phase .ph-n,.c-name,.ph-name,.slotbadge){font-family:var(--display);font-weight:400;letter-spacing:.03em}
+html[data-skin="retro"] :is(h1,h2,h3,h4){font-family:var(--display);font-weight:400;letter-spacing:.03em}
 html[data-skin="retro"] .lede,html[data-skin="retro"] .note,html[data-skin="retro"] .count{color:var(--muted)}
 html[data-skin="retro"] a{color:var(--accent)}
 html[data-skin="retro"] :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -150,3 +150,25 @@ html[data-skin="retro"] :is(.btn[data-pa=concede-yes],.pl-acts .btn.pl-concede):
 html[data-skin="retro"] img,html[data-skin="retro"] .pixel{image-rendering:pixelated}
 @media (max-width:720px){html[data-skin="retro"] .ph.actor::before{display:none}}
 @media (max-width:480px){html[data-skin="retro"] .brand{font-size:1.1rem}html[data-skin="retro"] .brand small{font-size:.7rem}html[data-skin="retro"] .skin-btn{padding:3px 7px;font-size:.7rem}}
+
+/* Jersey 10 sizes (it runs small, so headings and labels are scaled up) */
+html[data-skin="retro"] h1{font-size:2.7rem;line-height:1.05}
+html[data-skin="retro"] h2{font-size:1.75rem}
+html[data-skin="retro"] h3{font-size:1.45rem}
+html[data-skin="retro"] .rules h2{font-size:1.9rem} html[data-skin="retro"] .rules h3{font-size:1.5rem}
+html[data-skin="retro"] .brand{font-size:1.9rem;font-weight:400}
+html[data-skin="retro"] .brand small{font-size:1.05rem}
+html[data-skin="retro"] .tabs a{font-size:1.35rem;padding:2px 9px 2px 22px}
+html[data-skin="retro"] .btn{font-size:1.2rem;padding:3px 13px;line-height:1.2}
+html[data-skin="retro"] .btn.sm{font-size:1.08rem;padding:2px 10px}
+html[data-skin="retro"] .chip{font-size:1.12rem;padding:2px 11px}
+html[data-skin="retro"] .c-name{font-size:1.3rem;line-height:1.05}
+html[data-skin="retro"] .ph-name{font-size:1.32rem}
+html[data-skin="retro"] .group-h{font-size:1.5rem}
+html[data-skin="retro"] .pl-phase .ph-n{font-size:1.45rem}
+html[data-skin="retro"] .step{font-size:1.15rem}
+html[data-skin="retro"] .slotbadge{font-size:.95rem!important}
+html[data-skin="retro"] .gem{font-size:1.6rem;padding-top:9px}
+html[data-skin="retro"] .meter .big{font-family:var(--display);font-size:2.4rem}
+@media (max-width:480px){html[data-skin="retro"] .brand{font-size:1.45rem}html[data-skin="retro"] .tabs a{font-size:1.15rem}}
+html[data-skin="retro"] .pl-bar .nm{font-size:1.4rem;font-weight:400}

@@ -52,7 +52,7 @@ button{cursor:pointer}
 .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:1.35rem;letter-spacing:.02em;white-space:nowrap}
 .brand small{font-family:var(--body);font-weight:500;font-size:.8rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
 .tabs{display:flex;gap:4px;flex-wrap:wrap}
-.tabs a{padding:7px 14px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:500}
+.tabs a{padding:7px 11px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:500}
 .tabs a:hover{color:var(--ink);background:var(--sunk)}
 .tabs a[aria-current="page"]{color:var(--ink);background:var(--sunk);box-shadow:inset 0 -2px 0 var(--accent)}
 .acct{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--muted);min-width:0}
@@ -266,7 +266,7 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261030j">
+<link rel="stylesheet" href="assets/retro.css?v=20261030k">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -277,6 +277,7 @@ button.card:hover{border-color:var(--cc)}
     <a href="#decks" data-view="decks">My Decks</a>
     <a href="#best" data-view="best">Best Decks</a>
     <a href="#rules" data-view="rules">Rules</a>
+    <a href="#changelog" data-view="changelog">Changelog</a>
     <a href="#play" data-view="play">Play</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
@@ -289,12 +290,15 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261030j"></script>
-<script src="assets/app.js?v=20261030j"></script>
-<script src="assets/play-engine.js?v=20261030j"></script>
-<script src="assets/play-cards.js?v=20261030j"></script>
-<script src="assets/play-ai.js?v=20261030j"></script>
-<script src="assets/play-ui.js?v=20261030j"></script>
+<script src="assets/cards-data.js?v=20261030k"></script>
+<script src="assets/app.js?v=20261030k"></script>
+<script src="assets/play-engine.js?v=20261030k"></script>
+<script src="assets/play-cards.js?v=20261030k"></script>
+<script src="assets/play-ai.js?v=20261030k"></script>
+<script src="assets/play-ui.js?v=20261030k"></script>
+<script src="assets/changelog-data.js?v=20261030k"></script>
+<script src="assets/changelog.js?v=20261030k"></script>
+<script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinBtn");if(!b)return;var cur=document.documentElement.dataset.skin;
 b.textContent=cur==="retro"?"Clean theme":"Retro theme";b.setAttribute("aria-label","Switch to the "+(cur==="retro"?"Clean":"Retro")+" theme");

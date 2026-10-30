@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: October 30, 2026 (update 6)*
+*Version: October 30, 2026 (update 7)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -153,7 +153,7 @@ Every card shows a version number (v1, v2, v3…) in its bottom corner. When a c
 
 ### Party Positions
 
-Your Heroes stand in a row. The Hero furthest left is the **Lead** (Position 1), the middle Hero is the **Center** (Position 2), and the Hero on the right is the **Closer** (Position 3). Positions decide when each Hero acts during the Battle Phase. A Hero can move to the back of the line with the Step Back action.
+Your Heroes stand in a row. The Hero furthest left is the **Lead** (Position 1), the middle Hero is the **Center** (Position 2), and the Hero on the right is the **Closer** (Position 3). Positions decide when each Hero acts during the Battle Phase. A Hero can choose to act last, after the Closer, with the Step Back action.
 
 ## 6. Resources
 
@@ -226,10 +226,10 @@ This is where the fighting happens. Set the Position marker to **Lead**.
 
 1. The active player takes one action with their Lead Hero.
 2. Priority passes clockwise. Each other player takes one action with their own Lead Hero.
-3. When every player has acted once with that position, move the Position marker to the next position: Lead, then Center, then Closer, then back to Lead.
+3. When every player has acted once with that position, move the Position marker to the next position: Lead, then Center, then Closer, then **Last** (only if a ready Hero has stepped back this round), then back to Lead.
 4. Keep going until every player has passed.
 
-**Stand-ins.** If the Hero in the marked position is exhausted or dead, the next ready Hero to its right acts instead. After the Closer, this wraps around to the Lead. If none of your Heroes are ready, you may still attack with a ready summon or surrender a dead Hero’s soul; otherwise you have no action this time.
+**Stand-ins.** If the Hero in the marked position is exhausted, dead or has stepped back, the next ready Hero to its right acts instead. After the Closer, this wraps around to the Lead. A Hero that stepped back acts at Last; it stands in earlier only if none of your other Heroes are ready. If none of your Heroes are ready, you may still attack with a ready summon or surrender a dead Hero’s soul; otherwise you have no action this time.
 
 **Summons.** When you have priority, you may attack with a ready summon instead of taking your Hero’s action.
 
@@ -303,7 +303,7 @@ Each Hero can level up once per round, up to Level 6. Every two levels a Hero ga
 
 ### Step Back
 
-Move the Hero to the back of your party (the Closer position). The other Heroes shift left. Stepping back uses the Hero’s action but doesn’t exhaust it. Each Hero can step back once per Battle Phase.
+The Hero steps back: for the rest of this round it acts **last**, after the Closer (at the Last step of the Position marker). Party order doesn’t change. Stepping back uses the Hero’s action but doesn’t exhaust it. Each Hero can step back once per Battle Phase. If several Heroes stepped back, they act at Last in party order.
 
 ### Inventory Actions
 
@@ -539,7 +539,7 @@ Some equipment has a **Gold Upgrade Cost** and an **Upgrade** effect. At the Bla
 | **Harmonize X** | Exhaust X ready Heroes you control to gain the effect after the colon. |
 | **Lifelink** | When this Hero deals damage, heal it that much. |
 | **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, you may keep it exhausted. If you do, it gets a +1/+1 counter. When it readies, it stops Meditating, and all its +1/+1 counters (including any from Monk Tactics) are removed at the next Dusk. |
-| **Mill X** | Put the top X cards of a library into its owner’s discard pile. |
+| **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
 | **Piercing X** | This attack ignores X points of the target’s DEF. |
 | **Poisonous X** | Whenever this Hero or card deals damage, add X Poison counters to the target if it has none. **Poisonous** with no number adds Poison counters equal to the damage dealt. |
@@ -606,8 +606,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Mulligan**: Once at setup, shuffle your hand into your library and draw a new hand of four.
 - **Active player**: The player with initiative. Acts first in each position, stacks triggers first, and visits Town first.
 - **Passive player**: Any player without initiative.
-- **Position marker**: Shared marker showing which position (Lead, Center or Closer) is acting.
-- **Stand-in**: If the marked Hero is exhausted or dead, the next ready Hero to its right acts, wrapping from Closer to Lead.
+- **Position marker**: Shared marker showing which position (Lead, Center, Closer, or Last for Heroes that stepped back) is acting.
+- **Stand-in**: If the marked Hero is exhausted, dead or stepped back, the next ready Hero to its right acts, wrapping from Closer to Lead.
 - **At Dawn / At Dusk**: During the Dawn Phase / Dusk Phase.
 
 ### Heroes and stats
@@ -676,7 +676,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Basic attack**: Choose any target, resolve on-attack triggers, exhaust, calculate damage, set HP.
 - **Combat damage**: Damage dealt by an attack.
 - **Level (action)**: Exhaust the Hero, raise its level by 1, draw a card. Once per round, max Level 6.
-- **Step Back**: Action. Move the Hero to the Closer position. Doesn’t exhaust. Once per Hero per Battle Phase.
+- **Step Back**: Action. The Hero acts last (after the Closer) for the rest of the round. Party order doesn’t change. Doesn’t exhaust. Once per Hero per Battle Phase.
 - **Equip**: A Hero pays the equipment’s Aura cost and puts it on itself, whether it comes from your hand, your inventory, or another of your Heroes. The receiving Hero always takes the action. Equipment has no separate equip cost.
 - **Unequip**: Take equipment off a Hero. It goes to your inventory.
 - **Attach**: Put an enchantment or curse onto a Hero. On older cards, “attach an Equipment” means equip it.
@@ -691,7 +691,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Sacrifice**: Destroy one of your own cards as a cost.
 - **Draw / Discard**: Take the top card of your library into hand / put a card from hand into the discard pile.
 - **Reveal**: Show cards from your library to all players.
-- **Mill X**: Put the top X cards of a library into the discard pile.
+- **Mill X**: Move the top X cards of your library to your discard pile.
 - **Scry X**: Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order.
 - **Duplicate**: Make a copy of a card or summon.
 - **Choose two**: Pick two of the listed effects.
@@ -721,6 +721,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 ### Card keywords
 
 - **Combo (Monk)**: When a card with Combo finishes resolving (after any Scry), reveal the top card of your library. If it’s a Combo card, you may play it or a Combo card from your hand, paying its Aura cost. A Combo card is a card with the Combo subtype.
+- **Mill X**: Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.)
 - **Petal counter (Monk)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
 - **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn you may keep it exhausted and give it a +1/+1 counter. When it readies, its counters come off at the next Dusk.
 - **+1/+1 counter (Monk)**: +1 STR and +1 DEF. Meditating Heroes gain them, and some Monk Tactics add more.

@@ -183,7 +183,7 @@ song("Ballad of Blades",S["Ballad of Blades"]);
 song("Crescendo",Object.assign({t:[ANY]},{modes:{n:1,opts:[{label:"Deal 3 damage"},{label:"Harmonize 2: 3 damage to each enemy"}]},can:()=>true,run(c){
   const harm=(c.modes||[])[0]===1&&living(c.me).filter(h=>!h.ex).length>=2;
   if(harm){living(c.me).filter(h=>!h.ex).slice(0,2).forEach(h=>h.ex=true);enemies(c).forEach(e=>D(c,e,3))}else D(c,c.t[0],3)}}));
-song("Dazzling Melody",{run(c){c.actor.fl.tauntRound=c.s.round;log(c,`Enemies must target ${c.actor.name} this turn.`)}});
+song("Dazzling Melody",{run(c){c.actor.fl.tauntRound=c.s.round;log(c,`${c.actor.name} dazzles: this turn enemies can only attack ${c.actor.name}, and their cards and abilities must target it.`)}});
 song("Lullaby",{t:[t("any","target with 2 or less STR",(s,o)=>E.str(s,o)<=2)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
 song("Peace",{t:[HERO],run(c){st(c,c.t[0],"stun");if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
 song("Rousing Chorus",{t:[AL],run(c){buff(c.t[0],{str:1})}});
@@ -237,7 +237,7 @@ def("Stampede",{run(c){summons(c.me).forEach(o=>{o.ex=false;const tg=rand(c,enem
 def("Inspiration",{run(c){draw(c,2)}});
 def("Precognition",{run(c){scry(c,2,{draw:1})}});
 def("Search for Knowledge",{run(c){draw(c,2);E.pushChoose(c.s,c.pid,{title:"Discard 2 cards",cards:c.me.hand.map(x=>x.uid),min:2,max:2,op:"discard"})}});
-def("Level Up",{t:[HERO],run(c){if(c.t[0])E.levelUp(c.s,c.t[0],"str")}});
+def("Level Up",{t:[HERO],modes:{n:1,opts:[{label:"If it reaches an even Level, gain +1 STR"},{label:"If it reaches an even Level, gain +1 DEF"},{label:"If it reaches an even Level, gain +1 AURA"}]},run(c){if(c.t[0])E.levelUp(c.s,c.t[0],["str","def","aura"][(c.modes||[])[0]||0])}});
 def("Delevel",{t:[HERO],run(c){const h=c.t[0];if(h&&h.lvl>0){if(h.lvl%2===0){const k=["str","def","aura"].find(k=>h.bon[k]>0);if(k)h.bon[k]--}h.lvl--;log(c,`${h.name} drops to Level ${h.lvl}.`)}}});
 def("Block Progress",{t:[HERO],run(c){if(c.t[0])c.t[0].fl.noLevel=c.s.round}});
 def("Humble",{t:[t("any","Hero or summon")],run(c){buff(c.t[0],{zeroStr:1})}});
@@ -264,7 +264,14 @@ def("Revitalize",item(2,[],c=>{c.me.aura+=4;log(c,`${c.me.name} gains 4 Aura.`)}
 def("Smoke Bomb",item(1,[AHERO],c=>buff(c.t[0],{stealth:1}),{exile:true}));
 def("Vial of Venom",item(1,[ANY],c=>st(c,c.t[0],"poison",2),{exile:true}));
 def("Energizing Ale",item(2,[t("allyHero","target Bard",(s,o)=>E.heroIs(o,"Bard"))],c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}},{exile:true}));
-def("Harmonic Flask",item(1,[t("hero","Hero to clear (2 status)",null,{opt:true})],c=>{if(c.t[0])E.removeStatus(c.s,c.t[0],2);else heal(c,c.actor,3)},{exile:true}));
+def("Harmonic Flask",item(2,[],c=>{if((c.modes||[])[0]===1){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}else heal(c,c.actor,2)},{exile:true,modes:{n:1,opts:[{label:"Heal this Hero for 2 HP"},{label:"Remove up to 2 status counters from target Hero",t:[t("hero","Hero to clear (2 status)")]}]}}));
+/* "Choices": choose two of Mill 2 / equip an Equipment from hand or inventory to this Hero for free / return a Song from discard to hand */
+song("Choices",{modes:{n:2,opts:[{label:"Mill 2"},{label:"Equip an Equipment from your hand or inventory to this Hero (free)"},{label:"Return a Song from your discard pile to your hand"}]},run(c){const m=c.modes||[];const pl=c.me;
+  if(m.includes(0))E.mill(c.s,c.pid,2);
+  if(m.includes(1)&&c.actor){const hand=pl.hand.filter(x=>E.DB[x.id]&&E.DB[x.id].kind==="equip"&&E.canUseEq(c.s,c.actor,E.eqObjFromCard(c.s,c.pid,x)));const inv=pl.inv.filter(o=>o.kind==="equip"&&E.canUseEq(c.s,c.actor,o));
+    const show={};hand.forEach(x=>show[x.uid]=x.id);inv.forEach(o=>show[o.uid]=o.id);
+    if(hand.length+inv.length)E.pushChoose(c.s,c.pid,{title:"Choices: equip an Equipment to "+c.actor.name+" for free",cards:hand.concat(inv).map(x=>x.uid),show,min:1,max:1,op:"equipFree",hero:c.actor.uid});else log(c,"No Equipment in hand or inventory that this Hero can use.")}
+  if(m.includes(2)){const songs=pl.disc.filter(x=>E.DB[x.id]&&E.DB[x.id].type==="Song");if(songs.length)E.pushChoose(c.s,c.pid,{title:"Choices: return a Song to your hand",cards:songs.map(x=>x.uid),min:1,max:1,op:"fromDisc"});else log(c,"No Song in your discard pile.")}}});
 def("Phoenix Down",item(3,[t("deadAny","dead Hero")],c=>{const h=c.t[0];if(!h)return;h.dead=false;h.dmg=Math.max(0,E.maxHp(c.s,h)-3);h.ex=true;E.addMod(h,{stealth:1});log(c,`${h.name} is revived with 3 HP.`)},{exile:true,can:(s)=>s.p.some(p=>p.heroes.some(h=>h.dead&&!h.surr))}));
 def("Platinum Bar",item(2,[],c=>draw(c,1)));
 def("Gold Bar",item(3,[],c=>{c.me.pm.def=(c.me.pm.def||0)+1;log(c,"Your party gains +1 DEF this turn.")}));
@@ -322,5 +329,8 @@ OPS.bottom=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib
 OPS.discard=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.hand.findIndex(c=>c.uid===u);if(i>=0){const c=pl.hand.splice(i,1)[0];pl.disc.push(c);E.log(s,`${pl.name} discards ${E.DB[c.id].name}.`,pid)}})};
 OPS.opDiscard=(s,pid,pr,picks)=>{const pl=s.p[pr.target];picks.forEach(u=>{const i=pl.hand.findIndex(c=>c.uid===u);if(i>=0){const c=pl.hand.splice(i,1)[0];pl.disc.push(c);E.log(s,`${pl.name} discards ${E.DB[c.id].name}.`,pid)}})};
 OPS.tutor=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){const c=pl.lib.splice(i,1)[0];pl.hand.push(c);E.log(s,`${pl.name} searches for ${E.DB[c.id].name}.`,pid)}});E.shuffle(s,pl.lib)};
+OPS.equipFree=(s,pid,pr,picks)=>{const pl=s.p[pid];const h=E.heroByUid(s,pr.hero);if(!h||h.dead)return;picks.forEach(u=>{let i=pl.hand.findIndex(c=>c.uid===u);let o=null;
+  if(i>=0){o=E.eqObjFromCard(s,pid,pl.hand.splice(i,1)[0])}else{i=pl.inv.findIndex(x=>x.uid===u);if(i>=0)o=pl.inv.splice(i,1)[0]}
+  if(o){E.log(s,`${h.name} equips ${o.name} for free.`,pid);E.equipTo(s,h,o)}})};
 OPS.fromDisc=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(c=>c.uid===u);if(i>=0){const c=pl.disc.splice(i,1)[0];pl.hand.push(c);E.log(s,`${pl.name} returns ${E.DB[c.id].name} to hand.`,pid)}})};
 })(typeof window!=="undefined"?window:globalThis);

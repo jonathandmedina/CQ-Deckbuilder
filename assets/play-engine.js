@@ -139,6 +139,10 @@ function guardEq(h){let g=0;eqList(h).forEach(e=>{if(/(^|\. |\n)Guard 1/.test(de
 E.guardEq=guardEq;E.hasEq=hasEqN;E.living=living;E.invHas=invHas;E.invCount=invCount;E.P=P;E.cardProof=cardProof;E.heroByUid=(s,u)=>heroByUid(s,u);E.poisonous=poisonous;E.lifelink=lifelink;E.stealth=stealth;
 
 /* ---------- basic operations ---------- */
+/* Mill X: move the top X cards of a library to its owner's discard pile (no reshuffle) */
+function mill(s,pid,n){const pl=P(s,pid);const out=[];for(let i=0;i<n&&pl.lib.length;i++){const c=pl.lib.pop();pl.disc.push(c);out.push(DB[c.id]?DB[c.id].name:"a card")}
+  log(s,out.length?`${pl.name} mills ${out.length}: ${out.join(", ")}.`:`${pl.name} has no cards to mill.`,pid);return out.length}
+E.mill=mill;
 function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
   for(let i=0;i<n;i++){if(!pl.lib.length){if(!pl.disc.length)break;pl.lib=shuffle(s,pl.disc.splice(0));log(s,`${pl.name} shuffles the discard pile into a new library.`,pid)}
     pl.hand.push(pl.lib.pop());got++;
@@ -349,7 +353,12 @@ E.resolveTarget=resolveTarget;
 /* ---------- actor / priority ---------- */
 function actorFor(s,pid){const pl=P(s,pid);
   if(s.bonus&&s.bonus.pid===pid){const h=pl.heroes.find(h=>h.uid===s.bonus.uid);if(h&&!h.dead&&!h.ex)return h}
-  const n=pl.heroes.length;for(let i=0;i<n;i++){const h=pl.heroes[(s.pos+i)%n];if(!h.dead&&!h.ex)return h}return null}
+  /* Step Back: a stepped-back Hero keeps its place but acts last (the "Last" step after the Closer).
+     It is skipped at Lead/Center/Closer unless no other Hero of that party is ready. */
+  const n=pl.heroes.length,ok=h=>!h.dead&&!h.ex,back=h=>h.fl.stepped===s.round;
+  if(s.pos===3){const b=pl.heroes.find(h=>ok(h)&&back(h));if(b)return b;for(const h of pl.heroes)if(ok(h))return h;return null}
+  for(let i=0;i<n;i++){const h=pl.heroes[(s.pos+i)%n];if(ok(h)&&!back(h))return h}
+  return pl.heroes.find(h=>ok(h)&&back(h))||null}
 E.actorFor=actorFor;
 const canPlayCards=h=>h&&!h.st.stun&&h.name!=="Dum Dum";
 function canPlayCard(s,pid,actor,c,free){const d=DB[c.id];if(!d||!actor)return false;
@@ -387,7 +396,7 @@ function battleOptions(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,
     if(!a.fl.noAttack)out.push({type:"attack",att:a.uid});
     if(a.lvl<6&&a.fl.leveled!==s.round&&a.fl.noLevel!==s.round){const st=(a.lvl+1)%2===0;
       if(st)["str","def","aura"].forEach(k=>out.push({type:"level",stat:k}));else out.push({type:"level"})}
-    if(a.fl.stepped!==s.round&&pl.heroes.indexOf(a)<pl.heroes.length-1)out.push({type:"step"});
+    if(a.fl.stepped!==s.round)out.push({type:"step"});
     const hs=HS()[a.name];
     if(hs&&!a.st.stun)hs.forEach((ab,i)=>{if((!ab.lvl||a.lvl>=ab.lvl)&&(!ab.can||ab.can(s,pid,a))&&abilityCost(s,pid,a,ab)<=pl.aura)out.push({type:"ability",idx:i})});
     pl.inv.forEach(o=>{const d=def(o);
@@ -437,7 +446,7 @@ E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
     const act=a.type==="comboPlay"?heroByUid(s,s.pend[0]&&s.pend[0].actor):actor;
     if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes).map(sp=>mk(sp,{actor:act,card:d}))}
   if(a.type==="ability"){const ab=HS()[actor.name][a.idx];return(ab.t||[]).map(sp=>mk(sp,{actor}))}
-  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];return((isc.act&&isc.act.t)||[]).map(sp=>mk(sp,{actor,item:o}))}
+  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];return(isc.act?specsFor(isc.act,a.modes):[]).map(sp=>mk(sp,{actor,item:o}))}
   if(a.type==="soul"){if(a.ch===2||a.ch===5)return[mk({k:"ally",label:"ally"})];if(a.ch===3)return[mk({k:"any",label:"damage target"})];return[]}
   if(a.type==="inn")return[];
   return[]};
@@ -453,7 +462,7 @@ E.act=function(s,pid,a){
     log(s,`${P(s,pid).name} concedes.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`);return{ok:true}}
   const opts=E.options(s,pid);
   if(a.type==="play"){const ok=opts.some(o=>o.type==="play"&&findCardAnywhere(s,pid,o.uid)&&findCardAnywhere(s,pid,o.uid).id===(findCardAnywhere(s,pid,a.uid)||{}).id);if(!ok)return{ok:false,err:"You can't play that card now."}}
-  else if(!["fix","man","manDone","scry","choose","wake"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
+  else if(!["fix","man","manDone","manCancel","scry","choose","wake"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
   if(a.type==="fix"&&!(s.phase==="battle"&&s.prio===pid&&!s.pend.length))return{ok:false,err:"Rules fixes are made on your priority."};
   if(["man","manDone"].includes(a.type)&&!(s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===pid))return{ok:false,err:"No manual resolution open."};
   if(a.type==="scry"&&!(s.pend[0]&&s.pend[0].type==="scry"&&s.pend[0].pid===pid))return{ok:false,err:"No scry open."};
@@ -466,9 +475,21 @@ E.act=function(s,pid,a){
       if(!slots[i].cands.includes(t))return{ok:false,err:`Invalid target for ${slots[i].label}.`};
       if(slots[i].distinct&&tg.slice(0,i).includes(t))return{ok:false,err:"Choose different targets."}}
     if(a.type==="attack"&&!slots[0].cands.length)return{ok:false,err:"There's nothing to attack."}}
+  if(a.type==="manCancel"){const pr=s.pend[0];if(!(pr&&pr.type==="manual"&&pr.pid===pid&&s.undo))return{ok:false,err:"Nothing to cancel."};
+    const what=s.undo.what,keepLog=s.log;const snap=JSON.parse(s.undo.snap);Object.keys(s).forEach(k=>delete s[k]);Object.assign(s,snap);s.log=keepLog;s.seq=(s.seq||0)+2;
+    log(s,`✋ ${P(s,pid).name} cancels ${what} (undone).`,pid);settle(s);return{ok:true}}
+  /* remember the state before anything that may open a resolve-by-hand panel, so it can be canceled */
+  const undoable=["play","comboPlay","use","ability","manualAbility","reveal","fix"].includes(a.type);
+  const snap=undoable?JSON.stringify(Object.assign({},s,{undo:null,log:[]})):null;const what=undoable?undoLabel(s,pid,a):null;
   s.seq++;
   try{doAct(s,pid,a)}catch(err){log(s,"Engine error: "+(err&&err.message));if(root.console)console.error(err)}
-  settle(s);return{ok:true}};
+  settle(s);
+  const top=s.pend[0];
+  if(undoable&&top&&top.type==="manual"&&top.pid===pid&&!top.undoId){top.undoId=s.seq;s.undo={id:s.seq,snap,what}}
+  else if(!(top&&top.type==="manual"&&s.undo&&top.undoId===s.undo.id))s.undo=null;
+  return{ok:true}};
+function undoLabel(s,pid,a){try{if(a.type==="play"||a.type==="comboPlay"){const c=findCardAnywhere(s,pid,a.uid);return c?DB[c.id].name:"the card"}
+  if(a.type==="use"){const f=find(s,a.uid);return f?f.o.name:"the item"}if(a.type==="fix")return"the rules fix";if(a.type==="reveal")return"the Hidden card";return"the ability"}catch(e){return"the action"}}
 
 function doAct(s,pid,a){const pl=P(s,pid);
   switch(a.type){
@@ -495,7 +516,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
   if(a.type==="play"){playCard(s,pid,actor,a.uid,a,{});return}
   if(a.type==="attack"){startAttack(s,pid,a.att,a.targets[0],{});return}
   if(a.type==="level"){actor.ex=true;levelUp(s,actor,a.stat,true);draw(s,pid,1);actor.fl.leveled=s.round;return}
-  if(a.type==="step"){pl.heroes.splice(pl.heroes.indexOf(actor),1);pl.heroes.push(actor);actor.fl.stepped=s.round;log(s,`${actor.name} steps back to the Closer position.`,pid);return}
+  if(a.type==="step"){actor.fl.stepped=s.round;log(s,`${actor.name} steps back and will act last this round, after the Closer.`,pid);return}
   if(a.type==="ability"){const ab=HS()[actor.name][a.idx];const c=abilityCost(s,pid,actor,ab);if(ab.ex!==false)actor.ex=true;pay(s,pid,actor,c);
     log(s,`${actor.name} uses its ability${ab.label?`: ${ab.label}`:""}.`,pid);
     const trig={kind:"card",ability:true,src:actor,pid,targets:a.targets||[],cost:c,cls:actor.cls,type:"Ability"};
@@ -506,7 +527,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
     log(s,`${actor.name} activates ${o.name}.`,pid);
     if(isc.act.exile||def(o).sub==="Arrow"){pl.inv.splice(pl.inv.indexOf(o),1);if(isc.act.exile)pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});else pl.disc.push({uid:o.uid,id:o.id,owner:o.owner})}
     const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:c,cls:def(o).cls,type:"Item",name:o.name};
-    queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],arrow:def(o).sub==="Arrow"},trig);return}
+    queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],modes:a.modes||[],arrow:def(o).sub==="Arrow"},trig);return}
   if(a.type==="equipInv"){const o=find(s,a.uid).o;pay(s,pid,actor,eqCost(s,actor,o));pl.inv.splice(pl.inv.indexOf(o),1);equipTo(s,actor,o);return}
   if(a.type==="take"){const f=find(s,a.uid);pay(s,pid,actor,eqCost(s,actor,f.o));f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;log(s,`${actor.name} takes ${f.o.name} from ${f.hero.name}.`,pid);equipTo(s,actor,f.o);return}
   if(a.type==="clear"){const o=find(s,a.uid).o;pl.inv.splice(pl.inv.indexOf(o),1);log(s,`${pl.name} clears ${o.fd?"a face-down card":o.name} from inventory.`,pid);toDisc(s,o);return}
@@ -582,7 +603,7 @@ function resolveCont(s,pid,cont,mods){
   if(cont.k==="attack"){resolveAttack(s,pid,cont,mods);return}
   const actor=cont.actor?heroByUid(s,cont.actor):null;
   if(cont.k==="ability"){const ab=HS()[actor.name][cont.idx];ab.run(mkCtx(s,pid,actor,DB[actor.id],null,cont.targets,{mods}));checkDeaths(s);return}
-  if(cont.k==="item"){const isc=SC()[cont.itemName];const o=find(s,cont.item);const ctx=mkCtx(s,pid,actor,DB[cont.itemName],o?o.o:null,cont.targets,{mods,arrow:cont.arrow});
+  if(cont.k==="item"){const isc=SC()[cont.itemName];const o=find(s,cont.item);const ctx=mkCtx(s,pid,actor,DB[cont.itemName],o?o.o:null,cont.targets,{mods,arrow:cont.arrow,modes:cont.modes||[]});
     if(cont.arrow)ctx.arrowBonus=arrowBonus(s,pid,actor);
     isc.act.run(ctx);
     if(cont.arrow){const pl=P(s,pid);pl.t.arrows=(pl.t.arrows||0)+1;pl.fl.arrowNext=null;
@@ -699,6 +720,19 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
   case"doll":E.makeDoll(s,pid);break;
   case"destroy":if(t&&t.kind!=="hero"&&t.kind!=="player"){log(s,`${who}:`,pid);destroyObj(s,t,!!a.neg)}break;
   case"discard":{const c=pl.hand.find(c=>c.uid===a.card);if(c){pl.hand.splice(pl.hand.indexOf(c),1);pl.disc.push(c);log(s,`${who} discards ${DB[c.id].name}.`,pid)}break}
+  case"mill":{const who=a.name==="Opponent"?opp(pid):pid;log(s,`✋ ${pl.name} (by hand):`,pid);mill(s,who,n);break}
+  case"equipfree":{if(!t||t.kind!=="hero"||t.dead||t.owner!==pid)break;let i=pl.hand.findIndex(c=>c.uid===a.card),o=null;
+    if(i>=0&&DB[pl.hand[i].id]&&DB[pl.hand[i].id].kind==="equip")o=eqObjFromCard(s,pid,pl.hand.splice(i,1)[0]);else{i=pl.inv.findIndex(x=>x.uid===a.card&&x.kind==="equip");if(i>=0)o=pl.inv.splice(i,1)[0]}
+    if(o){log(s,`✋ ${pl.name} equips ${o.name} to ${t.name} for free${canUseEq(s,t,o)?"":" (normally not allowed for this Hero)"}.`,pid);equipTo(s,t,o)}break}
+  case"revealtop":{const who=a.name==="Opponent"?opp(pid):pid;const lp=P(s,who);const top=lp.lib.slice(-Math.max(1,n)).reverse();const pr=s.pend[0];
+    log(s,`✋ ${pl.name} reveals the top ${top.length} of ${lp.name}'s library: ${top.map(c=>DB[c.id].name).join(", ")||"(empty)"}.`,pid);
+    if(pr&&pr.type==="manual"){pr.revTop={pid:who,uids:top.map(c=>c.uid)};pr.revealed=(pr.revealed||[]).concat(top.map(c=>({name:DB[c.id].name,text:DB[c.id].rules||""})))}break}
+  case"revmove":{const pr=s.pend[0];if(!pr||!pr.revTop)break;const lp=P(s,pr.revTop.pid);const i=lp.lib.findIndex(c=>c.uid===a.card);if(i<0)break;const c=lp.lib.splice(i,1)[0];const nm=DB[c.id].name;
+    if(a.k==="bottom"){lp.lib.unshift(c);log(s,`✋ ${pl.name} puts ${nm} on the bottom of ${lp.name}'s library.`,pid)}
+    else if(a.k==="hand"){lp.hand.push(c);log(s,`✋ ${nm} goes to ${lp.name}'s hand.`,pid)}
+    else if(a.k==="discard"){lp.disc.push(c);log(s,`✋ ${nm} goes to ${lp.name}'s discard pile.`,pid)}
+    else{lp.lib.push(c);log(s,`✋ ${pl.name} puts ${nm} on top of ${lp.name}'s library.`,pid)}
+    if(a.k!=="top")pr.revTop.uids=pr.revTop.uids.filter(u=>u!==c.uid);break}
   case"fromDisc":{const c=pl.disc.find(c=>c.uid===a.card);if(c){pl.disc.splice(pl.disc.indexOf(c),1);pl.hand.push(c);log(s,`${who} returns ${DB[c.id].name} from discard to hand.`,pid)}break}
   case"revive":if(t&&t.kind==="hero"&&t.dead&&!t.surr&&t.owner===pid){t.dead=false;t.dmg=Math.max(0,maxHp(s,t)-Math.max(1,n));t.ex=true;log(s,`${who} revives ${t.name} with ${maxHp(s,t)-t.dmg} HP.`,pid)}break;
   case"unequip":if(t&&t.kind==="equip")unequip(s,t);break;
@@ -745,7 +779,9 @@ function advance(s,pid){s.acted[pid]=true;if(s.passed[0]&&s.passed[1])return;
   const o=opp(pid);
   if(!s.passed[o]&&!s.acted[o]){s.prio=o;return}
   /* both acted (or other passed): next position */
-  s.pos=(s.pos+1)%3;s.acted=[false,false];
+  /* Lead → Center → Closer → Last (only when a ready Hero has stepped back) → Lead */
+  const anyBack=s.p.some(pl=>pl.heroes.some(h=>!h.dead&&!h.ex&&h.fl.stepped===s.round));
+  s.pos=s.pos===2?(anyBack?3:0):s.pos===3?0:s.pos+1;s.acted=[false,false];
   s.prio=!s.passed[s.init]?s.init:opp(s.init)}
 function startRound(s){s.round++;s.phase="dawn";log(s,`— Round ${s.round}: Dawn —`);doDawn(s)}
 function doDawn(s){
@@ -826,5 +862,5 @@ E.redact=function(s,viewer){/* hide opponent's hand and libraries for network pl
   c.p.forEach((pl,pid)=>{pl.lib=pl.lib.map(x=>keep.has(x.uid)?x:({uid:x.uid,id:null,owner:x.owner}));
     if(pid!==viewer){pl.hand=pl.hand.map(x=>({uid:x.uid,id:null,owner:x.owner}));pl.inv=pl.inv.map(o=>o.fd?{uid:o.uid,kind:"card",fd:true,name:"Hidden card",id:null,owner:o.owner}:o)}});
   c.pend=c.pend.map(pr=>{if(pr.pid===viewer)return pr;return{type:pr.type,pid:pr.pid,title:pr.title,hiddenPrompt:true}});
-  c.log=c.log.slice(-300);c.redacted=viewer;return c};
+  c.log=c.log.slice(-300);c.redacted=viewer;if(c.undo)c.undo={id:c.undo.id,what:c.undo.what};return c};
 })(typeof window!=="undefined"?window:globalThis);

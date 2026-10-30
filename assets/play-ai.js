@@ -45,6 +45,8 @@ AI.expand=function(s,pid,o,cap){cap=cap||24;let bases=[o];
     if(sc&&sc.modes){const ms=combos(sc.modes.opts.map((_,i)=>i),Math.min(sc.modes.n,sc.modes.opts.length));bases=ms.map(m=>Object.assign({},o,{modes:m}))}
     if(d.cost==="X"||(sc&&sc.x)){const xs=[];const max=d.cost==="X"?Math.min(8,pl.aura):(sc.x.max?sc.x.max(s,pid,E.actorFor(s,pid)):6);for(let v=0;v<=max;v+=d.cost==="X"?1:2)xs.push(v);if(d.cost==="X"&&!xs.includes(max))xs.push(max);
       bases=[].concat(...bases.map(b=>xs.map(x=>Object.assign({},b,{x}))))}}
+  if(o.type==="use"){const f=E.find(s,o.uid);const isc=f&&(root.CQ_SCRIPTS||{})[f.o.name];const md=isc&&isc.act&&isc.act.modes;
+    if(md){const ms=combos(md.opts.map((_,i)=>i),Math.min(md.n,md.opts.length));bases=ms.map(m=>Object.assign({},o,{modes:m}))}}
   const out=[];
   for(const b of bases){const slots=E.need(s,pid,b);
     let tl=[[]];for(const sl of slots){const c=sl.cands.slice(0,8);const next=[];

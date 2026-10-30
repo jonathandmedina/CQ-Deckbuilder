@@ -23,6 +23,12 @@ const CSS=`
 .pl-code{font-family:var(--display);font-size:2.2rem;font-weight:800;letter-spacing:.18em}
 .pl-game{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start;margin-top:12px}
 .pl-board{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pl-game{position:relative}
+.pl-game .pl-logshow{display:none}
+.pl-game.nolog{grid-template-columns:minmax(0,1fr)}
+.pl-game.nolog .pl-side{display:none}
+.pl-game.nolog .pl-logshow{display:inline-flex;position:absolute;right:0;top:-38px;z-index:2}
+.posm span.last{border-left:1px dashed var(--line)}
 .pl-side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 90px)}
 .pl-log{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;overflow:auto;font-size:.82rem;line-height:1.35;flex:1;min-height:200px}
 .pl-log p{margin:0 0 3px}
@@ -278,13 +284,14 @@ function roomHTML(){const n=U.net;if(!n)return"";
   <p class="pl-note">${n.peers?"Opponent connected.":"Waiting for opponent…"}</p>
   <div class="actions"><button class="btn" data-pa="leave">Cancel</button></div></div>`}
 function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
-  return`<div class="pl-game"><div class="pl-board">
+  if(U.logHidden==null){try{U.logHidden=localStorage.getItem("cq.play.log")==="hide"}catch(e){U.logHidden=false}}
+  return`<div class="pl-game${U.logHidden?" nolog":""}"><button class="btn sm pl-logshow" data-pa="log-toggle" title="Show the game log">Show log</button><div class="pl-board">
     ${zoneHTML(s,op,opts)}
     ${midHTML(s,opts)}
     ${zoneHTML(s,me,opts)}
     ${handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><h2>Game log</h2><span class="actions"><button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><h2>Game log</h2><span class="actions"><button class="btn sm" data-pa="log-toggle" title="Hide the game log">Hide log</button><button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div>
   </aside></div>`}
@@ -331,6 +338,7 @@ function turnCounts(s,pid){const pl=s.p[pid];const t=pl.t||{};const mine=pid===U
 function heroCounts(s,h){if(h.dead)return[];const out=[];const r=s.round;const pl=s.p[h.owner];
   const combos=h.fl&&h.fl.combosRound===r?h.fl.combos||0:0;
   if(h.name==="Grandmaster Reece"){if(h.lvl>=3){const m=combos%3;out.push(`<span class="tg cnt" title="Every third Combo card he plays this turn: +2 STR">Combo ${m}/3${combos>=3?` · ${combos} total`:""}</span>`)}else out.push(`<span class="tg cnt" title="His third Combo card this turn: +2 STR">Combo ${Math.min(combos,3)}/3${combos>=3?" ✓":""}</span>`)}
+  if(h.fl&&h.fl.stepped===r)out.push('<span class="tg cnt" title="Stepped back: acts after the Closer this round">Acts last</span>');
   if(h.name==="Sage Monk")out.push(`<span class="tg cnt" title="Scry 1 on its first Combo card each turn">First Combo: ${h.fl&&h.fl.sageRound===r?"used":"ready"}</span>`);
   const atks=h.atkRound===r?h.attacks||0:0;
   if(h.name==="Skullcrusher")out.push(`<span class="tg cnt" title="+3 STR on its second attack each turn">Attacks ${atks}${atks>=2?" ✓":"/2"}</span>`);
@@ -411,7 +419,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
       prompt=a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}. Play a highlighted card, or choose an action:`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
       acts=battleActs(s,opts)}}
   if(U.busy){wait=true;prompt="Sending…"}
-  const posm=`<span class="posm" title="Position marker">${E.POS.map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}">${p}</span>`).join("")}</span>`;
+  const posm=`<span class="posm" title="Position marker">${[...E.POS,"Last"].map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
     <div class="pl-prompt">${prompt}</div>${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${acts||!s.over?`<div class="pl-acts">${acts}${s.over?"":'<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>'}</div>`:""}${man}</section>`}
@@ -436,23 +444,30 @@ function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(
   const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
   return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · green outline = playable now</span></div><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div></section>`}
 function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1,k:"burn",name:"Soldier"});
-  const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","+STR this turn"],["nstr","−STR this turn"],["def","+DEF this turn"],["ndef","−DEF this turn"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"]];
-  const needT=!["draw","aura","naura","gold","summon","pillar","dagger","doll","discard","fromDisc","reveal"].includes(m.op);
-  const needN=["dmg","lose","heal","str","nstr","def","ndef","guard","draw","aura","naura","gold","revive","move"].includes(m.op);
+  const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","STR up (this turn)"],["nstr","STR down (this turn)"],["def","DEF up (this turn)"],["ndef","DEF down (this turn)"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"],["mill","Mill (top cards → discard)"],["equipfree","Equip for free"],["revealtop","Reveal top cards of a library"],["revmove","Move a revealed card"]].sort((x,y)=>x[1].localeCompare(y[1]));
+  const az=(arr,nm)=>arr.slice().sort((x,y)=>nm(x).localeCompare(nm(y)));const cn=c=>(E.DB[c.id]||{name:c.name||""}).name;
+  const needT=!["draw","aura","naura","gold","summon","pillar","dagger","doll","discard","fromDisc","reveal","mill","revealtop","revmove"].includes(m.op);
+  const needN=["dmg","lose","heal","str","nstr","def","ndef","guard","draw","aura","naura","gold","revive","move","mill","revealtop"].includes(m.op);
   let extra="";
   if(m.op==="status"||m.op==="unstatus")extra=`<select data-pa="man-k">${E.STATUS.map(k=>`<option value="${k}" ${m.k===k?"selected":""}>${E.STATUS_NAME[k]}</option>`).join("")}</select>`;
-  if(m.op==="summon")extra=`<select data-pa="man-name">${Object.values(E.TOK).filter(t=>t.tkind==="Summon").map(t=>`<option ${m.name===t.name?"selected":""}>${esc(t.name)}</option>`).join("")}</select>`;
+  if(m.op==="summon")extra=`<select data-pa="man-name">${az(Object.values(E.TOK).filter(t=>t.tkind==="Summon"),t=>t.name).map(t=>`<option ${m.name===t.name?"selected":""}>${esc(t.name)}</option>`).join("")}</select>`;
   if(m.op==="pillar")extra=`<select data-pa="man-name"><option ${m.name==="Spell Damage Pillar"?"selected":""}>Spell Damage Pillar</option><option ${m.name==="Pain Pillar"?"selected":""}>Pain Pillar</option></select>`;
   if(m.op==="dagger")extra=`<select data-pa="man-name"><option>Dagger</option><option ${m.name==="Viper Fang Dagger"?"selected":""}>Viper Fang Dagger</option></select>`;
-  if(m.op==="discard")extra=`<select data-pa="man-card">${pl.hand.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`;
-  if(m.op==="fromDisc")extra=`<select data-pa="man-card">${pl.disc.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`;
-  if(m.op==="reveal"){const hc=[...pl.inv.filter(o=>o.fd&&o.id),...pl.hand.filter(c=>E.DB[c.id]&&E.DB[c.id].sup==="Hidden")];extra=hc.length?`<select data-pa="man-card">${hc.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)} (${pl.inv.includes(c)?"set":"in hand"}, ${E.hiddenCost(s,U.me,c)} Aura)</option>`).join("")}</select>`:'<span class="pl-note">You have no Hidden cards set or in hand.</span>'}
+  if(m.op==="discard")extra=`<select data-pa="man-card">${az(pl.hand,cn).map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`;
+  if(m.op==="fromDisc")extra=`<select data-pa="man-card">${az(pl.disc,cn).map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`;
+  if(m.op==="reveal"){const hc=az([...pl.inv.filter(o=>o.fd&&o.id),...pl.hand.filter(c=>E.DB[c.id]&&E.DB[c.id].sup==="Hidden")],cn);extra=hc.length?`<select data-pa="man-card">${hc.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)} (${pl.inv.includes(c)?"set":"in hand"}, ${E.hiddenCost(s,U.me,c)} Aura)</option>`).join("")}</select>`:'<span class="pl-note">You have no Hidden cards set or in hand.</span>'}
+  const whoSel=`<select data-pa="man-name"><option ${m.name!=="Opponent"?"selected":""}>You</option><option ${m.name==="Opponent"?"selected":""}>Opponent</option></select>`;
+  if(m.op==="mill"||m.op==="revealtop")extra=whoSel;
+  if(m.op==="equipfree"){const eq=az([...pl.hand.filter(c=>E.DB[c.id]&&E.DB[c.id].kind==="equip"),...pl.inv.filter(o=>o.kind==="equip")],cn);
+    extra=eq.length?`<select data-pa="man-card">${eq.map(c=>`<option value="${c.uid}">${esc(cn(c))} (${pl.hand.includes(c)?"hand":"inventory"})</option>`).join("")}</select>`:'<span class="pl-note">No Equipment in your hand or inventory.</span>'}
+  if(m.op==="revmove"){const rt=pr.revTop;const lp=rt&&s.p[rt.pid];const cs=rt?az(lp.lib.filter(c=>rt.uids.includes(c.uid)&&c.id),cn):[];
+    extra=cs.length?`<select data-pa="man-card">${cs.map(c=>`<option value="${c.uid}">${esc(cn(c))}</option>`).join("")}</select><select data-pa="man-k">${[["top","to the top"],["bottom","to the bottom"],["hand","to hand"],["discard","to the discard pile"]].map(([k,l])=>`<option value="${k}" ${m.k===k?"selected":""}>${l}</option>`).join("")}</select>`:'<span class="pl-note">Reveal top cards first.</span>'}
   if(m.op==="level")extra=`<select data-pa="man-k">${["str","def","aura"].map(k=>`<option value="${k}" ${m.k===k?"selected":""}>if even: +1 ${k.toUpperCase()}</option>`).join("")}</select>`;
   return`<div class="pl-man"><div class="txt"><b>${esc(pr.title)}</b>${pr.text?`<br>${rulesHTML(pr.text)}`:""}</div>${(pr.revealed||[]).map(r=>`<div class="txt"><b>Revealed: ${esc(r.name)}</b><br>${rulesHTML(r.text)}</div>`).join("")}
     <div class="row"><select data-pa="man-op">${ops.map(([k,l])=>`<option value="${k}" ${m.op===k?"selected":""}>${l}</option>`).join("")}</select>
     ${needN?`<input type="number" min="0" max="99" value="${m.n}" data-pa="man-n" aria-label="Amount">`:""}${extra}
     ${needT?`<span class="pl-note">Target: <b>${U.manT?esc(nameOf(U.manT)):"click a Hero, summon or item on the board"}</b></span>${U.manT?"":""}`:""}
-    <button class="btn" data-pa="man-apply">Apply</button><button class="btn go" data-pa="do" data-a='{"type":"manDone"}'>Done</button></div>
+    <button class="btn" data-pa="man-apply">Apply</button><button class="btn go" data-pa="do" data-a='{"type":"manDone"}'>Done</button>${s.undo?'<button class="btn danger" data-pa="man-cancel" title="Undo the card or action that opened this panel">Cancel</button>':""}</div>
     <p class="pl-note">Each change is written to the game log for both players.</p></div>`}
 
 /* ---------- modals ---------- */
@@ -502,6 +517,7 @@ function begin(a){const s=view();
     if((a.type==="play"||a.type==="comboPlay")&&!a._ready){const pl=s.p[U.me];const c=pl.hand.find(x=>x.uid===a.uid)||pl.lib.find(x=>x.uid===a.uid);const d=E.DB[c.id];const sc=SCR()[d.name];
       if(sc&&sc.modes&&!a.modes){return pickModes(a,d,sc)}
       if((d.cost==="X"||(sc&&sc.x))&&a.x==null){return pickX(a,d,sc)}}
+    if(a.type==="use"&&!a.modes){const f=E.find(s,a.uid);const isc=f&&SCR()[f.o.name];if(isc&&isc.act&&isc.act.modes)return pickModes(a,E.DB[f.o.id]||{name:f.o.name},isc.act)}
     const slots=E.need(s,U.me,a);
     if(!slots.length){send(a);return}
     const req=slots.find(sl=>!sl.opt&&!sl.cands.length);if(req&&a.type!=="attack"){/* engine allows required slots with no candidates (fizzle) */}
@@ -537,6 +553,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="leave"){leaveGame();return}
   if(k==="concede-ask"){if(!U.s||U.s.over)return;modal(`<h2>Concede?</h2><p>Are you sure you want to concede? The game ends and your opponent wins.</p><div class="actions"><button class="btn primary danger" data-pa="concede-yes">Concede</button><button class="btn" data-pa="close">Cancel</button></div>`);return}
   if(k==="concede-yes"){closeModal();if(U.s&&!U.s.over)send({type:"concede"});return}
+  if(k==="man-cancel"){modal(`<h2>Cancel?</h2><p>Undo ${esc((U.s&&U.s.undo&&U.s.undo.what)||"this")}? Everything goes back to how it was before it was played.</p><div class="actions"><button class="btn primary danger" data-pa="man-cancel-yes">Undo it</button><button class="btn" data-pa="close">Keep resolving</button></div>`);return}
+  if(k==="man-cancel-yes"){closeModal();U.man=null;U.manT=null;send({type:"manCancel"});return}
+  if(k==="log-toggle"){U.logHidden=!U.logHidden;try{localStorage.setItem("cq.play.log",U.logHidden?"hide":"show")}catch(e){}render();return}
   if(k==="leave-ask"){if(s&&s.over){leaveGame();return}modal(`<h2>Leave this game?</h2><p>${U.vsAI?"Your game is saved in this browser; you can resume it from the Play tab.":U.net&&U.net.role==="host"?"The room closes for your opponent. You can reopen it from the Play tab.":"You can rejoin with the same code while the host keeps the room open."}</p><div class="actions"><button class="btn primary" data-pa="leave-soft">Leave</button><button class="btn" data-pa="close">Stay</button></div>`);return}
   if(k==="leave-soft"){U.gameKey=null;closeModal();clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(err){}}U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";render();return}
   if(k==="resume-local"){const r=store2.get("cq.play.local",null);if(r){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.meta=r.meta||null;U.vsAI=true;U.net=null;U.mode="game";render();pumpAI()}return}
@@ -579,7 +598,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     const [op,neg]=map[m.op]||[m.op,0];const sel=document.querySelector("[data-pa=man-card]");
     const a={type:"man",op,neg:!!neg,n:m.n,k:m.k,name:m.name,target:U.manT||null,card:sel?sel.value:null};
     if(op==="reveal"&&!a.card){toast("No Hidden card to reveal.");return}
-    if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc","reveal"].includes(op)&&!a.target){toast("Click a target on the board first.");return}
+    if((op==="equipfree"||op==="revmove")&&!a.card){toast(op==="equipfree"?"No Equipment to equip.":"Nothing revealed to move.");return}
+    if(op==="revmove"&&!["top","bottom","hand","discard"].includes(a.k))a.k="top";
+    if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc","reveal","mill","revealtop","revmove"].includes(op)&&!a.target){toast("Click a Hero on the board first.");return}
     send(a);return}
 });
 function redrawPrompt(){const m=document.getElementById("pl-modal");if(m)delete m.dataset.k;const s=view();if(m)m.remove();modals(s)}

@@ -125,6 +125,12 @@ button.card:hover{border-color:var(--cc)}
 .slot .nm{font-family:var(--display);font-weight:700;font-size:1.05rem}
 .slot .cl{font-size:.85rem;color:var(--muted);display:flex;align-items:center;gap:6px}
 .slot .cl .dot{width:9px;height:9px;border-radius:50%;background:var(--cc)}
+.slot.hero-full{padding:0;border:0;background:none;min-height:0}
+.slot.hero-full .card{height:100%}
+.slot.hero-full .slotbadge{top:52px}
+.dl li .nlink{border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer}
+.dl li .nlink:hover{color:var(--accent);text-decoration:underline}
+.dl li .nlink.bad{color:var(--warn)}
 .slot .x{align-self:flex-start;border:0;background:none;color:var(--muted);padding:0;font-size:.8rem;text-decoration:underline}
 .split{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start;margin-top:8px}
 .deckpanel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 90px);overflow:auto}
@@ -269,12 +275,12 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261030a"></script>
-<script src="assets/app.js?v=20261030a"></script>
-<script src="assets/play-engine.js?v=20261030a"></script>
-<script src="assets/play-cards.js?v=20261030a"></script>
-<script src="assets/play-ai.js?v=20261030a"></script>
-<script src="assets/play-ui.js?v=20261030a"></script>
+<script src="assets/cards-data.js?v=20261030b"></script>
+<script src="assets/app.js?v=20261030b"></script>
+<script src="assets/play-engine.js?v=20261030b"></script>
+<script src="assets/play-cards.js?v=20261030b"></script>
+<script src="assets/play-ai.js?v=20261030b"></script>
+<script src="assets/play-ui.js?v=20261030b"></script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 </body>
 </html>

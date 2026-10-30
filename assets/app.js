@@ -6,12 +6,12 @@ const CLASS_TEXT={Cleric:"#231A00",Monk:"#2A1500"};
 const cc=c=>CLASS_COLOR[c]||"#777", ct=c=>CLASS_TEXT[c]||"#FFFFFF";
 const TYPES=["Spell","Tactic","Song","Item","Equipment","Enchantment","Summon"];
 
-const HEROES=RAW_HEROES.map(r=>({id:"h:"+r[0],kind:"hero",name:r[0],cls:r[1],str:r[2],def:r[3],aura:r[4],hp:r[5],rules:r[6],type:"Hero",sup:"",sub:"",cost:""}));
+const HEROES=RAW_HEROES.map(r=>({id:"h:"+r[0],kind:"hero",name:r[0],cls:r[1],str:r[2],def:r[3],aura:r[4],hp:r[5],rules:r[6],ver:r[7]||1,type:"Hero",sup:"",sub:"",cost:""}));
 const CARDS=[
-  ...RAW_CARDS.map(r=>({id:r[1],kind:"card",name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7]})),
-  ...RAW_EQUIP.map(r=>({id:r[0],kind:"equip",name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:+r[7]||0,pdef:+r[8]||0}))
+  ...RAW_CARDS.map(r=>({id:r[1],kind:"card",name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7],ver:r[8]||1})),
+  ...RAW_EQUIP.map(r=>({id:r[0],kind:"equip",name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:+r[7]||0,pdef:+r[8]||0,ver:r[9]||1}))
 ];
-const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?" · "+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],sup:""}));
+const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?" · "+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],ver:r[11]||1,sup:""}));
 const TOKEN_BY_NAME=new Map(TOKENS.map(t=>[t.name,t]));
 const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
 const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
@@ -184,11 +184,11 @@ function readShare(code){
 function shareURL(d){return location.origin+location.pathname+"?deck="+shareCode(d)+"#build"}
 
 /* ---------- rendering: card tile ---------- */
-function typeLine(c){
-  if(c.kind==="hero")return`<span>Hero</span><span>${esc(c.cls)}</span>`;
-  if(c.kind==="token")return`<span>Token — ${esc(c.sub)}</span><span>${esc(c.cls)}</span>`;
+function typeLine(c){const v=`<i class="cver" title="Card version">v${c.ver||1}</i>`;
+  if(c.kind==="hero")return`<span>Hero</span><span>${esc(c.cls)} ${v}</span>`;
+  if(c.kind==="token")return`<span>Token — ${esc(c.sub)}</span><span>${esc(c.cls)} ${v}</span>`;
   const left=(c.sup?`<span class="leg">${esc(c.sup)}</span> `:"")+esc(c.type)+(c.sub?" — "+esc(c.sub):"");
-  return`<span>${left}</span><span>${esc(c.cls)}</span>`;
+  return`<span>${left}</span><span>${esc(c.cls)} ${v}</span>`;
 }
 function footHTML(c){
   if(c.kind==="hero")return`<div class="stats">${[["STR",c.str],["DEF",c.def],["AURA",c.aura],["HP",c.hp]].map(([k,v])=>`<div class="stat"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
@@ -509,7 +509,8 @@ function drawCard(ctx,c,W,H){
     let ft=c.kind==="token"?(c.tkind==="Equipment"?[c.region,"+"+c.str+" STR","Token"].join("  ·  "):"Pillar token"):c.kind==="equip"?[c.region,c.pstr?"+"+c.pstr+" STR":"",c.pdef?"+"+c.pdef+" DEF":""].filter(Boolean).join("  ·  "):(c.sup==="Legendary"?"Legendary · 1 per deck":"");
     ctx.font=`700 ${30*s}px ${F_BODY}`;ctx.fillStyle="#4C5563";ctx.fillText(ft,ix+22*s,footY+50*s);
   }
-  ctx.font=`700 ${20*s}px ${F_DISP}`;ctx.fillStyle=tcol;ctx.globalAlpha=.85;ctx.textAlign="center";ctx.fillText("CRYSTAL QUEST",W/2,H-6*s);ctx.globalAlpha=1;ctx.textAlign="left";
+  ctx.font=`700 ${20*s}px ${F_DISP}`;ctx.fillStyle=tcol;ctx.globalAlpha=.85;ctx.textAlign="center";ctx.fillText("CRYSTAL QUEST",W/2,H-6*s);
+  ctx.font=`700 ${19*s}px ${F_BODY}`;ctx.textAlign="right";ctx.fillText("v"+(c.ver||1),W-44*s,H-6*s);ctx.globalAlpha=1;ctx.textAlign="left";
   ctx.restore();
 }
 function drawBack(ctx,W,H){
@@ -535,7 +536,24 @@ async function offer(filename,data){
 }
 function exportList(d){const l=[];d.heroes.forEach(h=>{const c=BYID.get(h);if(c)l.push(c)});
   Object.entries(d.cards).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([id,q])=>{const c=BYID.get(id);if(c)for(let i=0;i<q;i++)l.push(c)});return l}
-async function exportPnP(d){
+/* print tracking: per deck, the version of each card last printed in this browser */
+const printKey=d=>"cq.printed."+d.id;
+function printRecord(d){return store.get(printKey(d),null)}
+function printPlan(d){const rec=printRecord(d);const all=exportList(d);const toks=[];tokensFor(d).forEach(t=>{for(let i=0;i<t.q;i++)toks.push(t.c)});
+  if(!rec)return{rec:null,all,toks,upd:null,updToks:null};
+  const changed=c=>!(c.id in rec.v)||rec.v[c.id]<(c.ver||1);
+  return{rec,all,toks,upd:all.filter(changed),updToks:toks.filter(changed)}}
+function choosePrint(d){const p=printPlan(d);const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Print and play");
+  const names=p.upd?[...new Set([...p.upd,...p.updToks].map(c=>c.name+" v"+(c.ver||1)))]:[];
+  m.innerHTML=`<div class="box"><h2>Print &amp; Play</h2><p class="note">Every printed card shows its version (v1, v2…) in the bottom corner.</p>
+    <div class="actions" style="flex-direction:column;align-items:stretch">
+      <button type="button" class="btn primary" data-act="pnp-go" data-src="${esc(d.id)}" data-v="all">Print the whole deck (${p.all.length+p.toks.length} cards)</button>
+      <button type="button" class="btn" data-act="pnp-go" data-src="${esc(d.id)}" data-v="upd" ${p.upd&&p.upd.length+p.updToks.length?"":"disabled"}>Print only updated cards${p.upd?` (${p.upd.length+p.updToks.length})`:""}</button>
+    </div>
+    <p class="note">${p.rec?`Last printed ${esc(new Date(p.rec.at).toLocaleString())} in this browser. Updated means a newer card version or a card added to the deck since then.${names.length?`<br><b>To print:</b> ${esc(names.join(", "))}`:"<br>Nothing has changed since then."}`:"This deck hasn't been printed from this browser yet, so print the whole deck first."}</p>
+    <div class="actions"><button type="button" class="btn" data-act="close">Cancel</button></div></div>`;
+  m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m)}
+async function exportPnP(d,mode){mode=mode||"all";const plan=printPlan(d);
   if(!window.jspdf){toast("The PDF tool didn't load. Reload the page and try again.");return}
   const iss=issues(d);
   busy(true,"Building print & play PDF…");await loadFonts();
@@ -544,7 +562,7 @@ async function exportPnP(d){
     // cover page
     pdf.setFont("helvetica","bold");pdf.setFontSize(22);pdf.text(d.name,0.75,1);
     pdf.setFont("helvetica","normal");pdf.setFontSize(11);
-    pdf.text(`Crystal Quest deck · ${deckTotal(d)} cards + 3 Heroes · printed ${new Date().toLocaleDateString()}`,0.75,1.3);
+    pdf.text(`Crystal Quest deck · ${deckTotal(d)} cards + 3 Heroes · printed ${new Date().toLocaleDateString()}${mode==="upd"?" · UPDATED CARDS ONLY":""}`,0.75,1.3);
     if(iss.length){pdf.setTextColor(170,60,30);pdf.text("Note: "+iss.join(" "),0.75,1.6,{maxWidth:7});pdf.setTextColor(0)}
     let y=2.1;pdf.setFont("helvetica","bold");pdf.text("Heroes",0.75,y);pdf.setFont("helvetica","normal");y+=0.25;
     d.heroes.forEach((h,i)=>{const c=BYID.get(h);pdf.text(`${["Lead","Center","Closer"][i]}: ${c?c.name+" ("+c.cls+")":h}`,0.9,y);y+=0.22});
@@ -555,17 +573,19 @@ async function exportPnP(d){
     if(toks.length){y+=half*0.22+0.2;pdf.setFont("helvetica","bold");pdf.text("Tokens to print",0.75,y);pdf.setFont("helvetica","normal");y+=0.25;
       const th=Math.ceil(toks.length/2);toks.forEach((t,i)=>pdf.text(`${t.q} ${t.c.name} (${tokenStatLine(t.c)})`,i<th?0.9:4.5,y+(i%th)*0.22));}
     pdf.setFontSize(9);pdf.setTextColor(90);pdf.text("Print at 100% (no scaling). Cut on the gray lines. Cards are 2.5 x 3.5 in, standard sleeve size. The last page has optional card backs.",0.75,10.4,{maxWidth:7});pdf.setTextColor(0);
-    const cards=exportList(d),cache=new Map();
+    const cards=mode==="upd"?plan.upd:plan.all,cache=new Map();
+    if(mode==="upd"){pdf.setFontSize(10);pdf.text("This printing only has cards updated since "+(plan.rec?new Date(plan.rec.at).toLocaleDateString():"the last print")+": "+[...new Set([...plan.upd,...plan.updToks].map(c=>c.name+" (v"+(c.ver||1)+")"))].join(", "),0.75,9.6,{maxWidth:7});pdf.setFontSize(11)}
     const W=750,H=1050,mx=0.5,my=0.25,cw=2.5,ch=3.5;
     const img=c=>{if(!cache.has(c.id))cache.set(c.id,cardCanvas(c,W,H).toDataURL("image/jpeg",0.9));return cache.get(c.id)};
     const page=(items,getImg)=>{pdf.addPage();items.forEach((c,i)=>{const x=mx+(i%3)*cw,yy=my+Math.floor(i/3)*ch;pdf.addImage(getImg(c),"JPEG",x,yy,cw,ch,undefined,"FAST")});
       pdf.setDrawColor(170);pdf.setLineWidth(0.005);for(let i=0;i<=3;i++){pdf.line(mx+i*cw,0,mx+i*cw,11);pdf.line(0,my+i*ch,8.5,my+i*ch)}};
     for(let i=0;i<cards.length;i+=9){page(cards.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
-    const tokCards=[];toks.forEach(t=>{for(let i=0;i<t.q;i++)tokCards.push(t.c)});
+    const tokCards=mode==="upd"?plan.updToks:plan.toks;
     for(let i=0;i<tokCards.length;i+=9){page(tokCards.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
     const back=cardCanvas(null,W,H).toDataURL("image/jpeg",0.9);page(Array(9).fill({}),()=>back);
     const blob=pdf.output("blob");busy(false);
-    await offer(safeName(d.name)+"_print_and_play.pdf",blob);
+    const rec=mode==="upd"&&plan.rec?{v:{...plan.rec.v}}:{v:{}};[...plan.all,...plan.toks].forEach(c=>{if(mode==="all"||cards.includes(c)||tokCards.includes(c))rec.v[c.id]=c.ver||1});rec.at=Date.now();store.set(printKey(d),rec);
+    await offer(safeName(d.name)+(mode==="upd"?"_updated_cards.pdf":"_print_and_play.pdf"),blob);
   }catch(e){busy(false);console.error(e);toast("Couldn't build the PDF. Try again.")}
 }
 async function exportTTS(d){
@@ -714,7 +734,8 @@ document.addEventListener("click",async e=>{
   else if(a==="hand-mull"){handMull()}
   else if(a==="hand-new"){if(S.hand){dealHand(S.hand.d);renderHand()}}
   else if(a==="inspect-hand"){const c=BYID.get(id);if(c){const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);m.innerHTML=`<div class="box">${cardHTML(c)}<div class="actions"><button type="button" class="btn" data-act="close">Close</button></div></div>`;m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m);m.querySelector("[data-act=close]").focus()}}
-  else if(a==="pnp"){const d=deckBySrc(b.dataset.src);if(d)exportPnP(d)}
+  else if(a==="pnp"){const d=deckBySrc(b.dataset.src);if(d)choosePrint(d)}
+  else if(a==="pnp-go"){const d=deckBySrc(b.dataset.src);b.closest(".modal")?.remove();if(d)exportPnP(d,v)}
   else if(a==="tts"){const d=deckBySrc(b.dataset.src);if(d)exportTTS(d)}
   else if(a==="copylist"){const d=deckBySrc(b.dataset.src);if(d)copyText(deckText(d))}
   else if(a==="import"){const t=$("#import-text").value;if(!t.trim()){toast("Paste a deck list first.");return}

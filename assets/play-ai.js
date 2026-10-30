@@ -2,6 +2,8 @@
 "use strict";
 (function(root){
 const E=root.CQE;const AI={};root.CQAI=AI;
+/* clone without the game log (the log can be long and the AI never reads it) */
+function lightClone(s){const l=s.log;s.log=[];try{return E.clone(s)}finally{s.log=l}}
 const W={alive:22,hp:1,str:1.6,def:1.2,aura:2.4,lvl:1.4,guard:.6,sum:4,sumStr:1.2,sumHp:.5,pillar:3,inv:1.2,hand:.4,gold:.12,aura0:0,tmpStr:.8,status:1.1,stun:2};
 AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e4;
   let sc=0;s.p.forEach((pl,p)=>{let v=0;
@@ -59,7 +61,7 @@ AI.choose=function(s,pid){if(s.over)return null;
   if(s.pend.length){const pr=s.pend[0];if(pr.pid!==pid)return null;
     if(pr.type==="window"||pr.type==="combo"){const opts=E.options(s,pid);let best={type:"decline"},bv=-1e9;
       for(const o of opts){const acts=o.type==="comboPlay"?AI.expand(s,pid,o):[o];
-        for(const a of acts){const c=E.clone(s);const r=E.act(c,pid,a);if(!r.ok)continue;settleSim(c,pid);const v=AI.evaluate(c,pid)+(a.type==="decline"?0.2:0);if(v>bv){bv=v;best=a}}}
+        for(const a of acts){const c=lightClone(s);const r=E.act(c,pid,a);if(!r.ok)continue;settleSim(c,pid);const v=AI.evaluate(c,pid)+(a.type==="decline"?0.2:0);if(v>bv){bv=v;best=a}}}
       if(pr.type==="window"&&best.type==="reveal"){const o=E.find(s,best.uid);if(o&&!(root.CQ_SCRIPTS[E.DB[o.o.id].name]||{}).hidden)return{type:"decline"}}
       return best}
     return quick(s,pid,pr)}
@@ -68,11 +70,11 @@ AI.choose=function(s,pid){if(s.over)return null;
     const good=pl.hand.filter(c=>{const d=E.DB[c.id];return(d.cls==="Generic"||cls.has(d.cls))&&(parseInt(d.cost,10)||0)<=aura+1}).length;
     return good>=2||pl.mulled?{type:"keep"}:{type:"mull"}}
   if(s.phase==="dawn"){if(s.dawnDone[pid])return null;const base=AI.evaluate(s,pid);let best={type:"dawnDone"},bv=base+1.5;
-    E.options(s,pid).filter(o=>o.type==="gem").forEach(o=>{const c=E.clone(s);E.act(c,pid,o);const v=AI.evaluate(c,pid);if(v>bv){bv=v;best=o}});return best}
+    E.options(s,pid).filter(o=>o.type==="gem").forEach(o=>{const c=lightClone(s);E.act(c,pid,o);const v=AI.evaluate(c,pid);if(v>bv){bv=v;best=o}});return best}
   if(s.phase==="town"){const opts=E.options(s,pid);if(!opts.length)return null;
     /* simulate each Town choice and keep the best real improvement */
     const base=AI.evaluate(s,pid);let best={type:"leave"},bv=base+0.3;
-    for(const o of opts){if(o.type==="leave")continue;const c=E.clone(s);const r=E.act(c,pid,o);if(!r.ok)continue;settleSim(c,pid);
+    for(const o of opts){if(o.type==="leave")continue;const c=lightClone(s);const r=E.act(c,pid,o);if(!r.ok)continue;settleSim(c,pid);
       let v=AI.evaluate(c,pid);if(o.type==="inn"){const h0=E.find(s,o.hero).o,h1=E.find(c,o.hero).o;const gain=(h0.dmg||0)-(h1.dmg||0);if(gain<=0||h1.dead)continue}
       if(v>bv){bv=v;best=o}}
     return best}
@@ -86,7 +88,7 @@ AI.choose=function(s,pid){if(s.over)return null;
     if(o.type==="play"){const c=pl.hand.find(x=>x.uid===o.uid);if(c&&!E.isScripted(E.DB[c.id].name)&&E.DB[c.id].kind!=="equip"&&E.DB[c.id].type!=="Item"&&E.DB[c.id].sup!=="Hidden")continue}
     if(o.type==="soul"&&o.ch===4&&s.round<2)continue;
     const acts=AI.expand(s,pid,o);
-    for(const a of acts){const c=E.clone(s);const r=E.act(c,pid,a);if(!r.ok)continue;settleSim(c,pid);
+    for(const a of acts){const c=lightClone(s);const r=E.act(c,pid,a);if(!r.ok)continue;settleSim(c,pid);
       let v=AI.evaluate(c,pid);
       if(a.type==="soul")v-=6;
       /* exhausting the acting Hero while it could still spend Aura on cards wastes that Aura */

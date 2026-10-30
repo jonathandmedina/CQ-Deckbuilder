@@ -33,7 +33,7 @@ E.rnd=rnd;E.ri=ri;E.shuffle=shuffle;
 const nid=s=>"o"+(++s.nx);
 const P=(s,pid)=>s.p[pid];
 const opp=pid=>1-pid;E.opp=opp;
-function log(s,m,pid){s.log.push({r:s.round,m,p:pid==null?-1:pid});if(s.log.length>260)s.log.splice(0,s.log.length-260)}
+function log(s,m,pid){s.logN=(s.logN||0)+1;s.log.push({n:s.logN,r:s.round,m,p:pid==null?-1:pid});if(s.log.length>4000)s.log.splice(0,s.log.length-4000)}
 E.log=log;
 const def=o=>DB[o.id]||TOK[o.name]||{};E.def=def;
 
@@ -85,8 +85,8 @@ E.slots=(s,pid)=>4+(living(P(s,pid)).some(h=>h.name==="Veteran Bowman")?1:0);
 /* ---------- stats ---------- */
 function maxHp(s,o){
   if(o.kind==="hero"){let m=o.base.hp;o.ench.forEach(e=>{if(e.name==="Life Boost")m+=2});
-    const pl=P(s,o.owner);if(o.cls==="Bard"&&pl.heroes.some(h=>h!==o&&!h.dead&&h.name==="Harmony Sage"))m+=2;return m}
-  if(o.kind==="summon"){let m=o.hp;const pl=P(s,o.ctrl);if(living(pl).some(h=>h.name==="Wild Shifter"))m+=2;
+    return m}
+  if(o.kind==="summon"){let m=o.hp;const pl=P(s,o.ctrl);
     if(/Soldier/.test(o.sub||o.name))m+=invCount(pl,"Captain's Banner");return m}
   if(o.kind==="doll")return 5;return 0}
 const hpOf=(s,o)=>maxHp(s,o)-(o.dmg||0);
@@ -99,11 +99,10 @@ function defOf(s,o){
     eqList(o).forEach(e=>d+=e.pdef||0);
     if(o.name==="Sun Paladin"&&o.ex)d+=2;
     const i=pl.heroes.indexOf(o);if(i>0&&pl.heroes[i-1].name==="Holy Guardian"&&!pl.heroes[i-1].dead)d+=1;
-    if(o.name==="Shadow Ranger"&&i===pl.heroes.length-1)d+=1;
     if(hasEqN(o,"Great Axe")&&enraged(s,o))d+=1;
     o.ench.forEach(e=>{if(e.name==="Distract")d-=1});
     if(modHas(o,"zeroDef"))d=0;return Math.max(0,d)}
-  if(o.kind==="summon"){const pl=P(s,o.ctrl);let d=modSum(o,"def")+invCount(pl,"Horn Crystal")+(pl.pm.sdef||0);return Math.max(0,d)}
+  if(o.kind==="summon"){const pl=P(s,o.ctrl);let d=modSum(o,"def")+invCount(pl,"Horn Crystal")+(pl.pm.sdef||0)+living(pl).filter(h=>h.name==="Wild Shifter").length;return Math.max(0,d)}
   return 0}
 function strOf(s,o,vs){
   if(o.kind==="hero"){const pl=P(s,o.owner);let b=o.name==="King of Curses"?curses(s):o.base.str;
@@ -117,7 +116,7 @@ function strOf(s,o,vs){
     const op=P(s,opp(o.owner));if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
     if(op)v-=(op.pm.enemyStr||0);
     if(vs){if(o.name==="Venom Dancer"&&vs.st&&vs.st.poison>0)v+=3;
-      if(o.name==="Shadowblade"&&vs.kind==="hero"){const vp=P(s,vs.owner);if(vp.heroes.indexOf(vs)===vp.heroes.length-1)v+=2}}
+}
     (o.mods||[]).forEach(m=>{if(m.mulStr&&(m.until==null||m.until>=s.round))v*=m.mulStr});
     if(modHas(o,"zeroStr"))v=0;return Math.max(0,v)}
   if(o.kind==="summon"){const pl=P(s,o.ctrl);let v=o.str+modSum(o,"str")+invCount(pl,"Tooth Crystal")+(pl.pm.sstr||0);
@@ -130,7 +129,7 @@ const auraStat=h=>h.base.aura+h.bon.aura;
 function spellDmg(s,pid,actor){const pl=P(s,pid);let n=pl.bf.filter(o=>o.name==="Spell Damage Pillar").length;
   if(actor){if(actor.name==="Ember Mage")n+=1;if(hasEqN(actor,"Apprentice's Wand"))n+=1;if(hasEqN(actor,"Ring of Power"))n+=2}return n}
 E.spellDmg=spellDmg;
-function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
+function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth"))return true;if((o.name==="Night Stalker"||o.name==="Shadow Ranger")&&o.ex)return true;return false}
 function cardProof(s,o){return o.kind==="hero"&&(hasEqN(o,"Cloak of Shadow")||modHas(o,"untarget"))}
 function poisonous(s,h){if(h.kind!=="hero")return 0;let n=0;if(h.name==="Dark Fang")n=Math.max(n,h.lvl>=3?3:1);
   eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger"||(e.x&&e.x.poison))n=Math.max(n,1)});
@@ -193,9 +192,9 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(dealt>0&&tgt.kind==="hero"){const tp=P(s,tgt.owner);const before=tp.t.took||0;tp.t.took=before+dealt;if(before<10&&tp.t.took>=10&&s.phase==="battle"){s.trig10=(s.trig10||[]).concat([tgt.owner])}if(tgt.fl.loseCtrlRound===s.round){if(hpOf(s,tgt)<1)tgt.dmg=maxHp(s,tgt)-1;tgt.ex=false}}
   if(src&&!o.noTrig){
     if(dealt>0&&lifelink(s,src))heal(s,src,src,dealt);
-    const pz=poisonous(s,src);if(pz&&(tgt.st&&!tgt.st.poison))addStatus(s,tgt,"poison",pz);
+    const pz=o.poisonous==="dmg"?dealt:poisonous(s,src);if(pz&&(tgt.st&&!tgt.st.poison))addStatus(s,tgt,"poison",pz);
     if(src.kind==="hero"){
-      if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(2,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
+      if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
       if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,1)}
       if(src.fl.bruisedRound===s.round&&dealt>0&&tgt.st)addStatus(s,tgt,"wound",1);
       if(o.combat&&hasEqN(src,"Poison-Tipped Dagger")&&dealt>0&&tgt.st)addStatus(s,tgt,"poison",2);
@@ -335,7 +334,7 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
     else if(k==="nonHero")list=objs.filter(o=>o.kind!=="hero"&&!o.fd);
   }
   list=list.filter(o=>{
-    if(o.kind==="hero"&&isEnemy(o)&&stealth(s,o)&&!o.dead)return false;
+    if(o.kind==="hero"&&isEnemy(o)&&stealth(s,o)&&!o.dead&&viaCard)return false; /* Stealth: can't be targeted by enemy cards or abilities, but can be attacked */
     if(viaCard&&cardProof(s,o))return false;
     if(spec.f&&!spec.f(s,o,ctx))return false;return true});
   /* Dazzling Melody: enemies must target the taunting Hero with attacks, cards and abilities (when it is a legal choice) */
@@ -351,7 +350,7 @@ function actorFor(s,pid){const pl=P(s,pid);
   if(s.bonus&&s.bonus.pid===pid){const h=pl.heroes.find(h=>h.uid===s.bonus.uid);if(h&&!h.dead&&!h.ex)return h}
   const n=pl.heroes.length;for(let i=0;i<n;i++){const h=pl.heroes[(s.pos+i)%n];if(!h.dead&&!h.ex)return h}return null}
 E.actorFor=actorFor;
-const canPlayCards=h=>h&&!h.st.stun&&h.name!=="Dumm Dum";
+const canPlayCards=h=>h&&!h.st.stun&&h.name!=="Dum Dum";
 function canPlayCard(s,pid,actor,c,free){const d=DB[c.id];if(!d||!actor)return false;
   if(!canPlayCards(actor))return false;
   if(d.cls!=="Generic"&&!heroIs(actor,d.cls))return false;
@@ -590,6 +589,7 @@ function resolveCont(s,pid,cont,mods){
     else pl.disc.push(cont.card)}
   /* triggers on card played */
   if(d.type==="Spell"){living(pl).forEach(h=>{if(h.name==="Diviner Mage")pushScry(s,pid,1)})}
+  if(d.type==="Song"&&actor&&!actor.dead&&heroIs(actor,"Bard")){living(pl).filter(h=>h.name==="Harmony Sage").forEach(hs=>heal(s,hs,actor,1,pid))}
   if(d.type==="Song"){if(invHas(pl,"The Forbidden Tuner")){const t=bestDamageTarget(s,pid,1,{pierce:1});if(t)damage(s,{name:"The Forbidden Tuner"},t,1,{pierce:1,card:true})}
     if(actor&&hasEqN(actor,"War Lute")){const t=autoTarget(s,pid,"strAlly");if(t)addMod(t,{str:1})}
     if(actor&&hasEqN(actor,"Celestial Harp")&&pl.t.songs===2)living(pl).forEach(h=>heal(s,actor,h,1))}
@@ -601,7 +601,7 @@ function arrowBonus(s,pid,actor){const pl=P(s,pid);let b=0,ign=false,pierce=0;
   if(pl.fl.rapidPierce)pierce=1;return{dmg:b,ignoreDef:ign,pierce}}
 function comboTrigger(s,pid,actor){const pl=P(s,pid);if(!actor||actor.dead)return;
   living(pl).forEach(h=>{if(h.name==="Monastery Stalwart")addMod(h,{def:1})});
-  if(actor.name==="Grandmaster Reece"&&actor.fl.combos===3)addMod(actor,{str:2});
+  if(actor.name==="Grandmaster Reece"&&(actor.lvl>=3?actor.fl.combos%3===0:actor.fl.combos===3)){const t=autoTarget(s,pid,"strAlly")||actor;addMod(t,{str:2});log(s,`Grandmaster Reece: ${t.name} gains +2 STR this turn.`,pid)}
   const shrine=pl.inv.find(o=>o.name==="Petal Shrine"&&!o.fd);if(shrine){shrine.ctr=shrine.ctr||{};shrine.ctr.petal=(shrine.ctr.petal||0)+1;if(shrine.ctr.petal>=3){shrine.ctr.petal=0;pl.fl.petalDisc=true;log(s,"Petal Shrine: next Combo card costs 1 less.",pid)}}
   const look=hasEqN(actor,"Jun Lao's Headband")?2:1;
   if(!pl.lib.length)return;
@@ -812,5 +812,5 @@ E.redact=function(s,viewer){/* hide opponent's hand and libraries for network pl
   c.p.forEach((pl,pid)=>{pl.lib=pl.lib.map(x=>keep.has(x.uid)?x:({uid:x.uid,id:null,owner:x.owner}));
     if(pid!==viewer){pl.hand=pl.hand.map(x=>({uid:x.uid,id:null,owner:x.owner}));pl.inv=pl.inv.map(o=>o.fd?{uid:o.uid,kind:"card",fd:true,name:"Hidden card",id:null,owner:o.owner}:o)}});
   c.pend=c.pend.map(pr=>{if(pr.pid===viewer)return pr;return{type:pr.type,pid:pr.pid,title:pr.title,hiddenPrompt:true}});
-  c.redacted=viewer;return c};
+  c.log=c.log.slice(-300);c.redacted=viewer;return c};
 })(typeof window!=="undefined"?window:globalThis);

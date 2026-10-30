@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: October 30, 2026 (update 3)*
+*Version: October 30, 2026 (update 4)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -134,6 +134,10 @@ Splitting Ritual and Doubling Ritual copy whichever Pillars you sacrifice.
 
 - **Legendary**: only 1 copy allowed per deck.
 - **Hidden**: played face down and triggered later. Traps and cards previously marked “Secret” are Hidden cards.
+
+### Card Versions
+
+Every card shows a version number (v1, v2, v3…) in its bottom corner. When a card’s text or stats change, its version goes up. Always play the newest version of a card. If a printed copy shows an older version, the current text on the Deck Forge site wins.
 
 ## 5. Areas of Play
 
@@ -538,11 +542,11 @@ Some equipment has a **Gold Upgrade Cost** and an **Upgrade** effect. At the Bla
 | **Mill X** | Put the top X cards of a library into its owner’s discard pile. |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
 | **Piercing X** | This attack ignores X points of the target’s DEF. |
-| **Poisonous X** | Whenever this Hero deals damage, add X Poison counters to the target if it has none. |
+| **Poisonous X** | Whenever this Hero or card deals damage, add X Poison counters to the target if it has none. **Poisonous** with no number adds Poison counters equal to the damage dealt. |
 | **Scry X** | Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order. |
 | **Spell Damage +X** | Your spells deal X extra damage. |
 | **Spell Damage Pillar** | Each one you control gives your spells +1 Spell Damage. |
-| **Stealth** | This Hero can’t be targeted by enemy attacks, cards or abilities. |
+| **Stealth** | This Hero can’t be targeted by enemy cards or abilities. It can still be attacked. |
 | **+1/+1 counter** | +1 STR and +1 DEF while on the Hero. |
 
 **Damage types.** Fire, Ice, Lightning, Light and Dark damage work like normal damage for now. They will matter in a future update.
@@ -652,6 +656,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Token**: A card created by an effect. Pillars and summons go on the battlefield. Equipment and item tokens (Dagger, Viper Fang Dagger, Doll) take an inventory slot. A token’s Aura cost is 0 unless it says otherwise (Viper Fang Dagger costs 1 to equip). Tokens that leave play are removed from the game. See the token list in The Cards.
 - **Hidden**: Supertype. Set face down in an inventory slot as an action. To trigger it, exhaust a ready Hero of its class (any Hero for Generic) and pay its cost. Resolves before the action that triggered it.
 - **Legendary**: Supertype. Only 1 copy per deck.
+- **Version (v1, v2…)**: The number in a card’s bottom corner. It goes up whenever the card changes. Play the newest version.
 - **Inventory slot**: One of 4 shared slots for items, Hidden cards, equipment tokens and unequipped equipment.
 - **Inventory overflow**: When more cards must go into your inventory than you have room for, you choose which to discard.
 - **Deck**: The 30 cards you build before a game (deck construction).
@@ -723,8 +728,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Echo (Bard)**: At your next Dawn, play the card again for free. You may choose new targets.
 - **Harmonize X (Bard)**: Exhaust X ready Heroes to gain the effect after the colon.
 - **Guard X (Paladin)**: Absorbs the first X damage that would be dealt to this Hero, before DEF is applied. Wears off in the Dusk Phase.
-- **Poisonous X (Rogue)**: Whenever this Hero deals damage, add X Poison counters to the target if it has none.
-- **Stealth (Rogue)**: This Hero can’t be targeted by enemy attacks, cards or abilities.
+- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, add X Poison counters to the target if it has none. Poisonous with no number adds Poison counters equal to the damage dealt.
+- **Stealth (Rogue)**: This Hero can’t be targeted by enemy cards or abilities. It can still be attacked.
 - **Lifelink (Cleric)**: When this Hero deals damage, heal it that much.
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.
 - **Conjure (Mage, Warlock)**: Create a Pillar token in play.

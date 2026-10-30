@@ -213,7 +213,7 @@ def("Blunt-Point Force",arrow(1,[ANY],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){
 def("Dual Shot",arrow(1,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"burn")}));
 def("Level Shot",arrow(1,[ANY],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
-def("Poison Dart",arrow(1,[t("any","target to poison")],c=>{st(c,c.t[0],"poison",2+((c.arrowBonus&&c.arrowBonus.dmg)||0))}));
+def("Poison Dart",arrow(1,[t("any","damage target")],c=>{D(c,c.t[0],1,{poisonous:"dmg"})}));
 def("Serrated Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3);st(c,c.t[0],"wound")}));
 def("Smoke Trail Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3);c.me.fl.preventNext=true}));
 def("Tri-Shot",arrow(4,[t("enemyPlayer","target party")],c=>{const p=c.t[0];if(!p)return;const hs=c.s.p[p.pid].heroes;[5,3,1].forEach((n,i)=>{if(hs[i]&&!hs[i].dead)D(c,hs[i],n,{ignoreDef:true})})}));
@@ -302,6 +302,8 @@ hid("Timely Heals",["party10","attack","card"],(s,pid)=>(s.p[pid].t.took||0)>=10
 
 /* ===== Hero abilities ===== */
 const hab=(name,arr)=>{H[name]=arr};
+const enemyItem=max=>t("item",max==null?"enemy item":"enemy item (cost 2 or less)",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner&&(max==null||(o.tok?0:(parseInt((E.DB[o.id]||{}).cost,10)||0))<=max));
+hab("Valdo Sticky Fingers",[{label:"Take an enemy item (cost 2 or less)",can:(s,pid,a)=>a.lvl<3&&s.p[1-pid].inv.some(o=>!o.fd&&(o.kind==="doll"||(o.kind==="card"&&(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2))),t:[enemyItem(2)],run:c=>steal(c,c.t[0])},{label:"Take an enemy item",lvl:3,can:(s,pid)=>s.p[1-pid].inv.some(o=>!o.fd&&(o.kind==="doll"||o.kind==="card")),t:[enemyItem(null)],run:c=>steal(c,c.t[0])}]);
 hab("Arcane Scholar",[{label:"Next Mage card costs 2 less",run:c=>{c.me.fl.mageNext=true}},{label:"Mage cards cost 1 less this turn",lvl:3,run:c=>{c.me.fl.mageAll=true}}]);
 hab("Arnett Lifebinder",[{label:"Heal any target 3",t:[ANY],run:c=>heal(c,c.t[0],3)},{label:"Heal any target 5",lvl:3,cost:2,t:[ANY],run:c=>heal(c,c.t[0],5)}]);
 hab("Battle Minstrel",[{label:"Return a Song from discard to hand",can:(s,pid)=>s.p[pid].disc.some(x=>E.DB[x.id].type==="Song"),run:c=>E.pushChoose(c.s,c.pid,{title:"Return a Song to hand",cards:c.me.disc.filter(x=>E.DB[x.id].type==="Song").map(x=>x.uid),min:1,max:1,op:"fromDisc"})}]);

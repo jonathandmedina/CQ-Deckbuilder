@@ -143,7 +143,7 @@ function myName(){return(AS()&&S.me&&S.me.name)||store2.get("cq.play.name","")||
 function startAI(){const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, 30 cards) for yourself.");return}
   if(!da){toast("Choose a deck for the AI.");return}
   U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
-  U.me=0;U.vsAI=true;U.net=null;U.mode="game";U.tgt=null;U.man=null;saveLocal();render();pumpAI()}
+  U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.net=null;U.mode="game";U.tgt=null;U.man=null;saveLocal();render();pumpAI()}
 function view(){return U.s}
 function send(a){
   if(U.net&&U.net.role==="guest"){U.net.ch.send({type:"broadcast",event:"act",payload:{a,cid}});U.busy=true;U.tgt=null;render();return}
@@ -166,11 +166,11 @@ function openChannel(code,role,onReady){const c=sb();if(!c){toast("Online play n
   ch.on("presence",{event:"sync"},()=>{if(!U.net)return;const st=ch.presenceState();U.net.peers=Object.keys(st).filter(k=>k!==cid).length;render()});
   ch.subscribe(async status=>{if(status==="SUBSCRIBED"){await ch.track({name:myName(),role});onReady&&onReady()}else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){toast("Couldn't reach the game server. Check your connection.")}});
   return ch}
-function hostRoom(resume){const dm=deckById(U.lobby.deck);if(!resume&&!dm){toast("Choose a legal deck first.");return}
+function hostRoom(resume){U.gameKey="g"+Date.now();const dm=deckById(U.lobby.deck);if(!resume&&!dm){toast("Choose a legal deck first.");return}
   const code=resume?resume.code:newCode();U.vsAI=false;U.s=resume?resume.s:null;U.me=0;
   U.net={role:"host",code,deck:dm,guest:resume?resume.guest:null,peers:0};U.mode=U.s?"game":"room";
   U.net.ch=openChannel(code,"host",()=>{if(U.s)broadcast()});render()}
-function joinRoom(code,resume){code=(code||"").trim().toUpperCase();if(!/^[A-Z0-9]{5}$/.test(code)){toast("Room codes are 5 letters/numbers.");return}
+function joinRoom(code,resume){U.gameKey="g"+Date.now();code=(code||"").trim().toUpperCase();if(!/^[A-Z0-9]{5}$/.test(code)){toast("Room codes are 5 letters/numbers.");return}
   const dm=resume?null:deckById(U.lobby.deck);if(!resume&&!dm){toast("Choose a legal deck first.");return}
   U.vsAI=false;U.s=null;U.me=1;U.net={role:"guest",code,deck:dm,peers:0};U.mode="room";store2.set("cq.play.guest",{code});
   U.net.ch=openChannel(code,"guest",()=>{U.net.ch.send({type:"broadcast",event:"hello",payload:{cid,name:myName(),deck:dm}})});render()}
@@ -181,7 +181,7 @@ function onHello(p){
   U.net.guest=p.cid;broadcast()}
 function onGuestAct(p){if(!U.s||p.cid!==U.net.guest)return;const r=E.act(U.s,1,p.a);saveLocal();broadcast(r.ok?null:r.err);render()}
 function broadcast(err){if(!U.net||!U.net.ch||!U.s||!U.net.guest)return;U.net.ch.send({type:"broadcast",event:"state",payload:{to:U.net.guest,s:E.redact(U.s,1),me:1,err:err||null}})}
-function leaveGame(){clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
+function leaveGame(){U.gameKey=null;clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
   if(U.net&&U.net.role==="guest")store2.del("cq.play.guest");if(U.net&&U.net.role==="host")store2.del("cq.play.host");
   if(U.vsAI)store2.del("cq.play.local");U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";U.tgt=null;U.man=null;render()}
 
@@ -195,10 +195,23 @@ const MANUAL_EQ=new Set(["Ritual Athame","Shillelagh","Helm of Aura","Ring of Vo
 function legal(){const s=view();if(!s)return[];if(U.net&&U.net.role==="guest"&&U.busy)return[];try{return E.options(s,U.me)}catch(e){return[]}}
 
 /* ---------- rendering ---------- */
+function mergeLog(s){if(!s)return;if(U.logFor!==U.gameKey){U.logFor=U.gameKey;U.logAll=new Map()}
+  s.log.forEach((l,i)=>{const k=l.n!=null?l.n:("i"+i);if(!U.logAll.has(k))U.logAll.set(k,l)})}
+function exportLog(){const s=view();if(!s)return;mergeLog(s);
+  const lines=[...U.logAll.values()].sort((a,b)=>(a.n||0)-(b.n||0));
+  const pdesc=pl=>`${pl.name}${pl.deckName?` — deck "${pl.deckName}"`:""} — party: ${pl.heroes.map(h=>h.name+" ("+h.cls+")").join(", ")}`;
+  const res=s.over?(s.winner<0?"Draw":`${s.p[s.winner].name} won`):`In progress (round ${s.round}, ${phaseLabel(s)})`;
+  let out=`Crystal Quest — game log\nExported: ${new Date().toLocaleString()}\nMode: ${U.vsAI?"vs AI":U.net?"online room "+U.net.code:"local"}\nPlayer 1: ${pdesc(s.p[0])}\nPlayer 2: ${pdesc(s.p[1])}\nResult: ${res}\n\n`;
+  let lastR=null;lines.forEach(l=>{if(l.r!==lastR&&!/^—/.test(l.m)){lastR=l.r}out+=(/^—/.test(l.m)?"\n":"")+`[R${l.r}] ${l.m}\n`});
+  if(lines.length&&lines[0].n>1)out+=`\n(Note: the first ${lines[0].n-1} log lines happened before this browser joined and aren't included.)\n`;
+  const blob=new Blob([out],{type:"text/plain"});const url=URL.createObjectURL(blob);const a=document.createElement("a");const d=new Date();
+  a.href=url;a.download=`crystal-quest-game-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}-${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}.txt`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);toast("Game log downloaded.")}
 function render(){const root=ROOT();if(!root)return;injectCSS();
   if(U.mode==="lobby"){root.innerHTML=lobbyHTML();return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
   const s=view();if(!s){root.innerHTML=roomHTML();return}
+  if(!U.gameKey)U.gameKey="g"+Date.now();mergeLog(s);
   const keepScroll=root.querySelector(".pl-log");const atBottom=!keepScroll||keepScroll.scrollTop+keepScroll.clientHeight>=keepScroll.scrollHeight-20;
   const handEl=root.querySelector(".pl-hand");const hs=handEl?handEl.scrollLeft:0;
   root.innerHTML=gameHTML(s);
@@ -246,11 +259,11 @@ function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
     ${zoneHTML(s,me,opts)}
     ${handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><h2>Game log</h2><span class="actions"><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><h2>Game log</h2><span class="actions"><button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div>
   </aside></div>`}
-function logHTML(s){return s.log.map(l=>{const sys=/^—/.test(l.m)||/🏆/.test(l.m);return`<p class="${sys?"sys":l.p===U.me?"me":l.p<0?"":"op"}">${esc(l.m)}</p>`}).join("")}
+function logHTML(s){return s.log.slice(-300).map(l=>{const sys=/^—/.test(l.m)||/🏆/.test(l.m);return`<p class="${sys?"sys":l.p===U.me?"me":l.p<0?"":"op"}">${esc(l.m)}</p>`}).join("")}
 function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const actor=s.phase==="battle"&&s.prio===pid&&!s.pend.length?E.actorFor(s,pid):null;
   const cands=U.tgt?new Set(U.tgt.slots[U.tgt.i].cands):new Set();
@@ -450,14 +463,15 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="join"){joinRoom(U.lobby.code);return}
   if(k==="leave"){leaveGame();return}
   if(k==="leave-ask"){if(s&&s.over){leaveGame();return}modal(`<h2>Leave this game?</h2><p>${U.vsAI?"Your game is saved in this browser; you can resume it from the Play tab.":U.net&&U.net.role==="host"?"The room closes for your opponent. You can reopen it from the Play tab.":"You can rejoin with the same code while the host keeps the room open."}</p><div class="actions"><button class="btn primary" data-pa="leave-soft">Leave</button><button class="btn" data-pa="close">Stay</button></div>`);return}
-  if(k==="leave-soft"){closeModal();clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(err){}}U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";render();return}
-  if(k==="resume-local"){const r=store2.get("cq.play.local",null);if(r){U.s=r.s;U.me=r.me||0;U.vsAI=true;U.net=null;U.mode="game";render();pumpAI()}return}
+  if(k==="leave-soft"){U.gameKey=null;closeModal();clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(err){}}U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";render();return}
+  if(k==="resume-local"){const r=store2.get("cq.play.local",null);if(r){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.vsAI=true;U.net=null;U.mode="game";render();pumpAI()}return}
   if(k==="drop-local"){store2.del("cq.play.local");render();return}
   if(k==="resume-host"){const r=store2.get("cq.play.host",null);if(r)hostRoom(r);return}
   if(k==="drop-host"){store2.del("cq.play.host");render();return}
   if(k==="resume-guest"){const r=store2.get("cq.play.guest",null);if(r)joinRoom(r.code,true);return}
   if(k==="drop-guest"){store2.del("cq.play.guest");render();return}
   if(k==="rules"){location.hash="rules";return}
+  if(k==="export-log"){exportLog();return}
   if(!s)return;
   if(k==="do"){let a;try{a=JSON.parse(b.dataset.a)}catch(err){return}closeModal();
     if(a.type==="fix"||a.type==="manDone"||a.type==="decline"){U.man=null;U.manT=null}
@@ -501,7 +515,7 @@ document.addEventListener("input",e=>{const t=e.target;const k=t.dataset&&t.data
   if(k==="code")U.lobby.code=t.value.toUpperCase();else if(k==="name")store2.set("cq.play.name",t.value.slice(0,24));else if(k==="man-n"&&U.man)U.man.n=parseInt(t.value,10)||0});
 function whyNot(s,c){const d=E.DB[c.id];const a=E.actorFor(s,U.me);
   if(s.phase!=="battle")return"Cards are played during the Battle Phase.";if(s.prio!==U.me||s.pend.length)return"Wait for your priority.";
-  if(!a)return"None of your Heroes are ready.";if(a.st.stun)return`${a.name} is Stunned and can't play cards.`;if(a.name==="Dumm Dum")return"Dumm Dum can't play cards.";
+  if(!a)return"None of your Heroes are ready.";if(a.st.stun)return`${a.name} is Stunned and can't play cards.`;if(a.name==="Dum Dum")return"Dum Dum can't play cards.";
   if(d.cls!=="Generic"&&!E.heroIs(a,d.cls))return`${a.name} is acting now and isn't a ${d.cls}. Only the Hero in the marked position (or its stand-in) acts.`;
   const cost=E.cardCost(s,U.me,a,d,0);if(cost>s.p[U.me].aura)return`Costs ${cost} Aura; you have ${s.p[U.me].aura}.`;
   if((d.type==="Item"||d.sup==="Hidden")&&s.p[U.me].inv.length>=E.slots(s,U.me))return"Your inventory is full. Clear a slot first.";

@@ -1,0 +1,140 @@
+/* Crystal Quest Deck Forge: "Retro" theme (default). 16-bit RPG menus: blue gradient windows with silver frames,
+   pixel type, a pointing-hand cursor, and the game's own pixel icons for classes, Aura, STR, DEF, HP and Legendary.
+   Everything is scoped to html[data-skin="retro"], so the Clean theme is untouched. */
+html[data-skin="retro"]{
+  --bg:#070b26; --surface:#1d2c96; --sunk:#14206e; --ink:#F4F5FF; --muted:#B4BCF2; --line:#7C88D8;
+  --accent:#FFD447; --accent-ink:#17123A; --legend:#FFD447; --warn:#FF7B6B; --ok:#73E98A;
+  --card-paper:#1a2884; --card-ink:#F4F5FF; --card-line:#6C79CF;
+  --display:"Pixelify Sans","Courier New",monospace; --body:"Pixelify Sans","Courier New",monospace;
+  --win:linear-gradient(180deg,#3c58cf 0,#2338a8 36px,#1b2b90 150px,#121c6c 100%);
+  --frame:#E4E6F6; --frame-dark:#0A0C24;
+  --winshadow:inset 0 0 0 1px #8C96D8,0 0 0 2px var(--frame-dark),0 4px 0 2px rgba(0,0,0,.35);
+  --shadow:0 0 0 2px var(--frame-dark),0 4px 0 2px rgba(0,0,0,.35);
+  --hand:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 18 13' shape-rendering='crispEdges'%3E%3Cpath d='M1 4h6V2h2v1h1v1h7v2h-5v1h3v1h-3v1h2v1h-2v1H5v-1H3V9H1z' fill='%23fff' stroke='%23000' stroke-width='1'/%3E%3Cpath d='M9 5h2M9 7h2M8 9h2' stroke='%23999' stroke-width='1'/%3E%3C/svg%3E");
+  color-scheme:dark;
+}
+html[data-skin="retro"] body{background:radial-gradient(120% 80% at 50% 0%,#162068 0%,#0b1038 45%,#05071c 100%) fixed var(--bg);
+  font-size:15px;letter-spacing:.01em;text-shadow:1px 1px 0 rgba(0,0,0,.55);-webkit-font-smoothing:none}
+html[data-skin="retro"] body::before{background:#0b1038}
+html[data-skin="retro"] h1,html[data-skin="retro"] h2,html[data-skin="retro"] h3{font-weight:600;letter-spacing:.02em}
+html[data-skin="retro"] h1{font-size:1.75rem;color:#fff;text-shadow:2px 2px 0 #000}
+html[data-skin="retro"] .lede,html[data-skin="retro"] .note,html[data-skin="retro"] .count{color:var(--muted)}
+html[data-skin="retro"] a{color:var(--accent)}
+html[data-skin="retro"] :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- windows ---------- */
+html[data-skin="retro"] :where(.top,.card,.deck,.panel,.deckpanel,.modal .box,.pl-zone,.pl-mid,.slot:not(.hero-full),.empty,.ph,.ps,.pi,.issues,.pl-man,.rules){
+  background:var(--win);color:var(--ink);border:3px solid var(--frame);border-radius:8px;box-shadow:var(--winshadow)}
+html[data-skin="retro"] .top{border-width:0 0 3px;border-radius:0;box-shadow:0 2px 0 var(--frame-dark),0 6px 0 rgba(0,0,0,.25)}
+html[data-skin="retro"] .brand{font-size:1.3rem;color:#fff;text-shadow:2px 2px 0 #000}
+html[data-skin="retro"] .brand small{font-family:var(--display);color:var(--accent);letter-spacing:.12em}
+html[data-skin="retro"] .tabs a{position:relative;color:var(--muted);border-radius:4px;padding:6px 12px 6px 22px}
+html[data-skin="retro"] .tabs a:hover{color:#fff;background:rgba(255,255,255,.08)}
+html[data-skin="retro"] .tabs a[aria-current="page"]{color:#fff;background:rgba(0,0,0,.25);box-shadow:none}
+html[data-skin="retro"] .tabs a[aria-current="page"]::before,html[data-skin="retro"] .tabs a:hover::before{content:"";position:absolute;left:2px;top:50%;width:18px;height:13px;transform:translateY(-50%);background:var(--hand) center/contain no-repeat}
+html[data-skin="retro"] .tabs a:hover:not([aria-current="page"])::before{opacity:.55}
+html[data-skin="retro"] .acct{color:var(--muted)} html[data-skin="retro"] .acct b{color:#fff}
+html[data-skin="retro"] .modal{background:rgba(2,3,16,.66)}
+
+/* ---------- controls ---------- */
+html[data-skin="retro"] :is(.btn,.chip,.mini,.pill,.tg,.pp,.posm,.posm span,.res){border-radius:4px}
+html[data-skin="retro"] .btn{background:linear-gradient(180deg,#2c42b6,#17227a);border:2px solid var(--frame);color:#fff;box-shadow:0 0 0 1px var(--frame-dark);font-weight:500;text-shadow:1px 1px 0 #000}
+html[data-skin="retro"] .btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+html[data-skin="retro"] .btn.primary{background:linear-gradient(180deg,#ffe27a,#e2a91e);border-color:#fff3c4;color:#1d1300;text-shadow:none}
+html[data-skin="retro"] .btn.primary:hover:not(:disabled){color:#1d1300;filter:brightness(1.08)}
+html[data-skin="retro"] .btn.danger{color:#ffb3a8}
+html[data-skin="retro"] .btn.primary.go,html[data-skin="retro"] .pl-acts .btn.go{background:linear-gradient(180deg,#59d873,#22914a);border-color:#d6ffd9;color:#06210d;text-shadow:none}
+html[data-skin="retro"] :is(select,input[type=search],input[type=text],input[type=email],input[type=password],input[type=number],textarea){background:#0d1452;border:2px solid var(--line);border-radius:4px;color:#fff}
+html[data-skin="retro"] :is(select,input,textarea):focus{border-color:var(--accent);outline:none}
+html[data-skin="retro"] .chip{background:#14206e;border:2px solid var(--line);color:var(--ink)}
+html[data-skin="retro"] .chip[aria-pressed="true"]{background:#fff;border-color:#fff;color:#141a52;text-shadow:none}
+html[data-skin="retro"] .pill,html[data-skin="retro"] .tg,html[data-skin="retro"] .pp,html[data-skin="retro"] .res{background:rgba(0,0,0,.28);border-color:var(--line);color:var(--ink)}
+html[data-skin="retro"] .step b{border-color:var(--line)}
+html[data-skin="retro"] .prog{background:#0b1145;border-color:var(--line)}
+html[data-skin="retro"] .prog i,html[data-skin="retro"] .curve span.b{background:linear-gradient(180deg,#ffe27a,#d99a15)}
+html[data-skin="retro"] .dl li{border-bottom:1px dotted rgba(255,255,255,.18)}
+html[data-skin="retro"] .lv{background:#fff;color:#141a52;text-shadow:none;border-radius:3px}
+html[data-skin="retro"] .toast{background:var(--win);border:3px solid var(--frame);box-shadow:var(--winshadow);color:#fff}
+html[data-skin="retro"] .issues.bad{background:linear-gradient(180deg,#5a1430,#3a0c22)}
+html[data-skin="retro"] .issues.good{background:linear-gradient(180deg,#145a2c,#0c3a1c)}
+
+/* ---------- class icons (--ci is set next to --cc wherever a class color is used) ---------- */
+html[data-skin="retro"] .dot{width:18px!important;height:18px!important;border-radius:0!important;transform:none!important;background:var(--ci) center/contain no-repeat!important;image-rendering:pixelated;flex:none}
+html[data-skin="retro"] [style*="--ci:none"] .dot,html[data-skin="retro"] .dot[style*="--ci:none"]{width:10px!important;height:10px!important;background:var(--cc)!important;transform:rotate(45deg)!important;margin:0 4px}
+html[data-skin="retro"] .group-h .dot{width:26px!important;height:26px!important}
+html[data-skin="retro"] .group-h{color:#fff;text-shadow:2px 2px 0 #000;border-bottom:2px solid color-mix(in srgb,var(--cc) 70%,#fff);padding-bottom:4px}
+
+/* ---------- cards ---------- */
+html[data-skin="retro"] .card{border-color:color-mix(in srgb,var(--cc) 35%,var(--frame));border-radius:8px}
+html[data-skin="retro"] button.card:hover{border-color:#fff;box-shadow:inset 0 0 0 1px #8C96D8,0 0 0 2px var(--accent),0 4px 0 2px rgba(0,0,0,.35)}
+html[data-skin="retro"] .c-head{background:linear-gradient(180deg,color-mix(in srgb,var(--cc) 82%,#fff) 0%,var(--cc) 45%,color-mix(in srgb,var(--cc) 72%,#000) 100%);color:var(--ct);text-shadow:none;border-bottom:2px solid var(--frame-dark);gap:6px;padding-left:8px}
+html[data-skin="retro"] .c-head::before{content:"";flex:none;width:32px;height:32px;background:var(--ci) center/24px 24px no-repeat,radial-gradient(circle,#2a3486 0%,#0c1040 100%);border:2px solid #E4E6F6;border-radius:5px;box-shadow:0 0 0 1px #0A0C24;image-rendering:pixelated}
+html[data-skin="retro"] .card[style*="--ci:none"] .c-head::before{display:none}
+html[data-skin="retro"] .c-name{font-weight:600;font-size:1rem}
+html[data-skin="retro"] .c-type{color:var(--muted)}
+html[data-skin="retro"] .c-rules{color:#fff}
+html[data-skin="retro"] .c-foot,html[data-skin="retro"] .c-ctrl{border-top:2px solid rgba(255,255,255,.18);color:var(--muted)}
+html[data-skin="retro"] .c-ctrl{background:rgba(0,0,0,.22)}
+html[data-skin="retro"] .cver{border-color:var(--line);color:var(--muted);border-radius:3px}
+html[data-skin="retro"] .card.picked,html[data-skin="retro"] .pl-hand .hc.ok .card,html[data-skin="retro"] .pick-list .pk.on .card{outline:3px solid var(--accent);outline-offset:1px}
+html[data-skin="retro"] .card .slotbadge{background:var(--accent);color:var(--accent-ink);border-radius:3px;text-shadow:none}
+
+/* Aura cost: the Aura gem icon with the number on it */
+html[data-skin="retro"] .gem{clip-path:none;background:url(ico-aura.png) center/contain no-repeat;image-rendering:pixelated;width:30px;height:36px;color:#fff;font-size:1rem;font-weight:700;text-shadow:-1px 0 #000,1px 0 #000,0 -1px #000,0 1px #000,2px 2px 0 #000;padding-top:2px}
+html[data-skin="retro"] .aura{clip-path:none;background:url(ico-aura.png) center/contain no-repeat;image-rendering:pixelated;width:.85em;height:1.05em;vertical-align:-2px}
+
+/* Legendary */
+html[data-skin="retro"] .c-type .leg{color:var(--legend)}
+html[data-skin="retro"] .c-type .leg.legendary::before{content:"";display:inline-block;width:30px;height:9px;margin-right:4px;background:url(ico-legend.png) center/contain no-repeat;image-rendering:pixelated;vertical-align:1px}
+
+/* Hero stats with the STR / DEF / Aura / HP icons */
+html[data-skin="retro"] .stat{border:2px solid rgba(255,255,255,.22);background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0}
+html[data-skin="retro"] .stat b{color:#fff;display:inline}
+html[data-skin="retro"] .stat i{display:none}
+html[data-skin="retro"] :is(.stat,.ph-stats span)::before{content:"";width:18px;height:18px;flex:none;background:center/contain no-repeat;image-rendering:pixelated}
+html[data-skin="retro"] :is(.stat.s-str,.ph-stats .s-str)::before{background-image:url(ico-str.png)}
+html[data-skin="retro"] :is(.stat.s-def,.ph-stats .s-def)::before{background-image:url(ico-def.png)}
+html[data-skin="retro"] :is(.stat.s-aura,.ph-stats .s-aura)::before{background-image:url(ico-aura.png)}
+html[data-skin="retro"] .stat.s-hp::before{background-image:url(ico-hp.png)}
+html[data-skin="retro"] .ph-stats span{display:flex;align-items:center;justify-content:center;gap:3px;border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);font-size:0;padding:2px 0;border-radius:4px}
+html[data-skin="retro"] .ph-stats b{display:inline;font-size:.95rem;color:#fff}
+html[data-skin="retro"] .ph-stats b.up{color:var(--ok)} html[data-skin="retro"] .ph-stats b.dn{color:var(--warn)}
+
+/* ---------- play table ---------- */
+html[data-skin="retro"] .ph{border-left-width:3px;border-color:var(--frame);background:var(--win)}
+html[data-skin="retro"] .ph-name{color:#fff}
+html[data-skin="retro"] .ph-cls{color:var(--muted)}
+html[data-skin="retro"] .ph-cls .dot{width:22px!important;height:22px!important}
+html[data-skin="retro"] .ph-top{color:var(--muted)}
+html[data-skin="retro"] .ph.actor{box-shadow:inset 0 0 0 1px #8C96D8,0 0 0 2px var(--frame-dark),0 0 0 5px var(--accent)}
+html[data-skin="retro"] .ph.actor::before{content:"";position:absolute;left:-26px;top:14px;width:22px;height:16px;background:var(--hand) center/contain no-repeat;z-index:2}
+html[data-skin="retro"] .hpbar{height:18px;border:2px solid #fff;border-radius:3px;background:#0a0e30;overflow:visible;margin-left:16px}
+html[data-skin="retro"] .hpbar::before{content:"";position:absolute;left:-20px;top:50%;transform:translateY(-50%);width:20px;height:18px;background:url(ico-hp.png) center/contain no-repeat;image-rendering:pixelated}
+html[data-skin="retro"] .hpbar i{background:linear-gradient(180deg,#9df7a8,#2fb34f);opacity:1}
+html[data-skin="retro"] .hpbar.low i{background:linear-gradient(180deg,#ffb0a0,#d6402c)}
+html[data-skin="retro"] .hpbar span{color:#fff;text-shadow:-1px 0 #000,1px 0 #000,0 -1px #000,0 1px #000;line-height:14px}
+html[data-skin="retro"] .pl-mid{background:var(--win);border-color:var(--accent)}
+html[data-skin="retro"] .pl-mid.wait{border-color:var(--frame)}
+html[data-skin="retro"] .posm{border:2px solid var(--frame)}
+html[data-skin="retro"] .posm span{background:#0d1452;color:var(--muted)}
+html[data-skin="retro"] .posm span.on{background:var(--accent);color:var(--accent-ink);text-shadow:none}
+html[data-skin="retro"] .pl-acts .btn.atk{background:linear-gradient(180deg,#ff6a55,#b3221a);border-color:#ffd6cf;color:#fff}
+html[data-skin="retro"] .pl-acts .btn.lv{background:linear-gradient(180deg,#8890a8,#4d5266);border-color:#e6e8f2}
+html[data-skin="retro"] .pl-acts .btn.lv-str{background:linear-gradient(180deg,#ff6a55,#b3221a)}
+html[data-skin="retro"] .pl-acts .btn.lv-def{background:linear-gradient(180deg,#59d873,#22914a)}
+html[data-skin="retro"] .pl-acts .btn.lv-aura{background:linear-gradient(180deg,#4fb6ff,#1f5fc8)}
+html[data-skin="retro"] .pl-acts .sep{background:rgba(255,255,255,.25)}
+html[data-skin="retro"] .pi{border:2px dashed var(--line);background:rgba(0,0,0,.25);color:var(--muted)}
+html[data-skin="retro"] .pi.full{border:3px solid var(--frame);background:var(--win);color:#fff}
+html[data-skin="retro"] .pi.fd{background:repeating-linear-gradient(45deg,#0d1452,#0d1452 6px,#1b2a8c 6px,#1b2a8c 12px)}
+html[data-skin="retro"] .ps{border-color:var(--frame);color:#fff}
+html[data-skin="retro"] .pl-man{border-color:var(--legend)}
+html[data-skin="retro"] .pl-hand .hc .auto{background:#0d1452;border-color:var(--line);color:var(--muted)}
+html[data-skin="retro"] .pl-hand .hc .cb span{background:#0d1452;border-radius:3px}
+html[data-skin="retro"] .pl-zone.op{background:linear-gradient(180deg,#46307e 0%,#2e1f63 40%,#1c1346 100%)}
+
+/* ---------- misc ---------- */
+html[data-skin="retro"] .skin-btn{font-size:.8rem}
+html[data-skin="retro"] img,html[data-skin="retro"] .pixel{image-rendering:pixelated}
+@media (max-width:720px){html[data-skin="retro"] .ph.actor::before{display:none}}
+@media (max-width:480px){html[data-skin="retro"] .brand{font-size:1.1rem}html[data-skin="retro"] .brand small{font-size:.7rem}html[data-skin="retro"] .skin-btn{padding:3px 7px;font-size:.7rem}}

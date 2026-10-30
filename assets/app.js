@@ -1,9 +1,18 @@
 "use strict";
 /* ---------- data ---------- */
 const CLASSES=["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock"];
-const CLASS_COLOR={Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
-const CLASS_TEXT={Cleric:"#231A00",Monk:"#2A1500"};
+/* Two themes: "retro" (default, SNES-style menus, class icons) and "clean". Printed cards always use the clean palette. */
+const SKIN=document.documentElement.dataset.skin==="clean"?"clean":"retro";
+const CLASS_COLOR_CLEAN={Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
+const CLASS_TEXT_CLEAN={Cleric:"#231A00",Monk:"#2A1500"};
+/* retro colors are sampled from the class icons */
+const CLASS_COLOR_RETRO={Barbarian:"#BE1029",Bard:"#A9327C",Cleric:"#CAAF65",Druid:"#A8622F",Mage:"#0271B9",Monk:"#51A5C5",Paladin:"#DE8600",Ranger:"#567428",Rogue:"#4B6170",Warlock:"#4D1791",Generic:"#6D6F80",Artificer:"#507B7F",Blacksmith:"#673839",Necromancer:"#466E6B"};
+const CLASS_TEXT_RETRO={Cleric:"#1A1206",Monk:"#06222E",Paladin:"#1E1000"};
+const CLASS_COLOR=SKIN==="retro"?CLASS_COLOR_RETRO:CLASS_COLOR_CLEAN, CLASS_TEXT=SKIN==="retro"?CLASS_TEXT_RETRO:CLASS_TEXT_CLEAN;
 const cc=c=>CLASS_COLOR[c]||"#777", ct=c=>CLASS_TEXT[c]||"#FFFFFF";
+const ICON_CLS=new Set(["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock","Artificer","Blacksmith","Necromancer"]);
+const ICON_BASE=new URL("assets/",document.baseURI).href;
+const ci=c=>ICON_CLS.has(c)?`url(${ICON_BASE}ico-${c.toLowerCase()}.png)`:"none";
 const TYPES=["Spell","Tactic","Song","Item","Equipment","Enchantment","Summon"];
 
 const HEROES=RAW_HEROES.map(r=>({id:"h:"+r[0],kind:"hero",name:r[0],cls:r[1],str:r[2],def:r[3],aura:r[4],hp:r[5],rules:r[6],ver:r[7]||1,type:"Hero",sup:"",sub:"",cost:""}));
@@ -187,11 +196,11 @@ function shareURL(d){return location.origin+location.pathname+"?deck="+shareCode
 function typeLine(c){const v=`<i class="cver" title="Card version">v${c.ver||1}</i>`;
   if(c.kind==="hero")return`<span>Hero</span><span>${esc(c.cls)} ${v}</span>`;
   if(c.kind==="token")return`<span>Token — ${esc(c.sub)}</span><span>${esc(c.cls)} ${v}</span>`;
-  const left=(c.sup?`<span class="leg">${esc(c.sup)}</span> `:"")+esc(c.type)+(c.sub?" — "+esc(c.sub):"");
+  const left=(c.sup?`<span class="leg${c.sup==="Legendary"?" legendary":""}">${esc(c.sup)}</span> `:"")+esc(c.type)+(c.sub?" — "+esc(c.sub):"");
   return`<span>${left}</span><span>${esc(c.cls)} ${v}</span>`;
 }
 function footHTML(c){
-  if(c.kind==="hero")return`<div class="stats">${[["STR",c.str],["DEF",c.def],["AURA",c.aura],["HP",c.hp]].map(([k,v])=>`<div class="stat"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
+  if(c.kind==="hero")return`<div class="stats">${[["STR",c.str],["DEF",c.def],["AURA",c.aura],["HP",c.hp]].map(([k,v])=>`<div class="stat s-${k.toLowerCase()}"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
   if(c.kind==="token"){const st=tokenStats(c);if(st)return`<div class="stats">${st.map(([k,v])=>`<div class="stat"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
     return c.tkind==="Equipment"?[esc(c.region),"+"+esc(c.str)+" STR","Token"].join(" · "):"Pillar token"}
   if(c.kind==="equip"){const b=[esc(c.region)];if(c.pstr)b.push("+"+c.pstr+" STR");if(c.pdef)b.push("+"+c.pdef+" DEF");return b.join(" · ")}
@@ -200,7 +209,7 @@ function footHTML(c){
 function cardHTML(c,o={}){
   const tag=o.button?"button":"article";
   const attrs=o.button?` type="button" data-act="${o.button}" data-id="${esc(c.id)}"`:"";
-  return`<${tag} class="card${o.picked?" picked":""}" style="--cc:${cc(c.cls)};--ct:${ct(c.cls)}"${attrs}>
+  return`<${tag} class="card${o.picked?" picked":""}" style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}"${attrs}>
   <div class="c-head"><span class="c-name">${esc(c.name)}</span>${hasGem(c)?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
   <div class="c-rules">${rulesHTML(c.rules||"")}</div>
@@ -225,12 +234,12 @@ function gridWithGroups(list,f,tile){
   const gk=c=>(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
   const counts={};list.forEach(c=>{const k=gk(c);counts[k]=(counts[k]||0)+1});
   for(const c of list){const k=gk(c);
-    if(k!==last){out+=`<div class="group-h" style="--cc:${cc(c.cls)}"><i class="dot"></i>${esc(k)} <span>${counts[k]}</span></div>`;last=k}
+    if(k!==last){out+=`<div class="group-h" style="--cc:${cc(c.cls)};--ci:${ci(c.cls)}"><i class="dot"></i>${esc(k)} <span>${counts[k]}</span></div>`;last=k}
     out+=tile(c)}
   return out;
 }
 function classChips(cur,act,classes,withAll=true){
-  return`<div class="chips" role="group" aria-label="Filter by class">${withAll?`<button type="button" class="chip" data-act="${act}" data-v="all" aria-pressed="${cur==="all"}">All classes</button>`:""}${classes.map(k=>`<button type="button" class="chip" style="--cc:${cc(k)}" data-act="${act}" data-v="${k}" aria-pressed="${cur===k}"><i class="dot"></i>${k}</button>`).join("")}</div>`;
+  return`<div class="chips" role="group" aria-label="Filter by class">${withAll?`<button type="button" class="chip" data-act="${act}" data-v="all" aria-pressed="${cur==="all"}">All classes</button>`:""}${classes.map(k=>`<button type="button" class="chip" style="--cc:${cc(k)};--ci:${ci(k)}" data-act="${act}" data-v="${k}" aria-pressed="${cur===k}"><i class="dot"></i>${k}</button>`).join("")}</div>`;
 }
 function selectHTML(id,act,cur,opts){return`<select id="${id}" data-act="${act}">${opts.map(([v,l])=>`<option value="${v}"${v===cur?" selected":""}>${l}</option>`).join("")}</select>`}
 const SORTS=[["class","Class"],["name","Name"],["cost","Aura cost"],["type","Card type"]];
@@ -267,7 +276,7 @@ function heroStatsHTML(h,cls="hstats"){return`<span class="${cls}">${HSTATS.map(
 function partySlots(d){
   const names=["Lead","Center","Closer"];
   return`<div class="party">${names.map((n,i)=>{const h=BYID.get(d.heroes[i]);
-    return h?`<div class="slot full hero-full" style="--cc:${cc(h.cls)}">${cardHTML(h,{slot:(i+1)+" · "+n.toUpperCase(),ctrl:`<div class="c-ctrl"><button type="button" class="btn sm" data-act="inspect" data-id="${esc(h.id)}">View</button><span class="sp"></span><button type="button" class="btn sm" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div>`})}</div>`
+    return h?`<div class="slot full hero-full" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${cardHTML(h,{slot:(i+1)+" · "+n.toUpperCase(),ctrl:`<div class="c-ctrl"><button type="button" class="btn sm" data-act="inspect" data-id="${esc(h.id)}">View</button><span class="sp"></span><button type="button" class="btn sm" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div>`})}</div>`
       :`<div class="slot"><small>${i+1} · ${n}</small><span class="cl">Empty</span></div>`}).join("")}</div>`;
 }
 function stepsHTML(){
@@ -329,9 +338,9 @@ function deckPanel(d){
     <ul class="issues ${iss.length?"bad":"good"}">${iss.length?iss.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Deck is legal and ready to play.</li>"}</ul>
     <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 2 copies of a card, and 1 of each Legendary.</p>`}
-    ${d.heroes.length?`<div class="dl heroes"><h4><span>Heroes</span><span>${d.heroes.length}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
-    <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
-    ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward the 30. Print &amp; Play includes them.</p></div>`:""})()}
+    ${d.heroes.length?`<div class="dl heroes"><h4><span>Heroes</span><span>${d.heroes.length}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
+    <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
+    ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward the 30. Print &amp; Play includes them.</p></div>`:""})()}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}
     <div class="actions">
       <button type="button" class="btn primary" data-act="save">Save deck</button>
@@ -357,7 +366,7 @@ function bestCard(r,rank){const d=bestDeck(r);const hs=d.heroes.map(h=>BYID.get(
   const players=(r.players||[]).filter(Boolean);const pl=players.slice(0,3).map(esc).join(", ")+(players.length>3?` +${players.length-3} more`:"");
   return`<article class="deck best">
     <div class="best-h">${rank?`<span class="rank">#${rank}</span>`:""}<h3>${esc(d.name)}</h3><span class="pct" title="Win percentage">${Number(r.win_pct).toFixed(0)}%</span></div>
-    <div class="pips">${hs.map(h=>`<button type="button" class="pill" style="--cc:${cc(h.cls)}" data-act="inspect" data-id="${esc(h.id)}"><i class="dot"></i>${esc(h.name)}</button>`).join("")}</div>
+    <div class="pips">${hs.map(h=>`<button type="button" class="pill" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-act="inspect" data-id="${esc(h.id)}"><i class="dot"></i>${esc(h.name)}</button>`).join("")}</div>
     <div class="best-rec"><b>${r.wins}–${r.losses}${r.draws?`–${r.draws}`:""}</b> in ${r.games} game${r.games===1?"":"s"} · vs AI ${r.ai_wins}/${r.ai_games} · online ${r.online_wins}/${r.online_games}</div>
     <div class="note">Played by ${pl||"Guest"} · last game ${esc(new Date(r.last_played).toLocaleDateString())}</div>
     <div class="actions"><button type="button" class="btn sm" data-act="best-view" data-id="${esc(r.deck_key)}">View list</button><button type="button" class="btn sm primary" data-act="best-open" data-id="${esc(r.deck_key)}">Open in Deck Builder</button></div>
@@ -374,8 +383,8 @@ function viewBest(){const b=S.best;
 function bestListModal(r){const d=bestDeck(r);const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",d.name);
   const rows=Object.entries(d.cards).map(([id,q])=>({c:BYID.get(id),id,q})).sort((a,b)=>(a.c?costNum(a.c):99)-(b.c?costNum(b.c):99)||a.id.localeCompare(b.id));
   m.innerHTML=`<div class="box"><h2>${esc(d.name)}</h2><p class="note">${r.wins}–${r.losses}${r.draws?`–${r.draws}`:""} · ${Number(r.win_pct).toFixed(1)}% wins in ${r.games} games</p>
-    <div class="dl"><h4><span>Heroes</span><span>3</span></h4><ul>${d.heroes.map(h=>{const c=BYID.get(h);return c?`<li style="--cc:${cc(c.cls)}"><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(c.id)}">${esc(c.name)}</button></li>`:""}).join("")}</ul>
-    <h4><span>Cards</span><span>${rows.reduce((a,e)=>a+e.q,0)}</span></h4><ul>${rows.map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink" data-act="inspect" data-id="${esc(e.id)}">${esc(e.c.name)}</button><span class="cst">${esc(e.c.cost)}</span>`:`<span class="n bad">${esc(e.id)}</span>`}</li>`).join("")}</ul></div>
+    <div class="dl"><h4><span>Heroes</span><span>3</span></h4><ul>${d.heroes.map(h=>{const c=BYID.get(h);return c?`<li style="--cc:${cc(c.cls)};--ci:${ci(c.cls)}"><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(c.id)}">${esc(c.name)}</button></li>`:""}).join("")}</ul>
+    <h4><span>Cards</span><span>${rows.reduce((a,e)=>a+e.q,0)}</span></h4><ul>${rows.map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink" data-act="inspect" data-id="${esc(e.id)}">${esc(e.c.name)}</button><span class="cst">${esc(e.c.cost)}</span>`:`<span class="n bad">${esc(e.id)}</span>`}</li>`).join("")}</ul></div>
     <div class="actions"><button type="button" class="btn primary" data-act="best-open" data-id="${esc(r.deck_key)}">Open in Deck Builder</button><button type="button" class="btn" data-act="close">Close</button></div></div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m)}
 function confirmReplace(){return window.confirm("Replace your unsaved draft in the Deck Builder with this deck?")}
@@ -387,7 +396,7 @@ function viewDecks(){
   ${S.mode==="account"&&store.get("cq.decks",[]).length?`<button type="button" class="btn" data-act="migrate">Move ${store.get("cq.decks",[]).length} browser deck(s) into my account</button>`:""}</div>
   <div class="decks">${ds.length?ds.map(d=>{const iss=issues(d);const t=deckTotal(d);
     return`<div class="deck"><h3>${esc(d.name)}</h3>
-    <div class="pips">${d.heroes.map(h=>BYID.get(h)).filter(Boolean).map(h=>`<span class="pill" style="--cc:${cc(h.cls)}"><i class="dot"></i>${esc(h.name)}</span>`).join("")||'<span class="note">No Heroes yet</span>'}</div>
+    <div class="pips">${d.heroes.map(h=>BYID.get(h)).filter(Boolean).map(h=>`<span class="pill" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><i class="dot"></i>${esc(h.name)}</span>`).join("")||'<span class="note">No Heroes yet</span>'}</div>
     <div class="note">${t}/${DECK_SIZE} cards${d.updated?" · saved "+new Date(d.updated).toLocaleDateString():""}</div>
     <span class="status ${iss.length?"no":"ok"}">${iss.length?iss.length+" issue"+(iss.length>1?"s":""):"Legal deck"}</span>
     <div class="actions"><button type="button" class="btn sm primary" data-act="open" data-id="${d.id}">Edit</button>
@@ -505,7 +514,7 @@ function layoutRules(ctx,text,w,size){
 }
 function drawCard(ctx,c,W,H){
   const s=W/750;ctx.save();ctx.textBaseline="alphabetic";
-  const col=cc(c.cls),tcol=ct(c.cls);
+  const col=CLASS_COLOR_CLEAN[c.cls]||"#777",tcol=CLASS_TEXT_CLEAN[c.cls]||"#FFFFFF";
   ctx.fillStyle=col;rr(ctx,0,0,W,H,34*s);ctx.fill();
   const ix=24*s,iy=24*s,iw=W-48*s,ih=H-48*s;
   ctx.fillStyle="#FBFBF8";rr(ctx,ix,iy,iw,ih,18*s);ctx.fill();

@@ -296,7 +296,7 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const inv=[];for(let i=0;i<slots;i++){const o=pl.inv[i];if(!o){inv.push('<span class="pi">Empty slot</span>');continue}
     const c=o.kind==="equip"?(o.cls||"Generic"):o.kind==="doll"?"Generic":((E.DB[o.id]||{}).cls||"Generic");
     if(o.fd)inv.push(`<button class="pi full fd${U.man&&U.manT===o.uid?" mansel":""}" data-pa="obj" data-u="${o.uid}">${mine&&o.id?esc(E.DB[o.id].name)+" (set)":"Face-down card"}</button>`);
-    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${invCounts(s,o,pid)}</button>`)}
+    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)};--ci:${ci(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${invCounts(s,o,pid)}</button>`)}
   const isInit=s.init===pid;
   const turnTag=s.phase==="battle"&&s.prio===pid&&!s.pend.length?'<span class="res init">Acting</span>':"";
   const pc=[0,1].map(p=>`P${p}`).filter(u=>cands.has(u)&&u==="P"+pid).length;
@@ -372,14 +372,14 @@ function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id
   const pz=E.poisonous(s,h);if(pz)tags.push(`<span class="tg">Poisonous ${pz}</span>`);
   heroCounts(s,h).forEach(x=>tags.push(x));
   (h.mods||[]).forEach(m=>{if(m.str)tags.push(`<span class="tg ${m.str>0?"good":"bad"}">${m.str>0?"+":""}${m.str} STR</span>`);if(m.def)tags.push(`<span class="tg ${m.def>0?"good":"bad"}">${m.def>0?"+":""}${m.def} DEF</span>`);if(m.zeroDef)tags.push('<span class="tg bad">DEF 0</span>');if(m.zeroStr)tags.push('<span class="tg bad">STR 0</span>');if(m.mulStr)tags.push('<span class="tg good">STR ×2</span>')});
-  const gear=E.eqList(h).map(e=>`<button class="tg eq${U.man&&U.manT===e.uid?" mansel":""}${cands.has(e.uid)?" cand":""}" style="--cc:${cc(e.cls||"Generic")}" data-pa="obj" data-u="${e.uid}">⚔ ${esc(e.name)}</button>`).concat(h.ench.map(e=>`<button class="tg eq${cands.has(e.uid)?" cand":""}" style="--cc:${cc((E.DB[e.id]||{}).cls||"Warlock")}" data-pa="obj" data-u="${e.uid}">✦ ${esc(e.name)}</button>`)).join("");
+  const gear=E.eqList(h).map(e=>`<button class="tg eq${U.man&&U.manT===e.uid?" mansel":""}${cands.has(e.uid)?" cand":""}" style="--cc:${cc(e.cls||"Generic")};--ci:${ci(e.cls||"Generic")}" data-pa="obj" data-u="${e.uid}">⚔ ${esc(e.name)}</button>`).concat(h.ench.map(e=>`<button class="tg eq${cands.has(e.uid)?" cand":""}" style="--cc:${cc((E.DB[e.id]||{}).cls||"Warlock")}" data-pa="obj" data-u="${e.uid}">✦ ${esc(e.name)}</button>`)).join("");
   const low=st.hp*3<=st.max;
   const isActor=actor&&actor.uid===h.uid;
-  return`<div role="button" tabindex="0" class="ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}" style="--cc:${cc(h.cls)}" data-pa="obj" data-u="${h.uid}">
+  return`<div role="button" tabindex="0" class="ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
     <span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>
     <span class="ph-name">${esc(h.name)}</span><span class="ph-cls"><span class="dot"></span>${esc(h.cls)}</span>
     <span class="hpbar${low?" low":""}"><i style="width:${Math.max(0,Math.min(100,st.hp/st.max*100))}%"></i><span>${h.dead?"0":st.hp} / ${st.max} HP</span></span>
-    <span class="ph-stats"><span>${statB(st.str,d.str)}STR</span><span>${statB(st.def,d.def)}DEF</span><span>${statB(st.aura,d.aura)}AURA</span></span>
+    <span class="ph-stats"><span class="s-str">${statB(st.str,d.str)}STR</span><span class="s-def">${statB(st.def,d.def)}DEF</span><span class="s-aura">${statB(st.aura,d.aura)}AURA</span></span>
     ${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}
   </div>`}
 function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});

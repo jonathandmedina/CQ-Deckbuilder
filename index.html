@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
 <style>
-/* Layout: sticky top bar with three views (Catalog, Deck Builder, My Decks); builder is a two-pane pool + deck list that stacks on phones. */
+/* Layout: sticky top bar with views (Cards, Deck Builder, My Decks, Best Decks, Rules, Play); builder is a two-pane pool + deck list that stacks on phones. */
 :root{
   --bg:#ECEFF3; --surface:#FFFFFF; --sunk:#F5F7F9; --ink:#18202B; --muted:#5A6474; --line:#D3D9E1;
   --accent:#0E747B; --accent-ink:#FFFFFF; --legend:#A8720F; --warn:#B4441F; --ok:#2E7D4F;
@@ -132,6 +132,13 @@ button.card:hover{border-color:var(--cc)}
 .dl li .nlink{border:0;background:none;padding:0;text-align:left;font:inherit;color:inherit;cursor:pointer}
 .dl li .nlink:hover{color:var(--accent);text-decoration:underline}
 .dl li .nlink.bad{color:var(--warn)}
+.deck.best .best-h{display:flex;align-items:center;gap:10px}
+.deck.best .best-h h3{flex:1;min-width:0}
+.deck.best .rank{font-family:var(--display);font-weight:800;color:var(--muted)}
+.deck.best .pct{font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--ok);font-variant-numeric:tabular-nums}
+.deck.best .best-rec{font-size:.9rem;font-variant-numeric:tabular-nums}
+.deck.best .pill{cursor:pointer}
+.bar a.btn{text-decoration:none;color:var(--ink)}
 .slot .x{align-self:flex-start;border:0;background:none;color:var(--muted);padding:0;font-size:.8rem;text-decoration:underline}
 .split{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start;margin-top:8px}
 .deckpanel{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;max-height:calc(100vh - 90px);overflow:auto}
@@ -261,9 +268,10 @@ button.card:hover{border-color:var(--cc)}
 <header class="top"><div class="wrap">
   <div class="brand">Crystal Quest <small>Deck Forge</small></div>
   <nav class="tabs" id="tabs">
-    <a href="#catalog" data-view="catalog">Catalog</a>
+    <a href="#catalog" data-view="catalog">Cards</a>
     <a href="#build" data-view="build">Deck Builder</a>
     <a href="#decks" data-view="decks">My Decks</a>
+    <a href="#best" data-view="best">Best Decks</a>
     <a href="#rules" data-view="rules">Rules</a>
     <a href="#play" data-view="play">Play</a>
   </nav>
@@ -276,12 +284,12 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261030d"></script>
-<script src="assets/app.js?v=20261030d"></script>
-<script src="assets/play-engine.js?v=20261030d"></script>
-<script src="assets/play-cards.js?v=20261030d"></script>
-<script src="assets/play-ai.js?v=20261030d"></script>
-<script src="assets/play-ui.js?v=20261030d"></script>
+<script src="assets/cards-data.js?v=20261030e"></script>
+<script src="assets/app.js?v=20261030e"></script>
+<script src="assets/play-engine.js?v=20261030e"></script>
+<script src="assets/play-cards.js?v=20261030e"></script>
+<script src="assets/play-ai.js?v=20261030e"></script>
+<script src="assets/play-ui.js?v=20261030e"></script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 </body>
 </html>

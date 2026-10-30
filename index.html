@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Crystal Quest Deck Forge</title>
-<meta name="description" content="Browse every Crystal Quest card, build decks, save them to your account, and export print-and-play PDFs or Tabletop Simulator decks.">
+<meta name="description" content="Browse every Crystal Quest card, build decks, save them to your account, export print-and-play PDFs or Tabletop Simulator decks, and play games against the AI or friends online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
@@ -258,6 +258,7 @@ button.card:hover{border-color:var(--cc)}
     <a href="#build" data-view="build">Deck Builder</a>
     <a href="#decks" data-view="decks">My Decks</a>
     <a href="#rules" data-view="rules">Rules</a>
+    <a href="#play" data-view="play">Play</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
 </div></header>
@@ -268,7 +269,12 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261028f"></script>
-<script src="assets/app.js?v=20261028f"></script>
+<script src="assets/cards-data.js?v=20261030a"></script>
+<script src="assets/app.js?v=20261030a"></script>
+<script src="assets/play-engine.js?v=20261030a"></script>
+<script src="assets/play-cards.js?v=20261030a"></script>
+<script src="assets/play-ai.js?v=20261030a"></script>
+<script src="assets/play-ui.js?v=20261030a"></script>
+<script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 </body>
 </html>

@@ -103,7 +103,7 @@ function defOf(s,o){
     if(hasEqN(o,"Great Axe")&&enraged(s,o))d+=1;
     o.ench.forEach(e=>{if(e.name==="Distract")d-=1});
     if(modHas(o,"zeroDef"))d=0;return Math.max(0,d)}
-  if(o.kind==="summon"){const pl=P(s,o.ctrl);let d=modSum(o,"def")+invCount(pl,"Horn Crystal")+(pl.pm.sdef||0);return Math.max(0,d)}
+  if(o.kind==="summon"){const pl=P(s,o.ctrl);let d=modSum(o,"def")+invCount(pl,"Horn Crystal")+invCount(pl,"Barkskin Totem")+(pl.pm.sdef||0);return Math.max(0,d)}
   return 0}
 function strOf(s,o,vs){
   if(o.kind==="hero"){const pl=P(s,o.owner);let b=o.name==="King of Curses"?curses(s):o.base.str;

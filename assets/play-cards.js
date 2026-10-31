@@ -121,7 +121,7 @@ def("Charged Barrage",{run(c){exMe(c);buff(c.actor,{def:4});c.actor.fl.chargedRo
 def("Noble Promotion",{run(c){c.me.fl.promoRound=c.s.round;log(c,`${c.me.name} will gain initiative at Dusk.`)}});
 def("To the Armory",{run(c){E.pushChoose(c.s,c.pid,{title:"To the Armory: choose an Equipment",cards:c.me.lib.filter(x=>E.DB[x.id].kind==="equip").map(x=>x.uid),min:1,max:1,op:"tutor"})}});
 def("Take a Stand",{run(c){draw(c,dfn(c,c.actor));c.actor.fl.standRound=c.s.round}});
-def("Noble Choice",M(2,[{label:"Summon a 2/1 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains Guard 2",t:[HERO],run:c=>{if(c.t[0]){c.t[0].guard+=2;log(c,`${c.t[0].name} gains Guard 2.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
+def("Noble Choice",M(2,[{label:"Summon a 2/3 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains Guard 2",t:[HERO],run:c=>{if(c.t[0]){c.t[0].guard+=2;log(c,`${c.t[0].name} gains Guard 2.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
 /* ===== Barbarian ===== */
 def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:3})}});
 def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:5})}});
@@ -238,7 +238,7 @@ def("Mass Populate",{run(c){summons(c.me).slice().forEach(o=>E.copySummon(c.s,c.
 def("Evolve",{run(c){summons(c.me).slice(0,2).forEach(o=>{destroy(c,o,true);E.copySummon(c.s,c.pid,o,1)});exMe(c)}});
 def("Return to the Earth",{t:[t("allySummon","summon to sacrifice")],run(c){destroy(c,c.t[0]);draw(c,1)}});
 def("Primal Energy",{t:[HERO],can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=2,run(c){summons(c.me).filter(o=>!o.ex).slice(0,2).forEach(o=>o.ex=true);if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}});
-def("Nature's Choice",M(2,[{label:"Summon a 1/2 Elk",run:c=>{summon(c,"Elk");exMe(c)}},{label:"A summon gains +2 STR",t:[t("summon")],run:c=>buff(c.t[0],{str:2})},{label:"Ready a summon",t:[t("allySummon","your summon")],run:c=>{if(c.t[0])c.t[0].ex=false}}]));
+def("Nature's Choice",M(2,[{label:"Summon a 2/2 Elk",run:c=>{summon(c,"Elk");exMe(c)}},{label:"A summon gains +2 STR",t:[t("summon")],run:c=>buff(c.t[0],{str:2})},{label:"Ready a summon",t:[t("allySummon","your summon")],run:c=>{if(c.t[0])c.t[0].ex=false}}]));
 def("Stampede",{run(c){summons(c.me).forEach(o=>{o.ex=false;const tg=rand(c,enemies(c).filter(e=>!E.stealth(c.s,e)));if(tg)E.damage(c.s,o,tg,str(c,o,tg),{combat:true})});summons(c.me).forEach(o=>o.ex=false)}});
 /* ===== Generic ===== */
 def("Inspiration",{run(c){draw(c,2)}});
@@ -298,7 +298,7 @@ song("Marching Cadence",{run(c){living(c.me).forEach(h=>h.fl.bandRound=c.s.round
 song("Duet",{t:[t("allyHero","ally Hero to band with",(s,o,x)=>!x||o!==x.actor)],run(c){const a=c.actor,b=c.t[0];[a,b].forEach(h=>{if(h)h.fl.bandRound=c.s.round});
   if((c.me.t.songs||0)>1&&a)a.fl.duetRound=c.s.round;log(c,`${a?a.name:"This Hero"}${b?" and "+b.name:""} gain Banding this turn${(c.me.t.songs||0)>1?"; their banded attack gets +2 STR":""}.`)}});
 /* passive items: handled in the engine by name (no script needed beyond entering play) */
-["Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
+["Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
 S["Almandine"].gem=c=>{c.actor=null;enemies(c).forEach(e=>E.damage(c.s,{name:"Almandine"},e,2,{card:true}))};
 S["Rose Quartz"].gem=c=>{living(c.me).forEach(h=>E.heal(c.s,null,h,3))};
 S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};
@@ -316,6 +316,7 @@ hid("Attack Reversal","attack",null,c=>{c.mods.cancel=true});
 hid("Refrain","attack",null,c=>{c.mods.noDamage=true});
 hid("Out of the Woods","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);return t2&&t2.o.kind==="hero"&&t2.pid===pid},c=>{summon(c,"Beast")});
 hid("Fade the Fury","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);const a=atkr(s,trig);return t2&&t2.o.kind==="hero"&&E.heroIs(t2.o,"Rogue")&&a&&a.o.kind==="hero"&&E.str(s,a.o)>=3},c=>{c.mods.cancel=true});
+hid("Shelter from the Storm",["attack","card"],(s,pid,trig)=>!trig.ability&&s.p[pid].bf.some(o=>o.kind==="summon"),c=>{summons(c.me).forEach(o=>{buff(o,{def:3});o.ex=true});log(c,"Summons gain +3 DEF this turn and are exhausted.")});
 hid("Cancel","card",null,c=>{c.mods.cancel=true});
 hid("Narrow Escape","card",(s,pid,trig)=>trig.card&&trig.cost>=3&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"&&E.heroIs(f.o,"Rogue")}),c=>{c.mods.cancel=true});
 hid("Camouflage","card",(s,pid,trig)=>/Spell|Tactic/.test(trig.type||"")&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"}),c=>{const hs=(c.trig.targets||[]).map(u=>E.find(c.s,u)).filter(f=>f&&f.pid===c.pid&&f.o.kind==="hero");c.mods.prevent=(c.mods.prevent||[]).concat(hs.map(f=>f.o.uid));hs.forEach(f=>E.addMod(f.o,{untarget:1}))});
@@ -338,7 +339,7 @@ hab("Rootbinder",[{label:"Summons +1 STR this turn",run:c=>{c.me.pm.sstr=(c.me.p
 hab("Songweaver",[{label:"Ally +2 STR this turn",t:[AL],run:c=>buff(c.t[0],{str:2})}]);
 hab("Storm Caller",[{label:"Deal 2 damage to all enemies",cost:2,can:(s,pid,a)=>a.lvl<3,run:c=>enemies(c).forEach(e=>E.damage(c.s,c.actor,e,2,{card:true}))},{label:"Deal 3 damage to all enemies",lvl:3,cost:2,run:c=>enemies(c).forEach(e=>E.damage(c.s,c.actor,e,3,{card:true}))}]);
 hab("Wild Shifter",[{label:"Ready a summon you control",can:(s,pid,a)=>a.lvl<3&&s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}},{label:"Ready up to two summons you control",lvl:3,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex),t("allySummon","second exhausted summon (optional)",(s,o)=>o.ex,{opt:true,distinct:true})],run:c=>{c.t.filter(Boolean).forEach(o=>{if(o.ex){o.ex=false;log(c,`${o.name} readies.`)}})}}]);
-hab("Warden of the Woods",[{label:"Summon a 1/1 Squirrel",cost:1,run:c=>summon(c,"Squirrel")},{label:"Exhaust a summon: +2 STR",ex:false,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&!o.ex),t:[t("allySummon","ready summon",(s,o)=>!o.ex)],run:c=>{if(c.t[0])c.t[0].ex=true;buff(c.actor,{str:2})}}]);
+hab("Warden of the Woods",[{label:"Summon a 1/3 Squirrel",cost:1,run:c=>summon(c,"Squirrel")},{label:"Exhaust a summon: +2 STR",ex:false,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&!o.ex),t:[t("allySummon","ready summon",(s,o)=>!o.ex)],run:c=>{if(c.t[0])c.t[0].ex=true;buff(c.actor,{str:2})}}]);
 
 /* ===== choose ops ===== */
 OPS.bottom=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){const c=pl.lib.splice(i,1)[0];pl.lib.unshift(c);E.log(s,`${pl.name} puts the card on the bottom of their library.`,pid)}})};

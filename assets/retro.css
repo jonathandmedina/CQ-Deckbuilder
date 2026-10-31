@@ -174,4 +174,4 @@ html[data-skin="retro"] .pl-bar .nm{font-size:1.4rem;font-weight:400}
 
 /* Play link stands out: green menu button with a gold frame */
 html[data-skin="retro"] .bhead h1{margin-bottom:0}
-@media (min-width:721px){html[data-skin="retro"] .top .brand{order:-2}html[data-skin="retro"] .discord-btn{order:-1;margin-left:auto}}
+@media (min-width:721px) and (max-width:1499px){html[data-skin="retro"] .top .brand{order:-2}html[data-skin="retro"] .discord-btn{order:-1;margin-left:auto}}

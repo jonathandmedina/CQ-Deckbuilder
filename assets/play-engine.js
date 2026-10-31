@@ -43,12 +43,14 @@ function mkHero(s,pid,id){const d=DB[id];return{uid:nid(s),kind:"hero",id,name:d
 function mkCard(s,pid,id){return{uid:nid(s),id,owner:pid}}
 E.newGame=function(cfg){
   const s={v:1,nx:0,rng:(cfg.seed>>>0)||((Math.random()*2**31)|0),round:0,phase:"mull",init:0,pos:0,prio:0,acted:[false,false],passed:[false,false],
-    p:[],pend:[],cur:null,qatk:null,bonus:null,town:null,over:false,winner:null,log:[],seq:0,dawnDone:[false,false],lastCard:null};
+    p:[],pend:[],cur:null,qatk:null,bonus:null,town:null,over:false,winner:null,log:[],seq:0,dawnDone:[false,false],lastCard:null,
+    stats:{dmg:[{},{}],prev:[{},{}],heal:[{},{}],start:[[],[]]}};
   cfg.players.forEach((pc,pid)=>{
     const pl={name:pc.name||("Player "+(pid+1)),ai:!!pc.ai,heroes:pc.deck.heroes.map(h=>mkHero(s,pid,h)),hand:[],lib:[],disc:[],exile:[],inv:[],bf:[],aura:0,gold:0,echo:[],pm:{},fl:{},t:{},mullDone:false,mulled:false,deckName:pc.deck.name||""};
     for(const[id,q]of Object.entries(pc.deck.cards))if(DB[id])for(let i=0;i<q;i++)pl.lib.push(mkCard(s,pid,id));
     s.p.push(pl);
   });
+  s.p.forEach((pl,i)=>{s.stats.start[i]=pl.heroes.map(h=>h.name)});
   s.p.forEach(pl=>{shuffle(s,pl.lib);for(let i=0;i<4;i++)draw(s,s.p.indexOf(pl),1,true)});
   let a,b;do{a=1+ri(s,6);b=1+ri(s,6)}while(a===b);
   s.init=a>b?0:1;
@@ -165,7 +167,36 @@ function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
 E.draw=draw;
 function addStatus(s,o,k,n){if(!o||o.dead||!o.st)return;o.st[k]=(o.st[k]||0)+(n||1);log(s,`${o.name} is ${E.STATUS_NAME[k]}${n>1?` (+${n})`:""}.`)}
 E.addStatus=addStatus;
-function addMod(o,m){o.mods=o.mods||[];o.mods.push(Object.assign({until:"dusk"},m))}
+/* ---------- game stats: damage dealt, damage prevented and healing done, credited to the card / ability / attack ---------- */
+let CUR_SRC=null;/* name of the card, item, ability or Hidden card currently resolving */
+function stat(s,k,side,name,n){if(!(n>0)||side==null||side<0||!name)return;if(!s.stats)s.stats={dmg:[{},{}],prev:[{},{}],heal:[{},{}],start:[[],[]]};const t=s.stats[k][side];t[name]=(t[name]||0)+n}
+function sideOf(s,o){if(!o)return null;if(o.kind==="hero")return o.owner;if(o.ctrl!=null)return o.ctrl;if(o.owner!=null)return o.owner;return null}
+E.stat=stat;
+/* runs a card / ability script with its name as the stats source; Guard it grants is remembered so later absorbs credit it */
+function withSrc(s,name,fn){const prev=CUR_SRC;CUR_SRC=name;const g=[];s.p.forEach(pl=>pl.heroes.forEach(h=>g.push([h,h.guard])));
+  try{return fn()}finally{g.forEach(([h,b])=>{if(h.guard>b){h.gsrc=h.gsrc||[];h.gsrc.push({n:h.guard-b,src:name})}});CUR_SRC=prev}}
+E.withSrc=withSrc;
+/* end-of-game summary: rounds, lineups (start / final order, level, died), top 5 damage, top 5 prevention, top healer per side */
+E.gameStats=function(s){const st=s.stats||{dmg:[{},{}],prev:[{},{}],heal:[{},{}],start:[[],[]]};
+  const top=(o,n)=>Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([name,v])=>({name,v}));
+  const both=k=>[0,1].map(i=>top(st[k][i],99).map(x=>Object.assign({side:i},x))).flat().sort((a,b)=>b.v-a.v).slice(0,5);
+  return{rounds:s.round,winner:s.winner,conceded:s.conceded,
+    sides:s.p.map((pl,i)=>({name:pl.name,start:st.start[i]||[],final:pl.heroes.map(h=>({name:h.name,lvl:h.lvl,dead:!!h.dead})),
+      dmg:top(st.dmg[i],5),prev:top(st.prev[i],5),healer:top(st.heal[i],1)[0]||null,
+      totDmg:Object.values(st.dmg[i]||{}).reduce((a,b)=>a+b,0),totPrev:Object.values(st.prev[i]||{}).reduce((a,b)=>a+b,0),totHeal:Object.values(st.heal[i]||{}).reduce((a,b)=>a+b,0)})),
+    topDmg:both("dmg"),topPrev:both("prev")}};
+/* credit prevented damage: Guard (FIFO by source), equipment Guard, then DEF layers (card buffs, equipment, Hero/item effects); base DEF is not credited */
+function creditGuard(s,h,n){const side=h.owner;h.gsrc=h.gsrc||[];while(n>0&&h.gsrc.length){const g=h.gsrc[0];const k=Math.min(g.n,n);stat(s,"prev",side,g.src,k);g.n-=k;n-=k;if(g.n<=0)h.gsrc.shift()}
+  if(n>0)stat(s,"prev",side,"Guard",n)}
+function defLayers(s,o){const L=[];
+  (o.mods||[]).forEach(m=>{if(m.def>0)L.push([m.src||null,m.def])});
+  if(o.kind==="hero"){eqList(o).forEach(e=>{if(e.pdef>0)L.push([e.name,e.pdef])});const pl=P(s,o.owner);
+    if(o.name==="Sun Paladin"&&o.ex)L.push(["Sun Paladin",2]);const i=pl.heroes.indexOf(o);if(i>0&&pl.heroes[i-1].name==="Holy Guardian"&&!pl.heroes[i-1].dead)L.push(["Holy Guardian",1]);
+    if(hasEqN(o,"Great Axe")&&enraged(s,o))L.push(["Great Axe",1])}
+  if(o.kind==="summon"){const pl=P(s,o.ctrl);const hc=invCount(pl,"Horn Crystal"),bt=invCount(pl,"Barkskin Totem");if(hc)L.push(["Horn Crystal",hc]);if(bt)L.push(["Barkskin Totem",bt])}
+  return L}
+function creditDef(s,o,n){if(n<=0)return;const side=sideOf(s,o);for(const[src,k]of defLayers(s,o)){if(n<=0)break;const c=Math.min(k,n);n-=c;if(src)stat(s,"prev",side,src,c)}}
+function addMod(o,m){o.mods=o.mods||[];if(CUR_SRC&&!m.src)m=Object.assign({src:CUR_SRC},m);o.mods.push(Object.assign({until:"dusk"},m))}
 E.addMod=addMod;
 function pay(s,pid,actor,amt){const pl=P(s,pid);pl.aura-=amt;if(amt<=0||!actor||actor.kind!=="hero")return;
   if(actor.ench.some(e=>e.name==="Blood Aura"))loseHp(s,actor,2,"Blood Aura");
@@ -181,11 +212,11 @@ function heal(s,healer,o,n,pid){
   const oc=ctrl(s,o);
   if(src!=null&&oc!==src&&invHas(P(s,src),"Inversion Stone")){log(s,`Inversion Stone turns the heal on ${o.name} into ${n} Light damage.`);damage(s,{name:"Inversion Stone"},o,n,{card:true,type:"Light",noTrig:true});return 0}
   const h=Math.min(n,o.dmg||0);o.dmg-=h;if(h>0)log(s,`${o.name} heals ${h} HP.`);
-  if(h>0&&src!=null){const sp=P(s,src);sp.t.healed=(sp.t.healed||0)+h}
+  if(h>0&&src!=null){const sp=P(s,src);sp.t.healed=(sp.t.healed||0)+h;stat(s,"heal",src,CUR_SRC||(healer&&healer.name)||"Heal",h)}
   if(h>0&&healer&&healer.kind==="hero"&&!healer.dead&&healer.name==="Radiant Oracle"&&h>=3)draw(s,healer.owner,1);
   /* Lightbringer L6: whenever you heal (any heal your side makes, not the Inn), deal that much Light damage */
   if(h>0&&src!=null&&!s._lb){const lb=living(P(s,src)).find(x=>x.name==="Lightbringer"&&x.lvl>=6);
-    if(lb){const t=bestDamageTarget(s,src,h,{type:"Light"});if(t){s._lb=true;try{damage(s,lb,t,h,{type:"Light",card:true,noTrig:true})}finally{s._lb=false}}else log(s,"Lightbringer: no enemy it can hurt.",src)}}
+    if(lb){const t=bestDamageTarget(s,src,h,{type:"Light"});if(t){s._lb=true;try{damage(s,lb,t,h,{type:"Light",card:true,noTrig:true,srcName:"Lightbringer"})}finally{s._lb=false}}else log(s,"Lightbringer: no enemy it can hurt.",src)}}
   return h}
 /* picks the enemy the damage hurts most (skips targets Guard/DEF would block, Stealth, Cloak); prefers kills */
 function bestDamageTarget(s,pid,n,o){o=o||{};const op=P(s,opp(pid));let best=null,bv=0;
@@ -197,15 +228,19 @@ E.bestDamageTarget=bestDamageTarget;
 E.heal=heal;
 /* damage: o={combat,spell,pierce,ignoreDef,card,actor,type,noTrig} returns damage dealt */
 function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
-  if(tgt.kind==="hero"&&tgt.fl.noDmgRound===s.round&&!o.status){log(s,`${tgt.name} takes no damage (prevented).`);return 0}
+  if(tgt.kind==="hero"&&tgt.fl.noDmgRound===s.round&&!o.status){log(s,`${tgt.name} takes no damage (prevented).`);stat(s,"prev",tgt.owner,tgt.fl.noDmgBy||"Damage prevention",amt);return 0}
   let a=Math.max(0,amt);
-  if(tgt.kind==="hero"){const tp=P(s,tgt.owner);if(tp.fl.preventNext&&(o.card||o.combat)&&ctrl(s,src||tgt)!==tgt.owner){tp.fl.preventNext=false;log(s,`Smoke Trail Arrow prevents the damage to ${tgt.name}.`);return 0}
-    let g=tgt.guard;const ga=Math.min(g,a);tgt.guard-=ga;a-=ga;const ge=Math.min(tgt.eqGuard,a);tgt.eqGuard-=ge;a-=ge;}
+  if(tgt.kind==="hero"){const tp=P(s,tgt.owner);if(tp.fl.preventNext&&(o.card||o.combat)&&ctrl(s,src||tgt)!==tgt.owner){tp.fl.preventNext=false;log(s,`Smoke Trail Arrow prevents the damage to ${tgt.name}.`);stat(s,"prev",tgt.owner,"Smoke Trail Arrow",amt);return 0}
+    let g=tgt.guard;const ga=Math.min(g,a);tgt.guard-=ga;a-=ga;const ge=Math.min(tgt.eqGuard,a);tgt.eqGuard-=ge;a-=ge;
+    if(ga>0)creditGuard(s,tgt,ga);if(ge>0){const ge1=eqList(tgt).find(e=>/Guard 1/.test(def(e).rules||""));stat(s,"prev",tgt.owner,ge1?ge1.name:"Equipment Guard",ge)}}
   let d=defOf(s,tgt);let pierce=o.pierce||0;
   if(tgt.kind==="hero"&&hasEqN(tgt,"Unpiercing Chestplate"))pierce=0;
   if(o.ignoreDef)d=0;else d=Math.max(0,d-pierce);
   const dealt=Math.max(0,a-d);
   tgt.dmg=(tgt.dmg||0)+dealt;
+  if(!o.ignoreDef&&a>0)creditDef(s,tgt,Math.min(a,d));
+  if(dealt>0){let side=sideOf(s,src);if(side==null)side=opp(ctrl(s,tgt));
+    const nm=o.srcName||(o.combat&&src?(o.band?"Band attack":src.name+" (attack)"):(CUR_SRC||(src&&src.name)));if(!o.status)stat(s,"dmg",side,nm,dealt)}
   const tn=tgt.name+(tgt.kind==="summon"?" (summon)":"");
   log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before Guard/DEF)`:""}.`);
   if(dealt>0&&tgt.kind==="hero"){const tp=P(s,tgt.owner);const before=tp.t.took||0;tp.t.took=before+dealt;if(before<10&&tp.t.took>=10&&s.phase==="battle"){s.trig10=(s.trig10||[]).concat([tgt.owner])}if(tgt.fl.loseCtrlRound===s.round){if(hpOf(s,tgt)<1)tgt.dmg=maxHp(s,tgt)-1;tgt.ex=false}}
@@ -237,7 +272,7 @@ function checkDeaths(s){let again=true;while(again){again=false;
 E.checkDeaths=checkDeaths;
 function die(s,h){const pl=P(s,h.owner);
   if(h.fl.selfSacTarget){}
-  h.dead=true;h.dmg=maxHp(s,h);h.ex=false;h.med=false;h.plus=0;h.mods=[];h.guard=0;h.eqGuard=0;STATUS.forEach(k=>h.st[k]=0);
+  h.dead=true;h.dmg=maxHp(s,h);h.ex=false;h.med=false;h.plus=0;h.mods=[];h.guard=0;h.gsrc=[];h.eqGuard=0;STATUS.forEach(k=>h.st[k]=0);
   log(s,`☠ ${h.name} dies.`,h.owner);
   const gear=eqList(h);for(const k in h.eq)h.eq[k]=null;
   h.ench.forEach(e=>toDisc(s,e));h.ench=[];
@@ -409,8 +444,18 @@ E.options=function(s,pid){
     if(pl.gold>=4&&!used.shop)out.push({type:"shop"});out.push({type:"leave"});return out}
   if(s.phase!=="battle"||s.prio!==pid)return[];
   return battleOptions(s,pid)};
-function battleOptions(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,pid);
+/* Arrow of Persuasion: the unit must attack the chosen target on its next action (ends after that attack, at round end, or if the target is gone / untargetable) */
+function forcedTarget(s,o){const f=o&&o.fl&&o.fl.forceAtk;if(!f||f.round!==s.round||o.dead)return null;const t=find(s,f.uid);if(!t||t.o.dead)return null;
+  const pid=o.kind==="hero"?o.owner:o.ctrl;const cs=candidates(s,pid,{k:"enemy"},{attack:true,actor:o});return cs.includes(f.uid)?f.uid:null}
+E.forcedTarget=forcedTarget;
+function battleOptions(s,pid){const out0=battleOptions0(s,pid);
+  /* Refire: the bonus action may only activate an Arrow (or be skipped) */
+  if(s.bonus&&s.bonus.pid===pid&&s.bonus.only==="arrow"){const r=out0.filter(o=>o.type==="use"&&def(find(s,o.uid).o).sub==="Arrow");r.push({type:"skipBonus"});return r}
+  return out0}
+function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,pid);
   if(a){
+    const forced=!a.fl.noAttack&&!a.st.stun&&forcedTarget(s,a);
+    if(forced){out.push({type:"attack",att:a.uid})}else{
     const seen=new Set();
     pl.hand.forEach(c=>{const d=DB[c.id];if(seen.has(c.id))return;
       if(canPlayCard(s,pid,a,c)){seen.add(c.id);out.push({type:"play",uid:c.uid})}});
@@ -426,7 +471,7 @@ function battleOptions(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,
       if(o.kind==="equip"&&canUseEq(s,a,o)&&eqCost(s,a,o)<=pl.aura)out.push({type:"equipInv",uid:o.uid});
       out.push({type:"clear",uid:o.uid})});
     pl.heroes.forEach(h=>{if(h===a||h.dead)return;eqList(h).forEach(e=>{if(canUseEq(s,a,e)&&eqCost(s,a,e)<=pl.aura)out.push({type:"take",uid:e.uid})})});
-    out.push({type:"manualAbility"});
+    out.push({type:"manualAbility"});}
   }
   pl.bf.forEach(o=>{if(o.kind==="summon"&&!o.ex&&!o.st.stun)out.push({type:"attack",att:o.uid})});
   {const bm=bandMembers(s,pid);if(bm.length>=2){if(a&&bm.includes(a))out.push({type:"band",att:a.uid});bm.forEach(o=>{if(o.kind==="summon")out.push({type:"band",att:o.uid})})}}
@@ -465,7 +510,8 @@ function windowFor(s,pid,trig){if(trig.noHidden)return false;const pl=P(s,pid);r
 E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
   const mk=(spec,ctx)=>({label:spec.label||labelFor(spec.k),opt:!!spec.opt,cands:candidates(s,pid,spec,ctx),distinct:spec.distinct,k:spec.k});
   if(a.type==="attack"||a.type==="band"){const att=find(s,a.att);if(!att)return[];
-    return[mk({k:"enemy",label:a.type==="band"?"band attack target":"attack target"},{attack:true,actor:att.o})]}
+    const sl=mk({k:"enemy",label:a.type==="band"?"band attack target":"attack target"},{attack:true,actor:att.o});const fz=forcedTarget(s,att.o);if(fz){sl.cands=[fz];sl.label="attack target (must attack)"}
+    return[sl]}
   if(a.type==="useFree"){const f=find(s,a.uid);if(!f)return[];const isc=SC()[f.o.name];return specsFor(isc.act,a.modes).map(sp=>mk(sp,{actor:null,item:f.o}))}
   if(a.type==="play"||a.type==="comboPlay"){const c=findCardAnywhere(s,pid,a.uid);if(!c)return[];const d=DB[c.id];const sc=SC()[d.name];
     const act=a.type==="comboPlay"?heroByUid(s,s.pend[0]&&s.pend[0].actor):actor;
@@ -487,12 +533,13 @@ E.act=function(s,pid,a){
     log(s,`${P(s,pid).name} concedes.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`);return{ok:true}}
   const opts=E.options(s,pid);
   if(a.type==="play"){const ok=opts.some(o=>o.type==="play"&&findCardAnywhere(s,pid,o.uid)&&findCardAnywhere(s,pid,o.uid).id===(findCardAnywhere(s,pid,a.uid)||{}).id);if(!ok)return{ok:false,err:"You can't play that card now."}}
-  else if(!["fix","man","manDone","manCancel","scry","choose","wake"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
+  else if(!["fix","man","manDone","manCancel","scry","choose","wake","giveAction"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
   if(a.type==="fix"&&!(s.phase==="battle"&&s.prio===pid&&!s.pend.length))return{ok:false,err:"Rules fixes are made on your priority."};
   if(["man","manDone"].includes(a.type)&&!(s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===pid))return{ok:false,err:"No manual resolution open."};
   if(a.type==="scry"&&!(s.pend[0]&&s.pend[0].type==="scry"&&s.pend[0].pid===pid))return{ok:false,err:"No scry open."};
   if(a.type==="choose"&&!(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].pid===pid))return{ok:false,err:"Nothing to choose."};
   if(a.type==="wake"&&!(s.phase==="dawn"&&!s.dawnDone[pid]))return{ok:false,err:"Only at Dawn."};
+  if(a.type==="giveAction"&&!(s.phase==="battle"&&(pid===0||pid===1)&&(s.pend.length?(s.pend[0].type==="manual"&&s.pend[0].pid===pid):s.prio===pid)))return{ok:false,err:"You can give an action on your priority or from your resolve-by-hand panel."};
   /* targets */
   const slots=E.need(s,pid,a);const tg=a.targets||[];
   if(["play","comboPlay","attack","ability","use","soul"].includes(a.type)){
@@ -500,7 +547,7 @@ E.act=function(s,pid,a){
       if(!slots[i].cands.includes(t))return{ok:false,err:`Invalid target for ${slots[i].label}.`};
       if(slots[i].distinct&&tg.slice(0,i).includes(t))return{ok:false,err:"Choose different targets."}}
     if(a.type==="attack"&&!slots[0].cands.length)return{ok:false,err:"There's nothing to attack."}}
-  if(a.type==="manCancel"){const pr=s.pend[0];if(!(pr&&pr.type==="manual"&&pr.pid===pid&&s.undo))return{ok:false,err:"Nothing to cancel."};
+  if(a.type==="manCancel"){const pr=s.pend[0];if(!(pr&&pr.type==="manual"&&pr.pid===pid&&s.undo&&pr.undoId===s.undo.id))return{ok:false,err:"Nothing to cancel."};
     const what=s.undo.what,keepLog=s.log;const snap=JSON.parse(s.undo.snap);Object.keys(s).forEach(k=>delete s[k]);Object.assign(s,snap);s.log=keepLog;s.seq=(s.seq||0)+2;
     log(s,`✋ ${P(s,pid).name} cancels ${what} (undone).`,pid);settle(s);return{ok:true}}
   /* remember the state before anything that may open a resolve-by-hand panel, so it can be canceled */
@@ -511,7 +558,7 @@ E.act=function(s,pid,a){
   settle(s);
   const top=s.pend[0];
   if(undoable&&top&&top.type==="manual"&&top.pid===pid&&!top.undoId){top.undoId=s.seq;s.undo={id:s.seq,snap,what}}
-  else if(!(top&&top.type==="manual"&&s.undo&&top.undoId===s.undo.id))s.undo=null;
+  else if(!(s.undo&&s.pend.some(p=>p.type==="manual"&&p.undoId===s.undo.id)))s.undo=null;
   return{ok:true}};
 function undoLabel(s,pid,a){try{if(a.type==="play"||a.type==="comboPlay"){const c=findCardAnywhere(s,pid,a.uid);return c?DB[c.id].name:"the card"}
   if(a.type==="use"){const f=find(s,a.uid);return f?f.o.name:"the item"}if(a.type==="fix")return"the rules fix";if(a.type==="reveal")return"the Hidden card";return"the ability"}catch(e){return"the action"}}
@@ -533,12 +580,15 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"scry":{const pr=s.pend.shift();finishScry(s,pid,pr,a);return}
   case"choose":{const pr=s.pend.shift();finishChoose(s,pid,pr,a.picks||[]);return}
   case"man":manualOp(s,pid,a);return;
-  case"manDone":{s.pend.shift();log(s,`${pl.name} finishes resolving by hand.`,pid);return}
+  case"manDone":{const pr=s.pend.shift();log(s,pr&&pr.given?`${pl.name} is done; control returns to ${P(s,opp(pid)).name}.`:`${pl.name} finishes resolving by hand.`,pid);return}
+  case"giveAction":{const op=opp(pid);s.pend.unshift({type:"manual",pid:op,title:`${pl.name} gave you an action`,text:"Resolve anything that needs your hands (a card you control, a choice, a by-hand effect). This does not use an action. Press Done to hand control back.",given:true});
+    log(s,`✋ ${pl.name} gives ${P(s,op).name} an action to resolve by hand.`,pid);return}
+  case"skipBonus":{log(s,`${pl.name} doesn't use the extra action.`,pid);s.bonus=null;s.cur={pid,type:"skip"};return}
   case"fix":s.pend.unshift({type:"manual",pid,title:"Rules fix",text:"Adjust the game to match the rules. Every change is logged for both players."});log(s,`✋ ${pl.name} opens a rules fix.`,pid);return;
   }
   if(a.type==="useFree"){const o=find(s,a.uid).o;const isc=SC()[o.name];const c=isc.act.cost||0;if(c)pl.aura-=c;
     log(s,`${pl.name} activates ${o.name}${c?` (${c} Aura)`:""} (no action used).`,pid);
-    isc.act.run(mkCtx(s,pid,null,DB[o.id],o,a.targets||[],{modes:a.modes||[]}));checkDeaths(s);return}
+    withSrc(s,o.name,()=>isc.act.run(mkCtx(s,pid,null,DB[o.id],o,a.targets||[],{modes:a.modes||[]})));checkDeaths(s);return}
   /* battle actions */
   s.cur={pid,type:a.type};const actor=actorFor(s,pid);
   if(a.type==="play"){playCard(s,pid,actor,a.uid,a,{});return}
@@ -558,7 +608,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
     log(s,`${actor.name} activates ${o.name}.`,pid);
     if(isc.act.exile||def(o).sub==="Arrow"){pl.inv.splice(pl.inv.indexOf(o),1);if(isc.act.exile)pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});else pl.disc.push({uid:o.uid,id:o.id,owner:o.owner})}
     const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:c,cls:def(o).cls,type:"Item",name:o.name};
-    queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],modes:a.modes||[],arrow:def(o).sub==="Arrow"},trig);return}
+    queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],modes:a.modes||[],arrow:def(o).sub==="Arrow",refire:!!(s.bonus&&s.bonus.pid===pid&&s.bonus.refire&&def(o).sub==="Arrow")},trig);return}
   if(a.type==="equipInv"){const o=find(s,a.uid).o;pay(s,pid,actor,eqCost(s,actor,o));pl.inv.splice(pl.inv.indexOf(o),1);equipTo(s,actor,o);return}
   if(a.type==="take"){const f=find(s,a.uid);pay(s,pid,actor,eqCost(s,actor,f.o));f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;log(s,`${actor.name} takes ${f.o.name} from ${f.hero.name}.`,pid);equipTo(s,actor,f.o);return}
   if(a.type==="clear"){const o=find(s,a.uid).o;pl.inv.splice(pl.inv.indexOf(o),1);log(s,`${pl.name} clears ${o.fd?"a face-down card":o.name} from inventory.`,pid);toDisc(s,o);return}
@@ -621,7 +671,9 @@ function doReveal(s,pid,o,pr){const pl=P(s,pid);const d=def(o);const h=revealHer
   log(s,`${pl.name} reveals ${d.name}${cost?` (${cost} Aura)`:""}, exhausting ${h.name}.`,pid);
   trapGold(s,pid,d);
   const hs=hiddenScript(o);
-  if(hs){const ctx=mkCtx(s,pid,h,d,o,[],{trig:pr.trig,mods:pr.mods});hs.run(ctx);
+  if(hs){const ctx=mkCtx(s,pid,h,d,o,[],{trig:pr.trig,mods:pr.mods});withSrc(s,d.name,()=>hs.run(ctx));
+    if(pr.mods.prevent||pr.mods.preventAll)pr.mods.by=pr.mods.by||d.name;
+    if(pr.trig&&pr.trig.kind==="attack"&&(pr.mods.cancel||pr.mods.noDamage)&&!pr.mods.by){pr.mods.by=d.name;const t2=resolveTarget(s,pr.trig.target);const n=Math.max(0,(pr.trig.str||0)-(t2&&!t2.dead?defOf(s,t2):0));stat(s,"prev",pid,d.name,n)}
     const keep=hs.keep?hs.keep(ctx):false;if(keep)pl.inv.push(o);else if(d.type==="Item"||d.sup==="Hidden")toDisc(s,o);
     countCombo(s,pid,h,d);
     if(pr.mods.cancel){s.pend.shift();log(s,"The action is canceled.");afterCancel(s,pr)}
@@ -635,17 +687,19 @@ function resolveCont(s,pid,cont,mods){
   if(cont.k==="none")return;
   if(cont.k==="attack"){resolveAttack(s,pid,cont,mods);return}
   const actor=cont.actor?heroByUid(s,cont.actor):null;
-  if(cont.k==="ability"){const ab=HS()[actor.name][cont.idx];ab.run(mkCtx(s,pid,actor,DB[actor.id],null,cont.targets,{mods}));checkDeaths(s);return}
+  if(cont.k==="ability"){const ab=HS()[actor.name][cont.idx];withSrc(s,`${actor.name}: ${ab.label||"ability"}`,()=>ab.run(mkCtx(s,pid,actor,DB[actor.id],null,cont.targets,{mods})));checkDeaths(s);return}
   if(cont.k==="item"){const isc=SC()[cont.itemName];const o=find(s,cont.item);const ctx=mkCtx(s,pid,actor,DB[cont.itemName],o?o.o:null,cont.targets,{mods,arrow:cont.arrow,modes:cont.modes||[]});
     if(cont.arrow)ctx.arrowBonus=arrowBonus(s,pid,actor);
-    isc.act.run(ctx);
+    withSrc(s,cont.itemName,()=>isc.act.run(ctx));
+    if(cont.refire){const pl=P(s,pid);const i=pl.disc.findIndex(c=>c.uid===cont.item);if(i>=0){const c=pl.disc.splice(i,1)[0];toInv(s,pid,c);log(s,`Refire: ${cont.itemName} returns to ${pl.name}'s inventory.`,pid)}}
     if(cont.arrow){const pl=P(s,pid);pl.t.arrows=(pl.t.arrows||0)+1;pl.fl.arrowNext=null;
-      if(actor&&actor.name==="Wild Archer"&&(actor.lvl>=3||pl.t.arrows===1)){actor.ex=false;log(s,"Wild Archer readies.",pid)}}
+      /* Wild Archer: after YOUR first Arrow each turn (any Hero firing it), ready it; L3: also after every Arrow it fires itself */
+      living(pl).filter(h=>h.name==="Wild Archer"&&h.ex&&(pl.t.arrows===1||(h===actor&&h.lvl>=3))).forEach(h=>{h.ex=false;log(s,`${h.name} readies.`,pid)})}
     checkDeaths(s);return}
   const d=DB[cont.card.id];const sc=SC()[d.name];const pl=P(s,pid);
   const ctx=mkCtx(s,pid,actor,d,cont.card,cont.targets,{mods,modes:cont.modes,x:cont.x,comboed:cont.combo});
   let stays=false;const pend0=s.pend.length;
-  if(sc){const r=sc.run(ctx);stays=r==="stay"}
+  if(sc){const r=withSrc(s,d.name,()=>sc.run(ctx));stays=r==="stay"}
   else{s.pend.unshift({type:"manual",pid,title:d.name,text:d.rules,card:cont.card.id});}
   if(d.type==="Enchantment"&&sc){stays=true}
   if(!stays){if(/Echo\./.test(d.rules||"")&&!cont.echo){pl.echo.push({card:cont.card,targets:cont.targets,modes:cont.modes,x:cont.x});log(s,`${d.name} is set aside (Echo).`,pid)}
@@ -688,7 +742,7 @@ function startAttack(s,pid,attUid,tgtUid,o){const f=find(s,attUid);if(!f)return;
   if(!o.noExhaust)att.ex=true;
   /* Resistance Shield: pay 1 Aura to attack its owner's Heroes */
   const tp=ctrl(s,tgt);if(tgt.kind==="hero"&&invHas(P(s,tp),"Resistance Shield")&&tp!==pid){P(s,pid).aura=Math.max(0,P(s,pid).aura-1);log(s,"Resistance Shield: attacker pays 1 Aura.",pid)}
-  att.attacks=(att.atkRound===s.round?att.attacks:0)+1;att.atkRound=s.round;
+  att.attacks=(att.atkRound===s.round?att.attacks:0)+1;att.atkRound=s.round;if(att.fl&&att.fl.forceAtk){delete att.fl.forceAtk}
   if(o.band){const mem=o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o);mem.forEach(m=>{m.ex=true;m.attacks=(m.atkRound===s.round?m.attacks:0)+1;m.atkRound=s.round});
     const parts=[att,...mem].map(m=>`${m.name} ${dmgStr(s,m,tgt)}`);log(s,`⚔ Band attack on ${tgt.name}: ${parts.join(" + ")}${bandBonus(s,att,mem)?` + ${bandBonus(s,att,mem)} bonus`:""} = ${bandTotal(s,att,mem,tgt)} STR.`,pid)}
   else log(s,`⚔ ${att.name} attacks ${tgt.name}.`,pid);
@@ -705,7 +759,7 @@ function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);const tgt=resol
   const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att));
   let dealt=0;
   if(mods.noDamage){log(s,`The attack deals no damage.`)}
-  else dealt=damage(s,att,tgt,Math.max(0,str),{combat:true,pierce,ignoreDef:ign});
+  else dealt=damage(s,att,tgt,Math.max(0,str),{combat:true,pierce,ignoreDef:ign,band:!!o.band});
   if(mods.retaliate&&dealt>0){}
   postAttack(s,pid,cont,dealt)}
 function postAttack(s,pid,cont,dealt){const f=find(s,cont.att);const o=cont.o||{};const att=f&&f.o;const tgt=resolveTarget(s,cont.tgt);
@@ -878,7 +932,7 @@ function doDusk(s){s.phase="dusk";log(s,`— Dusk —`);
   s.p.forEach((pl,pid)=>{if(pl.fl.promoRound===s.round)nextInit=pid});
   s.p.forEach((pl,pid)=>{
     const clean=o=>{o.mods=(o.mods||[]).filter(m=>!(m.until==="dusk"||(typeof m.until==="number"&&m.until<=s.round)))};
-    pl.heroes.forEach(h=>{clean(h);h.guard=0;if(!h.med&&h.plus&&h.fl.medEnd){h.plus=0;h.fl.medEnd=false}});
+    pl.heroes.forEach(h=>{clean(h);h.guard=0;h.gsrc=[];if(!h.med&&h.plus&&h.fl.medEnd){h.plus=0;h.fl.medEnd=false}});
     pl.bf.forEach(clean);
     pl.pm={};pl.t={};pl.fl.mageNext=pl.fl.mageAll=pl.fl.trapNext=pl.fl.trapAll=pl.fl.songDisc=false;pl.fl.arrowNext=null;pl.fl.rapidPierce=false;pl.fl.preventNext=false;
     if(pl.aura>0)log(s,`${pl.name} loses ${pl.aura} unspent Aura.`,pid);pl.aura=0;

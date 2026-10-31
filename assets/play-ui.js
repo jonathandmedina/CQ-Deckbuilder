@@ -91,6 +91,20 @@ const CSS=`
 .pp{border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.78rem;background:var(--sunk)}
 .pl-mid{display:flex;flex-direction:column;gap:8px;border-radius:14px;padding:10px 14px;background:color-mix(in srgb,var(--accent) 9%,var(--surface));border:1.5px solid color-mix(in srgb,var(--accent) 45%,var(--line))}
 .pl-mid.wait{background:var(--surface);border-color:var(--line)}
+.pl-mid.opp{background:color-mix(in srgb,#C0392B 9%,var(--surface));border-color:color-mix(in srgb,#C0392B 55%,var(--line))}
+.pl-oppinfo{display:flex;flex-wrap:wrap;gap:6px;font-size:.84rem}
+.pl-oppinfo span{border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--surface)}
+.pl-oppinfo b{font-variant-numeric:tabular-nums}
+.pl-banner{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--accent);border-radius:12px;padding:8px 10px;background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.pl-banner .bl{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:.88rem}
+.pl-banner .bl b{font-size:.92rem}
+.pl-banner .bl .hit{color:#C0392B;font-weight:600}
+.pl-banner .btn{margin-left:auto;flex:none}
+.pl-stats{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;font-size:.86rem}
+.pl-stats h3{margin:0 0 4px;font-size:.92rem}
+.pl-stats ol{margin:0;padding-left:20px}
+.pl-stats .dead{text-decoration:line-through;opacity:.7}
+.tg.must{color:#C0392B;font-weight:700}
 .pl-phase{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:.88rem}
 .pl-phase .ph-n{font-family:var(--display);font-weight:800;font-size:1.15rem}
 .posm{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
@@ -166,11 +180,16 @@ async function maybeRecord(){const s=U.s,m=U.meta;if(!s||!s.over||!m||!m.gid||m.
   const c=sb();if(!c)return;m.recorded=true;saveLocal();
   const sides=m.mode==="ai"?[0]:[0,1];const rows=[];
   for(const side of sides){const d=m.decks[side];if(!d||E.validateDeck(d).length)continue;
-    rows.push({game_id:m.gid,side,deck_key:await deckKey(d),deck_name:d.name,heroes:d.heroes,cards:d.cards,player_name:(s.p[side].name||"Guest").slice(0,40),mode:m.mode,result:s.winner<0?"draw":(s.winner===side?"win":"loss"),rounds:s.round})}
+    rows.push({game_id:m.gid,side,deck_key:await deckKey(d),deck_name:d.name,heroes:d.heroes,cards:d.cards,player_name:(s.p[side].name||"Guest").slice(0,40),mode:m.mode,result:s.winner<0?"draw":(s.winner===side?"win":"loss"),rounds:s.round,stats:recStats(s,side)})}
   if(!rows.length)return;
-  const{error}=await c.from("deck_results").insert(rows);
+  let{error}=await c.from("deck_results").insert(rows);
+  /* the stats column may not exist yet: save the result without it */
+  if(error&&/stats/i.test(error.message)){({error}=await c.from("deck_results").insert(rows.map(r=>{const x=Object.assign({},r);delete x.stats;return x})))}
   if(error&&!/duplicate/i.test(error.message)){m.recorded=false;saveLocal();console.warn("Couldn't save the result:",error.message);return}
   store2.set("cq.play.recorded",done.concat([m.gid]).slice(-300));toast("Result recorded for Best Decks.")}
+function recStats(s,side){try{const g=E.gameStats(s);const sd=g.sides[side],od=g.sides[E.opp(side)];
+  const o={v:1,rounds:g.rounds,lineup:{start:sd.start,final:sd.final},opp:{start:od.start,final:od.final},dmg:sd.dmg,prev:sd.prev,healer:sd.healer,tot:{dmg:sd.totDmg,prev:sd.totPrev,heal:sd.totHeal}};
+  return JSON.stringify(o).length<5500?o:null}catch(e){return null}}
 function myName(){return(AS()&&S.me&&S.me.name)||store2.get("cq.play.name","")||"Player"}
 
 /* ---------- game control ---------- */
@@ -238,6 +257,7 @@ function exportLog(){const s=view();if(!s)return;mergeLog(s);
   const res=s.over?(s.winner<0?"Draw":`${s.p[s.winner].name} won`):`In progress (round ${s.round}, ${phaseLabel(s)})`;
   let out=`Crystal Quest — game log\nExported: ${new Date().toLocaleString()}\nMode: ${U.vsAI?"vs AI":U.net?"online room "+U.net.code:"local"}\nPlayer 1: ${pdesc(s.p[0])}\nPlayer 2: ${pdesc(s.p[1])}\nResult: ${res}\n\n`;
   let lastR=null;lines.forEach(l=>{if(l.r!==lastR&&!/^—/.test(l.m)){lastR=l.r}out+=(/^—/.test(l.m)?"\n":"")+`[R${l.r}] ${l.m}\n`});
+  if(s.over)out+=statsText(s);
   if(lines.length&&lines[0].n>1)out+=`\n(Note: the first ${lines[0].n-1} log lines happened before this browser joined and aren't included.)\n`;
   const blob=new Blob([out],{type:"text/plain"});const url=URL.createObjectURL(blob);const a=document.createElement("a");const d=new Date();
   a.href=url;a.download=`crystal-quest-game-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}-${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}.txt`;
@@ -246,7 +266,7 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   if(U.mode==="lobby"){root.innerHTML=lobbyHTML();return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
   const s=view();if(!s){root.innerHTML=roomHTML();return}
-  if(!U.gameKey)U.gameKey="g"+Date.now();mergeLog(s);
+  if(!U.gameKey)U.gameKey="g"+Date.now();mergeLog(s);try{trackBanner(s)}catch(e){console.warn(e)}
   const keepScroll=root.querySelector(".pl-log");const atBottom=!keepScroll||keepScroll.scrollTop+keepScroll.clientHeight>=keepScroll.scrollHeight-20;
   const handEl=root.querySelector(".pl-hand");const hs=handEl?handEl.scrollLeft:0;
   root.innerHTML=gameHTML(s);
@@ -343,6 +363,7 @@ function heroCounts(s,h){if(h.dead)return[];const out=[];const r=s.round;const p
   const combos=h.fl&&h.fl.combosRound===r?h.fl.combos||0:0;
   if(h.name==="Grandmaster Reece"){if(h.lvl>=3){const m=combos%3;out.push(`<span class="tg cnt" title="Every third Combo card he plays this turn: +2 STR">Combo ${m}/3${combos>=3?` · ${combos} total`:""}</span>`)}else out.push(`<span class="tg cnt" title="His third Combo card this turn: +2 STR">Combo ${Math.min(combos,3)}/3${combos>=3?" ✓":""}</span>`)}
   if(h.fl&&h.fl.stepped===r)out.push('<span class="tg cnt" title="Stepped back: acts after the Closer this round">Acts last</span>');
+  {const fz=E.forcedTarget&&E.forcedTarget(s,h);if(fz)out.push(`<span class="tg cnt must" title="Arrow of Persuasion: its next action must be an attack on ${esc(nameOf(fz))}">Must attack ${esc(nameOf(fz))}</span>`)}
   if(E.hasBanding(s,h))out.push('<span class="tg cnt band" title="Can join a Band attack: add its STR, then it is exhausted">Banding</span>');
   if(E.usesDef(s,h))out.push('<span class="tg cnt" title="Deals damage equal to its DEF instead of its STR this turn">DEF damage</span>');
   if(h.name==="Sage Monk")out.push(`<span class="tg cnt" title="Scry 1 on its first Combo card each turn">First Combo: ${h.fl&&h.fl.sageRound===r?"used":"ready"}</span>`);
@@ -399,7 +420,7 @@ function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id
     ${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}
   </div>`}
 function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});
-  return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${E.hasBanding(s,o)?"<span class=\"band\">Banding</span>":""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}</button>`}
+  return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${E.hasBanding(s,o)?"<span class=\"band\">Banding</span>":""}${E.forcedTarget&&E.forcedTarget(s,o)?`<span class="must" style="color:#C0392B;font-weight:700">Must attack ${esc(nameOf(E.forcedTarget(s,o)))}</span>`:""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}</button>`}
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
 function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false;
   const mineTurn=opts.length>0;
@@ -421,14 +442,41 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
     acts=opts.filter(o=>o.type==="gem").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(nameOf(o.uid))} (exhaust ${esc(nameOf(o.hero))})</button>`).join("")+opts.filter(o=>o.type==="wake").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${o.v?"Keep":"Wake"} ${esc(nameOf(o.hero))} ${o.v?"Meditating":"next Dawn"}</button>`).join("")+'<button class="btn go" data-pa="do" data-a=\'{"type":"dawnDone"}\'>Start battle</button>'}}
   else if(s.phase==="town"){const t=s.town&&s.town.order[s.town.i];if(t!==me){wait=true;prompt=`${esc(s.p[t].name)} is in Town…`}else{const used=(s.town&&s.town.used)||{};prompt=`Town: you have ${s.p[me].gold} Gold. Inn ${E.INN_COST} Gold (a Hero heals ${E.INN_HEAL})${used.inn?" ✓ used":""} · Shop ${E.SHOP_COST} Gold (draw a card)${used.shop?" ✓ used":""}. Each once per visit.`;
     acts=opts.filter(o=>o.type==="inn").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Inn: heal ${esc(nameOf(o.hero))}</button>`).join("")+(opts.some(o=>o.type==="shop")?'<button class="btn" data-pa="do" data-a=\'{"type":"shop"}\'>Shop: draw a card</button>':"")+'<button class="btn go" data-pa="do" data-a=\'{"type":"leave"}\'>Leave Town</button>'}}
-  else if(s.phase==="battle"){if(s.prio!==me){wait=true;prompt=`${esc(s.p[s.prio].name)} is acting…`}else{const a=E.actorFor(s,me);
-      prompt=a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}. Play a highlighted card, or choose an action:`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
+  else if(s.phase==="battle"){if(s.prio!==me){wait=true;prompt=`${esc(s.p[s.prio].name)} is acting…`}else{const a=E.actorFor(s,me);const refire=s.bonus&&s.bonus.pid===me&&s.bonus.only==="arrow";const fz=a&&E.forcedTarget(s,a);
+      prompt=refire?`Refire: <b>${esc(a?a.name:"")}</b> activates an Arrow (pay its Aura). If it resolves, it returns to your inventory.`:a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}${fz?` — it <b>must attack ${esc(nameOf(fz))}</b> (Arrow of Persuasion)`:""}. ${fz?"Attack, or choose a summon action:":"Play a highlighted card, or choose an action:"}`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
       acts=battleActs(s,opts)}}
   if(U.busy){wait=true;prompt="Sending…"}
+  const oppActing=!s.over&&wait&&!U.busy&&(pr?pr.pid!==me:(s.phase==="battle"&&s.prio!==me)||(s.phase==="town"&&s.town&&s.town.order[s.town.i]!==me));
+  const oppInfo=oppActing?oppInfoHTML(s):"";
+  const ban=U.banner&&!s.over&&!U.tgt?bannerHTML():"";if(ban)acts="";
   const posm=`<span class="posm" title="Position marker">${[...E.POS,"Last"].map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
-  return`<section class="pl-mid${wait?" wait":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
-    <div class="pl-prompt">${prompt}</div>${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${acts||!s.over?`<div class="pl-acts">${acts}${s.over?"":'<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>'}</div>`:""}${man}</section>`}
+  return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
+    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${s.over?statsHTML(s):""}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":'<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>'}</div>`:""}${ban?"":man}</section>`}
+/* opponent's turn: what they have to work with */
+function oppInfoHTML(s){const op=E.opp(U.me);const pl=s.p[op];const a=s.phase==="battle"&&s.prio===op?E.actorFor(s,op):null;
+  return`<div class="pl-oppinfo">${a?`<span>Acting: <b>${esc(a.name)}</b></span>`:""}<span>Hand <b>${pl.hand.length}</b></span><span>Aura <b>${pl.aura}</b></span><span>Gold <b>${pl.gold}</b></span><span>Library <b>${pl.lib.length}</b></span></div>`}
+/* "What just happened": after the opponent acts, list their log lines (and what hit you), then hand control back */
+function trackBanner(s){const op=E.opp(U.me);if(U.banFor!==U.gameKey){U.banFor=U.gameKey;U.seenN=Math.max(0,...s.log.map(l=>l.n||0));U.banBuf=[];U.banner=null;return}
+  const fresh=s.log.filter(l=>(l.n||0)>U.seenN);if(fresh.length){U.seenN=Math.max(...fresh.map(l=>l.n||0));
+    if(fresh.some(l=>l.p===op)||U.banBuf.length&&!fresh.some(l=>l.p===U.me))U.banBuf.push(...fresh.filter(l=>l.p!==U.me&&!/^—/.test(l.m)&&!/keeps their hand|mulligans/.test(l.m)))}
+  if(!U.banBuf.some(l=>l.p===op&&!/keeps their hand|mulligans|draws \d+ cards?\.$/.test(l.m)))U.banBuf=[];
+  const myMove=!s.over&&legal().length>0&&!(s.pend[0]&&s.pend[0].pid!==U.me);
+  if(myMove&&U.banBuf.length&&!U.tgt){const lines=U.banBuf.splice(0);U.banBuf=[];showBanner(s,lines)}
+  else if(s.over){U.banBuf=[]}}
+function showBanner(s,lines){const mine=new Set([...s.p[U.me].heroes.map(h=>h.name),...s.p[U.me].bf.map(o=>o.name),s.p[U.me].name]);
+  const hit=l=>[...mine].some(n=>n&&l.m.includes(n));const sel=lines.filter(l=>l.p===E.opp(U.me)||hit(l));const show=(sel.length?sel:lines).slice(-8);
+  if(!show.length)return;clearTimeout(U.banT);U.banner={opp:s.p[E.opp(U.me)].name,lines:show.map(l=>({m:l.m,hit:l.p!==E.opp(U.me)&&hit(l)}))};
+  U.banT=setTimeout(()=>{U.banner=null;render()},Math.min(6000,3000+Math.max(0,show.length-2)*500))}
+function bannerHTML(){const b=U.banner;return`<div class="pl-banner" role="status"><div class="bl"><b>${esc(b.opp)} just:</b>${b.lines.map(l=>`<span class="${l.hit?"hit":""}">${esc(l.m)}</span>`).join("")}</div><button class="btn sm" data-pa="banner-x">Dismiss</button></div>`}
+/* end-of-game summary */
+function statsHTML(s){if(!E.gameStats)return"";const g=E.gameStats(s);const me=U.me;
+  const li=a=>a.length?`<ol>${a.map(x=>`<li>${esc(x.name)} — <b>${x.v}</b>${x.side!=null?` <span class="pl-note">(${esc(s.p[x.side].name)})</span>`:""}</li>`).join("")}</ol>`:'<p class="pl-note">None.</p>';
+  const line=sd=>`<p><b>${esc(sd.name)}</b><br>Start: ${sd.start.map(esc).join(" → ")||"–"}<br>End: ${sd.final.map(h=>`<span class="${h.dead?"dead":""}">${esc(h.name)} L${h.lvl}</span>`).join(" → ")}<br><span class="pl-note">Damage ${sd.totDmg} · Prevented ${sd.totPrev} · Healed ${sd.totHeal}${sd.healer?` · Top healer: ${esc(sd.healer.name)} (${sd.healer.v})`:""}</span></p>`;
+  return`<div class="pl-stats"><div><h3>Game summary · ${g.rounds} round${g.rounds===1?"":"s"}</h3>${line(g.sides[me])}${line(g.sides[E.opp(me)])}</div><div><h3>Most damage</h3>${li(g.topDmg)}</div><div><h3>Most damage prevented</h3>${li(g.topPrev)}<p class="pl-note">Base DEF isn't credited to any card.</p></div></div>`}
+function statsText(s){if(!E.gameStats)return"";const g=E.gameStats(s);let t=`\n=== Game summary ===\nRounds: ${g.rounds}\n`;
+  g.sides.forEach(sd=>{t+=`${sd.name}: start ${sd.start.join(" > ")} | end ${sd.final.map(h=>`${h.name} L${h.lvl}${h.dead?" (died)":""}`).join(" > ")}\n  Damage ${sd.totDmg}, prevented ${sd.totPrev}, healed ${sd.totHeal}${sd.healer?`; top healer ${sd.healer.name} (${sd.healer.v})`:""}\n`});
+  t+="Most damage:\n"+g.topDmg.map((x,i)=>`  ${i+1}. ${x.name} (${g.sides[x.side].name}): ${x.v}`).join("\n")+"\nMost damage prevented:\n"+g.topPrev.map((x,i)=>`  ${i+1}. ${x.name} (${g.sides[x.side].name}): ${x.v}`).join("\n")+"\n";return t}
 function lvBtn(o,label,cls){return`<button class="btn ${cls}" data-pa="do" data-a='${esc(JSON.stringify(o))}'><span class="plus" aria-hidden="true">+</span>${esc(label)}</button>`}
 function btn(o,label,cls){return`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(label)}</button>`}
 function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
@@ -445,7 +493,9 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   if(opts.some(o=>o.type==="soul"))out.push('<button class="btn" data-pa="soul">Surrender a soul…</button>');
   out.push('<span class="sep"></span>');
   if(opts.some(o=>o.type==="manualAbility")&&a&&/Exhaust|\{A\}:/.test(E.DB[a.id].rules)&&!window.CQ_HERO_SCRIPTS[a.name])out.push(btn({type:"manualAbility"},`Use ${a.name}'s ability (by hand)`));
-  out.push(btn({type:"pass"},"Pass for the round"));
+  if(opts.some(o=>o.type==="skipBonus"))out.push(btn({type:"skipBonus"},"Skip (don't activate an Arrow)"));
+  else out.push(btn({type:"pass"},"Pass for the round"));
+  if(U.net)out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"giveAction"}\' title="Let your opponent resolve something by hand (a card they control, a choice). Control comes back to you without using your action.">Give opponent an action</button>');
   out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"fix"}\' title="Open the manual panel to correct something the engine missed">Rules fix</button>');
   return out.join("")}
 function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(o=>o.type==="play").map(o=>{const c=pl.hand.find(x=>x.uid===o.uid);return c&&c.id}));
@@ -475,7 +525,7 @@ function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1
     <div class="row"><select data-pa="man-op">${ops.map(([k,l])=>`<option value="${k}" ${m.op===k?"selected":""}>${l}</option>`).join("")}</select>
     ${needN?`<input type="number" min="0" max="99" value="${m.n}" data-pa="man-n" aria-label="Amount">`:""}${extra}
     ${needT?`<span class="pl-note">Target: <b>${U.manT?esc(nameOf(U.manT)):"click a Hero, summon or item on the board"}</b></span>${U.manT?"":""}`:""}
-    <button class="btn" data-pa="man-apply">Apply</button><button class="btn go" data-pa="do" data-a='{"type":"manDone"}'>Done</button>${s.undo?'<button class="btn danger" data-pa="man-cancel" title="Undo the card or action that opened this panel">Cancel</button>':""}</div>
+    <button class="btn" data-pa="man-apply">Apply</button><button class="btn go" data-pa="do" data-a='{"type":"manDone"}'>Done</button>${U.net&&!pr.given?'<button class="btn sm" data-pa="do" data-a=\'{"type":"giveAction"}\' title="Let your opponent resolve something by hand; this panel stays open for you afterwards">Give opponent an action</button>':""}${s.undo&&pr.undoId===s.undo.id?'<button class="btn danger" data-pa="man-cancel" title="Undo the card or action that opened this panel">Cancel</button>':""}</div>
     <p class="pl-note">Each change is written to the game log for both players.</p></div>`}
 
 /* ---------- modals ---------- */
@@ -590,6 +640,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="drop-guest"){store2.del("cq.play.guest");render();return}
   if(k==="rules"){location.hash="rules";return}
   if(k==="export-log"){exportLog();return}
+  if(k==="banner-x"){clearTimeout(U.banT);U.banner=null;render();return}
   if(!s)return;
   if(k==="do"){let a;try{a=JSON.parse(b.dataset.a)}catch(err){return}closeModal();
     if(a.type==="fix"||a.type==="manDone"||a.type==="decline"){U.man=null;U.manT=null}

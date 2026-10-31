@@ -219,7 +219,7 @@ function footHTML(c){
 function cardHTML(c,o={}){
   const tag=o.button?"button":"article";
   const attrs=o.button?` type="button" data-act="${o.button}" data-id="${esc(c.id)}"`:"";
-  return`<${tag} class="card${o.picked?" picked":""}" style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}"${attrs}>
+  return`<${tag} class="card${o.picked?" picked":""}${c.kind==="token"?" token":""}${o.maxed?" maxed":""}" style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}"${attrs}>
   <div class="c-head"><span class="c-name">${esc(c.name)}</span>${hasGem(c)?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
   <div class="c-rules">${rulesHTML(c.rules||"")}</div>
@@ -326,7 +326,7 @@ function viewBuild(){
         <button type="button" class="btn sm" data-act="to-heroes">Change Heroes</button>
       </div>
       <div class="grid">${gridWithGroups(pool,f,c=>{const q=d.cards[c.id]||0,m=maxCopies(c);
-        return cardHTML(c,{ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
+        return cardHTML(c,{maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
     </section>
     ${deckPanel(d)}
   </div>`;

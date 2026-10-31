@@ -175,3 +175,18 @@ html[data-skin="retro"] .pl-bar .nm{font-size:1.4rem;font-weight:400}
 /* Play link stands out: green menu button with a gold frame */
 html[data-skin="retro"] .bhead h1{margin-bottom:0}
 @media (min-width:721px) and (max-width:1499px){html[data-skin="retro"] .top .brand{order:-2}html[data-skin="retro"] .discord-btn{order:-1;margin-left:auto}}
+
+/* Tokens: lighter sky-blue window so they don't look like playable cards */
+html[data-skin="retro"] .card.token{background:linear-gradient(180deg,#8fb8f2 0,#6f9de4 36px,#5b88d4 150px,#4a74c0 100%);border-color:#d8e8ff}
+html[data-skin="retro"] .card.token .c-rules,html[data-skin="retro"] .card.token .c-type{color:#0d1a3a;text-shadow:none}
+html[data-skin="retro"] .card.token .c-type span{color:#0d1a3a}
+/* maxed cards in the Deck Builder pool */
+html[data-skin="retro"] .card.maxed{border-style:dashed}
+html[data-skin="retro"] .maxtag{color:#ffe27a}
+html[data-skin="retro"] .pl-mid.opp{background:linear-gradient(180deg,#5a1f2a,#3a1420);border-color:#ff8a8a}
+html[data-skin="retro"] .pl-oppinfo span{background:#1a0d14;border-color:#ff8a8a;color:#ffe9e9}
+html[data-skin="retro"] .pl-banner{background:#13234a;border-color:#ffe27a;color:#fff}
+html[data-skin="retro"] .pl-banner .bl .hit{color:#ff9a9a}
+html[data-skin="retro"] .pl-stats{background:var(--win);border-color:var(--accent)}
+html[data-skin="retro"] .tg.must,html[data-skin="retro"] .ps .must{color:#ff9a9a!important;border-color:#ff9a9a}
+html[data-skin="retro"] .pl-stats h3{font-size:1.15rem;line-height:1.2}

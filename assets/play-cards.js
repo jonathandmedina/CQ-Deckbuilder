@@ -12,8 +12,7 @@ const summons=pl=>pl.bf.filter(o=>o.kind==="summon");
 const enemies=c=>[...living(c.op),...summons(c.op)];
 const allies=c=>[...living(c.me),...summons(c.me)];
 function D(c,tg,n,o){o=o||{};if(!tg||tg.kind==="player")return 0;
-  if(c.mods&&c.mods.preventAll){log(c,`Damage to ${tg.name} is prevented.`);return 0}
-  if(c.mods&&c.mods.prevent&&c.mods.prevent.includes(tg.uid)){log(c,`Damage to ${tg.name} is prevented.`);return 0}
+  if(c.mods&&(c.mods.preventAll||c.mods.prevent&&c.mods.prevent.includes(tg.uid))){log(c,`Damage to ${tg.name} is prevented.`);E.stat(c.s,"prev",E.ctrl(c.s,tg),c.mods.by||"Prevent",n);return 0}
   let a=n;if(c.def&&c.def.type==="Spell"&&!o.noSpell)a+=E.spellDmg(c.s,c.pid,c.actor);
   if(c.def&&c.def.sub==="Combo"&&c.actor&&E.hasEq(c.actor,"Iron Hand Wraps"))a+=1;
   if(c.arrowBonus){a+=c.arrowBonus.dmg;if(c.arrowBonus.ignoreDef)o.ignoreDef=true;o.pierce=(o.pierce||0)+c.arrowBonus.pierce}
@@ -213,7 +212,12 @@ def("Reload",{run(c){const top=c.me.lib[c.me.lib.length-1];if(!top)return;const 
 def("Quickdraw",{run(c){const top=c.me.lib.splice(-3);top.slice().forEach(x=>{if(E.DB[x.id].sub==="Arrow"&&c.me.inv.length<E.slots(c.s,c.pid)){top.splice(top.indexOf(x),1);c.me.inv.push(Object.assign({kind:"card",fd:false,name:E.DB[x.id].name,ctr:{}},x));log(c,`${E.DB[x.id].name} goes into inventory.`)}});c.me.lib.push(...top);exMe(c)}});
 const arrow=(cost,t2,run,o)=>({act:Object.assign({cost,t:t2,run},o||{})});
 def("Arrow of Hope",arrow(3,[ANY],c=>{D(c,c.t[0],2);draw(c,2)}));
-def("Arrow of Persuasion",arrow(1,[ANY],c=>{D(c,c.t[0],3)}));
+def("Arrow of Persuasion",arrow(1,[ANY,t("ally","which of your units it must attack")],c=>{const tg=c.t[0],to=c.t[1];D(c,tg,3);
+  if(tg&&!tg.dead&&(tg.kind==="hero"||tg.kind==="summon")&&E.ctrl(c.s,tg)!==c.pid&&to&&!to.dead){tg.fl=tg.fl||{};tg.fl.forceAtk={uid:to.uid,round:c.s.round,by:c.pid};log(c,`${tg.name} must attack ${to.name} on its next action.`)}}));
+/* Refire: the same Hero immediately activates an Arrow (paying its Aura); if it resolves, the Arrow returns to inventory */
+const refireArrows=(s,pid,a)=>{const pl=s.p[pid];return pl.inv.filter(o=>o.kind==="card"&&!o.fd&&E.DB[o.id].sub==="Arrow"&&(S[o.name]||{}).act)};
+def("Refire",{can:(s,pid,a)=>!!a&&refireArrows(s,pid,a).some(o=>E.itemCost(s,pid,a,o)+1<=s.p[pid].aura),
+  run(c){c.s.bonus={pid:c.pid,uid:c.actor.uid,n:2,only:"arrow",refire:true};log(c,`Refire: ${c.actor.name} activates an Arrow now; it returns to inventory if it resolves.`)}});
 def("Blunt-Point Force",arrow(1,[ANY],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){const pl=c.s.p[E.ctrl(c.s,c.t[0])];if(pl.hand.length){const x=pl.hand.splice(E.ri(c.s,pl.hand.length),1)[0];pl.disc.push(x);log(c,`${pl.name} discards ${E.DB[x.id].name}.`)}}}));
 def("Dual Shot",arrow(1,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"burn")}));

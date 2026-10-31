@@ -84,10 +84,10 @@ AI.choose=function(s,pid){if(s.over)return null;
   if(s.phase!=="battle"||s.prio!==pid)return null;
   const opts=E.options(s,pid).filter(o=>!["clear","manualAbility","fix"].includes(o.type));
   const actor0=E.actorFor(s,pid);
-  const base=AI.evaluate(s,pid);let best={type:"pass"},bv=base+0.4;let alt=null,av=-1e9;
+  const base=AI.evaluate(s,pid);let best=opts.some(o=>o.type==="skipBonus")?{type:"skipBonus"}:{type:"pass"},bv=base+0.4;let alt=null,av=-1e9;
   pl.t.aiActs=(pl.t.aiActs||0);
   if(pl.t.aiActs>30)return{type:"pass"};
-  for(const o of opts){if(o.type==="pass")continue;
+  for(const o of opts){if(o.type==="pass"||o.type==="skipBonus")continue;
     if(o.type==="play"){const c=pl.hand.find(x=>x.uid===o.uid);if(c&&!E.isScripted(E.DB[c.id].name)&&E.DB[c.id].kind!=="equip"&&E.DB[c.id].type!=="Item"&&E.DB[c.id].sup!=="Hidden")continue}
     if(o.type==="soul"&&o.ch===4&&s.round<2)continue;
     const acts=AI.expand(s,pid,o);

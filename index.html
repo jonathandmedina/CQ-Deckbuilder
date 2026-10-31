@@ -60,6 +60,7 @@ button{cursor:pointer}
 .btn.newdeck{font-weight:700}
 .newdeck-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .discord-btn{flex:none;text-decoration:none;color:var(--ink)}
+@media (max-width:1279px){.discord-btn{margin-left:auto}}
 .acct{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--muted);min-width:0}
 .acct img{width:26px;height:26px;border-radius:50%}
 .skin-btn{flex:none}
@@ -271,7 +272,7 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261031a">
+<link rel="stylesheet" href="assets/retro.css?v=20261031b">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -286,8 +287,8 @@ button.card:hover{border-color:var(--cc)}
     <a href="#changelog" data-view="changelog">Changelog</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
-  <a class="btn sm discord-btn" href="https://discord.gg/dvGaJRRkYg" target="_blank" rel="noopener">Join the Discord</a>
   <button type="button" class="btn sm skin-btn" id="skinBtn" title="Switch between the Retro and Clean themes"></button>
+  <a class="btn sm discord-btn" href="https://discord.gg/dvGaJRRkYg" target="_blank" rel="noopener">Join the Discord</a>
 </div></header>
 <main><div class="wrap" id="view"></div></main>
 <div id="layer"></div>

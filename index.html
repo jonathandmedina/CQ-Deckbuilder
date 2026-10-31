@@ -59,9 +59,7 @@ button{cursor:pointer}
 .bhead h1{margin-bottom:0}
 .btn.newdeck{font-weight:700}
 .newdeck-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.tabs a.tab-play{background:var(--ok);color:var(--accent-ink);font-weight:700;box-shadow:0 0 0 1px var(--ok)}
-.tabs a.tab-play:hover{background:var(--ok);color:var(--accent-ink);filter:brightness(1.08)}
-.tabs a.tab-play[aria-current="page"]{background:var(--ok);color:var(--accent-ink);box-shadow:0 0 0 2px var(--ink)}
+.discord-btn{flex:none;text-decoration:none;color:var(--ink)}
 .acct{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--muted);min-width:0}
 .acct img{width:26px;height:26px;border-radius:50%}
 .skin-btn{flex:none}
@@ -273,7 +271,7 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261030m">
+<link rel="stylesheet" href="assets/retro.css?v=20261031a">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -284,10 +282,11 @@ button.card:hover{border-color:var(--cc)}
     <a href="#decks" data-view="decks">My Decks</a>
     <a href="#best" data-view="best">Best Decks</a>
     <a href="#rules" data-view="rules">Rules</a>
-    <a href="#play" data-view="play" class="tab-play">Play</a>
+    <a href="#play" data-view="play">Play</a>
     <a href="#changelog" data-view="changelog">Changelog</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
+  <a class="btn sm discord-btn" href="https://discord.gg/dvGaJRRkYg" target="_blank" rel="noopener">Join the Discord</a>
   <button type="button" class="btn sm skin-btn" id="skinBtn" title="Switch between the Retro and Clean themes"></button>
 </div></header>
 <main><div class="wrap" id="view"></div></main>
@@ -297,14 +296,14 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261030m"></script>
-<script src="assets/app.js?v=20261030m"></script>
-<script src="assets/play-engine.js?v=20261030m"></script>
-<script src="assets/play-cards.js?v=20261030m"></script>
-<script src="assets/play-ai.js?v=20261030m"></script>
-<script src="assets/play-ui.js?v=20261030m"></script>
-<script src="assets/changelog-data.js?v=20261030m"></script>
-<script src="assets/changelog.js?v=20261030m"></script>
+<script src="assets/cards-data.js?v=20261031a"></script>
+<script src="assets/app.js?v=20261031a"></script>
+<script src="assets/play-engine.js?v=20261031a"></script>
+<script src="assets/play-cards.js?v=20261031a"></script>
+<script src="assets/play-ai.js?v=20261031a"></script>
+<script src="assets/play-ui.js?v=20261031a"></script>
+<script src="assets/changelog-data.js?v=20261031a"></script>
+<script src="assets/changelog.js?v=20261031a"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinBtn");if(!b)return;var cur=document.documentElement.dataset.skin;

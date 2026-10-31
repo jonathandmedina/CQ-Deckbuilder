@@ -765,7 +765,7 @@ document.addEventListener("click",async e=>{
   else if(a==="hero-cls"){S.b.heroCls=v;render()}
   else if(a==="b-cls"){S.b.cls=v;render()}
   else if(a==="inspect"){inspect(BYID.get(id))}
-  else if(a==="pick-hero"){setDeck(d=>{const i=d.heroes.indexOf(id);if(i>=0)d.heroes.splice(i,1);else if(d.heroes.length<3)d.heroes.push(id);else toast("Your party is full. Remove a Hero first.")})}
+  else if(a==="pick-hero"){let added=false;setDeck(d=>{const i=d.heroes.indexOf(id);if(i>=0)d.heroes.splice(i,1);else if(d.heroes.length<3){d.heroes.push(id);added=true}else toast("Your party is full. Remove a Hero first.")});if(added&&S.deck.heroes.length===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
   else if(a==="unhero"){setDeck(d=>{d.heroes=d.heroes.filter(h=>h!==id)});if(S.deck.heroes.length<3){S.b.step="heroes";render()}}
   else if(a==="to-cards"){if(S.deck.heroes.length===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
   else if(a==="to-heroes"){S.b.step="heroes";render()}

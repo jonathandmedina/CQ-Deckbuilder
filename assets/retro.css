@@ -94,7 +94,6 @@ html[data-skin="retro"] .res.au .aura{background-image:url(ico-aura.png)}
 
 /* Legendary */
 html[data-skin="retro"] .c-type .leg{color:var(--legend)}
-html[data-skin="retro"] .c-type .leg.legendary::before{content:"";display:inline-block;width:30px;height:9px;margin-right:4px;background:url(ico-legend.png) center/contain no-repeat;image-rendering:pixelated;vertical-align:1px}
 
 /* Hero stats with the STR / DEF / Aura / HP icons */
 html[data-skin="retro"] .stat{border:2px solid rgba(255,255,255,.22);background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0}
@@ -174,8 +173,5 @@ html[data-skin="retro"] .meter .big{font-family:var(--display);font-size:2.4rem}
 html[data-skin="retro"] .pl-bar .nm{font-size:1.4rem;font-weight:400}
 
 /* Play link stands out: green menu button with a gold frame */
-html[data-skin="retro"] .tabs a.tab-play{background:linear-gradient(180deg,#59d873,#22914a);color:#06210d;border:2px solid #d6ffd9;border-radius:5px;text-shadow:none;margin-left:4px;padding:0 9px 0 22px;box-shadow:0 0 10px rgba(89,216,115,.55)}
-html[data-skin="retro"] .tabs a.tab-play:hover{color:#06210d;filter:brightness(1.1)}
-html[data-skin="retro"] .tabs a.tab-play[aria-current="page"]{color:#06210d;border-color:#ffe27a;box-shadow:0 0 12px rgba(255,226,122,.8)}
-html[data-skin="retro"] .tabs a.tab-play::before{filter:brightness(0)}
 html[data-skin="retro"] .bhead h1{margin-bottom:0}
+@media (min-width:721px){html[data-skin="retro"] .top .brand{order:-2}html[data-skin="retro"] .discord-btn{order:-1;margin-left:auto}}

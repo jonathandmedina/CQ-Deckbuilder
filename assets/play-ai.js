@@ -4,7 +4,7 @@
 const E=root.CQE;const AI={};root.CQAI=AI;
 /* clone without the game log (the log can be long and the AI never reads it) */
 function lightClone(s){const l=s.log;s.log=[];try{return E.clone(s)}finally{s.log=l}}
-const W={alive:22,hp:1,str:1.6,def:1.2,aura:2.4,lvl:1.4,guard:.6,sum:4,sumStr:1.2,sumHp:.5,pillar:3,inv:1.2,hand:.4,gold:.12,aura0:0,tmpStr:.8,status:1.1,stun:2};
+const W={alive:22,hp:1,str:1.6,def:1.2,aura:2.4,lvl:1.4,guard:.6,sum:3,sumStr:2.2,sumHp:.5,pillar:3,inv:1.2,hand:.4,gold:.12,aura0:0,tmpStr:.8,status:1.1,stun:2};
 AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e4;
   let sc=0;s.p.forEach((pl,p)=>{let v=0;
     pl.heroes.forEach(h=>{if(h.dead){v+=h.surr?0:1;return}const st=E.heroStats(s,h);
@@ -14,7 +14,7 @@ AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e
       v+=W.alive+W.hp*st.hp+W.str*Math.min(Math.max(0,st.str-tmp),12)+tv+W.def*Math.min(st.def,8)+W.aura*st.aura+W.lvl*h.lvl+W.guard*(h.guard+h.eqGuard)+h.plus*.5;
       v-=W.status*(h.st.burn+h.st.poison+h.st.wound+h.st.confuse)+W.stun*h.st.stun;
       v+=E.eqList(h).length*.6+h.ench.reduce((n,e)=>n+(e.owner===p?1:-1.5),0)});
-    pl.bf.forEach(o=>{if(o.kind==="summon")v+=W.sum+W.sumStr*E.str(s,o)+W.sumHp*E.hp(s,o);else v+=W.pillar});
+    pl.bf.forEach(o=>{if(o.kind==="summon"){const hp=E.hp(s,o),mx=Math.max(1,E.maxHp(s,o));v+=(W.sum+W.sumStr*E.str(s,o))*(0.6+0.4*Math.min(1,hp/mx))+W.sumHp*hp}else v+=W.pillar});
     v+=pl.inv.reduce((n,o)=>n+(o.kind==="card"&&!o.fd&&(E.DB[o.id]||{}).sub==="Arrow"?(pl.heroes.some(h=>!h.dead&&h.cls==="Ranger")?1.1:.2):o.fd?1.4:W.inv),0)+W.hand*Math.min(pl.hand.length,8)+W.gold*Math.min(pl.gold,12)+W.aura0*pl.aura;
     sc+=p===pid?v:-1.15*v});
   return sc};

@@ -121,7 +121,7 @@ def("Charged Barrage",{run(c){exMe(c);buff(c.actor,{def:4});c.actor.fl.chargedRo
 def("Noble Promotion",{run(c){c.me.fl.promoRound=c.s.round;log(c,`${c.me.name} will gain initiative at Dusk.`)}});
 def("To the Armory",{run(c){E.pushChoose(c.s,c.pid,{title:"To the Armory: choose an Equipment",cards:c.me.lib.filter(x=>E.DB[x.id].kind==="equip").map(x=>x.uid),min:1,max:1,op:"tutor"})}});
 def("Take a Stand",{run(c){draw(c,dfn(c,c.actor));c.actor.fl.standRound=c.s.round}});
-def("Noble Choice",M(2,[{label:"Summon a 2/2 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains Guard 2",t:[HERO],run:c=>{if(c.t[0]){c.t[0].guard+=2;log(c,`${c.t[0].name} gains Guard 2.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
+def("Noble Choice",M(2,[{label:"Summon a 2/1 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains Guard 2",t:[HERO],run:c=>{if(c.t[0]){c.t[0].guard+=2;log(c,`${c.t[0].name} gains Guard 2.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
 /* ===== Barbarian ===== */
 def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:3})}});
 def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:5})}});
@@ -233,12 +233,12 @@ def("Tooth",{run(c){c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR 
 def("Horn",{run(c){c.me.pm.sdef=(c.me.pm.sdef||0)+1;log(c,"Summons gain +1 DEF this turn.")}});
 def("Tooth or Horn",M(1,[{label:"+3 STR",t:[t("allySummon","your summon")],run:c=>buff(c.t[0],{str:3})},{label:"+3 DEF",t:[t("allySummon","your summon")],run:c=>buff(c.t[0],{def:3})}]));
 def("Entangling Roots",{t:[EN],run(c){const o=c.t[0];if(!o)return;o.ex=true;log(c,`${o.name} is exhausted.`);if(summons(c.me).length>=3)st(c,o,"stun")}});
-def("Populate",{t:[t("allySummon","summon with 3 or less STR",(s,o)=>E.str(s,o)<=3)],run(c){if(c.t[0])E.copySummon(c.s,c.pid,c.t[0]);exMe(c)}});
+def("Populate",{t:[t("allySummon","summon with 2 or less STR",(s,o)=>E.str(s,o)<=2)],run(c){if(c.t[0])E.copySummon(c.s,c.pid,c.t[0]);exMe(c)}});
 def("Mass Populate",{run(c){summons(c.me).slice().forEach(o=>E.copySummon(c.s,c.pid,o));exMe(c)}});
 def("Evolve",{run(c){summons(c.me).slice(0,2).forEach(o=>{destroy(c,o,true);E.copySummon(c.s,c.pid,o,1)});exMe(c)}});
 def("Return to the Earth",{t:[t("allySummon","summon to sacrifice")],run(c){destroy(c,c.t[0]);draw(c,1)}});
 def("Primal Energy",{t:[HERO],can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=2,run(c){summons(c.me).filter(o=>!o.ex).slice(0,2).forEach(o=>o.ex=true);if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}});
-def("Nature's Choice",M(2,[{label:"Summon a 2/2 Elk",run:c=>{summon(c,"Elk");exMe(c)}},{label:"A summon gains +2 STR",t:[t("summon")],run:c=>buff(c.t[0],{str:2})},{label:"Ready a summon",t:[t("allySummon","your summon")],run:c=>{if(c.t[0])c.t[0].ex=false}}]));
+def("Nature's Choice",M(2,[{label:"Summon a 1/2 Elk",run:c=>{summon(c,"Elk");exMe(c)}},{label:"A summon gains +2 STR",t:[t("summon")],run:c=>buff(c.t[0],{str:2})},{label:"Ready a summon",t:[t("allySummon","your summon")],run:c=>{if(c.t[0])c.t[0].ex=false}}]));
 def("Stampede",{run(c){summons(c.me).forEach(o=>{o.ex=false;const tg=rand(c,enemies(c).filter(e=>!E.stealth(c.s,e)));if(tg)E.damage(c.s,o,tg,str(c,o,tg),{combat:true})});summons(c.me).forEach(o=>o.ex=false)}});
 /* ===== Generic ===== */
 def("Inspiration",{run(c){draw(c,2)}});
@@ -337,7 +337,8 @@ hab("Rage Brute",[{label:"Double STR until end of next round",run:c=>{E.addMod(c
 hab("Rootbinder",[{label:"Summons +1 STR this turn",run:c=>{c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}}]);
 hab("Songweaver",[{label:"Ally +2 STR this turn",t:[AL],run:c=>buff(c.t[0],{str:2})}]);
 hab("Storm Caller",[{label:"Deal 2 damage to all enemies",cost:2,can:(s,pid,a)=>a.lvl<3,run:c=>enemies(c).forEach(e=>E.damage(c.s,c.actor,e,2,{card:true}))},{label:"Deal 3 damage to all enemies",lvl:3,cost:2,run:c=>enemies(c).forEach(e=>E.damage(c.s,c.actor,e,3,{card:true}))}]);
-hab("Warden of the Woods",[{label:"Summon a 2/2 Spirit",cost:1,run:c=>summon(c,"Spirit")},{label:"Exhaust a summon: +2 STR",ex:false,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&!o.ex),t:[t("allySummon","ready summon",(s,o)=>!o.ex)],run:c=>{if(c.t[0])c.t[0].ex=true;buff(c.actor,{str:2})}}]);
+hab("Wild Shifter",[{label:"Ready a summon you control",can:(s,pid,a)=>a.lvl<3&&s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}},{label:"Ready up to two summons you control",lvl:3,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex),t("allySummon","second exhausted summon (optional)",(s,o)=>o.ex,{opt:true,distinct:true})],run:c=>{c.t.filter(Boolean).forEach(o=>{if(o.ex){o.ex=false;log(c,`${o.name} readies.`)}})}}]);
+hab("Warden of the Woods",[{label:"Summon a 1/1 Squirrel",cost:1,run:c=>summon(c,"Squirrel")},{label:"Exhaust a summon: +2 STR",ex:false,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&!o.ex),t:[t("allySummon","ready summon",(s,o)=>!o.ex)],run:c=>{if(c.t[0])c.t[0].ex=true;buff(c.actor,{str:2})}}]);
 
 /* ===== choose ops ===== */
 OPS.bottom=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){const c=pl.lib.splice(i,1)[0];pl.lib.unshift(c);E.log(s,`${pl.name} puts the card on the bottom of their library.`,pid)}})};

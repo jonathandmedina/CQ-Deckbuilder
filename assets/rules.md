@@ -94,7 +94,7 @@ Enchantments attach to a Hero and change it while attached. Curses are Warlock e
 
 ### Summons
 
-Summon cards create creatures that fight for you. A summon has two numbers, written STR/HP: a 3/5 Beast has 3 STR and 5 HP. See Summons.
+Summon cards create creatures that fight for you. A summon has two numbers, written STR/HP: a 3/2 Beast has 3 STR and 2 HP. See Summons.
 
 ### Tokens
 
@@ -113,19 +113,19 @@ Tokens are cards created by effects rather than drawn from your library, such as
 | Dagger | Equipment (Rogue, One-Handed) | +1 STR | 0 | Equipped Hero gains +1 STR. | Armed, Quick Inventory, Blademaster’s Choice |
 | Viper Fang Dagger | Equipment (Rogue, One-Handed) | +1 STR | 1 | Equipped Hero gains +1 STR and Poisonous 1. | Ritual of Fang |
 | Doll | Item | 0 STR, 0 DEF, 5 HP | — | Takes an inventory slot. It can be targeted and dealt damage like a Hero. At 0 HP it is destroyed. | Mocking Doll |
-| Soldier | Summon | 2/2 | — | | Conscript, Noble Choice, Rally the Troops |
-| Eliazar | Summon (Soldier) | 3/5 | — | | Sword of Eliazar |
-| Beast | Summon | 3/3 | — | | Beast, Out of the Woods |
-| Heavy Beast | Summon (Beast) | 4/5 | — | | Heavy Beast |
-| Woods Beast | Summon (Beast) | 3/5 | — | When this deals damage, draw a card. | Elk of the Woods |
-| Elk | Summon | 2/2 | — | | Elk, Nature’s Choice |
-| Wolf | Summon | 2/3 | — | | Wolf |
-| Aurawing Familiar | Summon (Familiar) | 3/3 | — | When this is destroyed, gain 1 Aura. | Aurawing |
-| Drawwing Familiar | Summon (Familiar) | 3/3 | — | When this is destroyed, draw a card. | Drawwing |
+| Soldier | Summon | 2/1 | — | | Conscript, Noble Choice, Rally the Troops |
+| Eliazar | Summon (Soldier) | 3/3 | — | | Sword of Eliazar |
+| Beast | Summon | 3/2 | — | | Beast, Out of the Woods |
+| Heavy Beast | Summon (Beast) | 4/3 | — | | Heavy Beast |
+| Woods Beast | Summon (Beast) | 3/3 | — | When this deals damage, draw a card. | Elk of the Woods |
+| Elk | Summon | 1/2 | — | | Elk, Nature’s Choice |
+| Wolf | Summon | 2/1 | — | | Wolf |
+| Aurawing Familiar | Summon (Familiar) | 2/1 | — | When this is destroyed, gain 1 Aura. | Aurawing |
+| Drawwing Familiar | Summon (Familiar) | 2/2 | — | When this is destroyed, draw a card. | Drawwing |
 | Spore | Summon | 0/1 | — | When this is destroyed, discard a card. | Spore Calling |
-| Spirit | Summon | 2/2 | — | | Warden of the Woods |
-| Spectral Elk | Summon (Spirit) | 5/8 | — | | Verdant Sage |
-| Sapling | Summon | 0/2 | — | At Dawn, gain 1 Aura. | Heartwood Seed |
+| Squirrel | Summon | 1/1 | — | | Warden of the Woods |
+| Spectral Elk | Summon (Spirit) | 4/3 | — | | Verdant Sage |
+| Sapling | Summon | 0/1 | — | At Dawn, gain 1 Aura. | Heartwood Seed |
 | Spell Damage Pillar | Pillar | — | — | Your spells deal +1 damage. | Boost Ritual, Volt Jab, Lightning Lance, Lightning Rod, Ritual of Power, Chain Lightning |
 | Pain Pillar | Pillar | — | — | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. | Dark Insight, Ritual of Pain |
 
@@ -716,7 +716,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: draw a card; gain 2 Aura; target ally +2 STR this turn; deal 2 damage; gain 3 Gold; or target ally +2 DEF this turn. That Hero can’t be revived. Once per dead Hero.
 - **Surrendered**: A dead Hero whose soul was surrendered. Face down and sideways. Still counts as dead.
 - **STR/HP (e.g. 3/3)**: Shorthand for a summon's Strength and Health.
-- **Summon types**: Named creatures from cards: Beast, Elk, Familiar, Sapling, Soldier, Spirit, Spore, Wolf. See the token list in The Cards for every summon’s STR/HP.
+- **Summon types**: Named creatures from cards: Beast, Elk, Familiar, Sapling, Soldier, Spirit, Spore, Squirrel, Wolf. See the token list in The Cards for every summon’s STR/HP.
 - **Damage types**: Fire, Ice, Lightning, Light and Dark appear on cards. They have no rules effect yet but will later.
 
 ### Card keywords

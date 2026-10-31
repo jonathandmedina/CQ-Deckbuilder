@@ -28,6 +28,8 @@ const exMe=c=>{if(c.actor)c.actor.ex=true};
 const summon=(c,name,ready)=>E.makeSummon(c.s,c.pid,name,ready);
 const pillar=(c,name,n)=>{for(let i=0;i<(n||1);i++)E.makePillar(c.s,c.pid,name)};
 const str=(c,o,vs)=>E.str(c.s,o,vs),dfn=(c,o)=>E.defn(c.s,o);
+/* damage "equal to this Hero's STR": uses DEF instead after Rebuke / Bulwark Prayer */
+const dstr=(c,o,vs)=>E.dmgStr(c.s,o,vs);
 const hp=(c,o)=>E.hp(c.s,o);
 const attack=(c,att,tg,o)=>{if(att&&tg)c.s.qatk={pid:c.pid,att:att.uid,tgt:tg.uid,o:o||{}}};
 const rand=(c,arr)=>arr.length?arr[E.ri(c.s,arr.length)]:null;
@@ -89,8 +91,8 @@ def("All Play",{run(c){c.s.p.forEach(pl=>living(pl).forEach(h=>heal(c,h,2)));con
 def("Light Blast",dmgCard(2,{type:"Light",pierce:2}));
 def("Light Helix",{t:[t("hero","Hero to heal"),t("any","damage target")],run(c){heal(c,c.t[0],2);D(c,c.t[1],2,{type:"Light"})}});
 def("Healing Blast",{t:[t("any","heal target"),t("any","damage target")],run(c){const x=c.x||0;heal(c,c.t[0],x);D(c,c.t[1],Math.ceil(x/2),{type:"Light"});exMe(c)}});
-def("Bulwark Prayer",{t:[t("ally","ally to protect"),t("enemy","enemy to strike (if you control a Paladin)")],run(c){const a=c.t[0];buff(a,{def:2});
-  if(a&&living(c.me).some(h=>E.heroIs(h,"Paladin"))&&c.t[1])E.damage(c.s,a,c.t[1],dfn(c,a),{card:true,type:"Light"});exMe(c)}});
+def("Bulwark Prayer",{t:[t("ally","ally to protect")],run(c){const a=c.t[0];buff(a,{def:2});c.me.fl.clericDefRound=c.s.round;log(c,"This turn, Clerics you control deal damage equal to their DEF instead of their STR.")}});
+def("Rebuke",{run(c){if(!c.actor)return;c.actor.fl.defDmgRound=c.s.round;log(c,`This turn, ${c.actor.name} deals damage equal to its DEF (${dfn(c,c.actor)}) instead of its STR.`)}});
 def("Carry Radiance",{t:[cls("Cleric")],run(c){buff(c.t[0],{lifelink:1})}});
 def("Medical Visit",{t:[ANY],run(c){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}});
 def("Purify",{t:[AL],run(c){if(c.t[0]){E.removeStatus(c.s,c.t[0],1);heal(c,c.t[0],1)}}});
@@ -100,7 +102,7 @@ def("Righteous Rage",{run(c){buff(c.actor,{str:2,lifelink:1});const tg=enemies(c
 def("Withdrawal Ailments",{t:[ANY],run(c){let n=0;living(c.me).forEach(h=>E.STATUS.forEach(k=>{n+=h.st[k];h.st[k]=0}));log(c,`${n} status counters removed.`);D(c,c.t[0],n,{type:"Light"})}});
 def("Healer's Choice",M(2,[{label:"Heal 2 HP",t:[ANY],run:c=>heal(c,c.t[0],2)},{label:"Remove 1 status counter",t:[ANY],run:c=>c.t[0]&&E.removeStatus(c.s,c.t[0],1)},{label:"Deal 2 Light damage",t:[ANY],run:c=>D(c,c.t[0],2,{type:"Light"})}]));
 /* ===== Paladin ===== */
-def("Power Thrust",{t:[DMG],run(c){D(c,c.t[0],(c.actor?str(c,c.actor):0)+2);exMe(c)}});
+def("Power Thrust",{t:[DMG],run(c){D(c,c.t[0],(c.actor?dstr(c,c.actor):0)+2);exMe(c)}});
 def("Shield Bash",{t:[ANY],run(c){D(c,c.t[0],dfn(c,c.actor))}});
 def("Radiant Strike",{t:[ANY],run(c){const sw=E.eqList(c.actor).some(e=>/Sword/.test(e.name+" "+(E.DB[e.id]||{}).rules));D(c,c.t[0],5+(sw?3:0));exMe(c)}});
 def("Divine Judgment",{run(c){const d=dfn(c,c.actor);enemies(c).forEach(e=>D(c,e,d));exMe(c)}});
@@ -125,8 +127,8 @@ def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:3})}});
 def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:5})}});
 def("Blood Frenzy",{t:[cls("Barbarian")],run(c){if(!c.t[0])return;E.loseHp(c.s,c.t[0],4,"Blood Frenzy");buff(c.t[0],{str:2})}});
 def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buff(c.actor,{str:1});const h=c.t[0];if(c.actor.lvl>=3&&h&&dfn(c,h)<str(c,c.actor)){h.ex=true;log(c,`${h.name} is exhausted.`)}}});
-def("Battered",{t:[HERO],run(c){D(c,c.t[0],str(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
-def("Pummel",{t:[HERO],run(c){const n=living(c.me).filter(h=>h.cls==="Barbarian").length;D(c,c.t[0],str(c,c.actor,c.t[0])*n)}});
+def("Battered",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
+def("Pummel",{t:[HERO],run(c){const n=living(c.me).filter(h=>h.cls==="Barbarian").length;D(c,c.t[0],dstr(c,c.actor,c.t[0])*n)}});
 def("Awestruck",{t:[t("any","Hero or summon with less STR",(s,o,x)=>x.actor&&E.str(s,o)<E.str(s,x.actor))],run(c){const was=c.t[0]&&c.t[0].st&&c.t[0].st.stun>0;st(c,c.t[0],"stun");if(was)st(c,c.t[0],"stun")}});
 def("Bloodthirst",{t:[EN],run(c){c.actor.ex=false;attack(c,c.actor,c.t[0],{after:"readyIfKill"})}});
 def("Unstoppable",{t:[EN],run(c){attack(c,c.actor,c.t[0],{ignoreDef:true,noHidden:true})}});
@@ -139,7 +141,7 @@ def("War Chant",{run(c){const bs=living(c.me).filter(h=>h.cls==="Barbarian"&&h.l
 def("Campfire",{enter(c){c.inst.ctr={camp:3}}});
 def("Lose Control",{t:[cls("Barbarian")],run(c){if(c.t[0])c.t[0].fl.loseCtrlRound=c.s.round}});
 /* ===== Rogue ===== */
-def("Surprise Attack",{t:[ANY],run(c){D(c,c.t[0],str(c,c.actor,c.t[0]),{ignoreDef:true})}});
+def("Surprise Attack",{t:[ANY],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]),{ignoreDef:true})}});
 def("Toxic Cloud",{run(c){enemies(c).forEach(e=>st(c,e,"poison",e.st.poison>0?2:1))}});
 def("Acceleration Agent",{t:[ANY],run(c){const o=c.t[0];if(o&&o.st){o.st.poison*=3;log(c,`${o.name} now has ${o.st.poison} Poison counters.`)}}});
 def("Spread the Sickness",{t:[ANY],run(c){const o=c.t[0];if(o&&o.st){o.st.poison*=2;log(c,`${o.name} now has ${o.st.poison} Poison counters.`)}}});
@@ -152,10 +154,10 @@ def("Ritual of Fang",{run(c){E.toInv(c.s,c.pid,E.makeEqToken(c.s,c.pid,"Viper Fa
 def("Blademaster's Choice",Object.assign(M(2,[{label:"+1 additional STR",run:c=>{c._x.str=1}},{label:"Poisonous 1",run:c=>{c._x.poison=1}},{label:"Stun on combat damage",run:c=>{c._x.stun=1}}]),{run(c){const x={};c._x=x;(c.modes||[]).forEach(i=>this.modes.opts[i]&&this.modes.opts[i].run(c));const e=E.makeEqToken(c.s,c.pid,"Dagger",x);if(x.str)e.pstr+=1;E.toInv(c.s,c.pid,e);log(c,"A custom Dagger token goes to inventory.")}}));
 def("Resourceful Maneuver",{t:[cls("Rogue")],can:(s,pid)=>s.p[pid].disc.some(x=>/Dagger/.test(x.id||"")&&E.DB[x.id].kind==="equip"),run(c){const pl=c.me;const i=pl.disc.findIndex(x=>/Dagger/.test(x.id||"")&&E.DB[x.id].kind==="equip");if(i<0||!c.t[0])return;const card=pl.disc.splice(i,1)[0];E.equipTo(c.s,c.t[0],E.eqObjFromCard(c.s,c.pid,card))}});
 def("Broken Blade",{can:(s,pid,a)=>a&&E.eqList(a).some(e=>/Dagger/.test(e.name)),run(c){const d=daggers(c.actor)[0];if(d){destroy(c,d);c.actor.fl.twiceRound=c.s.round;c.actor.fl.twiceUsed=false}}});
-def("Flick Dagger",{can:(s,pid,a)=>a&&E.eqList(a).some(e=>/Dagger/.test(e.name)),run(c){const d=daggers(c.actor)[0];if(!d)return;destroy(c,d);const n=str(c,c.actor);enemies(c).forEach(e=>D(c,e,n))}});
+def("Flick Dagger",{can:(s,pid,a)=>a&&E.eqList(a).some(e=>/Dagger/.test(e.name)),run(c){const d=daggers(c.actor)[0];if(!d)return;destroy(c,d);const n=dstr(c,c.actor);enemies(c).forEach(e=>D(c,e,n))}});
 def("Death by a Thousand Cuts",{t:[ANY],run(c){let n=0;enemies(c).forEach(e=>n+=e.st.poison);living(c.me).filter(h=>h.cls==="Rogue").forEach(h=>n+=daggers(h).length);D(c,c.t[0],n);exMe(c)}});
 def("Cut Off",{t:[EHERO],run(c){const h=c.t[0];if(!h)return;const pl=c.s.p[h.owner];pl.heroes.splice(pl.heroes.indexOf(h),1);pl.heroes.push(h);log(c,`${h.name} is moved to the Closer position.`);attack(c,c.actor,h)}});
-def("Synchronous Strike",{t:[ANY],run(c){const rs=living(c.me).filter(h=>h.cls==="Rogue");let n=0;rs.forEach(h=>{n+=str(c,h);h.ex=true});D(c,c.t[0],n)}});
+def("Synchronous Strike",{t:[ANY],run(c){const rs=living(c.me).filter(h=>h.cls==="Rogue");let n=0;rs.forEach(h=>{n+=dstr(c,h);h.ex=true});D(c,c.t[0],n)}});
 def("Larceny",{t:[t("item","enemy item",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner)],run(c){steal(c,c.t[0])}});
 def("Petty Theft",{t:[t("item","enemy Consumable",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner&&(E.DB[o.id]||{}).sub==="Consumable")],run(c){steal(c,c.t[0])}});
 function steal(c,o){if(!o)return;const f=E.find(c.s,o.uid);if(!f||f.zone!=="inv")return;const from=c.s.p[f.pid];from.inv.splice(from.inv.indexOf(o),1);o.ctrl=c.pid;E.toInv(c.s,c.pid,o);log(c,`${c.me.name} gains control of ${o.name}.`)}
@@ -179,14 +181,14 @@ def("Balanced Choice",M(2,[{label:"Scry 2",run:c=>scry(c,2)},{label:"Target Hero
 def("Well Trained",{t:[HERO],modes:{n:1,opts:[{label:"If it reaches an even Level, gain +1 STR"},{label:"If it reaches an even Level, gain +1 DEF"},{label:"If it reaches an even Level, gain +1 AURA"}]},run(c){if(combosPlayed(c)>=3&&c.t[0])E.levelUp(c.s,c.t[0],["str","def","aura"][(c.modes||[])[0]||0])}});
 def("Stunner",{run(c){c.me.fl.stunner=true}});
 /* ===== Bard ===== */
-def("Ballad of Blades",{t:[ANY],run(c){D(c,c.t[0],(c.me.t.songs||0)>1?3:2)}});S['"Ballad of Blades"']=S["Ballad of Blades"];
+def("Ballad of Blades",{t:[t("ally","ally to boost")],run(c){const n=(c.me.t.songs||0)>1?3:2;if(c.t[0]){buff(c.t[0],{str:n});log(c,`${c.t[0].name} gains +${n} STR this turn.`)}}});S['"Ballad of Blades"']=S["Ballad of Blades"];
 const song=(n,o)=>{S['"'+n+'"']=o};
 song("Ballad of Blades",S["Ballad of Blades"]);
 song("Crescendo",Object.assign({t:[ANY]},{modes:{n:1,opts:[{label:"Deal 3 damage"},{label:"Harmonize 2: 3 damage to each enemy"}]},can:()=>true,run(c){
   const harm=(c.modes||[])[0]===1&&living(c.me).filter(h=>!h.ex).length>=2;
   if(harm){living(c.me).filter(h=>!h.ex).slice(0,2).forEach(h=>h.ex=true);enemies(c).forEach(e=>D(c,e,3))}else D(c,c.t[0],3)}}));
 song("Dazzling Melody",{run(c){c.actor.fl.tauntRound=c.s.round;log(c,`${c.actor.name} dazzles: this turn enemies can only attack ${c.actor.name}, and their cards and abilities must target it.`)}});
-song("Lullaby",{t:[t("any","target with 2 or less STR",(s,o)=>E.str(s,o)<=2)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
+song("Lullaby",{t:[t("any","target with 1 or less STR",(s,o)=>E.str(s,o)<=1)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
 song("Peace",{t:[HERO],run(c){st(c,c.t[0],"stun");if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
 song("Rousing Chorus",{t:[AL],run(c){buff(c.t[0],{str:1})}});
 song("Song of Healing",{run(c){living(c.me).filter(h=>E.heroIs(h,"Bard")).forEach(o=>heal(c,o,2))}});
@@ -271,11 +273,11 @@ def("Vial of Venom",item(1,[ANY],c=>st(c,c.t[0],"poison",2),{exile:true}));
 def("Energizing Ale",item(2,[t("allyHero","target Bard",(s,o)=>E.heroIs(o,"Bard"))],c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}},{exile:true}));
 def("Harmonic Flask",item(2,[],c=>{if((c.modes||[])[0]===1){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}else heal(c,c.actor,2)},{exile:true,modes:{n:1,opts:[{label:"Heal this Hero for 2 HP"},{label:"Remove up to 2 status counters from target Hero",t:[t("hero","Hero to clear (2 status)")]}]}}));
 /* "Choices": choose two of Mill 2 / equip an Equipment from hand or inventory to this Hero for free / return a Song from discard to hand */
-song("Choices",{modes:{n:2,opts:[{label:"Mill 2"},{label:"Equip an Equipment from your hand or inventory to this Hero (free)"},{label:"Return a Song from your discard pile to your hand"}]},run(c){const m=c.modes||[];const pl=c.me;
+song("Choices",{modes:{n:2,opts:[{label:"Mill 2"},{label:"Equip a Bard Equipment from your hand or inventory to this Hero (free)"},{label:"Return a Song from your discard pile to your hand"}]},run(c){const m=c.modes||[];const pl=c.me;
   if(m.includes(0))E.mill(c.s,c.pid,2);
-  if(m.includes(1)&&c.actor){const hand=pl.hand.filter(x=>E.DB[x.id]&&E.DB[x.id].kind==="equip"&&E.canUseEq(c.s,c.actor,E.eqObjFromCard(c.s,c.pid,x)));const inv=pl.inv.filter(o=>o.kind==="equip"&&E.canUseEq(c.s,c.actor,o));
+  if(m.includes(1)&&c.actor){const hand=pl.hand.filter(x=>E.DB[x.id]&&E.DB[x.id].kind==="equip"&&E.DB[x.id].cls==="Bard"&&E.canUseEq(c.s,c.actor,E.eqObjFromCard(c.s,c.pid,x)));const inv=pl.inv.filter(o=>o.kind==="equip"&&(E.DB[o.id]||{}).cls==="Bard"&&E.canUseEq(c.s,c.actor,o));
     const show={};hand.forEach(x=>show[x.uid]=x.id);inv.forEach(o=>show[o.uid]=o.id);
-    if(hand.length+inv.length)E.pushChoose(c.s,c.pid,{title:"Choices: equip an Equipment to "+c.actor.name+" for free",cards:hand.concat(inv).map(x=>x.uid),show,min:1,max:1,op:"equipFree",hero:c.actor.uid});else log(c,"No Equipment in hand or inventory that this Hero can use.")}
+    if(hand.length+inv.length)E.pushChoose(c.s,c.pid,{title:"Choices: equip a Bard Equipment to "+c.actor.name+" for free",cards:hand.concat(inv).map(x=>x.uid),show,min:1,max:1,op:"equipFree",hero:c.actor.uid});else log(c,"No Bard Equipment in hand or inventory that this Hero can use.")}
   if(m.includes(2)){const songs=pl.disc.filter(x=>E.DB[x.id]&&E.DB[x.id].type==="Song");if(songs.length)E.pushChoose(c.s,c.pid,{title:"Choices: return a Song to your hand",cards:songs.map(x=>x.uid),min:1,max:1,op:"fromDisc"});else log(c,"No Song in your discard pile.")}}});
 def("Phoenix Down",item(3,[t("deadAny","dead Hero")],c=>{const h=c.t[0];if(!h)return;h.dead=false;h.dmg=Math.max(0,E.maxHp(c.s,h)-3);h.ex=true;E.addMod(h,{stealth:1});log(c,`${h.name} is revived with 3 HP.`)},{exile:true,can:(s)=>s.p.some(p=>p.heroes.some(h=>h.dead&&!h.surr))}));
 def("Platinum Bar",item(2,[],c=>draw(c,1)));
@@ -284,11 +286,19 @@ def("Silver Bar",item(3,[],c=>{c.me.pm.str=(c.me.pm.str||0)+1;log(c,"Your party 
 def("Dynamite",item(3,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Sleeping Potion",item(2,[HERO],c=>{if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}},{exile:true,ex:true}));
 def("Amnesia Puzzle Box",item(0,[t("player","target player")],c=>{const p=c.s.p[c.t[0].pid];p.lib.push(...p.disc.splice(0));E.shuffle(c.s,p.lib);log(c,`${p.name} shuffles their discard pile into their library.`)},{exile:true}));
-def("Energy Stone",item(0,[],c=>{summons(c.me).filter(o=>!o.ex).slice(0,2).forEach(o=>o.ex=true);c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=2}));
+def("Energy Stone",item(0,[t("allySummon","first ready summon to exhaust",(s,o)=>!o.ex),t("allySummon","second ready summon to exhaust",(s,o)=>!o.ex,{distinct:true})],c=>{const ss=c.t.filter(o=>o&&!o.ex);if(ss.length<2){log(c,"Energy Stone needs two ready summons.");return}ss.slice(0,2).forEach(o=>{o.ex=true;log(c,`${o.name} is exhausted.`)});c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{free:true,can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=2}));
 def("Song Book",item(1,[],c=>{c.inst.exh=true;E.pushChoose(c.s,c.pid,{title:"Song Book: choose a Song",cards:c.me.lib.filter(x=>E.DB[x.id].type==="Song").map(x=>x.uid),min:1,max:1,op:"tutor"})},{can:(s,pid,a,o)=>!o.exh}));
 def("Instrument Bag",item(2,[],c=>{E.pushChoose(c.s,c.pid,{title:"Instrument Bag: choose an Instrument",cards:c.me.lib.filter(x=>E.DB[x.id].sub==="Instrument").map(x=>x.uid),min:1,max:1,op:"tutor"})}));
+/* ===== update 9 ===== */
+def("Reclaim",{t:[],can:(s,pid)=>s.p[pid].disc.length>0,run(c){const pl=c.me;if(!pl.disc.length){log(c,"Your discard pile is empty.");return}
+  E.pushChoose(c.s,c.pid,{title:"Reclaim: return a card from your discard pile to your hand",cards:pl.disc.map(x=>x.uid),min:1,max:1,op:"fromDisc"})}});
+/* Banding cards: the engine reads these flags (E.hasBanding) and offers "Band attack" */
+def("Unity of the Herd",{run(c){c.me.fl.summonBandRound=c.s.round;log(c,"Friendly summons gain Banding this turn.")}});
+song("Marching Cadence",{run(c){living(c.me).forEach(h=>h.fl.bandRound=c.s.round);log(c,"Heroes in your party gain Banding this turn.");exMe(c)}});
+song("Duet",{t:[t("allyHero","ally Hero to band with",(s,o,x)=>!x||o!==x.actor)],run(c){const a=c.actor,b=c.t[0];[a,b].forEach(h=>{if(h)h.fl.bandRound=c.s.round});
+  if((c.me.t.songs||0)>1&&a)a.fl.duetRound=c.s.round;log(c,`${a?a.name:"This Hero"}${b?" and "+b.name:""} gain Banding this turn${(c.me.t.songs||0)>1?"; their banded attack gets +2 STR":""}.`)}});
 /* passive items: handled in the engine by name (no script needed beyond entering play) */
-["Aura Crystal","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
+["Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
 S["Almandine"].gem=c=>{c.actor=null;enemies(c).forEach(e=>E.damage(c.s,{name:"Almandine"},e,2,{card:true}))};
 S["Rose Quartz"].gem=c=>{living(c.me).forEach(h=>E.heal(c.s,null,h,3))};
 S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};

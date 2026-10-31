@@ -29,6 +29,10 @@ const CSS=`
 .pl-game.nolog .pl-side{display:none}
 .pl-game.nolog .pl-logshow{display:inline-flex;position:absolute;right:0;top:-38px;z-index:2}
 .posm span.last{border-left:1px dashed var(--line)}
+.band-list{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.band-list .band-pick{text-align:left;justify-content:flex-start}
+.band-total{font-size:1.05rem;margin:8px 0}
+.tg.band,.ps .band{color:var(--ok)}
 .pl-side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 90px)}
 .pl-log{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;overflow:auto;font-size:.82rem;line-height:1.35;flex:1;min-height:200px}
 .pl-log p{margin:0 0 3px}
@@ -339,6 +343,8 @@ function heroCounts(s,h){if(h.dead)return[];const out=[];const r=s.round;const p
   const combos=h.fl&&h.fl.combosRound===r?h.fl.combos||0:0;
   if(h.name==="Grandmaster Reece"){if(h.lvl>=3){const m=combos%3;out.push(`<span class="tg cnt" title="Every third Combo card he plays this turn: +2 STR">Combo ${m}/3${combos>=3?` · ${combos} total`:""}</span>`)}else out.push(`<span class="tg cnt" title="His third Combo card this turn: +2 STR">Combo ${Math.min(combos,3)}/3${combos>=3?" ✓":""}</span>`)}
   if(h.fl&&h.fl.stepped===r)out.push('<span class="tg cnt" title="Stepped back: acts after the Closer this round">Acts last</span>');
+  if(E.hasBanding(s,h))out.push('<span class="tg cnt band" title="Can join a Band attack: add its STR, then it is exhausted">Banding</span>');
+  if(E.usesDef(s,h))out.push('<span class="tg cnt" title="Deals damage equal to its DEF instead of its STR this turn">DEF damage</span>');
   if(h.name==="Sage Monk")out.push(`<span class="tg cnt" title="Scry 1 on its first Combo card each turn">First Combo: ${h.fl&&h.fl.sageRound===r?"used":"ready"}</span>`);
   const atks=h.atkRound===r?h.attacks||0:0;
   if(h.name==="Skullcrusher")out.push(`<span class="tg cnt" title="+3 STR on its second attack each turn">Attacks ${atks}${atks>=2?" ✓":"/2"}</span>`);
@@ -393,7 +399,7 @@ function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id
     ${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}
   </div>`}
 function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});
-  return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}</button>`}
+  return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${E.hasBanding(s,o)?"<span class=\"band\">Banding</span>":""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}</button>`}
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
 function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false;
   const mineTurn=opts.length>0;
@@ -427,6 +433,8 @@ function lvBtn(o,label,cls){return`<button class="btn ${cls}" data-pa="do" data-
 function btn(o,label,cls){return`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(label)}</button>`}
 function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   const atk=opts.filter(o=>o.type==="attack");atk.forEach(o=>out.push(btn(o,o.att===(a&&a.uid)?"Attack":`${nameOf(o.att)} attacks`,"atk")));
+  const bands=opts.filter(o=>o.type==="band");if(bands.length){const lead=bands.find(o=>a&&o.att===a.uid)||bands[0];out.push(btn(lead,`Band attack (${E.bandMembers(s,me).length} ready)`,"atk band"))}
+  opts.filter(o=>o.type==="useFree").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Use ${f.o.name} (no action)`))});
   const lv=opts.filter(o=>o.type==="level");const LV={str:"STR",def:"DEF",aura:"AURA"};
   if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
   opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
@@ -502,6 +510,8 @@ function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f
   if(mine&&o.kind==="card"){opts.filter(x=>(x.type==="use"||x.type==="clear")&&x.uid===u).forEach(x=>acts.push(btn(x,x.type==="use"?"Activate":"Clear from inventory (discard)")))}
   if(mine&&o.kind==="equip"){opts.filter(x=>(x.type==="equipInv"||x.type==="take"||x.type==="clear")&&x.uid===u).forEach(x=>acts.push(btn(x,x.type==="clear"?"Clear from inventory (discard)":x.type==="take"?"Take it":"Equip it")))}
   if(mine&&o.kind==="summon")opts.filter(x=>x.type==="attack"&&x.att===u).forEach(x=>acts.push(btn(x,"Attack with it","go")));
+  if(mine)opts.filter(x=>x.type==="band"&&x.att===u).forEach(x=>acts.push(btn(x,"Lead a Band attack","go")));
+  if(mine&&o.kind==="card")opts.filter(x=>x.type==="useFree"&&x.uid===u).forEach(x=>acts.push(btn(x,"Activate (no action)","go")));
   if(mine&&o.kind==="hero"&&o.med)acts.push(`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"wake",hero:u,v:o.keepMed}))}' ${s.phase==="dawn"?"":"disabled"}>${o.keepMed?"Wake at next Dawn":"Keep Meditating"}</button>`);
   const hidden=o.fd&&!mine;
   modal(`${hidden?"<p>A face-down Hidden card.</p>":card?cardHTML(card):`<h2>${esc(o.name)}</h2>`}
@@ -513,6 +523,10 @@ function showPile(pid,z){const s=view();const pl=s.p[pid];const list=pl[z];
 
 /* ---------- starting an action (modes, X, targets) ---------- */
 function begin(a){const s=view();
+  if(a.type==="band"&&!a.members){return pickBand(a)}
+  if(a.type==="band"||a.type==="useFree"){const slots=E.need(s,U.me,a);if(!slots.length){send(a);return}
+    if(a.type==="band"&&!slots[0].cands.length){toast("There's nothing that can be attacked.");return}
+    U.tgt={a,slots,i:0,picks:[],label:a.type==="band"?"the band attack":E.labelAction(s,U.me,a)};skipEmpty();render();return}
   if(a.type==="soul"||a.type==="attack"||a.type==="ability"||a.type==="use"||a.type==="play"||a.type==="comboPlay"){
     if((a.type==="play"||a.type==="comboPlay")&&!a._ready){const pl=s.p[U.me];const c=pl.hand.find(x=>x.uid===a.uid)||pl.lib.find(x=>x.uid===a.uid);const d=E.DB[c.id];const sc=SCR()[d.name];
       if(sc&&sc.modes&&!a.modes){return pickModes(a,d,sc)}
@@ -531,6 +545,16 @@ function pickTarget(u){const t=U.tgt;if(!t)return;const sl=t.slots[t.i];if(!sl.c
   if(sl.distinct&&t.picks.includes(u)){toast("Choose a different target.");return}
   t.picks.push(u);t.i++;if(t.i<t.slots.length){skipEmpty();render();return}
   const a=Object.assign({},t.a,{targets:t.picks});U.tgt=null;send(a)}
+/* Band attack: choose who joins (all ready units with Banding are listed; "Select all summons" shortcut), then the target */
+function pickBand(a){const s=view();const all=E.bandMembers(s,U.me);U.bandSel=all.map(o=>o.uid);
+  const draw=()=>{const s2=view();const sel=all.filter(o=>U.bandSel.includes(o.uid));const lead=E.find(s2,a.att);
+    const mem=sel.filter(o=>o.uid!==a.att);const tot=lead?E.bandTotal(s2,lead.o,mem):0;
+    modal(`<h2>Band attack</h2><p>Choose who joins. Their STR is added together for one attack (the target's DEF and Guard still apply), then every attacker is exhausted.</p>
+    <div class="band-list">${all.map(o=>{const on=U.bandSel.includes(o.uid);const isLead=o.uid===a.att;return`<button class="btn band-pick${on?" primary":""}" data-pa="band-t" data-u="${o.uid}" ${isLead?"disabled":""}><b>${esc(o.name)}</b> · ${E.dmgStr(s2,o)} STR${o.kind==="summon"?" (summon)":""}${isLead?" · leads":""}</button>`}).join("")}</div>
+    <div class="actions"><button class="btn sm" data-pa="band-sums">Select all summons</button><button class="btn sm" data-pa="band-all">Select all</button><button class="btn sm" data-pa="band-none">Only the leader</button></div>
+    <p class="band-total">Total: <b>${tot}</b> STR${mem.length?` (${sel.length} attackers)`:" (no one else joins — a normal attack)"}</p>
+    <div class="actions"><button class="btn primary go" data-pa="band-ok">Choose target</button><button class="btn" data-pa="close">Cancel</button></div>`)};
+  U.bandCtx={a,all,draw};draw()}
 function pickModes(a,d,sc){const n=sc.modes.n;U.modeSel=[];
   const draw=()=>modal(`<h2>${esc(d.name)}</h2><p>${n>1?`Choose ${n}:`:"Choose one:"}</p><div class="actions" style="flex-direction:column;align-items:stretch">${sc.modes.opts.map((m,i)=>`<button class="btn${U.modeSel.includes(i)?" primary":""}" data-pa="mode" data-i="${i}">${esc(m.label)}</button>`).join("")}</div>
     <div class="actions"><button class="btn primary go" data-pa="mode-ok" ${U.modeSel.length!==Math.min(n,sc.modes.opts.length)?"disabled":""}>Continue</button><button class="btn" data-pa="close">Cancel</button></div>`);
@@ -586,6 +610,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="soul"){const opts=legal().filter(o=>o.type==="soul");const heroes=[...new Set(opts.map(o=>o.hero))];
     modal(`<h2>Surrender a soul</h2><p class="pl-note">A surrendered Hero can never be revived. Uses your priority; no Hero is exhausted.</p>${heroes.map(h=>`<h3>${esc(nameOf(h))}</h3><div class="actions" style="flex-direction:column;align-items:stretch">${opts.filter(o=>o.hero===h).map(o=>btn(o,E.SOULS[o.ch])).join("")}</div>`).join("")}<div class="actions"><button class="btn" data-pa="close">Cancel</button></div>`);return}
   if(k==="mode"){const i=+b.dataset.i;const c=U.modeCtx;const n=Math.min(c.sc.modes.n,c.sc.modes.opts.length);if(U.modeSel.includes(i))U.modeSel=U.modeSel.filter(x=>x!==i);else{if(n===1)U.modeSel=[i];else if(U.modeSel.length<n)U.modeSel.push(i)}c.draw();return}
+  if(k==="band-t"){const u=b.dataset.u;U.bandSel=U.bandSel.includes(u)?U.bandSel.filter(x=>x!==u):U.bandSel.concat([u]);U.bandCtx.draw();return}
+  if(k==="band-sums"){const c=U.bandCtx;U.bandSel=c.all.filter(o=>o.kind==="summon"||o.uid===c.a.att).map(o=>o.uid);c.draw();return}
+  if(k==="band-all"){const c=U.bandCtx;U.bandSel=c.all.map(o=>o.uid);c.draw();return}
+  if(k==="band-none"){const c=U.bandCtx;U.bandSel=[c.a.att];c.draw();return}
+  if(k==="band-ok"){const c=U.bandCtx;closeModal();const mem=U.bandSel.filter(u=>u!==c.a.att);begin(Object.assign({},c.a,{members:mem}));return}
   if(k==="mode-ok"){const c=U.modeCtx;closeModal();begin(Object.assign({},c.a,{modes:U.modeSel.slice().sort()}));return}
   if(k==="x-ok"){const c=U.xCtx;const v=Math.max(0,Math.min(c.max,parseInt(document.getElementById("pl-x").value,10)||0));closeModal();begin(Object.assign({},c.a,{x:v}));return}
   if(k==="scry-bot"){const u=b.dataset.u;const sc=U.scry;sc.bottom=sc.bottom.includes(u)?sc.bottom.filter(x=>x!==u):sc.bottom.concat([u]);redrawPrompt();return}

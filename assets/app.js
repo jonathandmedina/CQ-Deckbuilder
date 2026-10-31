@@ -300,7 +300,7 @@ function viewBuild(){
   if(S.b.step==="heroes"){
     const f={cls:S.b.heroCls,type:"Hero",sort:"class",q:""};
     const list=filterSort(HEROES,f);
-    return`<h1>Deck Builder</h1>${stepsHTML()}
+    return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button></div>${stepsHTML()}
     <p class="lede">Pick three Heroes for your party, in order. Their classes decide which cards you can add next: cards of those classes plus Generic cards.</p>
     ${partySlots(d)}
     <div class="bar">${classChips(S.b.heroCls,"hero-cls",CLASSES)}</div>
@@ -314,7 +314,7 @@ function viewBuild(){
   if(f.cls!=="all"&&f.cls!=="Generic"&&!pcls.includes(f.cls))f.cls="all";
   const pool=filterSort(CARDS.filter(c=>allowed(c,d)),f);
   const total=deckTotal(d);
-  return`<h1>Deck Builder</h1>${stepsHTML()}
+  return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button></div>${stepsHTML()}
   ${partySlots(d)}
   <div class="split">
     <section aria-label="Card pool">
@@ -774,7 +774,15 @@ document.addEventListener("click",async e=>{
     setDeck(d=>{d.cards[id]=(d.cards[id]||0)+1});if(a==="inc-close"){b.closest(".modal")?.remove();toast(`Added ${c.name}.`)}}
   else if(a==="dec"){setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})}
   else if(a==="prune"){setDeck(d=>{for(const k of Object.keys(d.cards)){const c=BYID.get(k);if(!c||!allowed(c,d))delete d.cards[k]}})}
-  else if(a==="new-deck"||a==="new-deck-go"){if(S.dirty&&a==="new-deck"&&!b.dataset.sure){b.dataset.sure="1";b.textContent="Discard unsaved changes?";setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent=b.closest(".deckpanel")?"New deck":"Start over"}},3500);return}
+  else if(a==="new-deck-ask"){const d=S.deck;const has=d.heroes.length||deckTotal(d);
+    if(!S.dirty||!has){S.deck=blankDeck();S.dirty=false;S.b.step="heroes";saveDraft();go("build");render();return}
+    const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Start a new deck");
+    m.innerHTML=`<div class="box"><h2>Save this deck first?</h2><p>“${esc(d.name||"Untitled deck")}” has unsaved changes. Save it before starting a new deck?</p><div class="actions newdeck-acts"><button type="button" class="btn primary go" data-act="new-deck-save">Save and start new</button><button type="button" class="btn" data-act="new-deck-go">Don't save</button><button type="button" class="btn" data-act="close">Cancel</button></div></div>`;
+    l.appendChild(m);m.addEventListener("click",ev=>{if(ev.target===m)m.remove()});return}
+  else if(a==="new-deck-save"){const d=S.deck;d.name=(d.name||"").trim()||"Untitled deck";b.disabled=true;
+    try{const where=await persistDeck(d);toast(where==="account"?"Deck saved to your account. New deck started.":"Deck saved in this browser. New deck started.")}catch(err){b.disabled=false;return}
+    b.closest(".modal")?.remove();S.deck=blankDeck();S.dirty=false;S.b.step="heroes";saveDraft();go("build");render()}
+  else if(a==="new-deck"||a==="new-deck-go"){if(a==="new-deck-go")b.closest(".modal")?.remove();if(S.dirty&&a==="new-deck"&&!b.dataset.sure){b.dataset.sure="1";b.textContent="Discard unsaved changes?";setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent=b.closest(".deckpanel")?"New deck":"Start over"}},3500);return}
     S.deck=blankDeck();S.dirty=false;S.b.step="heroes";saveDraft();go("build");render()}
   else if(a==="save"){const d=S.deck;d.name=(d.name||"").trim()||"Untitled deck";b.disabled=true;
     try{const where=await persistDeck(d);S.dirty=false;saveDraft();toast(where==="account"?"Deck saved to your account.":"Deck saved in this browser.")}catch(err){}

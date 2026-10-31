@@ -127,6 +127,18 @@ function strOf(s,o,vs){
     return Math.max(0,v)}
   return 0}
 E.str=strOf;E.defn=defOf;
+/* Rebuke / Bulwark Prayer: this turn the Hero deals damage equal to its DEF instead of its STR */
+function usesDef(s,o){if(!o||o.kind!=="hero")return false;if(o.fl.defDmgRound===s.round)return true;const pl=P(s,o.owner);return heroIs(o,"Cleric")&&pl.fl.clericDefRound===s.round}
+function dmgStr(s,o,vs){return usesDef(s,o)?defOf(s,o):strOf(s,o,vs)}
+E.dmgStr=dmgStr;E.usesDef=usesDef;
+/* Banding: Rousing Bandleader (Heroes), Marching Cadence / Duet (Heroes this turn), Gathering Tree (summons), Unity of the Herd (summons this turn) */
+function hasBanding(s,o){if(!o||o.dead)return false;
+  if(o.kind==="hero"){const pl=P(s,o.owner);return o.fl.bandRound===s.round||living(pl).some(h=>h.name==="Rousing Bandleader")}
+  if(o.kind==="summon"){const pl=P(s,o.ctrl);return invHas(pl,"Gathering Tree")||pl.fl.summonBandRound===s.round}
+  return false}
+function bandReady(s,o){return hasBanding(s,o)&&!o.ex&&!(o.st&&o.st.stun)&&!(o.fl&&o.fl.noAttack)}
+function bandMembers(s,pid){const pl=P(s,pid);return[...living(pl),...pl.bf.filter(o=>o.kind==="summon")].filter(o=>bandReady(s,o))}
+E.hasBanding=hasBanding;E.bandMembers=bandMembers;
 const auraStat=h=>h.base.aura+h.bon.aura;
 function spellDmg(s,pid,actor){const pl=P(s,pid);let n=pl.bf.filter(o=>o.name==="Spell Damage Pillar").length;
   if(actor){if(actor.name==="Ember Mage")n+=1;if(hasEqN(actor,"Apprentice's Wand"))n+=1;if(hasEqN(actor,"Ring of Power"))n+=2}return n}
@@ -169,6 +181,7 @@ function heal(s,healer,o,n,pid){
   const oc=ctrl(s,o);
   if(src!=null&&oc!==src&&invHas(P(s,src),"Inversion Stone")){log(s,`Inversion Stone turns the heal on ${o.name} into ${n} Light damage.`);damage(s,{name:"Inversion Stone"},o,n,{card:true,type:"Light",noTrig:true});return 0}
   const h=Math.min(n,o.dmg||0);o.dmg-=h;if(h>0)log(s,`${o.name} heals ${h} HP.`);
+  if(h>0&&src!=null){const sp=P(s,src);sp.t.healed=(sp.t.healed||0)+h}
   if(h>0&&healer&&healer.kind==="hero"&&!healer.dead&&healer.name==="Radiant Oracle"&&h>=3)draw(s,healer.owner,1);
   /* Lightbringer L6: whenever you heal (any heal your side makes, not the Inn), deal that much Light damage */
   if(h>0&&src!=null&&!s._lb){const lb=living(P(s,src)).find(x=>x.name==="Lightbringer"&&x.lvl>=6);
@@ -205,7 +218,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
       if(src.fl.bruisedRound===s.round&&dealt>0&&tgt.st)addStatus(s,tgt,"wound",1);
       if(o.combat&&hasEqN(src,"Poison-Tipped Dagger")&&dealt>0&&tgt.st)addStatus(s,tgt,"poison",2);
       if(o.combat&&dealt>0)eqList(src).forEach(e=>{if(e.x&&e.x.stun&&tgt.st)addStatus(s,tgt,"stun",1)});
-      if(o.combat&&dealt>0&&hasEqN(src,"Hammer")){const it=P(s,ctrl(s,tgt)).inv.find(x=>!x.fd&&x.kind!=="equip");if(it){destroyObj(s,it);}}
+      if(o.combat&&dealt>0&&(hasEqN(src,"Hammer of Ruin")||hasEqN(src,"Hammer"))){const it=P(s,ctrl(s,tgt)).inv.find(x=>!x.fd&&x.kind!=="equip");if(it){destroyObj(s,it);}}
     }
     if(src.kind==="summon"&&src.name==="Woods Beast"&&dealt>0)draw(s,src.ctrl,1);
   }
@@ -287,6 +300,7 @@ function equipTo(s,h,e){const pid=h.owner;const r=e.region;let slot;
   e.ctrl=pid;
   if(/Guard 1/.test(def(e).rules||""))h.eqGuard+=1;
   log(s,`${h.name} equips ${e.name}.`,pid);
+  if(e.name==="Shimmering Cloak"){const x=P(s,pid).t.healed||0;if(x>0){addMod(h,{def:x});log(s,`Shimmering Cloak: ${h.name} gains +${x} DEF this turn (${x} HP healed this turn).`,pid)}else log(s,"Shimmering Cloak: no healing yet this turn, so no DEF bonus.",pid)}
   displaced.forEach(d=>{if(d&&d!=="2H"){log(s,`${d.name} goes to inventory.`,pid);toInv(s,pid,d)}})}
 E.equipTo=equipTo;
 function unequip(s,e){const f=find(s,e.uid);if(!f||f.zone!=="eq")return;f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;toInv(s,f.hero.owner,e);log(s,`${e.name} is unequipped from ${f.hero.name}.`)}
@@ -411,6 +425,9 @@ function battleOptions(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,
     out.push({type:"manualAbility"});
   }
   pl.bf.forEach(o=>{if(o.kind==="summon"&&!o.ex&&!o.st.stun)out.push({type:"attack",att:o.uid})});
+  {const bm=bandMembers(s,pid);if(bm.length>=2){if(a&&bm.includes(a))out.push({type:"band",att:a.uid});bm.forEach(o=>{if(o.kind==="summon")out.push({type:"band",att:o.uid})})}}
+  /* item abilities with no Hero cost (Energy Stone): any time you have priority, no action used */
+  pl.inv.forEach(o=>{if(o.kind!=="card"||o.fd)return;const isc=SC()[def(o).name];if(isc&&isc.act&&isc.act.free&&(!isc.act.can||isc.act.can(s,pid,null,o))&&(isc.act.cost||0)<=pl.aura)out.push({type:"useFree",uid:o.uid})});
   pl.heroes.forEach(h=>{if(h.dead&&!h.surr)SOULS.forEach((_,i)=>out.push({type:"soul",hero:h.uid,ch:i}))});
   out.push({type:"pass"});
   return out}
@@ -443,8 +460,9 @@ function windowFor(s,pid,trig){if(trig.noHidden)return false;const pl=P(s,pid);r
 /* ---------- need(): target slots for an action ---------- */
 E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
   const mk=(spec,ctx)=>({label:spec.label||labelFor(spec.k),opt:!!spec.opt,cands:candidates(s,pid,spec,ctx),distinct:spec.distinct,k:spec.k});
-  if(a.type==="attack"){const att=find(s,a.att);if(!att)return[];
-    return[mk({k:"enemy",label:"attack target"},{attack:true,actor:att.o})]}
+  if(a.type==="attack"||a.type==="band"){const att=find(s,a.att);if(!att)return[];
+    return[mk({k:"enemy",label:a.type==="band"?"band attack target":"attack target"},{attack:true,actor:att.o})]}
+  if(a.type==="useFree"){const f=find(s,a.uid);if(!f)return[];const isc=SC()[f.o.name];return specsFor(isc.act,a.modes).map(sp=>mk(sp,{actor:null,item:f.o}))}
   if(a.type==="play"||a.type==="comboPlay"){const c=findCardAnywhere(s,pid,a.uid);if(!c)return[];const d=DB[c.id];const sc=SC()[d.name];
     const act=a.type==="comboPlay"?heroByUid(s,s.pend[0]&&s.pend[0].actor):actor;
     if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes).map(sp=>mk(sp,{actor:act,card:d}))}
@@ -514,10 +532,16 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"manDone":{s.pend.shift();log(s,`${pl.name} finishes resolving by hand.`,pid);return}
   case"fix":s.pend.unshift({type:"manual",pid,title:"Rules fix",text:"Adjust the game to match the rules. Every change is logged for both players."});log(s,`✋ ${pl.name} opens a rules fix.`,pid);return;
   }
+  if(a.type==="useFree"){const o=find(s,a.uid).o;const isc=SC()[o.name];const c=isc.act.cost||0;if(c)pl.aura-=c;
+    log(s,`${pl.name} activates ${o.name}${c?` (${c} Aura)`:""} (no action used).`,pid);
+    isc.act.run(mkCtx(s,pid,null,DB[o.id],o,a.targets||[],{modes:a.modes||[]}));checkDeaths(s);return}
   /* battle actions */
   s.cur={pid,type:a.type};const actor=actorFor(s,pid);
   if(a.type==="play"){playCard(s,pid,actor,a.uid,a,{});return}
   if(a.type==="attack"){startAttack(s,pid,a.att,a.targets[0],{});return}
+  if(a.type==="band"){const all=bandMembers(s,pid);let mem=(a.members||all.map(o=>o.uid)).filter(u=>u!==a.att&&all.some(o=>o.uid===u));
+    if(!mem.length){startAttack(s,pid,a.att,a.targets[0],{});return}
+    startAttack(s,pid,a.att,a.targets[0],{band:mem});return}
   if(a.type==="level"){actor.ex=true;levelUp(s,actor,a.stat,true);draw(s,pid,1);actor.fl.leveled=s.round;return}
   if(a.type==="step"){actor.fl.stepped=s.round;log(s,`${actor.name} steps back and will act last this round, after the Closer.`,pid);return}
   if(a.type==="ability"){const ab=HS()[actor.name][a.idx];const c=abilityCost(s,pid,actor,ab);if(ab.ex!==false)actor.ex=true;pay(s,pid,actor,c);
@@ -649,20 +673,28 @@ function comboTrigger(s,pid,actor){const pl=P(s,pid);if(!actor||actor.dead)retur
   s.pend.unshift({type:"combo",pid,actor:actor.uid,cands})}
 
 /* ---------- attacks ---------- */
+/* Banding bonuses: Rousing Bandleader L3 = +1 STR per banded Hero; Duet = +2 once if its Song condition was met */
+function bandBonus(s,att,mem){const all=[att,...mem];const pl=P(s,att.kind==="hero"?att.owner:att.ctrl);let b=0;
+  if(living(pl).some(h=>h.name==="Rousing Bandleader"&&h.lvl>=3))b+=all.filter(m=>m.kind==="hero").length;
+  if(all.some(m=>m.kind==="hero"&&m.fl.duetRound===s.round))b+=2;return b}
+function bandTotal(s,att,mem,tgt){return[att,...mem].reduce((n,m)=>n+dmgStr(s,m,tgt),0)+bandBonus(s,att,mem)}
+E.bandTotal=bandTotal;
 function startAttack(s,pid,attUid,tgtUid,o){const f=find(s,attUid);if(!f)return;const att=f.o;const tgt=resolveTarget(s,tgtUid);if(!tgt)return;
   if(!o.noExhaust)att.ex=true;
   /* Resistance Shield: pay 1 Aura to attack its owner's Heroes */
   const tp=ctrl(s,tgt);if(tgt.kind==="hero"&&invHas(P(s,tp),"Resistance Shield")&&tp!==pid){P(s,pid).aura=Math.max(0,P(s,pid).aura-1);log(s,"Resistance Shield: attacker pays 1 Aura.",pid)}
   att.attacks=(att.atkRound===s.round?att.attacks:0)+1;att.atkRound=s.round;
-  log(s,`⚔ ${att.name} attacks ${tgt.name}.`,pid);
+  if(o.band){const mem=o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o);mem.forEach(m=>{m.ex=true;m.attacks=(m.atkRound===s.round?m.attacks:0)+1;m.atkRound=s.round});
+    const parts=[att,...mem].map(m=>`${m.name} ${dmgStr(s,m,tgt)}`);log(s,`⚔ Band attack on ${tgt.name}: ${parts.join(" + ")}${bandBonus(s,att,mem)?` + ${bandBonus(s,att,mem)} bonus`:""} = ${bandTotal(s,att,mem,tgt)} STR.`,pid)}
+  else log(s,`⚔ ${att.name} attacks ${tgt.name}.`,pid);
   if(att.kind==="hero"){if(att.name==="Dawn Priest"||hasEqN(att,"Mace of Dawn")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,att,t,1)}}
-  const trig={kind:"attack",attacker:attUid,target:tgtUid,pid,noHidden:!!o.noHidden,str:strOf(s,att,tgt)};
+  const trig={kind:"attack",attacker:attUid,target:tgtUid,pid,noHidden:!!o.noHidden,str:o.band?bandTotal(s,att,o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o),tgt):dmgStr(s,att,tgt),band:o.band||null};
   queueResolve(s,pid,{k:"attack",att:attUid,tgt:tgtUid,o},trig)}
 E.startAttack=startAttack;
 function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);const tgt=resolveTarget(s,cont.tgt);const o=cont.o||{};
   if(mods.cancel||!f||!tgt||tgt.dead){if(mods.cancel)log(s,"The attack is canceled.");postAttack(s,pid,cont,0);return}
   const att=f.o;
-  let str=strOf(s,att,tgt)+(mods.str||0)+(o.str||0);
+  let str=(o.band?bandTotal(s,att,o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o).filter(m=>!m.dead),tgt):dmgStr(s,att,tgt))+(mods.str||0)+(o.str||0);
   if(att.kind==="hero"&&att.name==="Skullcrusher"&&att.attacks===2)str+=3;
   let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0);
   const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att));
@@ -857,7 +889,7 @@ E.publicCard=c=>DB[c.id];
 E.heroStats=(s,h)=>({str:strOf(s,h),def:defOf(s,h),aura:h.kind==="hero"?auraStat(h):0,hp:hpOf(s,h),max:maxHp(s,h)});
 E.labelAction=function(s,pid,a){const pl=P(s,pid);const nm=u=>{const r=resolveTarget(s,u);return r?r.name:"?"};
   switch(a.type){case"play":{const c=findCardAnywhere(s,pid,a.uid);return"Play "+(c?DB[c.id].name:"card")}
-  case"attack":return`${nm(a.att)} attacks`;case"level":return"Level up"+(a.stat?` (+1 ${a.stat.toUpperCase()})`:"");case"step":return"Step Back";
+  case"attack":return`${nm(a.att)} attacks`;case"band":return`Band attack led by ${nm(a.att)}`;case"useFree":return"Activate "+nm(a.uid);case"level":return"Level up"+(a.stat?` (+1 ${a.stat.toUpperCase()})`:"");case"step":return"Step Back";
   case"ability":{const a2=actorFor(s,pid);return`${a2.name}: ${HS()[a2.name][a.idx].label}`}
   case"use":return"Activate "+nm(a.uid);case"equipInv":return"Equip "+nm(a.uid);case"take":return"Take "+nm(a.uid);case"clear":return"Clear "+nm(a.uid);
   case"soul":return`Surrender ${nm(a.hero)}'s soul: ${SOULS[a.ch]}`;case"pass":return"Pass";default:return a.type}};

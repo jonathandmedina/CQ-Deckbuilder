@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-30 (update 8: class identity fixes + 11 new cards).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-30 (update 9: Bulwark Prayer, Rebuke, Hammer of Ruin, Bard changes, Reclaim, Rousing Bandleader, Shimmering Cloak).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -24,7 +24,7 @@ const RAW_CARDS=[
 [2, "Awakened Fist", "2", "", "Tactic", "", "Monk", "A Meditating Hero you control readies and attacks. That attack gains Piercing 1. (It stops Meditating, and its +1/+1 counters are removed at Dusk.)", 1],
 [2, "Awestruck", "0", "", "Tactic", "", "Barbarian", "Stun target Hero or summon with less STR than this Hero. If it is already Stunned, you may add another Stun counter.", 1],
 [2, "Balanced Choice", "3", "", "Tactic", "", "Monk", "Choose two: Scry 2; target Hero gains +2 STR this turn; or this Hero Meditates.", 1],
-[2, "\"Ballad of Blades\"", "2", "", "Song", "", "Bard", "Deal 2 damage. If you played another Song this turn, deal 3 damage instead.", 1],
+[2, "\"Ballad of Blades\"", "2", "", "Song", "", "Bard", "Target ally gains +2 STR this turn. If you played another Song this turn, it gains +3 STR instead.", 2],
 [2, "Battered", "2", "", "Tactic", "", "Barbarian", "Deal damage equal to this Hero's STR to target Hero. If \"Bruised\" is in your discard pile, you may wound that target.", 1],
 [2, "Battle Horn", "2", "", "Item", "", "Barbarian", "Whenever a Barbarian attacks, you may discard a card at random. If you do, Barbarians gain +1 STR this turn.", 1],
 [2, "Bear Trap", "0", "Hidden", "Item", "Trap", "Ranger", "3{A}: When an enemy Hero or summon attacks, cancel that attack. Stun the attacker.", 1],
@@ -38,7 +38,7 @@ const RAW_CARDS=[
 [2, "Blood Aura", "3", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. Whenever that Hero spends Aura, it loses 2 HP.", 1],
 [2, "Blood Frenzy", "1", "", "Tactic", "", "Barbarian", "Target Barbarian loses 4 HP and gains +2 STR this turn.", 1],
 [2, "Blood Offering", "0", "", "Spell", "", "Warlock", "Lose 3 HP. Gain 2 Aura.", 1],
-[2, "Bloodthirst", "2", "", "Tactic", "", "Barbarian", "Attack with this Barbarian. If the target dies, ready this Hero.", 1],
+[2, "Bloodthirst", "2", "", "Tactic", "", "Barbarian", "Attack with this Barbarian. If the defending enemy dies, ready this Hero.", 2],
 [2, "Blunt Force", "3", "", "Tactic", "", "Barbarian", "Target Barbarian gains +5 STR this turn.", 1],
 [2, "Blunt-Point Force", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. If damage is dealt this way, the defending player discards a card.", 1],
 [2, "Boost Ritual", "2", "", "Spell", "", "Mage", "Conjure a Spell Damage Pillar. Exhaust this Hero.", 1],
@@ -57,7 +57,7 @@ const RAW_CARDS=[
 [2, "Carry Radiance", "0", "", "Tactic", "", "Cleric", "Target Cleric gains Lifelink this turn.", 1],
 [2, "Chain Lightning", "7", "", "Spell", "", "Mage", "Deal 4 Lightning damage to all enemies. Conjure a Spell Damage Pillar. Exhaust this Hero.", 1],
 [2, "Charged Barrage", "3", "", "Tactic", "", "Paladin", "Exhaust this Hero. It gains +4 DEF this turn. If no damage is dealt to this Hero this turn, at Dusk it deals damage equal to its STR to each enemy.", 1],
-[2, "\"Choices\"", "3", "", "Song", "", "Bard", "Choose two:\n- Mill 2 (move the top 2 cards of your library to your discard pile).\n- Equip an Equipment from your hand or inventory to this Hero without paying its Aura cost.\n- Return a Song from your discard pile to your hand.", 2],
+[2, "\"Choices\"", "3", "", "Song", "", "Bard", "Choose two:\n- Mill 2 (move the top 2 cards of your library to your discard pile).\n- Equip a Bard Equipment from your hand or inventory to this Hero without paying its Aura cost.\n- Return a Song from your discard pile to your hand.", 3],
 [2, "\"Come Together\"", "3", "", "Song", "", "Bard", "Harmonize X: Reveal the top X cards of your library. You may play a revealed Bard card without paying its Aura cost.", 1],
 [2, "Conscript", "2", "", "Tactic", "", "Paladin", "Summon a 2/2 Soldier. Exhaust this Hero.", 2],
 [2, "Coordinated Attack", "3", "", "Tactic", "", "Paladin", "Soldiers you control gain +2 STR this turn. Exhaust this Hero.", 1],
@@ -154,7 +154,7 @@ const RAW_CARDS=[
 [2, "Look Ahead", "1", "", "Tactic", "", "Monk", "Scry 2. Put a +1/+1 counter on target Meditating Hero.", 1],
 [1, "Lose Control", "4", "Legendary", "Tactic", "", "Barbarian", "Target Barbarian's HP can't be reduced below 1 this turn. Whenever it takes damage this turn, ready it.", 1],
 [2, "Lotus Jab", "2", "", "Tactic", "Combo", "Monk", "Deal 2 damage. Combo. If this card is Comboed, gain 1 Aura.", 1],
-[2, "\"Lullaby\"", "2", "", "Song", "", "Bard", "Exhaust target Hero or summon with 2 or less STR.", 1],
+[2, "\"Lullaby\"", "2", "", "Song", "", "Bard", "Exhaust target Hero or summon with 1 or less STR.", 2],
 [2, "Lunge", "0", "", "Tactic", "Combo", "Monk", "Deal 1 damage. Combo.", 1],
 [2, "Magic Sink", "X", "", "Spell", "", "Mage", "Deal X damage to target enemy.", 1],
 [2, "Mark of Doom", "1", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. At Dusk, that Hero loses 1 HP.", 1],
@@ -302,11 +302,12 @@ const RAW_CARDS=[
 [2, "\"Marching Cadence\"", "3", "", "Song", "", "Bard", "Heroes in your party gain Banding this turn. Exhaust this Hero.", 1],
 [2, "\"Duet\"", "2", "", "Song", "", "Bard", "This Hero and target ally Hero gain Banding this turn. If you played another Song this turn, their banded attack gets +2 STR.", 1],
 [2, "\"Call and Response\"", "1", "", "Song", "", "Bard", "Harmonize 1: Draw 2 cards.", 1],
-[2, "Rebuke", "2", "", "Tactic", "", "Cleric", "This Cleric attacks using its DEF instead of STR. The damage is Light damage. This Hero can't heal until Dusk.", 1],
-[2, "Bulwark Prayer", "3", "", "Tactic", "", "Cleric", "Target ally gains +2 DEF this turn. If you control a Paladin, that ally also deals damage equal to its DEF to target enemy. Exhaust this Hero.", 1],
+[2, "Rebuke", "2", "", "Tactic", "", "Cleric", "This Hero deals damage equal to its DEF instead of its STR this turn.", 2],
+[2, "Bulwark Prayer", "3", "", "Tactic", "", "Cleric", "Target ally gains +2 DEF this turn. Clerics you control deal damage equal to their DEF instead of their STR this turn.", 2],
 [2, "Ley Grove", "3", "", "Item", "", "Druid", "At Dawn, gain 1 Aura for every two summons you control.", 1],
 [2, "Bloom", "1", "", "Tactic", "", "Druid", "Exhaust any number of ready summons you control. Gain 1 Aura for each. Exhaust this Hero.", 1],
-[2, "Heartwood Seed", "0", "", "Summon", "", "Druid", "Summon a 0/2 Sapling with \"At Dawn, gain 1 Aura.\"", 1]
+[2, "Heartwood Seed", "0", "", "Summon", "", "Druid", "Summon a 0/2 Sapling with \"At Dawn, gain 1 Aura.\"", 1],
+[2, "Reclaim", "3", "", "Tactic", "", "Generic", "Return target card from your discard pile to your hand.", 1],
 ];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],
@@ -361,7 +362,8 @@ const RAW_HEROES=[
 ["Warden of the Woods", "Druid", "0", "0", "1", "16", "1{A}, Exhaust: Summon a 2/2 Spirit.\nExhaust a summon you control: Warden of the Woods gains +2 STR this turn.", 3],
 ["Whisper Knife", "Rogue", "2", "0", "1", "16", "Enemy STR is reduced by 1 for each Poison counter they have.", 1],
 ["Wild Archer", "Ranger", "0", "0", "2", "16", "After you activate your first Arrow each turn, you may ready this Hero.\n{L3} Ready this Hero after every Arrow it activates.", 2],
-["Wild Shifter", "Druid", "0", "0", "2", "16", "Summons you control have +1 DEF.", 2]
+["Wild Shifter", "Druid", "0", "0", "2", "16", "Summons you control have +1 DEF.", 2],
+["Rousing Bandleader", "Bard", "1", "1", "1", "16", "Heroes you control have Banding.\n{L3} Heroes you control get +1 STR while banding.", 1],
 ];
 const RAW_EQUIP=[
 ["Antler Crown", "", "Armor", "Druid", "The first Summon card the equipped Hero plays each turn costs 1 less Aura.", "3", "Head", "0", "0", 1],
@@ -380,7 +382,7 @@ const RAW_EQUIP=[
 ["Gauntlets of Growth", "Legendary", "Armor", "Generic", "Can only be equipped to a Hero with 1 or more STR.\nOnce per turn, whenever this Hero deals damage to another Hero, you may have it gain a level. If you do, exhaust this Hero.", "3", "Arms", "1", "0", 1],
 ["Great Axe", "", "Weapon", "Barbarian", "Equipped Hero gains +3 STR. While it is Enraged, it also has +1 DEF.", "3", "Two-Handed", "3", "0", 1],
 ["Greaves of Light", "", "Armor", "Paladin", "Guard 1.", "1", "Legs", "0", "0", 1],
-["Hammer", "Legendary", "Weapon", "Barbarian", "Equipped Hero gains +4 STR. Whenever it deals combat damage, destroy target item the defending player controls.", "3", "Two-Handed", "4", "0", 1],
+["Hammer of Ruin", "Legendary", "Weapon", "Barbarian", "Equipped Hero gains +2 STR. Whenever it deals combat damage, destroy target item the defending player controls.", "3", "Two-Handed", "2", "0", 2],
 ["Helm of Aura", "Legendary", "Armor", "Paladin", "Guard 1. Sacrifice this: Gain 1 Aura.", "1", "Head", "0", "0", 1],
 ["Helm of Protection", "", "Armor", "Paladin", "Guard 1.", "1", "Head", "0", "0", 1],
 ["Iron Hand Wraps", "", "Armor", "Monk", "Equipped Hero gains +1 STR. Combo cards it plays deal +1 damage.", "2", "Arms", "1", "0", 1],
@@ -405,7 +407,8 @@ const RAW_EQUIP=[
 ["Tower Shield", "", "Armor", "Paladin", "Equipped Hero gains +2 DEF.", "2", "One-Handed", "0", "2", 1],
 ["Unpiercing Chestplate", "", "Armor", "Paladin", "Attacks and cards with Piercing that target the equipped Hero lose Piercing.", "1", "Chest", "0", "0", 1],
 ["Vambrace of Light", "", "Armor", "Paladin", "Guard 1.", "1", "Arms", "0", "0", 1],
-["War Lute", "", "Instrument", "Bard", "Whenever the equipped Hero plays a Song, target ally gains +1 STR this turn.", "2", "Two-Handed", "0", "0", 1]
+["War Lute", "", "Instrument", "Bard", "Whenever the equipped Hero plays a Song, target ally gains +1 STR this turn.", "2", "Two-Handed", "0", "0", 1],
+["Shimmering Cloak", "", "Armor", "Cleric", "When you equip this, the equipped Hero gains +X DEF this turn, where X is the amount of HP you have healed this turn.", "3", "Chest", "0", "0", 1],
 ];
 const RAW_TOKENS=[
 ["Dagger", "Equipment", "Weapon", "Rogue", "1", "0", "", "0", "One-Handed", "Equipped Hero gains +1 STR.", "Armed; Quick Inventory; Blademaster's Choice", 1],
@@ -430,4 +433,4 @@ const RAW_TOKENS=[
 const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Quick Inventory": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolf": [["Wolf", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Spirit", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Chain Lightning": [["Spell Damage Pillar", 1]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
-const CARD_RENAMES={"Wild Defense":"Shield Wall"};
+const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin"};

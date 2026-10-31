@@ -141,7 +141,7 @@ const STARTERS=[
   {name:"Iron Vanguard (starter)",heroes:["Rage Brute","Radiant Sentinel","Dawn Priest"]}];
 const STARTER_LISTS=[
  {"Flame Jab":2,"Lightning Bolt":2,"Volt Jab":2,"Flame Lance":2,"Ice Jab":2,"Arcane Study":2,"Power Thrust":2,"Conscript":2,"Protect":2,"Knight's Sword":1,"Bronze Chest Plate":1,"Shield Bash":2,"Healing Touch":2,"Light Helix":2,"Inspiration":2,"Potion":2},
- {"Beast":2,"Wolf":2,"Elk":2,"Tooth":2,"Serrated Arrow":2,"Flame Bolt":2,"Poison Dart":1,"Dual Shot":2,"Full Draw":1,"Longbow":1,"Spike Pit":2,"Pump":2,"Great Axe":1,"Bloodthirst":2,"Battered":2,"Potion":2,"Sword of Riverstead":2},
+ {"Beast":2,"Wolves":2,"Elk":2,"Tooth":2,"Serrated Arrow":2,"Flame Bolt":2,"Poison Dart":1,"Dual Shot":2,"Full Draw":1,"Longbow":1,"Spike Pit":2,"Pump":2,"Great Axe":1,"Bloodthirst":2,"Battered":2,"Potion":2,"Sword of Riverstead":2},
  {"Armed":2,"Toxic Cloud":2,"Surprise Attack":2,"Quick Inventory":2,"Envenom":1,"Dark Jab":2,"Dark Lance":2,"Ritual of Pain":2,"Siphon Life":2,"Weaken":2,"Jab":2,"Roundhouse":2,"Lunge":2,"Flurry of Blows":2,"Inspiration":1,"Potion":2},
  {"\"Ballad of Blades\"":2,"Embolden":2,"\"Rousing Chorus\"":2,"\"Song of Healing\"":2,"Strong Stance":2,"War Lute":1,"Flame Jab":2,"Ice Lance":2,"Lightning Bolt":2,"Boost Ritual":2,"Power Thrust":2,"Tower Shield":1,"Conscript":2,"Radiant Strike":2,"Potion":2,"Sword of Riverstead":2},
  {"Pump":2,"Blunt Force":2,"Great Axe":1,"Bloodthirst":2,"Battered":2,"Unstoppable":2,"Blockade":2,"Bronze Chest Plate":1,"Tower Shield":1,"Power Thrust":2,"Rally the Troops":1,"Healing Beam":2,"Mace of Dawn":1,"Light Blast":2,"Healing Touch":2,"Long Sword":1,"Potion":2,"Inspiration":2}];

@@ -118,14 +118,18 @@ Tokens are cards created by effects rather than drawn from your library, such as
 | Beast | Summon | 3/4 | — | | Beast, Out of the Woods |
 | Heavy Beast | Summon (Beast) | 4/5 | — | | Heavy Beast |
 | Woods Beast | Summon (Beast) | 3/5 | — | When this deals damage, draw a card. | Elk of the Woods |
-| Elk | Summon | 2/2 | — | | Elk, Nature’s Choice |
-| Wolf | Summon | 2/3 | — | | Wolf |
+| Elk | Summon | 2/3 | — | | Elk, Nature’s Choice |
+| Wolf | Summon | 2/2 | — | | Wolves, Call to Companions |
 | Aurawing Familiar | Summon (Familiar) | 2/3 | — | When this is destroyed, gain 1 Aura. | Aurawing |
 | Drawwing Familiar | Summon (Familiar) | 2/4 | — | When this is destroyed, draw a card. | Drawwing |
 | Spore | Summon | 0/2 | — | When this is destroyed, discard a card. | Spore Calling |
 | Squirrel | Summon | 1/3 | — | | Warden of the Woods |
 | Spectral Elk | Summon (Spirit) | 4/5 | — | | Verdant Sage |
 | Sapling | Summon | 0/3 | — | At Dawn, gain 1 Aura. | Heartwood Seed |
+| Rootfolk | Summon | 3/3 | — | Barkborn. | Rootfolk |
+| Great Rootfolk | Summon (Rootfolk) | 6/6 | — | Barkborn. | Great Rootfolk |
+| Elemental | Summon | 4/1 | — | | Lesser Elemental |
+| Greater Elemental | Summon (Elemental) | 5/1 | — | | Greater Elemental |
 | Spell Damage Pillar | Pillar | — | — | Your spells deal +1 damage. | Boost Ritual, Volt Jab, Lightning Lance, Lightning Rod, Ritual of Power, Chain Lightning |
 | Pain Pillar | Pillar | — | — | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. | Dark Insight, Ritual of Pain |
 
@@ -532,6 +536,7 @@ Some equipment has a **Gold Upgrade Cost** and an **Upgrade** effect. At the Bla
 | Keyword | Meaning |
 |---|---|
 | **Banding** | Lets Heroes and summons group together for one attack. When a Hero or summon with Banding attacks, any number of other ready friendly Heroes and summons with Banding may join it. Add their STR to the attack, then exhaust every attacker. Nothing has Banding naturally; only cards grant it. |
+| **Barkborn** | When a summon with Barkborn enters, it gains DEF equal to its HP until Dusk. Barkborn stacks: each time a summon has Barkborn, add that DEF again. Cards and abilities can give the next summon (or every summon) that enters this turn Barkborn. |
 | **Combo** | When a card with Combo finishes resolving (including any Scry it makes), reveal the top card of your library. If its subtype is Combo, you may play it, or a Combo card from your hand, by paying its Aura cost. This doesn’t use another action. A Hidden card with Combo triggers it when revealed. A **Combo card** is a card with the Combo subtype; only those count as “Combo cards you have played this turn.” |
 | **Conjure** | Create a Pillar token on the battlefield. |
 | **Echo** | At your next Dawn, play this card again for free (no Aura cost). Any of your Heroes of the card’s class plays the copy, and you may choose new targets. The copy doesn’t have Echo, so it only repeats once. Set the card aside until then, and discard it after. |
@@ -715,8 +720,9 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Revive**: Bring a dead Hero back to life. The card says how much HP and whether it is ready. It returns with no equipment. A surrendered Hero can’t be revived.
 - **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: draw a card; gain 2 Aura; target ally +2 STR this turn; deal 2 damage; gain 3 Gold; or target ally +2 DEF this turn. That Hero can’t be revived. Once per dead Hero.
 - **Surrendered**: A dead Hero whose soul was surrendered. Face down and sideways. Still counts as dead.
+- **Adjacent**: Heroes next to each other in party order. The Lead and the Closer are adjacent to the Center; the Center is adjacent to both.
 - **STR/HP (e.g. 3/3)**: Shorthand for a summon's Strength and Health.
-- **Summon types**: Named creatures from cards: Beast, Elk, Familiar, Sapling, Soldier, Spirit, Spore, Squirrel, Wolf. See the token list in The Cards for every summon’s STR/HP.
+- **Summon types**: Named creatures from cards: Beast, Elemental, Elk, Familiar, Rootfolk, Sapling, Soldier, Spirit, Spore, Squirrel, Wolf. See the token list in The Cards for every summon’s STR/HP.
 - **Damage types**: Fire, Ice, Lightning, Light and Dark appear on cards. They have no rules effect yet but will later.
 
 ### Card keywords
@@ -736,6 +742,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.
 - **Conjure (Mage, Warlock)**: Create a Pillar token in play.
 - **Banding (Druid)**: Granted by cards only. Heroes and summons with Banding can attack together: add their STR, then exhaust them all.
+- **Barkborn (Druid)**: When a summon with Barkborn enters, it gains DEF equal to its HP until Dusk. Barkborn stacks: a summon with Barkborn twice gains twice that DEF.
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Each one gives your spells +1 Spell Damage.

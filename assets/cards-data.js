@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-31 (update 11: summon HP +2, Elk 2/2, Spore 0/2, Barkskin Totem, Shelter from the Storm).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-31 (update 12: Barkborn, Rootfolk Elder, Rootfolk, Wolves, Elementals, Tangle Rod, Elk 2/3, Entangling Roots, Shelter from the Storm v2).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -84,13 +84,13 @@ const RAW_CARDS=[
 [2, "Drawwing", "5", "", "Summon", "", "Druid", "Summon a 2/4 Drawwing Familiar. When it is destroyed, draw a card. Exhaust this Hero.", 3],
 [2, "Dual Shot", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 2 damage to two targets.", 1],
 [2, "Dynamite", "0", "", "Item", "", "Generic", "3{A}: Deal 2 damage to any two different targets.", 2],
-[2, "Elk", "1", "", "Summon", "", "Druid", "Summon a 2/2 Elk. Exhaust this Hero.", 3],
+[2, "Elk", "1", "", "Summon", "", "Druid", "Summon a 2/3 Elk. Exhaust this Hero.", 4],
 [1, "Elk of the Woods", "7", "Legendary", "Summon", "", "Druid", "Summon a 3/5 Woods Beast with \"When this deals damage, draw a card.\" Ready it. Exhaust this Hero.", 3],
 [2, "Embolden", "2", "", "Tactic", "", "Bard", "Target Hero gains +2 STR for the rest of the turn. Echo.", 1],
 [2, "Energizing Ale", "0", "", "Item", "", "Bard", "2{A}, Exile: Ready target Bard.", 1],
 [2, "Energy Stone", "3", "", "Item", "", "Druid", "Exhaust two summons you control: Gain 1 Aura.", 2],
 [2, "Enfeeble", "3", "", "Tactic", "", "Generic", "Set a Hero's DEF to 0 until Dusk.", 1],
-[2, "Entangling Roots", "2", "", "Tactic", "", "Druid", "Exhaust target enemy Hero or summon. If you control three or more summons, it is also Stunned.", 1],
+[2, "Entangling Roots", "2", "", "Tactic", "", "Druid", "Choose an enemy Hero, then Stun a Hero adjacent to it.", 2],
 [2, "Envenom", "1", "", "Tactic", "", "Rogue", "Rogues you control gain Poisonous 1 this turn.", 1],
 [2, "Evolve", "4", "", "Tactic", "", "Druid", "Exile up to two summons you control. Summon copies of them with +1 STR and +1 HP. Exhaust this Hero.", 1],
 [2, "Exile", "4", "", "Tactic", "", "Generic", "Exile target non-Hero object.", 1],
@@ -168,7 +168,7 @@ const RAW_CARDS=[
 [2, "Mocking Doll", "2", "", "Tactic", "", "Generic", "Create a Doll Item token and place it in an empty inventory slot.", 1],
 [2, "Narrow Escape", "0", "Hidden", "Tactic", "", "Rogue", "1{A}: If a Rogue would be targeted by a card that costs 3 Aura or more, cancel that card.", 1],
 [2, "Naturalize", "2", "", "Tactic", "", "Generic", "Destroy target item.", 1],
-[2, "Nature's Choice", "3", "", "Tactic", "", "Druid", "Choose two: Summon a 2/2 Elk; a summon gains +2 STR; or ready a summon.", 3],
+[2, "Nature's Choice", "3", "", "Tactic", "", "Druid", "Choose two: Summon a 2/3 Elk; a summon gains +2 STR; or ready a summon.", 4],
 [2, "Night Terror", "7", "", "Spell", "", "Warlock", "As an additional cost, this Hero loses 4 HP. Each enemy loses 3 HP. They are Confused. Exhaust this Hero.", 2],
 [2, "Noble Choice", "3", "", "Tactic", "", "Paladin", "Choose two: Summon a 2/3 Soldier; target Hero gains Guard 2; or draw a card.", 3],
 [2, "Noble Promotion", "2", "", "Tactic", "", "Paladin", "At this turn's Dusk, you gain initiative instead of it passing normally.", 1],
@@ -295,7 +295,7 @@ const RAW_CARDS=[
 [2, "Well Trained", "1", "", "Tactic", "", "Monk", "If you have played 3 Combo cards this turn, target Hero gains a level.", 1],
 [2, "Shield Wall", "1", "", "Tactic", "", "Paladin", "Soldiers you control gain +1 DEF this turn.", 2],
 [2, "Withdrawal Ailments", "3", "", "Tactic", "", "Cleric", "Remove all status counters from all friendly Heroes. Deal Light damage to target equal to the number removed.", 1],
-[2, "Wolf", "3", "", "Summon", "", "Druid", "Summon a 2/3 Wolf. Exhaust this Hero.", 3],
+[2, "Wolves", "3", "", "Summon", "", "Druid", "Summon two 2/2 Wolves. Exhaust this Hero.", 4],
 [2, "Die Swinging", "0", "Hidden", "Tactic", "", "Barbarian", "0{A}: When a Barbarian you control would die, it first attacks target enemy. That attack ignores DEF.", 1],
 [2, "Blood Price", "1", "", "Tactic", "", "Barbarian", "As an additional cost, target Barbarian loses X HP. It gains +X STR this turn. If this makes it Enraged, ready it.", 1],
 [2, "Warrior's Pyre", "2", "", "Item", "Relic", "Barbarian", "Whenever a Barbarian you control dies, put a Fury counter on Warrior's Pyre (max 3). Barbarians you control have +1 STR for each Fury counter.", 1],
@@ -309,7 +309,14 @@ const RAW_CARDS=[
 [2, "Heartwood Seed", "0", "", "Summon", "", "Druid", "Summon a 0/3 Sapling with \"At Dawn, gain 1 Aura.\"", 3],
 [2, "Reclaim", "3", "", "Tactic", "", "Generic", "Return target card from your discard pile to your hand.", 1],
 [2, "Barkskin Totem", "3", "", "Item", "", "Druid", "Summons you control have +1 DEF.", 1],
-[2, "Shelter from the Storm", "0", "Hidden", "Tactic", "", "Druid", "2{A}: When an enemy attacks or plays a card, summons you control gain +3 DEF this turn. Exhaust all summons you control.", 1],
+[2, "Shelter from the Storm", "0", "Hidden", "Tactic", "", "Druid", "2{A}: When an enemy takes an action, summons you control can't be destroyed this turn. If a summon's HP would drop to 0, it stays at 1 instead. Exhaust all summons you control.", 2],
+[2, "Bark Blessing", "0", "", "Tactic", "", "Druid", "The next summon that enters this turn has Barkborn. (It gains DEF equal to its HP this turn.)", 1],
+[2, "Rootfolk", "3", "", "Summon", "", "Druid", "Summon a 3/3 Rootfolk with Barkborn. Exhaust this Hero.", 1],
+[2, "Great Rootfolk", "8", "", "Summon", "", "Druid", "Summon a 6/6 Great Rootfolk with Barkborn. Exhaust this Hero.", 1],
+[2, "Call to Companions", "5", "", "Summon", "", "Druid", "Summon a 2/2 Wolf for each Druid Hero you control. Exhaust this Hero.", 1],
+[2, "Lesser Elemental", "4", "", "Summon", "", "Druid", "Summon a 4/1 Elemental. Ready it, then it attacks. Exhaust this Hero.", 1],
+[2, "Greater Elemental", "6", "", "Summon", "", "Druid", "Summon a 5/1 Greater Elemental. Ready it, then it attacks. Exhaust this Hero.", 1],
+[2, "Tangle Rod", "2", "", "Item", "", "Druid", "Enemy Heroes' activated abilities cost 2 more Aura to activate.", 1],
 ];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],
@@ -364,6 +371,7 @@ const RAW_HEROES=[
 ["Warden of the Woods", "Druid", "0", "0", "1", "16", "1{A}, Exhaust: Summon a 1/3 Squirrel.\nExhaust a summon you control: Warden of the Woods gains +2 STR this turn.", 5],
 ["Whisper Knife", "Rogue", "2", "0", "1", "16", "Enemy STR is reduced by 1 for each Poison counter they have.", 1],
 ["Wild Archer", "Ranger", "0", "0", "2", "16", "After you activate your first Arrow each turn, you may ready this Hero.\n{L3} Ready this Hero after every Arrow it activates.", 2],
+["Rootfolk Elder", "Druid", "0", "1", "1", "16", "Exhaust: The next summon that enters this turn has Barkborn. (It gains DEF equal to its HP this turn.)\n{L3} Exhaust: All summons that enter this turn have Barkborn.", 1],
 ["Wild Shifter", "Druid", "0", "0", "2", "16", "Exhaust: Ready a summon you control.\n{L3} Exhaust: Ready up to two summons you control.", 3],
 ["Rousing Bandleader", "Bard", "1", "1", "1", "16", "Heroes you control have Banding.\n{L3} Heroes you control get +1 STR while banding.", 1],
 ];
@@ -420,19 +428,23 @@ const RAW_TOKENS=[
 ["Beast", "Summon", "Beast", "Druid", "3", "", "4", "0", "", "", "Beast; Out of the Woods", 3],
 ["Heavy Beast", "Summon", "Beast", "Druid", "4", "", "5", "0", "", "", "Heavy Beast", 3],
 ["Woods Beast", "Summon", "Beast", "Druid", "3", "", "5", "0", "", "When this deals damage, draw a card.", "Elk of the Woods", 3],
-["Elk", "Summon", "Elk", "Druid", "2", "", "2", "0", "", "", "Elk; Nature's Choice", 3],
-["Wolf", "Summon", "Wolf", "Druid", "2", "", "3", "0", "", "", "Wolf", 3],
+["Elk", "Summon", "Elk", "Druid", "2", "", "3", "0", "", "", "Elk; Nature's Choice", 4],
+["Wolf", "Summon", "Wolf", "Druid", "2", "", "2", "0", "", "", "Wolves; Call to Companions", 4],
 ["Aurawing Familiar", "Summon", "Familiar", "Druid", "2", "", "3", "0", "", "When this is destroyed, gain 1 Aura.", "Aurawing", 3],
 ["Drawwing Familiar", "Summon", "Familiar", "Druid", "2", "", "4", "0", "", "When this is destroyed, draw a card.", "Drawwing", 3],
 ["Spore", "Summon", "Spore", "Druid", "0", "", "2", "0", "", "When this is destroyed, discard a card.", "Spore Calling", 2],
 ["Squirrel", "Summon", "Squirrel", "Druid", "1", "", "3", "0", "", "", "Warden of the Woods", 3],
 ["Spectral Elk", "Summon", "Spirit", "Druid", "4", "", "5", "0", "", "", "Verdant Sage", 3],
 ["Sapling", "Summon", "Sapling", "Druid", "0", "", "3", "0", "", "At Dawn, gain 1 Aura.", "Heartwood Seed", 3],
+["Rootfolk", "Summon", "Rootfolk", "Druid", "3", "", "3", "0", "", "Barkborn.", "Rootfolk", 1],
+["Great Rootfolk", "Summon", "Rootfolk", "Druid", "6", "", "6", "0", "", "Barkborn.", "Great Rootfolk", 1],
+["Elemental", "Summon", "Elemental", "Druid", "4", "", "1", "0", "", "", "Lesser Elemental", 1],
+["Greater Elemental", "Summon", "Elemental", "Druid", "5", "", "1", "0", "", "", "Greater Elemental", 1],
 ["Eliazar", "Summon", "Soldier", "Paladin", "3", "", "5", "0", "", "", "Sword of Eliazar", 3],
 ["Spell Damage Pillar", "Pillar", "", "Mage", "", "", "", "0", "", "Your spells deal +1 damage.", "Boost Ritual; Volt Jab; Lightning Lance; Lightning Rod; Ritual of Power; Chain Lightning; Splitting Ritual; Doubling Ritual", 1],
 ["Pain Pillar", "Pillar", "", "Warlock", "", "", "", "0", "", "At Dusk, target loses X HP, where X is the number of Pain Pillars you control.", "Dark Insight; Ritual of Pain; Splitting Ritual; Doubling Ritual", 1]
 ];
-const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Quick Inventory": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolf": [["Wolf", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Chain Lightning": [["Spell Damage Pillar", 1]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
+const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Quick Inventory": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Chain Lightning": [["Spell Damage Pillar", 1]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
-const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin"};
+const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves"};

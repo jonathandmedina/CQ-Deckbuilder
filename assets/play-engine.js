@@ -231,7 +231,7 @@ E.removeStatus=removeStatus;
 function checkDeaths(s){let again=true;while(again){again=false;
   for(let pid=0;pid<s.p.length;pid++){const pl=s.p[pid];
     for(const h of pl.heroes)if(!h.dead&&hpOf(s,h)<=0){die(s,h);again=true}
-    for(const o of pl.bf.slice())if(o.kind==="summon"&&hpOf(s,o)<=0){destroyObj(s,o);again=true}
+    for(const o of pl.bf.slice())if(o.kind==="summon"&&hpOf(s,o)<=0){if(pl.t.shelter){o.dmg=maxHp(s,o)-1;log(s,`${o.name} can't be destroyed this turn (Shelter from the Storm); it stays at 1 HP.`,pid);continue}destroyObj(s,o);again=true}
     for(const o of pl.inv.slice())if(o.kind==="doll"&&hpOf(s,o)<=0){destroyObj(s,o);again=true}}}
   checkWin(s)}
 E.checkDeaths=checkDeaths;
@@ -275,7 +275,11 @@ function checkWin(s){if(s.over)return;const dead=s.p.map(pl=>pl.heroes.every(h=>
 
 /* ---------- tokens / summons ---------- */
 function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};const o={uid:nid(s),kind:"summon",name,str:t.str,hp:t.hp,sub:t.sub||"",dmg:0,ex:!ready,ctrl:pid,owner:pid,tok:true,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},mods:[],fl:{}};
-  P(s,pid).bf.push(o);log(s,`${P(s,pid).name} summons ${/^[AEIOU]/.test(name)?"an":"a"} ${name} (${t.str}/${t.hp}).`,pid);return o}
+  P(s,pid).bf.push(o);log(s,`${P(s,pid).name} summons ${/^[AEIOU]/.test(name)?"an":"a"} ${name} (${t.str}/${t.hp}).`,pid);
+  /* Barkborn: gains DEF equal to its HP until Dusk; stacks */
+  {const pl=P(s,pid);const n=(/Barkborn/.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
+   if(n>0){addMod(o,{def:n*o.hp});log(s,`${name} has Barkborn${n>1?" ×"+n:""}: +${n*o.hp} DEF this turn.`,pid)}}
+  return o}
 function makePillar(s,pid,name){const o={uid:nid(s),kind:"pillar",name,ctrl:pid,owner:pid,tok:true};P(s,pid).bf.push(o);log(s,`${P(s,pid).name} conjures a ${name}.`,pid);return o}
 function makeEqToken(s,pid,name,x){const t=TOK[name];return{uid:nid(s),kind:"equip",id:null,name,cls:t.cls,region:t.region,pstr:t.str,pdef:0,cost:t.cost,owner:pid,tok:true,x:x||null}}
 E.makeSummon=makeSummon;E.makePillar=makePillar;E.makeEqToken=makeEqToken;
@@ -431,7 +435,7 @@ function battleOptions(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,
   pl.heroes.forEach(h=>{if(h.dead&&!h.surr)SOULS.forEach((_,i)=>out.push({type:"soul",hero:h.uid,ch:i}))});
   out.push({type:"pass"});
   return out}
-function abilityCost(s,pid,a,ab){return(ab.cost||0)+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Resistance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Resistance"),0):0)}
+function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,opp(pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Resistance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Resistance"),0):0)}
 function itemCost(s,pid,a,o){const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);return c+(a?burden(a):0)}
 E.abilityCost=abilityCost;E.itemCost=itemCost;
 function promptOptions(s,pid,pr){

@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 1, 2026 (update 15)*
+*Version: November 1, 2026 (update 16)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -130,7 +130,7 @@ Tokens are cards created by effects rather than drawn from your library, such as
 | Great Rootfolk | Summon (Rootfolk) | 6/6 | — | Barkborn. | Great Rootfolk |
 | Elemental | Summon | 4/1 | — | | Lesser Elemental |
 | Greater Elemental | Summon (Elemental) | 5/1 | — | | Greater Elemental |
-| Spell Damage Pillar | Pillar | — | — | Your spells deal +1 damage. | Boost Ritual, Volt Jab, Lightning Lance, Lightning Rod, Ritual of Power, Chain Lightning |
+| Spell Damage Pillar | Pillar | — | — | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. | Boost Ritual, Volt Jab, Lightning Lance, Lightning Rod, Ritual of Power |
 | Pain Pillar | Pillar | — | — | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. | Dark Insight, Ritual of Pain |
 
 Splitting Ritual and Doubling Ritual copy whichever Pillars you sacrifice.
@@ -393,6 +393,8 @@ You must have a ready Hero to trigger a Hidden card. If all your matching Heroes
 - **Guard X** absorbs the first X damage before DEF is applied.
 - **Piercing X** ignores X points of the target’s DEF.
 - **Spell Damage +X** adds X to the damage your spells deal.
+- **Spell Damage Pillars are used up.** All of your Spell Damage Pillars add +2 each to the next Spell you play (any Spell, even one that deals no damage), then they are sacrificed after that Spell resolves. Pillars that the Spell itself conjures (such as Lightning Lance or Ritual of Power) stay for your next Spell.
+- **“Each enemy Hero”** hits only Heroes, not summons. **“All enemies”** and **“each enemy”** include summons.
 - **Status damage** from Burned, Poisoned and Wounded ignores DEF and Guard.
 - **“Lose X HP”** isn’t damage. It ignores DEF and Guard.
 
@@ -560,7 +562,7 @@ Some items and equipment have an **Upgrade** cost in Gold (for example, “Upgra
 | **Poisonous X** | Whenever this Hero or card deals damage, add X Poison counters to the target if it has none. **Poisonous** with no number adds Poison counters equal to the damage dealt. |
 | **Scry X** | Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order. |
 | **Spell Damage +X** | Your spells deal X extra damage. |
-| **Spell Damage Pillar** | Each one you control gives your spells +1 Spell Damage. |
+| **Spell Damage Pillar** | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. |
 | **Stealth** | This Hero can’t be targeted by enemy cards or abilities. It can still be attacked. |
 | **+1/+1 counter** | +1 STR and +1 DEF while on the Hero. |
 
@@ -765,5 +767,6 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Barkborn (Druid)**: When a summon with Barkborn enters, it gains DEF equal to its HP until Dusk. Barkborn stacks: a summon with Barkborn twice gains twice that DEF.
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
-- **Spell Damage Pillar (Mage)**: Pillar token. Each one gives your spells +1 Spell Damage.
+- **Spell Damage Pillar (Mage)**: Pillar token. Your next spell has +2 Spell Damage; sacrifice the Pillar after that spell resolves.
+- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026).
 - **Pain Pillar (Warlock)**: At Dusk, target loses X HP, where X is the number of Pain Pillars you control.

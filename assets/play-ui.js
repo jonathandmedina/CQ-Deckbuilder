@@ -408,6 +408,7 @@ function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id
   if(h.guard+h.eqGuard)tags.push(`<span class="tg good">Guard ${h.guard+h.eqGuard}</span>`);
   E.STATUS.forEach(k=>{if(h.st[k])tags.push(`<span class="tg bad">${E.STATUS_NAME[k]}${h.st[k]>1?" ×"+h.st[k]:""}</span>`)});
   if(E.stealth(s,h))tags.push('<span class="tg good">Stealth</span>');
+  if(E.noAttack(s,h))tags.push('<span class="tg good">Can\'t be attacked</span>');
   if(E.enraged(s,h)&&!h.dead&&h.cls==="Barbarian")tags.push('<span class="tg">Enraged</span>');
   if(E.lifelink(s,h))tags.push('<span class="tg good">Lifelink</span>');
   const pz=E.poisonous(s,h);if(pz)tags.push(`<span class="tg">Poisonous ${pz}</span>`);

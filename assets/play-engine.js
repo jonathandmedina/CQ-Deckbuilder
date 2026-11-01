@@ -11,6 +11,7 @@ E.DB=DB;E.TOK=TOK;
 function num(v){const n=parseInt(v,10);return isNaN(n)?0:n}
 const _RC=typeof RAW_CARDS!=="undefined"?RAW_CARDS:root.RAW_CARDS,_RE=typeof RAW_EQUIP!=="undefined"?RAW_EQUIP:root.RAW_EQUIP,_RH=typeof RAW_HEROES!=="undefined"?RAW_HEROES:root.RAW_HEROES,_RT=typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:root.RAW_TOKENS;
 (_RC||[]).forEach(r=>{DB[r[1]]={id:r[1],name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7],kind:"card"}});
+{const _DC=typeof DEPRECATED_CARDS!=="undefined"?DEPRECATED_CARDS:(root.DEPRECATED_CARDS||[]);_DC.forEach(r=>{if(!DB[r[1]])DB[r[1]]={id:r[1],name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7],kind:"card",dep:true}})}
 (_RE||[]).forEach(r=>{DB[r[0]]={id:r[0],name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:num(r[7]),pdef:num(r[8]),kind:"equip"}});
 (_RH||[]).forEach(r=>{DB["h:"+r[0]]={id:"h:"+r[0],name:r[0],cls:r[1],str:num(r[2]),def:num(r[3]),aura:num(r[4]),hp:num(r[5]),rules:r[6],type:"Hero",kind:"hero"}});
 {const RN=typeof CARD_RENAMES!=="undefined"?CARD_RENAMES:(root.CARD_RENAMES||{});for(const o in RN){if(DB[RN[o]]&&!DB[o])DB[o]=DB[RN[o]];if(DB["h:"+RN[o]]&&!DB["h:"+o])DB["h:"+o]=DB["h:"+RN[o]]}}
@@ -66,7 +67,7 @@ E.newGame=function(cfg){
 };
 E.validateDeck=function(d){
   const out=[];if(!d||!d.heroes||d.heroes.length!==3)out.push("Needs 3 Heroes.");
-  let t=0;for(const[id,q]of Object.entries(d.cards||{})){if(!DB[id])out.push(`Unknown card ${id}`);t+=q}
+  let t=0;for(const[id,q]of Object.entries(d.cards||{})){if(!DB[id])out.push(`Unknown card ${id}`);else if(DB[id].dep)out.push(`${id} is deprecated (removed from play).`);t+=q}
   if(t!==30)out.push(`Deck has ${t} cards (needs 30).`);return out};
 
 /* ---------- lookups ---------- */
@@ -149,9 +150,11 @@ function bandReady(s,o){return hasBanding(s,o)&&!o.ex&&!(o.st&&o.st.stun)&&!(o.f
 function bandMembers(s,pid){const pl=P(s,pid);return[...living(pl),...pl.bf.filter(o=>o.kind==="summon")].filter(o=>bandReady(s,o))}
 E.hasBanding=hasBanding;E.bandMembers=bandMembers;
 const auraStat=h=>h.base.aura+h.bon.aura;
-function spellDmg(s,pid,actor){const pl=P(s,pid);let n=pl.bf.filter(o=>o.name==="Spell Damage Pillar").length;
+function spellDmg(s,pid,actor){const pl=P(s,pid);let n=2*pl.bf.filter(o=>o.name==="Spell Damage Pillar").length;
   if(actor){if(actor.name==="Ember Mage")n+=1;if(hasEqN(actor,"Apprentice's Wand"))n+=1;if(hasEqN(actor,"Ring of Power"))n+=2}return n}
 E.spellDmg=spellDmg;
+function noAttack(s,o){return o&&o.kind==="hero"&&modHas(o,"noAttack")}
+E.noAttack=noAttack;
 function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
 function cardProof(s,o){return o.kind==="hero"&&(hasEqN(o,"Cloak of Shadow")||modHas(o,"untarget"))}
 function poisonous(s,h){if(h.kind!=="hero")return 0;let n=0;if(h.name==="Dark Fang")n=Math.max(n,h.lvl>=3?3:1);
@@ -462,7 +465,8 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
     else if(k==="nonHero")list=objs.filter(o=>o.kind!=="hero"&&(!o.fd||isEnemy(o)));
   }
   list=list.filter(o=>{
-    if(o.kind==="hero"&&isEnemy(o)&&stealth(s,o)&&!o.dead&&viaCard)return false; /* Stealth: can't be targeted by enemy cards or abilities, but can be attacked */
+    if(o.kind==="hero"&&isEnemy(o)&&stealth(s,o)&&!o.dead&&viaCard)return false;
+    if(!viaCard&&o.kind==="hero"&&isEnemy(o)&&modHas(o,"noAttack"))return false; /* Levitate: can't be attacked this turn */ /* Stealth: can't be targeted by enemy cards or abilities, but can be attacked */
     if(viaCard&&cardProof(s,o))return false;
     if(viaCard&&o.kind==="card"&&/can't be targeted/i.test(def(o).rules||"")&&def(o).type==="Item")return false; /* Arrow of Craftsmanship */
     if(spec.f&&!spec.f(s,o,ctx))return false;return true});
@@ -803,8 +807,11 @@ function resolveCont(s,pid,cont,mods){
   const d=DB[cont.card.id];const sc=SC()[d.name];const pl=P(s,pid);
   const ctx=mkCtx(s,pid,actor,d,cont.card,cont.targets,{mods,modes:cont.modes,x:cont.x,comboed:cont.combo});
   let stays=false;const pend0=s.pend.length;
+  /* Spell Damage Pillar (update 16): each gives +2 Spell Damage to your next spell, then is sacrificed after that spell resolves (Pillars the spell conjures itself stay) */
+  const pilBefore=d.type==="Spell"?pl.bf.filter(o=>o.name==="Spell Damage Pillar").map(o=>o.uid):[];
   if(sc&&sc.run){const r=withSrc(s,d.name,()=>sc.run(ctx));stays=r==="stay"}else if(sc&&cont.copy){log(s,`${d.name} has no effect to copy.`,pid)}
   else{s.pend.unshift({type:"manual",pid,title:d.name,text:d.rules,card:cont.card.id});}
+  if(pilBefore.length){const n0=pl.bf.length;pl.bf=pl.bf.filter(o=>!pilBefore.includes(o.uid));const k=n0-pl.bf.length;if(k)log(s,`${pl.name} sacrifices ${k} Spell Damage Pillar${k>1?"s":""} (used by ${d.name}).`,pid)}
   if(d.type==="Enchantment"&&sc){stays=true}
   if(cont.copy){}
   else if(!stays){if(/Echo\./.test(d.rules||"")&&!cont.echo){pl.echo.push({card:cont.card,targets:cont.targets,modes:cont.modes,x:cont.x});log(s,`${d.name} is set aside (Echo).`,pid)}

@@ -83,7 +83,7 @@ function issues(d){
   const t=deckTotal(d);
   if(t<DECK_SIZE)out.push(`Add ${DECK_SIZE-t} more card${DECK_SIZE-t===1?"":"s"} (decks are exactly 30).`);
   if(t>DECK_SIZE)out.push(`Remove ${t-DECK_SIZE} card${t-DECK_SIZE===1?"":"s"} (decks are exactly 30).`);
-  for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(!c){out.push(`"${id}" isn't in the card list anymore.`);continue}
+  for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(!c){out.push(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===id)?`${id} is deprecated (removed from play). Take it out of this deck.`:`"${id}" isn't in the card list anymore.`);continue}
     if(q>maxCopies(c))out.push(`${c.name}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 2 copies"}.`);
     if(d.heroes.length&&!allowed(c,d))out.push(`${c.name} is ${c.cls}; no Hero in your party can play it.`);}
   return out;

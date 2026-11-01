@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: October 31, 2026 (update 14)*
+*Version: November 1, 2026 (update 15)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -297,6 +297,8 @@ Playing a card doesn’t exhaust the Hero unless the card says “Exhaust this H
 3. Open a trigger window.
 4. Resolve as much of the effect as you can.
 
+**The colon rule:** any ability written as “cost: effect” (on a Hero, item or piece of equipment) is an activated ability, and activating it uses an action. It only exhausts a Hero if its cost says “Exhaust”. Hidden cards are the exception: revealing one never uses an action.
+
 ### Activate an Arrow
 
 Arrows are Ranger items in your inventory. Activating one is an action: pay its Aura cost, exhaust the Hero activating it, then resolve it like an ability. Other items with a cost (such as Gold Bar) are activated the same way, but they only exhaust a Hero if their text says so.
@@ -578,6 +580,14 @@ If you need to draw and your library is empty, shuffle your discard pile to make
 - **“Sacrifice”** means destroy one of your own cards as a cost.
 - **“Non-Hero object”** means any card in play that isn’t a Hero.
 - **“Attach an Equipment”** on older cards means equip it.
+
+### Taking Control (Steal)
+
+When an effect lets you steal or take control of an object, it stays under your control while it is in play. As soon as it changes zones (destroyed, discarded, exiled, returned to hand), it goes to its owner’s zone, not yours.
+
+### Targeting Face-Down Cards
+
+A face-down card in an opponent’s inventory can be targeted by effects that target items or non-Hero objects, without being revealed first.
 
 ## 19. Example Round
 

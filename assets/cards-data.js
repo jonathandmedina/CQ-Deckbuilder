@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-31 (update 14: Ranger traps and arrows, Caltrops, Into the Trees, Multi Bow, Heavy Bow, Arrow of Devastation, Arrow of Craftsmanship, Longbow +1 DEF, Radiant Strike v2).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-01 (update 15: every card automated; Mirrored Chant v2, Second Chances v2, Shadow Strike v2, Multi Bow v2).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -163,7 +163,7 @@ const RAW_CARDS=[
 [2, "Medical Visit", "1", "", "Tactic", "", "Cleric", "Remove 2 status counters.", 1],
 [2, "Meditate", "1", "", "Tactic", "", "Monk", "Meditate. (Exhaust this Hero. It is now Meditating. At each Dawn, you may choose not to ready it. If you don't, it gets a +1/+1 counter. When it readies, it stops Meditating, and its +1/+1 counters are removed at the next Dusk.)", 1],
 [2, "Memory Loss", "2", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero discards a card whenever it levels up.", 1],
-[2, "Mirrored Chant", "3", "", "Tactic", "", "Bard", "Copy the last card played this turn. You may choose new targets for the copy.", 1],
+[2, "Mirrored Chant", "3", "", "Tactic", "", "Bard", "Copy the last Spell, Tactic or Song any player played this turn. You may choose new targets for the copy. If that card has an X cost, the copy uses the X that was paid. The copy's costs count as paid.", 2],
 [2, "Miscalculation", "0", "Hidden", "Tactic", "", "Rogue", "0{A}: If this face-down card is targeted by an opponent's card or ability, cancel it. Draw 2 cards.", 1],
 [2, "Mocking Doll", "2", "", "Tactic", "", "Generic", "Create a Doll Item token and place it in an empty inventory slot.", 1],
 [2, "Narrow Escape", "0", "Hidden", "Tactic", "", "Rogue", "1{A}: If a Rogue would be targeted by a card that costs 3 Aura or more, cancel that card.", 1],
@@ -227,11 +227,11 @@ const RAW_CARDS=[
 [2, "Sanctuary", "1", "", "Enchantment", "", "Cleric", "Enchanted ally heals 1 HP at Dawn.", 1],
 [2, "Scrap Metal", "1", "", "Tactic", "", "Barbarian", "This turn, whenever this Hero deals damage to an enemy, destroy target Equipment that enemy has equipped.", 1],
 [2, "Search for Knowledge", "1", "", "Tactic", "", "Generic", "Draw 2 cards. Discard 2 cards.", 1],
-[2, "Second Chances", "0", "Hidden", "Tactic", "", "Cleric", "If a friendly non-Cleric Hero died this turn, you may revive it. At your next Dawn, your Aura pool is 3 less.", 1],
+[2, "Second Chances", "0", "Hidden", "Tactic", "", "Cleric", "4{A}: At Dusk, if a friendly non-Cleric Hero died this turn, you may revive it with half its max HP (rounded up).", 2],
 [2, "Second Wind", "3", "", "Tactic", "", "Barbarian", "Target Enraged Barbarian heals 3 HP and readies.", 1],
 [2, "Self Sacrifice", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: If a Hero would die, target Paladin dies instead.", 1],
 [2, "Serrated Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. Piercing 3.", 2],
-[2, "Shadow Strike", "0", "Hidden", "Tactic", "", "Rogue", "1{A}: If a Rogue would be exhausted, you may ready it and have it attack a target of your choice. This attack ignores DEF.", 1],
+[2, "Shadow Strike", "1", "", "Tactic", "", "Rogue", "Attack with an exhausted Rogue you control. It stays exhausted. This attack ignores DEF.", 2],
 [2, "Shatter", "2", "", "Tactic", "", "Generic", "Destroy target Equipment.", 1],
 [2, "Shield Bash", "1", "", "Tactic", "", "Paladin", "Deal damage equal to this Hero's DEF.", 1],
 [2, "Silver Bar", "0", "", "Item", "Precious Metal", "Generic", "3{A}: Your party gains +1 STR for the rest of the turn.", 1],
@@ -423,7 +423,7 @@ const RAW_EQUIP=[
 ["Vambrace of Light", "", "Armor", "Paladin", "Guard 1.", "1", "Arms", "0", "0", 1],
 ["War Lute", "", "Instrument", "Bard", "Whenever the equipped Hero plays a Song, target ally gains +1 STR this turn.", "2", "Two-Handed", "0", "0", 1],
 ["Shimmering Cloak", "", "Armor", "Cleric", "When you equip this, the equipped Hero gains +X DEF this turn, where X is the amount of HP you have healed this turn.", "3", "Chest", "0", "0", 1],
-["Multi Bow", "", "Weapon", "Ranger", "Destroy any number of Arrows in your inventory: The next Arrow you activate deals +3 damage for each Arrow destroyed this way. (This doesn't use an action.)", "3", "Two-Handed", "0", "0", 1],
+["Multi Bow", "", "Weapon", "Ranger", "Destroy any number of Arrows in your inventory: The next Arrow you activate deals +3 damage for each Arrow destroyed this way.", "3", "Two-Handed", "0", "0", 2],
 ["Heavy Bow", "", "Weapon", "Ranger", "Arrows the equipped Hero activates deal double damage. Whenever this Hero becomes exhausted, put a Fatigue counter on it.", "4", "Two-Handed", "0", "0", 1],
 ];
 const RAW_TOKENS=[

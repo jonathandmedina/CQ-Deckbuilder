@@ -26,6 +26,7 @@ function quick(s,pid,pr){
   if(pr.type==="scry")return scryChoice(s,pid,pr);
   if(pr.type==="choose")return chooseChoice(s,pid,pr);
   if(pr.type==="manual")return{type:"manDone"};
+  if(pr.type==="ask")return{type:"ask",i:0};
   return null}
 function scryChoice(s,pid,pr){const pl=s.p[pid];const cls=new Set(pl.heroes.filter(h=>!h.dead).map(h=>h.cls));
   const bottom=pr.cards.filter(u=>{const c=pl.lib.find(x=>x.uid===u);if(!c||!c.id)return false;const d=E.DB[c.id];return d.cls!=="Generic"&&!cls.has(d.cls)});

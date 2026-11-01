@@ -331,7 +331,7 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const inv=[];for(let i=0;i<slots;i++){const o=pl.inv[i];if(!o){inv.push('<span class="pi">Empty slot</span>');continue}
     const c=o.kind==="equip"?(o.cls||"Generic"):o.kind==="doll"?"Generic":((E.DB[o.id]||{}).cls||"Generic");
     if(o.fd)inv.push(`<button class="pi full fd${U.man&&U.manT===o.uid?" mansel":""}" data-pa="obj" data-u="${o.uid}">${mine&&o.id?esc(E.DB[o.id].name)+" (set)":"Face-down card"}</button>`);
-    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)};--ci:${ci(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${s.upg&&s.upg[o.uid]!=null?` <span title="Upgraded at the Blacksmith">Upgraded${E.upgradeCost(o)&&E.upgradeCost(o).x?` +${s.upg[o.uid]}`:""}</span>`:""}${invCounts(s,o,pid)}</button>`)}
+    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)};--ci:${ci(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${o.under&&o.under.length?` <span>${o.under.length} under it</span>`:""}${o.x&&o.x.name&&o.name==="Null Stone"?` <span>Names ${esc(o.x.name)}</span>`:""}${o.ctr&&o.ctr.trophy?` <span>${o.ctr.trophy} Trophy</span>`:""}${s.upg&&s.upg[o.uid]!=null?` <span title="Upgraded at the Blacksmith">Upgraded${E.upgradeCost(o)&&E.upgradeCost(o).x?` +${s.upg[o.uid]}`:""}</span>`:""}${invCounts(s,o,pid)}</button>`)}
   const isInit=s.init===pid;
   const turnTag=s.phase==="battle"&&s.prio===pid&&!s.pend.length?'<span class="res init">Acting</span>':"";
   const pc=[0,1].map(p=>`P${p}`).filter(u=>cands.has(u)&&u==="P"+pid).length;
@@ -435,7 +435,8 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
     if(pr.type==="window"){const tr=pr.trig;const w=tr.kind==="party10"?"Your party has now taken 10 or more damage this turn":tr.kind==="attack"?`${esc(nameOf(tr.attacker))} attacks ${esc(nameOf(tr.target))}`:`${esc(s.p[tr.pid].name)} plays ${esc(tr.name||"a card")}${(tr.targets||[]).length?" targeting "+tr.targets.map(nameOf).map(esc).join(", "):""}`;
       prompt=`⚡ ${w}. Reveal a Hidden card?`;acts=opts.filter(o=>o.type==="reveal").map(o=>{const f=E.find(s,o.uid);return`<button class="btn go" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Reveal ${esc(E.DB[f.o.id].name)}</button>`}).join("")+'<button class="btn" data-pa="do" data-a=\'{"type":"decline"}\'>Don\'t reveal</button>'}
     else if(pr.type==="manual")prompt=`✋ Resolve by hand: ${esc(pr.title)}`;
-    else if(pr.type==="combo")prompt="Combo! Play a Combo card without using an action?";
+    else if(pr.type==="combo")prompt=pr.title?esc(pr.title):"Combo! Play a Combo card without using an action?";
+    else if(pr.type==="ask")prompt=esc(pr.title||"Choose");
     else if(pr.type==="scry")prompt="Scry: arrange the top of your library.";
     else if(pr.type==="choose")prompt=esc(pr.title||"Choose");
   }
@@ -452,7 +453,8 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
         const xs=ups.filter(u=>u.uid===o.uid).map(u=>u.x);return`<span class="pl-up">Blacksmith: upgrade ${esc(f.o.name)} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>`}).join("")})()
       +'<button class="btn go" data-pa="do" data-a=\'{"type":"leave"}\'>Leave Town</button>'}}
   else if(s.phase==="battle"){if(s.prio!==me){wait=true;prompt=`${esc(s.p[s.prio].name)} is acting…`}else{const a=E.actorFor(s,me);const refire=s.bonus&&s.bonus.pid===me&&s.bonus.only==="arrow";const fz=a&&E.forcedTarget(s,a);
-      prompt=refire?`Refire: <b>${esc(a?a.name:"")}</b> activates an Arrow (pay its Aura). If it resolves, it returns to your inventory.`:a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}${fz?` — it <b>must attack ${esc(nameOf(fz))}</b> (Arrow of Persuasion)`:""}. ${fz?"Attack, or choose a summon action:":"Play a highlighted card, or choose an action:"}`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
+      const bb=s.bonus&&s.bonus.pid===me?s.bonus:null;
+      prompt=bb&&bb.only==="bard"?`Echo Performer: <b>${esc(a?a.name:"")}</b> plays a Bard Tactic or Song (pay its Aura cost); it will be duplicated.`:bb&&bb.rapid?`Rapid Shot: <b>${esc(a?a.name:"")}</b> activates Arrows (Piercing 1), then it's exhausted.`:bb&&bb.free?`Line It Up: <b>${esc(a?a.name:"")}</b> may fire an Arrow for free.`:refire?`Refire: <b>${esc(a?a.name:"")}</b> activates an Arrow (pay its Aura). If it resolves, it returns to your inventory.`:a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}${fz?` — it <b>must attack ${esc(nameOf(fz))}</b> (Arrow of Persuasion)`:""}. ${fz?"Attack, or choose a summon action:":"Play a highlighted card, or choose an action:"}`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
       acts=battleActs(s,opts)}}
   if(U.busy){wait=true;prompt="Sending…"}
   const oppActing=!s.over&&wait&&!U.busy&&(pr?pr.pid!==me:(s.phase==="battle"&&s.prio!==me)||(s.phase==="town"&&s.town&&s.town.order[s.town.i]!==me));
@@ -492,7 +494,9 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   const atk=opts.filter(o=>o.type==="attack");atk.forEach(o=>out.push(btn(o,o.att===(a&&a.uid)?"Attack":`${nameOf(o.att)} attacks`,"atk")));
   const bands=opts.filter(o=>o.type==="band");if(bands.length){const lead=bands.find(o=>a&&o.att===a.uid)||bands[0];out.push(btn(lead,`Band attack (${E.bandMembers(s,me).length} ready)`,"atk band"))}
   opts.filter(o=>o.type==="useFree").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Use ${f.o.name} (no action)`))});
-  if(opts.some(o=>o.type==="multiBow"))out.push('<button class="btn" data-pa="multi">Multi Bow: destroy Arrows (no action)</button>');
+  if(opts.some(o=>o.type==="multiBow"))out.push('<button class="btn" data-pa="multi">Multi Bow: destroy Arrows</button>');
+  opts.filter(o=>o.type==="eqAct").forEach(o=>{const f=E.find(s,o.uid);const x=(window.CQ_EQACT||{})[f.o.name];out.push(`<button class="btn" data-pa="eqact" data-u="${o.uid}">${esc(f.o.name)}: ${esc(x?x.label:"use")}</button>`)});
+  opts.filter(o=>o.type==="play"&&s.p[me].exile.some(x=>x.uid===o.uid)).forEach(o=>{const c=s.p[me].exile.find(x=>x.uid===o.uid);out.push(`<button class="btn go" data-pa="play" data-u="${o.uid}">Play ${esc(E.DB[c.id].name)} (Call of Nature)</button>`)});
   const lv=opts.filter(o=>o.type==="level");const LV={str:"STR",def:"DEF",aura:"AURA"};
   if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
   opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
@@ -503,7 +507,7 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   if(opts.some(o=>o.type==="soul"))out.push('<button class="btn" data-pa="soul">Surrender a soul…</button>');
   out.push('<span class="sep"></span>');
   if(opts.some(o=>o.type==="manualAbility")&&a&&/Exhaust|\{A\}:/.test(E.DB[a.id].rules)&&!window.CQ_HERO_SCRIPTS[a.name])out.push(btn({type:"manualAbility"},`Use ${a.name}'s ability (by hand)`));
-  if(opts.some(o=>o.type==="skipBonus"))out.push(btn({type:"skipBonus"},"Skip (don't activate an Arrow)"));
+  if(opts.some(o=>o.type==="skipBonus"))out.push(btn({type:"skipBonus"},s.bonus&&s.bonus.only==="bard"?"Skip (don't play a card)":s.bonus&&s.bonus.queue&&s.bonus.queue.length?"Skip this Ranger":"Skip (don't activate an Arrow)"));
   else out.push(btn({type:"pass"},"Pass for the round"));
   if(U.net)out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"giveAction"}\' title="Let your opponent resolve something by hand (a card they control, a choice). Control comes back to you without using your action.">Give opponent an action</button>');
   out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"fix"}\' title="Open the manual panel to correct something the engine missed">Rules fix</button>');
@@ -549,6 +553,7 @@ function modals(s){const pr=s.pend[0];
     const m=modal(scryHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="choose"){U.pick=U.pick&&U.pick.key===key?U.pick:{key,on:[]};const m=modal(chooseHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="combo"){const m=modal(comboHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
+  else if(pr.type==="ask"){const m=modal(`<h2>${esc(pr.title||"Choose")}</h2><div class="actions" style="flex-direction:column;align-items:stretch">${pr.opts.map((o,i)=>`<button class="btn${i===0?" primary":""}" data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'>${esc(o.label)}</button>`).join("")}</div>`,{dismiss:false});m.dataset.k=key}
   else if(cur&&cur.dataset.k)closeModal()}
 function cardById(s,u,pr){if(pr&&pr.show&&pr.show[u])return pr.show[u];for(const pl of s.p)for(const z of["hand","lib","disc"]){const c=pl[z].find(x=>x.uid===u);if(c&&c.id)return c.id}return null}
 function scryHTML(s,pr){const sc=U.scry;
@@ -561,7 +566,7 @@ function chooseHTML(s,pr){const pk=U.pick;
   <div class="pick-list">${pr.cards.map(u=>{const id=cardById(s,u,pr);return`<button class="pk${pk.on.includes(u)?" on":""}" data-pa="pick-card" data-u="${u}">${cardHTML(cardOf(id))}</button>`}).join("")}</div>
   <div class="actions"><button class="btn primary go" data-pa="choose-done" ${pk.on.length<(pr.min||0)?"disabled":""}>${pr.pickLabel?(pk.on.length?pr.pickLabel:"Leave it on top"):`Confirm (${pk.on.length})`}</button></div>`}
 function comboHTML(s,pr){const opts=legal().filter(o=>o.type==="comboPlay");
-  return`<h2>Combo</h2><p class="pl-note">You revealed a Combo card. You may play it, or a Combo card from your hand, by paying its Aura cost (no action used).</p>
+  return`<h2>${pr.free?"Revealed cards":"Combo"}</h2><p class="pl-note">${pr.free?esc(pr.title||"You may play a revealed card for free."):"You revealed a Combo card. You may play it, or a Combo card from your hand, by paying its Aura cost (no action used)."}</p>
   <div class="pick-list">${pr.cands.map(u=>{const id=cardById(s,u,pr);const ok=opts.some(o=>o.uid===u);const inLib=s.p[U.me].lib.some(c=>c.uid===u);return`<div class="pk">${cardHTML(cardOf(id))}<span class="badge">${inLib?"Revealed":"In hand"}</span><div class="actions" style="margin-top:6px"><button class="btn sm${ok?" primary":""}" data-pa="combo-play" data-u="${u}" ${ok?"":"disabled"}>${ok?"Play":"Can't afford"}</button></div></div>`}).join("")}</div>
   <div class="actions"><button class="btn" data-pa="do" data-a='{"type":"decline"}'>Don't play</button></div>`}
 function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f.o;
@@ -584,11 +589,11 @@ function showPile(pid,z){const s=view();const pl=s.p[pid];const list=pl[z];
 /* ---------- starting an action (modes, X, targets) ---------- */
 function begin(a){const s=view();
   if(a.type==="band"&&!a.members){return pickBand(a)}
-  if(a.type==="band"||a.type==="useFree"){const slots=E.need(s,U.me,a);if(!slots.length){send(a);return}
+  if(a.type==="band"||a.type==="useFree"||a.type==="eqAct"){const slots=E.need(s,U.me,a);if(!slots.length){send(a);return}
     if(a.type==="band"&&!slots[0].cands.length){toast("There's nothing that can be attacked.");return}
     U.tgt={a,slots,i:0,picks:[],label:a.type==="band"?"the band attack":E.labelAction(s,U.me,a)};skipEmpty();render();return}
   if(a.type==="soul"||a.type==="attack"||a.type==="ability"||a.type==="use"||a.type==="play"||a.type==="comboPlay"){
-    if((a.type==="play"||a.type==="comboPlay")&&!a._ready){const pl=s.p[U.me];const c=pl.hand.find(x=>x.uid===a.uid)||pl.lib.find(x=>x.uid===a.uid);const d=E.DB[c.id];const sc=SCR()[d.name];
+    if((a.type==="play"||a.type==="comboPlay")&&!a._ready){const pl=s.p[U.me];const c=pl.hand.find(x=>x.uid===a.uid)||pl.lib.find(x=>x.uid===a.uid)||pl.exile.find(x=>x.uid===a.uid);const d=E.DB[c.id];const sc=SCR()[d.name];
       if(sc&&sc.modes&&!a.modes){return pickModes(a,d,sc)}
       if((d.cost==="X"||(sc&&sc.x))&&a.x==null){return pickX(a,d,sc)}}
     if(a.type==="use"&&!a.modes){const f=E.find(s,a.uid);const isc=f&&SCR()[f.o.name];if(isc&&isc.act&&isc.act.modes)return pickModes(a,E.DB[f.o.id]||{name:f.o.name},isc.act)}
@@ -651,6 +656,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="rules"){location.hash="rules";return}
   if(k==="export-log"){exportLog();return}
   if(k==="banner-x"){clearTimeout(U.banT);U.banner=null;render();return}
+  if(k==="eqact"){begin({type:"eqAct",uid:b.dataset.u});return}
   if(k==="up-go"){const sel=document.querySelector(`select[data-pa=up-x][data-u="${b.dataset.u}"]`);send({type:"upgrade",uid:b.dataset.u,x:+(sel?sel.value:1)});return}
   if(k==="multi"){const s2=view();const ar=s2.p[U.me].inv.filter(o=>o.kind==="card"&&!o.fd&&(E.DB[o.id]||{}).sub==="Arrow");U.multiSel=[];
     const draw=()=>modal(`<h2>Multi Bow</h2><p>Destroy any number of Arrows in your inventory. The next Arrow you activate deals +3 damage for each one. This doesn't use an action.</p><div class="band-list">${ar.map(o=>`<button class="btn band-pick${U.multiSel.includes(o.uid)?" primary":""}" data-pa="multi-t" data-u="${o.uid}"><b>${esc(o.name)}</b></button>`).join("")}</div><p class="band-total">Next Arrow: <b>+${3*U.multiSel.length}</b> damage</p><div class="actions"><button class="btn primary go" data-pa="multi-ok" ${U.multiSel.length?"":"disabled"}>Destroy ${U.multiSel.length}</button><button class="btn" data-pa="close">Cancel</button></div>`);

@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: October 30, 2026 (update 8)*
+*Version: October 31, 2026 (update 14)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -86,7 +86,7 @@ Items go into your inventory slots and stay there until used or removed. Item su
 
 ### Equipment
 
-Weapons, armor, instruments and accessories that you equip to a Hero to boost it. Equipment has one cost: its Aura cost, which you pay every time you equip it, whether from your hand, from your inventory, or by moving it to another Hero. There is no separate equip cost. Some equipment can also be upgraded with Gold at the Blacksmith. See Equipment.
+Weapons, armor, instruments and accessories that you equip to a Hero to boost it. Equipment has one cost: its Aura cost, which you pay every time you equip it, whether from your hand, from your inventory, or by moving it to another Hero. There is no separate equip cost. Some items and equipment can also be upgraded with Gold at the Blacksmith. See Upgrading.
 
 ### Enchantments and Curses
 
@@ -152,7 +152,7 @@ Every card shows a version number (v1, v2, v3…) in its bottom corner. When a c
 | **Battlefield** | Your summons and Pillar tokens. |
 | **Inventory** | 4 slots shared by your party, for items, Hidden cards, equipment tokens and unequipped equipment. |
 | **Library** | Your face-down draw pile. Your 30-card deck becomes your library at the start of the game. |
-| **Hand** | Cards you have drawn but not yet played. There is no hand size limit. |
+| **Hand** | Cards you have drawn but not yet played. The maximum hand size is 5: at Dusk, discard down to 5. You may hold more than 5 until then. |
 | **Discard pile** | Face up. Used, destroyed and discarded cards go here. |
 | **Exile zone** | Face up. Cards removed from the game. Exiled cards don’t come back unless a card says so. |
 
@@ -198,8 +198,8 @@ Crystal Quest is played in rounds. Every player goes through each round together
 |---|---|
 | **1. Dawn** | Ready up, refresh Aura, take status damage, resolve “At Dawn” effects, draw a card. |
 | **2. Battle** | Heroes take actions in position order until every player passes. |
-| **3. Dusk** | Resolve “At Dusk” effects, end round-long effects, lose unspent Aura, collect Gold, pass initiative. |
-| **4. Town** | Spend Gold at the Blacksmith, Inn and Shop, starting with the player who has initiative. |
+| **3. Dusk** | Resolve “At Dusk” effects, end round-long effects, lose unspent Aura, collect Gold, discard down to 5 cards, pass initiative. |
+| **4. Town** | Spend Gold at the Blacksmith, Inn, Shop and Church, starting with the player who has initiative. |
 
 When a card says “At Dawn” or “At Dusk”, it means during that phase.
 
@@ -217,7 +217,7 @@ Initiative passes at the end of every Dusk Phase, so the player who receives it 
 
 All players do these steps together:
 
-1. **Ready.** Ready all your exhausted cards. You may choose to keep a Meditating Hero exhausted (see Meditate).
+1. **Ready.** Ready all your exhausted cards. You may choose to keep a Meditating Hero exhausted (see Meditate). A Hero with a Fatigue counter doesn’t ready; remove the counter instead.
 2. **Refresh Aura.** Your Aura pool becomes the total Aura of your Heroes that aren’t dead.
 3. **Status damage.** Each Burned, Poisoned or Wounded counter deals 1 damage. Then remove one of each status counter from each Hero and summon.
 4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when Echo copies are played and Gemstones can be used.
@@ -236,6 +236,8 @@ This is where the fighting happens. Set the Position marker to **Lead**.
 
 **Stand-ins.** If the Hero in the marked position is exhausted, dead or has stepped back, the next ready Hero to its right acts instead. After the Closer, this wraps around to the Lead. A Hero that stepped back acts at Last; it stands in earlier only if none of your other Heroes are ready. If none of your Heroes are ready, you may still attack with a ready summon or surrender a dead Hero’s soul; otherwise you have no action this time.
 
+**No Hero acts twice in a row.** A Hero can’t take two of your actions in a row while another of your Heroes is ready. If the Hero that took your last action would act again (for example, it stood in for an exhausted Lead and the marker has now reached its own position), your next ready Hero acts instead. A Hero may act again right away only if it’s your only ready Hero, or if a card gives it extra actions (such as Tempo Change or Refire). This resets at Dusk.
+
 **Summons.** When you have priority, you may attack with a ready summon instead of taking your Hero’s action.
 
 **Passing.** At any time during the Battle Phase, you may say **“I pass.”** You take no more actions this round, and priority skips you. Players usually pass when all their Heroes are exhausted or they choose not to act further. The Battle Phase ends when every player has passed.
@@ -248,17 +250,19 @@ All players do these steps together:
 2. **End effects.** Effects that last “until Dusk”, “this turn” or “for the rest of the turn” end. Guard wears off.
 3. **Lose Aura.** Remove all unspent Aura from your pool.
 4. **Collect Gold.** Gain 1 Gold for each of your Heroes that isn’t dead.
-5. **Pass initiative.** Initiative passes to the next player (see Initiative and the Active Player). That player is now the active player for Town and the next round.
+5. **Hand size.** The maximum hand size is 5. If you have more than 5 cards in hand, discard cards of your choice until you have 5.
+6. **Pass initiative.** Initiative passes to the next player (see Initiative and the Active Player). That player is now the active player for Town and the next round.
 
 ### 4. Town Phase
 
-Your party heads into Town. The player with initiative visits first, then Town passes clockwise. On your visit, go to the locations in any order. You may use the Inn and the Shop once each per visit, and the Blacksmith as many times as you can pay. Say “I leave Town” when you’re done.
+Your party heads into Town. The player with initiative visits first, then Town passes clockwise. On your visit, go to the locations in any order. You may use the Inn, the Shop and the Church once each per visit, and the Blacksmith as many times as you can pay. Say “I leave Town” when you’re done.
 
 | Location | Cost | What you get |
 |---|---|---|
-| **Blacksmith** | Upgrade cost | Upgrade one piece of your equipment (see Upgrading Equipment). |
+| **Blacksmith** | Upgrade cost | Upgrade one of your items or pieces of equipment that has an Upgrade cost (see Upgrading). |
 | **Inn** | 5 Gold | One of your Heroes that isn’t dead heals 3 HP. Once per visit. |
 | **Shop** | 4 Gold | Draw a card. Once per visit. |
+| **Church** | 10 Gold | Resurrect one of your dead Heroes with 5 HP. Once per visit. A Hero whose soul was surrendered can’t be resurrected. |
 
 Heroes can’t heal above their maximum HP, and dead Heroes can’t heal at the Inn.
 
@@ -435,7 +439,7 @@ A dead Hero’s soul can still help your party. When you have priority during th
 
 ### Revival
 
-A revive effect brings a dead Hero back to life. The card says how much HP it returns with and whether it is ready or exhausted. A revived Hero comes back with no equipment. Its old equipment stays in inventory and costs its Aura cost to equip again. A Hero whose soul was surrendered can’t be revived.
+A revive effect (or the Church in Town) brings a dead Hero back to life. The card says how much HP it returns with and whether it is ready or exhausted. A revived Hero comes back with no equipment. Its old equipment stays in inventory and costs its Aura cost to equip again. A Hero whose soul was surrendered can’t be revived.
 
 ## 14. Summons
 
@@ -463,7 +467,9 @@ There are five status counters. At Dawn, each damaging status deals its damage, 
 
 ### Other Counters
 
-Some cards use other counters, such as +1/+1 counters, Petal counters, Campfire counters and Fury counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
+Some cards use other counters, such as +1/+1 counters, Petal counters, Campfire counters, Fury counters and Fatigue counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
+
+- **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Heavy Bow puts one on its Hero whenever that Hero becomes exhausted.)
 
 ## 16. Equipment
 
@@ -522,14 +528,15 @@ Unequipped equipment goes to your inventory. This happens when a card unequips i
 
 Whenever more cards need to go into your inventory than you have empty slots, you choose which cards to discard, from the incoming cards and the cards already there, until everything left fits. This applies to replaced equipment, unequipped equipment and equipment from a Hero that dies.
 
-### Upgrading Equipment
+### Upgrading
 
-Some equipment has a **Gold Upgrade Cost** and an **Upgrade** effect. At the Blacksmith in Town, pay the upgrade cost to upgrade it:
+Some items and equipment have an **Upgrade** cost in Gold (for example, “Upgrade X Gold: This Arrow deals +X more damage”). At the Blacksmith in Town, you may upgrade any of them:
 
-- The equipment can be on a Hero or in your inventory.
-- Put an upgrade counter on it. Its Upgrade effect is now active.
-- Each piece can be upgraded once.
-- It keeps its upgrade when moved between Heroes, sent to your inventory, or taken from a Hero that died. It loses its upgrade if it leaves play (discarded, destroyed or exiled). Equipment in your inventory is still in play.
+- The object must be in play: on a Hero, in your inventory, or on the battlefield. You can’t upgrade a card in your hand, library or discard pile.
+- Pay the Gold. For an Upgrade X cost, choose X and pay X Gold.
+- Flip the card to its upgraded side (with proxies, put an upgrade counter on it and note X). Its Upgrade effect is now active.
+- Each object can be upgraded once.
+- **Upgrades are permanent.** An upgraded object stays upgraded for the rest of the game, even if it is destroyed, discarded, exiled or changes zones. (An upgraded Arrow is still upgraded when it comes back from your discard pile.)
 
 ## 17. Keywords
 
@@ -600,11 +607,12 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Phase**: One part of a round: Dawn, Battle, Dusk, Town.
 - **Dawn Phase**: First phase of a round. Ready cards, refresh Aura, take status damage, resolve “At Dawn” effects, draw a card.
 - **Battle Phase**: Second phase. Heroes act in position order, using the Position marker, until every player passes.
-- **Dusk Phase**: Third phase. Resolve “At Dusk” effects, end round-long effects, lose unspent Aura, collect Gold, then pass initiative.
-- **Town Phase (Enter Town)**: Each player may spend Gold at the Blacksmith, Inn and Shop. The player with initiative goes first.
-- **Blacksmith**: Town location. Pay an equipment's Gold Upgrade Cost to turn on its Upgrade effect. Once per piece.
+- **Dusk Phase**: Third phase. Resolve “At Dusk” effects, end round-long effects, lose unspent Aura, collect Gold, discard down to 5 cards, then pass initiative.
+- **Town Phase (Enter Town)**: Each player may spend Gold at the Blacksmith, Inn, Shop and Church. The player with initiative goes first.
+- **Blacksmith**: Town location. Pay an item's or equipment's Upgrade cost to flip it to its upgraded side. Once per object; upgrades last the whole game.
 - **Inn**: Town location. 5 Gold: one Hero that isn’t dead heals 3 HP. Once per Town visit.
 - **Shop**: Town location. 4 Gold: draw a card. Once per Town visit.
+- **Church**: Town location. 10 Gold: resurrect one of your dead Heroes with 5 HP. Once per Town visit. Not for surrendered Heroes.
 - **Initiative**: Who acts first. Set by a die roll at setup, then passed at the end of each Dusk Phase: to the other player (2 players) or clockwise (multiplayer). The player who receives it goes first in Town and in the next round.
 - **Priority**: The right to take the next action. Starts with the initiative player and passes clockwise after each action.
 - **Party order / Position**: Left-to-right order of your Heroes: Lead (Position 1), Center (2), Closer (3).
@@ -613,7 +621,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Active player**: The player with initiative. Acts first in each position, stacks triggers first, and visits Town first.
 - **Passive player**: Any player without initiative.
 - **Position marker**: Shared marker showing which position (Lead, Center, Closer, or Last for Heroes that stepped back) is acting.
-- **Stand-in**: If the marked Hero is exhausted, dead or stepped back, the next ready Hero to its right acts, wrapping from Closer to Lead.
+- **Stand-in**: If the marked Hero is exhausted, dead or stepped back, the next ready Hero to its right acts, wrapping from Closer to Lead. A Hero can’t take two of your actions in a row while another of your Heroes is ready.
 - **At Dawn / At Dusk**: During the Dawn Phase / Dusk Phase.
 
 ### Heroes and stats
@@ -639,7 +647,9 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Aura cost**: What a card or ability costs to play. On cards it is shown as a number plus the Aura icon. For equipment, it’s also what you pay each time you equip it.
 - **Gain Aura**: Add Aura to your pool right away. (Older cards say “generate”.)
 - **Gold**: Second resource. Earned in the Dusk Phase (1 per living Hero), kept between rounds, spent only in the Town Phase.
-- **Gold Upgrade Cost**: Gold paid at the Blacksmith to upgrade a piece of equipment.
+- **Upgrade cost**: Gold paid at the Blacksmith to flip an item or piece of equipment to its upgraded side. It stays upgraded for the whole game, even if it changes zones.
+- **Fatigue counter**: A Hero with one doesn’t ready at your next Dawn; remove the counter instead.
+- **Maximum hand size**: 5. At Dusk, discard down to 5.
 
 ### Card types and zones
 
@@ -667,7 +677,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Inventory overflow**: When more cards must go into your inventory than you have room for, you choose which to discard.
 - **Deck**: The 30 cards you build before a game (deck construction).
 - **Library**: Your draw pile during play.
-- **Hand**: Cards drawn but not yet played.
+- **Hand**: Cards drawn but not yet played. Maximum hand size 5 (checked at Dusk).
 - **Discard pile**: Where used cards go. Reshuffled into a new library when the library runs out.
 - **Exile zone**: Cards removed from the game.
 - **Non-Hero object**: Any card in play that isn't a Hero (items, equipment, summons, enchantments, tokens).

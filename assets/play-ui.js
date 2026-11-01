@@ -105,6 +105,8 @@ const CSS=`
 .pl-stats ol{margin:0;padding-left:20px}
 .pl-stats .dead{text-decoration:line-through;opacity:.7}
 .tg.must{color:#C0392B;font-weight:700}
+.pl-up{display:inline-flex;gap:4px;align-items:center;font-size:.86rem}
+.pl-up select{font-size:.85rem}
 .pl-phase{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;font-size:.88rem}
 .pl-phase .ph-n{font-family:var(--display);font-weight:800;font-size:1.15rem}
 .posm{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
@@ -329,7 +331,7 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const inv=[];for(let i=0;i<slots;i++){const o=pl.inv[i];if(!o){inv.push('<span class="pi">Empty slot</span>');continue}
     const c=o.kind==="equip"?(o.cls||"Generic"):o.kind==="doll"?"Generic":((E.DB[o.id]||{}).cls||"Generic");
     if(o.fd)inv.push(`<button class="pi full fd${U.man&&U.manT===o.uid?" mansel":""}" data-pa="obj" data-u="${o.uid}">${mine&&o.id?esc(E.DB[o.id].name)+" (set)":"Face-down card"}</button>`);
-    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)};--ci:${ci(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${invCounts(s,o,pid)}</button>`)}
+    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)};--ci:${ci(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${s.upg&&s.upg[o.uid]!=null?` <span title="Upgraded at the Blacksmith">Upgraded${E.upgradeCost(o)&&E.upgradeCost(o).x?` +${s.upg[o.uid]}`:""}</span>`:""}${invCounts(s,o,pid)}</button>`)}
   const isInit=s.init===pid;
   const turnTag=s.phase==="battle"&&s.prio===pid&&!s.pend.length?'<span class="res init">Acting</span>':"";
   const pc=[0,1].map(p=>`P${p}`).filter(u=>cands.has(u)&&u==="P"+pid).length;
@@ -352,6 +354,7 @@ function deckSub(pl,sub){const has=c=>{const d=c&&E.DB[c.id];return d&&(d.sub===
 function turnCounts(s,pid){const pl=s.p[pid];const t=pl.t||{};const mine=pid===U.me;const names=deckNames(pl);const out=[];
   const show=(rel,v)=>v>0||(mine&&rel);
   const monk=pl.heroes.some(h=>h.cls==="Monk");
+  if(pl.fl&&pl.fl.multi)out.push(`<span class="res" title="Multi Bow: added to the next Arrow you activate">Next Arrow <b>+${pl.fl.multi}</b></span>`);
   if(show(monk||deckSub(pl,"Combo"),t.combos||0))out.push(`<span class="res" title="Cards with the Combo subtype played this turn">Combo cards <b>${t.combos||0}</b></span>`);
   if(show(deckSub(pl,"Song"),t.songs||0))out.push(`<span class="res" title="Songs played this turn">Songs <b>${t.songs||0}</b></span>`);
   if(show(deckSub(pl,"Arrow"),t.arrows||0))out.push(`<span class="res" title="Arrows activated this turn">Arrows <b>${t.arrows||0}</b></span>`);
@@ -363,6 +366,7 @@ function heroCounts(s,h){if(h.dead)return[];const out=[];const r=s.round;const p
   const combos=h.fl&&h.fl.combosRound===r?h.fl.combos||0:0;
   if(h.name==="Grandmaster Reece"){if(h.lvl>=3){const m=combos%3;out.push(`<span class="tg cnt" title="Every third Combo card he plays this turn: +2 STR">Combo ${m}/3${combos>=3?` · ${combos} total`:""}</span>`)}else out.push(`<span class="tg cnt" title="His third Combo card this turn: +2 STR">Combo ${Math.min(combos,3)}/3${combos>=3?" ✓":""}</span>`)}
   if(h.fl&&h.fl.stepped===r)out.push('<span class="tg cnt" title="Stepped back: acts after the Closer this round">Acts last</span>');
+  if(h.fat)out.push('<span class="tg cnt must" title="Fatigue counter: this Hero doesn\'t ready at the next Dawn">Fatigued</span>');
   {const fz=E.forcedTarget&&E.forcedTarget(s,h);if(fz)out.push(`<span class="tg cnt must" title="Arrow of Persuasion: its next action must be an attack on ${esc(nameOf(fz))}">Must attack ${esc(nameOf(fz))}</span>`)}
   if(E.hasBanding(s,h))out.push('<span class="tg cnt band" title="Can join a Band attack: add its STR, then it is exhausted">Banding</span>');
   if(E.usesDef(s,h))out.push('<span class="tg cnt" title="Deals damage equal to its DEF instead of its STR this turn">DEF damage</span>');
@@ -440,8 +444,13 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
     if(!s.p[me].mullDone)acts='<button class="btn go" data-pa="do" data-a=\'{"type":"keep"}\'>Keep</button><button class="btn" data-pa="do" data-a=\'{"type":"mull"}\'>Mulligan</button>'}
   else if(s.phase==="dawn"){if(s.dawnDone[me]){wait=true;prompt="Waiting for your opponent to finish Dawn…"}else{prompt="Dawn: you may use Gemstones (exhausting a Hero) before battle.";
     acts=opts.filter(o=>o.type==="gem").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(nameOf(o.uid))} (exhaust ${esc(nameOf(o.hero))})</button>`).join("")+opts.filter(o=>o.type==="wake").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${o.v?"Keep":"Wake"} ${esc(nameOf(o.hero))} ${o.v?"Meditating":"next Dawn"}</button>`).join("")+'<button class="btn go" data-pa="do" data-a=\'{"type":"dawnDone"}\'>Start battle</button>'}}
-  else if(s.phase==="town"){const t=s.town&&s.town.order[s.town.i];if(t!==me){wait=true;prompt=`${esc(s.p[t].name)} is in Town…`}else{const used=(s.town&&s.town.used)||{};prompt=`Town: you have ${s.p[me].gold} Gold. Inn ${E.INN_COST} Gold (a Hero heals ${E.INN_HEAL})${used.inn?" ✓ used":""} · Shop ${E.SHOP_COST} Gold (draw a card)${used.shop?" ✓ used":""}. Each once per visit.`;
-    acts=opts.filter(o=>o.type==="inn").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Inn: heal ${esc(nameOf(o.hero))}</button>`).join("")+(opts.some(o=>o.type==="shop")?'<button class="btn" data-pa="do" data-a=\'{"type":"shop"}\'>Shop: draw a card</button>':"")+'<button class="btn go" data-pa="do" data-a=\'{"type":"leave"}\'>Leave Town</button>'}}
+  else if(s.phase==="town"){const t=s.town&&s.town.order[s.town.i];if(t!==me){wait=true;prompt=`${esc(s.p[t].name)} is in Town…`}else{const used=(s.town&&s.town.used)||{};prompt=`Town: you have ${s.p[me].gold} Gold. Inn ${E.INN_COST} Gold (a Hero heals ${E.INN_HEAL})${used.inn?" ✓ used":""} · Shop ${E.SHOP_COST} Gold (draw a card)${used.shop?" ✓ used":""} · Church ${E.CHURCH_COST} Gold (resurrect a dead Hero with ${E.CHURCH_HP} HP)${used.church?" ✓ used":""}. Each once per visit. Blacksmith: upgrade items and equipment that have an Upgrade cost.`;
+    acts=opts.filter(o=>o.type==="inn").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Inn: heal ${esc(nameOf(o.hero))}</button>`).join("")+(opts.some(o=>o.type==="shop")?'<button class="btn" data-pa="do" data-a=\'{"type":"shop"}\'>Shop: draw a card</button>':"")
+      +opts.filter(o=>o.type==="church").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Church: resurrect ${esc(nameOf(o.hero))}</button>`).join("")
+      +(()=>{const ups=opts.filter(o=>o.type==="upgrade");const seen=new Set();return ups.map(o=>{if(seen.has(o.uid))return"";seen.add(o.uid);const f=E.find(s,o.uid);
+        if(o.x==null)return`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Blacksmith: upgrade ${esc(f.o.name)}</button>`;
+        const xs=ups.filter(u=>u.uid===o.uid).map(u=>u.x);return`<span class="pl-up">Blacksmith: upgrade ${esc(f.o.name)} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>`}).join("")})()
+      +'<button class="btn go" data-pa="do" data-a=\'{"type":"leave"}\'>Leave Town</button>'}}
   else if(s.phase==="battle"){if(s.prio!==me){wait=true;prompt=`${esc(s.p[s.prio].name)} is acting…`}else{const a=E.actorFor(s,me);const refire=s.bonus&&s.bonus.pid===me&&s.bonus.only==="arrow";const fz=a&&E.forcedTarget(s,a);
       prompt=refire?`Refire: <b>${esc(a?a.name:"")}</b> activates an Arrow (pay its Aura). If it resolves, it returns to your inventory.`:a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}${fz?` — it <b>must attack ${esc(nameOf(fz))}</b> (Arrow of Persuasion)`:""}. ${fz?"Attack, or choose a summon action:":"Play a highlighted card, or choose an action:"}`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
       acts=battleActs(s,opts)}}
@@ -483,6 +492,7 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   const atk=opts.filter(o=>o.type==="attack");atk.forEach(o=>out.push(btn(o,o.att===(a&&a.uid)?"Attack":`${nameOf(o.att)} attacks`,"atk")));
   const bands=opts.filter(o=>o.type==="band");if(bands.length){const lead=bands.find(o=>a&&o.att===a.uid)||bands[0];out.push(btn(lead,`Band attack (${E.bandMembers(s,me).length} ready)`,"atk band"))}
   opts.filter(o=>o.type==="useFree").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Use ${f.o.name} (no action)`))});
+  if(opts.some(o=>o.type==="multiBow"))out.push('<button class="btn" data-pa="multi">Multi Bow: destroy Arrows (no action)</button>');
   const lv=opts.filter(o=>o.type==="level");const LV={str:"STR",def:"DEF",aura:"AURA"};
   if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
   opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
@@ -641,6 +651,12 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="rules"){location.hash="rules";return}
   if(k==="export-log"){exportLog();return}
   if(k==="banner-x"){clearTimeout(U.banT);U.banner=null;render();return}
+  if(k==="up-go"){const sel=document.querySelector(`select[data-pa=up-x][data-u="${b.dataset.u}"]`);send({type:"upgrade",uid:b.dataset.u,x:+(sel?sel.value:1)});return}
+  if(k==="multi"){const s2=view();const ar=s2.p[U.me].inv.filter(o=>o.kind==="card"&&!o.fd&&(E.DB[o.id]||{}).sub==="Arrow");U.multiSel=[];
+    const draw=()=>modal(`<h2>Multi Bow</h2><p>Destroy any number of Arrows in your inventory. The next Arrow you activate deals +3 damage for each one. This doesn't use an action.</p><div class="band-list">${ar.map(o=>`<button class="btn band-pick${U.multiSel.includes(o.uid)?" primary":""}" data-pa="multi-t" data-u="${o.uid}"><b>${esc(o.name)}</b></button>`).join("")}</div><p class="band-total">Next Arrow: <b>+${3*U.multiSel.length}</b> damage</p><div class="actions"><button class="btn primary go" data-pa="multi-ok" ${U.multiSel.length?"":"disabled"}>Destroy ${U.multiSel.length}</button><button class="btn" data-pa="close">Cancel</button></div>`);
+    U.multiDraw=draw;draw();return}
+  if(k==="multi-t"){const u=b.dataset.u;U.multiSel=U.multiSel.includes(u)?U.multiSel.filter(x=>x!==u):U.multiSel.concat([u]);U.multiDraw();return}
+  if(k==="multi-ok"){closeModal();send({type:"multiBow",n:U.multiSel.length,uids:U.multiSel});return}
   if(!s)return;
   if(k==="do"){let a;try{a=JSON.parse(b.dataset.a)}catch(err){return}closeModal();
     if(a.type==="fix"||a.type==="manDone"||a.type==="decline"){U.man=null;U.manT=null}

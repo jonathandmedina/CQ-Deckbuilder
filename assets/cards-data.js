@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-31 (update 12: Barkborn, Rootfolk Elder, Rootfolk, Wolves, Elementals, Tangle Rod, Elk 2/3, Entangling Roots, Shelter from the Storm v2).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-10-31 (update 14: Ranger traps and arrows, Caltrops, Into the Trees, Multi Bow, Heavy Bow, Arrow of Devastation, Arrow of Craftsmanship, Longbow +1 DEF, Radiant Strike v2).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -27,7 +27,7 @@ const RAW_CARDS=[
 [2, "\"Ballad of Blades\"", "2", "", "Song", "", "Bard", "Target ally gains +2 STR this turn. If you played another Song this turn, it gains +3 STR instead.", 2],
 [2, "Battered", "2", "", "Tactic", "", "Barbarian", "Deal damage equal to this Hero's STR to target Hero. If \"Bruised\" is in your discard pile, you may wound that target.", 1],
 [2, "Battle Horn", "2", "", "Item", "", "Barbarian", "Whenever a Barbarian attacks, you may discard a card at random. If you do, Barbarians gain +1 STR this turn.", 1],
-[2, "Bear Trap", "0", "Hidden", "Item", "Trap", "Ranger", "3{A}: When an enemy Hero or summon attacks, cancel that attack. Stun the attacker.", 1],
+[2, "Bear Trap", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: When an enemy Hero or summon attacks, deal 3 damage to it.", 2],
 [2, "Beast", "4", "", "Summon", "", "Druid", "Summon a 3/4 Beast. Exhaust this Hero.", 3],
 [2, "Beat Down", "2", "", "Tactic", "", "Barbarian", "This Hero gains +2 STR this turn, then attacks a random enemy. Exhaust that enemy.", 1],
 [2, "Bewilder", "2", "", "Spell", "", "Warlock", "Target player reveals their hand. You may choose a card from it and discard it.", 1],
@@ -40,7 +40,7 @@ const RAW_CARDS=[
 [2, "Blood Offering", "0", "", "Spell", "", "Warlock", "Lose 3 HP. Gain 2 Aura.", 1],
 [2, "Bloodthirst", "2", "", "Tactic", "", "Barbarian", "Attack with this Barbarian. If the defending enemy dies, ready this Hero.", 2],
 [2, "Blunt Force", "3", "", "Tactic", "", "Barbarian", "Target Barbarian gains +5 STR this turn.", 1],
-[2, "Blunt-Point Force", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. If damage is dealt this way, the defending player discards a card.", 1],
+[2, "Blunt-Point Force", "0", "", "Item", "Arrow", "Ranger", "2{A}: Deal 3 damage. If damage is dealt this way, the defending player discards a card.", 2],
 [2, "Boost Ritual", "2", "", "Spell", "", "Mage", "Conjure a Spell Damage Pillar. Exhaust this Hero.", 1],
 [1, "Brain Rot", "1", "", "Tactic", "", "Warlock", "Target player reveals their hand. Choose and discard any Tactic or Spell.", 1],
 [2, "Breath", "0", "", "Tactic", "Combo", "Monk", "Scry 1. Combo.", 1],
@@ -116,7 +116,7 @@ const RAW_CARDS=[
 [2, "Gathering Tree", "4", "", "Item", "", "Druid", "Friendly summons have Banding.", 1],
 [2, "Glimpse the Future", "1", "", "Tactic", "", "Monk", "Scry 3.", 1],
 [2, "Gold Bar", "0", "", "Item", "Precious Metal", "Generic", "3{A}: Your party gains +1 DEF for the rest of the turn.", 1],
-[2, "Grapple", "0", "Hidden", "Item", "Trap", "Ranger", "3{A}: Prevent all damage from target attack. Move the defender to any position in your party.", 1],
+[2, "Grapple", "0", "Hidden", "Item", "Trap", "Ranger", "3{A}: Prevent all damage from target attack. Ready the defending Hero.", 2],
 [2, "Hack and Slash", "1", "", "Tactic", "", "Rogue", "If this Hero has two Daggers equipped, its next attack this turn deals damage to two targets.", 1],
 [2, "Hail", "3", "", "Spell", "", "Mage", "Deal 2 Ice damage to all Heroes in target party.", 1],
 [2, "Hand to Hand Combat", "1", "", "Tactic", "", "Monk", "Unequip all Equipment from a friendly Hero and an enemy Hero. They each deal damage equal to their STR to each other. At Dusk, each of those Heroes that isn't dead re-equips the Equipment it lost without paying its Aura cost.", 1],
@@ -183,9 +183,9 @@ const RAW_CARDS=[
 [2, "Petty Theft", "0", "", "Tactic", "", "Rogue", "Gain control of target Consumable item.", 1],
 [1, "Phoenix Down", "0", "Legendary", "Item", "", "Generic", "3{A}, Exile: Revive a Hero, exhaust it and heal it 3 HP. It gains Stealth this turn.", 1],
 [2, "Pillage the Dead", "0", "Hidden", "Tactic", "", "Rogue", "2{A}: When a Hero dies, its Equipment comes to you instead of going to its owner's inventory. Equip any of it to Heroes you control that can use it, without paying its Aura cost. Put the rest in your inventory or discard it.", 1],
-[2, "Pitfall", "0", "Hidden", "Item", "Trap", "Ranger", "4{A}: When an enemy Hero attacks, cancel that attack. Move the attacker to the Closer position. It loses 1 level.", 1],
+[2, "Pitfall", "0", "Hidden", "Item", "Trap", "Ranger", "4{A}: When an enemy Hero attacks, cancel that attack. Unequip all of the attacker's equipment.", 2],
 [2, "Platinum Bar", "0", "", "Item", "Precious Metal", "Generic", "2{A}: Draw a card.", 1],
-[2, "Poison Dart", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 1 damage to any target. Poisonous.", 3],
+[2, "Poison Dart", "0", "", "Item", "Arrow", "Ranger", "1{A}: Place 2 Poison counters on any target.", 4],
 [2, "Pop Rocks", "6", "", "Spell", "", "Mage", "Deal 1 damage to all enemies three times. Exhaust this Hero.", 1],
 [2, "Populate", "2", "", "Tactic", "", "Druid", "Duplicate a summon with 2 or less STR.", 2],
 [2, "Potion", "0", "", "Item", "", "Generic", "2{A}, Exile: Heal target Hero for 3 HP.", 2],
@@ -201,7 +201,7 @@ const RAW_CARDS=[
 [2, "Quick Change", "2", "", "Tactic", "", "Generic", "Move an Equipment from a Hero you control to another Hero you control. (You don't pay its Aura cost.)", 1],
 [2, "Quick Inventory", "1", "", "Tactic", "", "Rogue", "Create a Dagger token.", 1],
 [2, "Quickdraw", "3", "", "Tactic", "", "Ranger", "Look at the top 3 cards of your library. You may put any number of Arrow cards from among them into your inventory. Exhaust this Hero.", 1],
-[2, "Radiant Strike", "3", "", "Tactic", "", "Paladin", "Deal 5 damage. If this Hero is equipped with a Sword, it deals an additional 3 damage. Exhaust this Hero.", 1],
+[2, "Radiant Strike", "3", "", "Tactic", "", "Paladin", "Deal 3 Light damage, or 5 if this Hero has a Sword equipped. Exhaust this Hero.", 2],
 [2, "Rally the Troops", "5", "", "Tactic", "", "Paladin", "Summon two 2/3 Soldiers. Exhaust this Hero.", 3],
 [2, "Rapacious Encore", "0", "Hidden", "Tactic", "", "Bard", "2{A}: Deal damage to any target equal to the damage dealt by the current action.", 1],
 [2, "Rapid Shot", "0", "", "Tactic", "", "Ranger", "You may activate two Arrows from your inventory this action. They gain Piercing 1. Exhaust this Hero.", 1],
@@ -230,7 +230,7 @@ const RAW_CARDS=[
 [2, "Second Chances", "0", "Hidden", "Tactic", "", "Cleric", "If a friendly non-Cleric Hero died this turn, you may revive it. At your next Dawn, your Aura pool is 3 less.", 1],
 [2, "Second Wind", "3", "", "Tactic", "", "Barbarian", "Target Enraged Barbarian heals 3 HP and readies.", 1],
 [2, "Self Sacrifice", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: If a Hero would die, target Paladin dies instead.", 1],
-[2, "Serrated Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. The target is Wounded.", 1],
+[2, "Serrated Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. Piercing 3.", 2],
 [2, "Shadow Strike", "0", "Hidden", "Tactic", "", "Rogue", "1{A}: If a Rogue would be exhausted, you may ready it and have it attack a target of your choice. This attack ignores DEF.", 1],
 [2, "Shatter", "2", "", "Tactic", "", "Generic", "Destroy target Equipment.", 1],
 [2, "Shield Bash", "1", "", "Tactic", "", "Paladin", "Deal damage equal to this Hero's DEF.", 1],
@@ -250,7 +250,7 @@ const RAW_CARDS=[
 [2, "Sonic Recall", "4", "", "Tactic", "", "Bard", "Shuffle X Songs from your discard pile into your library. Deal X damage to target Hero. Exhaust this Hero.", 1],
 [2, "Spark", "0", "", "Spell", "", "Mage", "Deal 1 Lightning damage.", 1],
 [2, "Sphere of Resistance", "3", "", "Item", "", "Warlock", "Non-Warlock cards cost 1 more Aura to play or activate.", 1],
-[2, "Spike Pit", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: When an enemy Hero attacks, deal 3 damage to it. It is Wounded.", 1],
+[2, "Spike Pit", "0", "Hidden", "Item", "Trap", "Ranger", "4{A}: When an enemy Hero attacks, it loses 2 HP. Place 3 Wounded counters on it.", 2],
 [2, "Split Kick", "1", "", "Tactic", "", "Monk", "Your next Combo card may target two Heroes.", 1],
 [2, "Splitting Ritual", "2", "", "Spell", "", "Warlock", "Sacrifice a Pillar. Create two of that Pillar. Exhaust this Hero.", 1],
 [2, "Spore Calling", "0", "", "Summon", "", "Druid", "Summon a 0/2 Spore. When it enters, draw a card. When it is destroyed, discard a card.", 2],
@@ -317,6 +317,10 @@ const RAW_CARDS=[
 [2, "Lesser Elemental", "4", "", "Summon", "", "Druid", "Summon a 4/1 Elemental. Ready it, then it attacks. Exhaust this Hero.", 1],
 [2, "Greater Elemental", "6", "", "Summon", "", "Druid", "Summon a 5/1 Greater Elemental. Ready it, then it attacks. Exhaust this Hero.", 1],
 [2, "Tangle Rod", "2", "", "Item", "", "Druid", "Enemy Heroes' activated abilities cost 2 more Aura to activate.", 1],
+[2, "Caltrops", "2", "", "Item", "", "Ranger", "Whenever an enemy attacks a Hero you control, the attacker loses 2 HP.", 1],
+[2, "Into the Trees", "0", "Hidden", "Item", "Trap", "Ranger", "3{A}: When an enemy attacks or targets a friendly Hero, you may cancel that action.", 1],
+[2, "Arrow of Devastation", "0", "", "Item", "Arrow", "Ranger", "4{A}: Deal 5 damage. Piercing 3.", 1],
+[2, "Arrow of Craftsmanship", "0", "", "Item", "Arrow", "Ranger", "This can't be targeted.\n1{A}: Deal 2 damage.\nUpgrade X Gold: This Arrow deals +X more damage.", 1],
 ];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],
@@ -400,7 +404,7 @@ const RAW_EQUIP=[
 ["Knight's Sword", "", "Weapon", "Paladin", "Sword. Equipped Hero gains +2 STR and Guard 1.", "3", "One-Handed", "2", "0", 1],
 ["Leg Armor of Riverstead", "", "Armor", "Generic", "Equipped Hero gains +1 DEF.", "1", "Legs", "0", "1", 1],
 ["Long Sword", "", "Weapon", "Generic", "Equipped Hero gains +4 STR.", "3", "Two-Handed", "4", "0", 1],
-["Longbow", "", "Weapon", "Ranger", "Equipped Hero gains +2 STR. Arrows it activates deal +1 damage.", "3", "Two-Handed", "2", "0", 1],
+["Longbow", "", "Weapon", "Ranger", "Equipped Hero gains +1 DEF. Arrows it activates deal +1 damage.", "3", "Two-Handed", "0", "1", 2],
 ["Mace of Dawn", "", "Weapon", "Cleric", "Equipped Hero gains +1 STR. Whenever it attacks, heal any target for 1 HP.", "2", "One-Handed", "1", "0", 1],
 ["Mystic Quiver", "", "Accessory", "Ranger", "Arrows the equipped Hero activates cost 1 less Aura to activate.", "3", "Accessory", "0", "0", 2],
 ["Poison-Tipped Dagger", "", "Weapon", "Rogue", "When this Hero deals combat damage, add two Poison counters to the defending target.", "2", "One-Handed", "0", "0", 1],
@@ -419,6 +423,8 @@ const RAW_EQUIP=[
 ["Vambrace of Light", "", "Armor", "Paladin", "Guard 1.", "1", "Arms", "0", "0", 1],
 ["War Lute", "", "Instrument", "Bard", "Whenever the equipped Hero plays a Song, target ally gains +1 STR this turn.", "2", "Two-Handed", "0", "0", 1],
 ["Shimmering Cloak", "", "Armor", "Cleric", "When you equip this, the equipped Hero gains +X DEF this turn, where X is the amount of HP you have healed this turn.", "3", "Chest", "0", "0", 1],
+["Multi Bow", "", "Weapon", "Ranger", "Destroy any number of Arrows in your inventory: The next Arrow you activate deals +3 damage for each Arrow destroyed this way. (This doesn't use an action.)", "3", "Two-Handed", "0", "0", 1],
+["Heavy Bow", "", "Weapon", "Ranger", "Arrows the equipped Hero activates deal double damage. Whenever this Hero becomes exhausted, put a Fatigue counter on it.", "4", "Two-Handed", "0", "0", 1],
 ];
 const RAW_TOKENS=[
 ["Dagger", "Equipment", "Weapon", "Rogue", "1", "0", "", "0", "One-Handed", "Equipped Hero gains +1 STR.", "Armed; Quick Inventory; Blademaster's Choice", 1],

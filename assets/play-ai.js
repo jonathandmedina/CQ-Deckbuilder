@@ -15,7 +15,7 @@ AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e
       v-=W.status*(h.st.burn+h.st.poison+h.st.wound+h.st.confuse)+W.stun*h.st.stun;
       v+=E.eqList(h).length*.6+h.ench.reduce((n,e)=>n+(e.owner===p?1:-1.5),0)});
     pl.bf.forEach(o=>{if(o.kind==="summon"){const hp=E.hp(s,o),mx=Math.max(1,E.maxHp(s,o));v+=(W.sum+W.sumStr*E.str(s,o))*(0.6+0.4*Math.min(1,hp/mx))+W.sumHp*hp+(s.phase==="battle"?0.5*Math.min(E.defn(s,o),hp):0)}else v+=W.pillar});
-    v+=pl.inv.reduce((n,o)=>n+(o.kind==="card"&&!o.fd&&(E.DB[o.id]||{}).sub==="Arrow"?(pl.heroes.some(h=>!h.dead&&h.cls==="Ranger")?1.1:.2):o.fd?1.4:W.inv),0)+W.hand*Math.min(pl.hand.length,8)+W.gold*Math.min(pl.gold,12)+W.aura0*pl.aura;
+    v+=pl.inv.reduce((n,o)=>n+(o.kind==="card"&&!o.fd&&(E.DB[o.id]||{}).sub==="Arrow"?(pl.heroes.some(h=>!h.dead&&h.cls==="Ranger")?1.1:.2):o.fd?1.4:W.inv),0)+W.hand*Math.min(pl.hand.length,5)+(pl.fl&&pl.fl.multi?0.7*pl.fl.multi:0)+pl.inv.reduce((n,o)=>n+(s.upg&&s.upg[o.uid]?0.8*s.upg[o.uid]:0),0)+W.gold*Math.min(pl.gold,12)+W.aura0*pl.aura;
     if(s.phase==="battle"&&(pl.t.nextBark||pl.t.allBark||pl.t.shelter)){const sm=pl.hand.some(c=>(E.DB[c.id]||{}).type==="Summon");v+=(sm?2*((pl.t.nextBark||0)+(pl.t.allBark||0)):0)+(pl.t.shelter?1:0)}
     sc+=p===pid?v:-1.15*v});
   return sc};

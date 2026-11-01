@@ -15,7 +15,7 @@ function D(c,tg,n,o){o=o||{};if(!tg||tg.kind==="player")return 0;
   if(c.mods&&(c.mods.preventAll||c.mods.prevent&&c.mods.prevent.includes(tg.uid))){log(c,`Damage to ${tg.name} is prevented.`);E.stat(c.s,"prev",E.ctrl(c.s,tg),c.mods.by||"Prevent",n);return 0}
   let a=n;if(c.def&&c.def.type==="Spell"&&!o.noSpell)a+=E.spellDmg(c.s,c.pid,c.actor);
   if(c.def&&c.def.sub==="Combo"&&c.actor&&E.hasEq(c.actor,"Iron Hand Wraps"))a+=1;
-  if(c.arrowBonus){a+=c.arrowBonus.dmg;if(c.arrowBonus.ignoreDef)o.ignoreDef=true;o.pierce=(o.pierce||0)+c.arrowBonus.pierce}
+  if(c.arrowBonus){a+=c.arrowBonus.dmg;if(c.arrowBonus.ignoreDef)o.ignoreDef=true;o.pierce=(o.pierce||0)+c.arrowBonus.pierce;if(c.arrowBonus.mult>1)a*=c.arrowBonus.mult}
   if(c.def&&c.def.sub==="Combo"&&c.me.fl.stunner){c.me.fl.stunner=false;E.addStatus(c.s,tg,"stun",1)}
   return E.damage(c.s,c.actor||{name:c.def.name},tg,a,Object.assign({card:true},o))}
 const heal=(c,tg,n)=>tg?E.heal(c.s,c.actor,tg,n,c.pid):0;
@@ -103,7 +103,7 @@ def("Healer's Choice",M(2,[{label:"Heal 2 HP",t:[ANY],run:c=>heal(c,c.t[0],2)},{
 /* ===== Paladin ===== */
 def("Power Thrust",{t:[DMG],run(c){D(c,c.t[0],(c.actor?dstr(c,c.actor):0)+2);exMe(c)}});
 def("Shield Bash",{t:[ANY],run(c){D(c,c.t[0],dfn(c,c.actor))}});
-def("Radiant Strike",{t:[ANY],run(c){const sw=E.eqList(c.actor).some(e=>/Sword/.test(e.name+" "+(E.DB[e.id]||{}).rules));D(c,c.t[0],5+(sw?3:0));exMe(c)}});
+def("Radiant Strike",{t:[ANY],run(c){const sw=E.eqList(c.actor).some(e=>/Sword/.test(e.name+" "+(E.DB[e.id]||{}).rules));D(c,c.t[0],sw?5:3,{type:"Light"});exMe(c)}});
 def("Divine Judgment",{run(c){const d=dfn(c,c.actor);enemies(c).forEach(e=>D(c,e,d));exMe(c)}});
 def("Blockade",{t:[HERO],run(c){buff(c.t[0],{def:5})}});
 def("Protect",{t:[HERO],run(c){if(c.t[0]){c.t[0].guard+=2;log(c,`${c.t[0].name} gains Guard 2.`)}}});
@@ -218,12 +218,15 @@ def("Arrow of Persuasion",arrow(1,[ANY,t("ally","which of your units it must att
 const refireArrows=(s,pid,a)=>{const pl=s.p[pid];return pl.inv.filter(o=>o.kind==="card"&&!o.fd&&E.DB[o.id].sub==="Arrow"&&(S[o.name]||{}).act)};
 def("Refire",{can:(s,pid,a)=>!!a&&refireArrows(s,pid,a).some(o=>E.itemCost(s,pid,a,o)+1<=s.p[pid].aura),
   run(c){c.s.bonus={pid:c.pid,uid:c.actor.uid,n:2,only:"arrow",refire:true};log(c,`Refire: ${c.actor.name} activates an Arrow now; it returns to inventory if it resolves.`)}});
-def("Blunt-Point Force",arrow(1,[ANY],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){const pl=c.s.p[E.ctrl(c.s,c.t[0])];if(pl.hand.length){const x=pl.hand.splice(E.ri(c.s,pl.hand.length),1)[0];pl.disc.push(x);log(c,`${pl.name} discards ${E.DB[x.id].name}.`)}}}));
+def("Blunt-Point Force",arrow(2,[ANY],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){const pl=c.s.p[E.ctrl(c.s,c.t[0])];if(pl.hand.length){const x=pl.hand.splice(E.ri(c.s,pl.hand.length),1)[0];pl.disc.push(x);log(c,`${pl.name} discards ${E.DB[x.id].name}.`)}}}));
 def("Dual Shot",arrow(1,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"burn")}));
 def("Level Shot",arrow(1,[ANY],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
-def("Poison Dart",arrow(1,[t("any","damage target")],c=>{D(c,c.t[0],1,{poisonous:"dmg"})}));
-def("Serrated Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3);st(c,c.t[0],"wound")}));
+def("Poison Dart",arrow(1,[t("any","target for 2 Poison counters")],c=>{st(c,c.t[0],"poison",2)}));
+def("Serrated Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3,{pierce:3})}));
+def("Arrow of Devastation",arrow(4,[ANY],c=>{D(c,c.t[0],5,{pierce:3})}));
+/* Arrow of Craftsmanship: can't be targeted (engine); Upgrade X Gold (Town): +X damage for the rest of the game */
+def("Arrow of Craftsmanship",arrow(1,[ANY],c=>{D(c,c.t[0],2+(c.upg||0))}));
 def("Smoke Trail Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3);c.me.fl.preventNext=true}));
 def("Tri-Shot",arrow(4,[t("enemyPlayer","target party")],c=>{const p=c.t[0];if(!p)return;const hs=c.s.p[p.pid].heroes;[5,3,1].forEach((n,i)=>{if(hs[i]&&!hs[i].dead)D(c,hs[i],n,{ignoreDef:true})})}));
 /* ===== Druid ===== */
@@ -308,7 +311,7 @@ song("Marching Cadence",{run(c){living(c.me).forEach(h=>h.fl.bandRound=c.s.round
 song("Duet",{t:[t("allyHero","ally Hero to band with",(s,o,x)=>!x||o!==x.actor)],run(c){const a=c.actor,b=c.t[0];[a,b].forEach(h=>{if(h)h.fl.bandRound=c.s.round});
   if((c.me.t.songs||0)>1&&a)a.fl.duetRound=c.s.round;log(c,`${a?a.name:"This Hero"}${b?" and "+b.name:""} gain Banding this turn${(c.me.t.songs||0)>1?"; their banded attack gets +2 STR":""}.`)}});
 /* passive items: handled in the engine by name (no script needed beyond entering play) */
-["Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
+["Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
 S["Almandine"].gem=c=>{c.actor=null;enemies(c).forEach(e=>E.damage(c.s,{name:"Almandine"},e,2,{card:true}))};
 S["Rose Quartz"].gem=c=>{living(c.me).forEach(h=>E.heal(c.s,null,h,3))};
 S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};
@@ -316,11 +319,14 @@ S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};
 const hid=(name,when,ok,run)=>{S[name]=Object.assign(S[name]||{},{hidden:{when,ok,run}})};
 const atkr=(s,trig)=>E.find(s,trig.attacker);
 const isHeroAtk=(s,pid,trig)=>{const f=atkr(s,trig);return f&&f.o.kind==="hero"};
-hid("Bear Trap","attack",null,c=>{c.mods.cancel=true;const a=atkr(c.s,c.trig);if(a)st(c,a.o,"stun")});
-hid("Pitfall","attack",isHeroAtk,c=>{c.mods.cancel=true;const a=atkr(c.s,c.trig).o;const pl=c.s.p[a.owner];pl.heroes.splice(pl.heroes.indexOf(a),1);pl.heroes.push(a);if(a.lvl>0){if(a.lvl%2===0){const k=["str","def","aura"].find(k=>a.bon[k]>0);if(k)a.bon[k]--}a.lvl--}log(c,`${a.name} falls to the Closer position and drops to Level ${a.lvl}.`)});
+hid("Bear Trap","attack",null,c=>{const a=atkr(c.s,c.trig);if(a)E.damage(c.s,{name:"Bear Trap"},a.o,3,{card:true})});
+hid("Pitfall","attack",isHeroAtk,c=>{c.mods.cancel=true;const a=atkr(c.s,c.trig).o;const eq=E.eqList(a);eq.forEach(e=>E.unequip(c.s,e));log(c,eq.length?`Pitfall: ${a.name} loses all its equipment (to inventory).`:`Pitfall: ${a.name} has no equipment.`)});
 hid("Snare","attack",isHeroAtk,c=>{c.mods.str=(c.mods.str||0)-3;log(c,"The attacker gets -3 STR for this attack.")});
-hid("Spike Pit","attack",isHeroAtk,c=>{const a=atkr(c.s,c.trig).o;E.damage(c.s,{name:"Spike Pit"},a,3,{card:true});st(c,a,"wound")});
-hid("Grapple","attack",null,c=>{c.mods.noDamage=true});
+hid("Spike Pit","attack",isHeroAtk,c=>{const a=atkr(c.s,c.trig).o;E.loseHp(c.s,a,2,"Spike Pit");E.stat(c.s,"dmg",c.pid,"Spike Pit",2);st(c,a,"wound",3)});
+hid("Grapple","attack",null,c=>{c.mods.noDamage=true;const d=E.find(c.s,c.trig.target);if(d&&d.o.kind==="hero"&&!d.o.dead&&d.o.ex){d.o.ex=false;log(c,`Grapple: ${d.o.name} readies.`)}});
+/* Into the Trees: cancel an enemy attack on, or an enemy card/ability targeting, a friendly Hero */
+hid("Into the Trees",["attack","card"],(s,pid,trig)=>{if(trig.kind==="attack"){const f=E.find(s,trig.target);return f&&f.pid===pid&&f.o.kind==="hero"}
+  return(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"})},c=>{c.mods.cancel=true});
 hid("Fortify","attack",null,c=>{c.mods.noDamage=true});
 hid("Attack Reversal","attack",null,c=>{c.mods.cancel=true});
 hid("Refrain","attack",null,c=>{c.mods.noDamage=true});

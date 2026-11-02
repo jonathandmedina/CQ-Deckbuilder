@@ -59,8 +59,8 @@ def("Flame Wave",{run(c){const L=c.actor&&c.actor.lvl>=6?5:3;living(c.op).forEac
 def("Pop Rocks",allDmg(1,{times:3,ex:1}));
 def("Hail",{t:[t("enemyPlayer","target party")],run(c){const p=c.t[0];if(!p)return;living(c.s.p[p.pid]).forEach(h=>D(c,h,1,{type:"Ice"}))}});
 def("Storm of Insight",{run(c){let tot=0;living(c.op).forEach(e=>tot+=D(c,e,3,{type:"Lightning"}));exMe(c);if(tot)scry(c,tot)}});
-def("Heat Wave",{t:[ANY],run(c){const was=c.t[0]&&c.t[0].st&&c.t[0].st.burn>0;st(c,c.t[0],"burn");if(was)st(c,c.t[0],"burn")}});
-def("Ice Ray",{t:[ANY],run(c){const was=c.t[0]&&c.t[0].st&&c.t[0].st.stun>0;st(c,c.t[0],"stun");if(was)st(c,c.t[0],"stun")}});
+def("Heat Wave",{t:[ANY],run(c){st(c,c.t[0],"burn")}});
+def("Ice Ray",{t:[ANY],run(c){st(c,c.t[0],"stun")}});
 def("Sleep",{t:[HERO],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
 def("Arcane Study",{run(c){draw(c,1);scry(c,2)}});
 def("Boost Ritual",{run(c){pillar(c,"Spell Damage Pillar");exMe(c)}});
@@ -131,7 +131,7 @@ def("Blood Frenzy",{t:[cls("Barbarian")],run(c){if(!c.t[0])return;E.loseHp(c.s,c
 def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buff(c.actor,{str:1});const h=c.t[0];if(c.actor.lvl>=3&&h&&dfn(c,h)<str(c,c.actor)){h.ex=true;log(c,`${h.name} is exhausted.`)}}});
 def("Battered",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
 def("Pummel",{t:[HERO],run(c){const n=living(c.me).filter(h=>h.cls==="Barbarian").length;D(c,c.t[0],dstr(c,c.actor,c.t[0])*n)}});
-def("Awestruck",{t:[t("any","Hero or summon with less STR",(s,o,x)=>x.actor&&E.str(s,o)<E.str(s,x.actor))],run(c){const was=c.t[0]&&c.t[0].st&&c.t[0].st.stun>0;st(c,c.t[0],"stun");if(was)st(c,c.t[0],"stun")}});
+def("Awestruck",{t:[t("any","Hero or summon with less STR",(s,o,x)=>x.actor&&E.str(s,o)<E.str(s,x.actor))],run(c){st(c,c.t[0],"stun")}});
 def("Bloodthirst",{t:[EN],run(c){c.actor.ex=false;attack(c,c.actor,c.t[0],{after:"readyIfKill"})}});
 def("Unstoppable",{t:[EN],run(c){attack(c,c.actor,c.t[0],{ignoreDef:true,noHidden:true})}});
 def("Beat Down",{run(c){buff(c.actor,{str:2});const tg=rand(c,enemies(c).filter(e=>!E.stealth(c.s,e)&&!E.noAttack(c.s,e)));attack(c,c.actor,tg,{after:"exhaustTarget"})}});
@@ -225,7 +225,7 @@ def("Blunt-Point Force",arrow(2,[ANY],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){
 def("Dual Shot",arrow(1,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"burn")}));
 def("Level Shot",arrow(1,[ANY],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
-def("Poison Dart",arrow(1,[t("any","target for 2 Poison counters")],c=>{st(c,c.t[0],"poison",2)}));
+def("Poison Dart",arrow(1,[t("any","target to Poison twice")],c=>{st(c,c.t[0],"poison",2)}));
 def("Serrated Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3,{pierce:3})}));
 def("Arrow of Devastation",arrow(4,[ANY],c=>{D(c,c.t[0],5,{pierce:3})}));
 /* Arrow of Craftsmanship: can't be targeted (engine); Upgrade X Gold (Town): +X damage for the rest of the game */

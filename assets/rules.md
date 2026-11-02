@@ -461,6 +461,8 @@ A revive effect (or the Church in Town) brings a dead Hero back to life. The car
 
 There are five status counters. At Dawn, each damaging status deals its damage, then one of each status counter is removed from each Hero and summon.
 
+**Applying a status.** Cards use a verb: **Burn**, **Poison**, **Wound**, **Confuse** or **Stun** a target (for example, “Deal 3 Fire damage to any target and Burn it” or “Stun any target”). That puts one counter of that status on the target: if it has none, it gets one; if it already has one or more, add another. “Twice” or “three times” means that many counters. Words like “is Burned” or “a Poisoned target” only check whether the target has that status.
+
 | Status | Effect |
 |---|---|
 | **Burned** | Deals 1 damage at Dawn. |
@@ -559,7 +561,7 @@ Some items and equipment have an **Upgrade** cost in Gold (for example, “Upgra
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
 | **Piercing X** | This attack ignores X points of the target’s DEF. |
-| **Poisonous X** | Whenever this Hero or card deals damage, add X Poison counters to the target if it has none. **Poisonous** with no number adds Poison counters equal to the damage dealt. |
+| **Poisonous X** | Whenever this Hero or card deals damage, Poison the target X times. **Poisonous** with no number Poisons it once for each damage dealt. |
 | **Scry X** | Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order. |
 | **Spell Damage +X** | Your spells deal X extra damage. |
 | **Spell Damage Pillar** | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. |
@@ -732,10 +734,11 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 ### Statuses, death and summons
 
 - **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF and Guard. +1/+1, Petal, Campfire and Fury counters are not status counters.
-- **Burned**: Status. 1 damage each Dawn Phase.
-- **Poisoned**: Status. 1 damage each Dawn Phase. Cards add “Poison counters”.
-- **Wounded**: Status. 1 damage each Dawn Phase. Cards say “wound that target”.
-- **Confused**: Status. The Hero's attacks and targets are random.
+- **Burned**: Status. 1 damage each Dawn Phase. Cards say “Burn”.
+- **Poisoned**: Status. 1 damage each Dawn Phase. Cards say “Poison”.
+- **Wounded**: Status. 1 damage each Dawn Phase. Cards say “Wound”.
+- **Confused**: Status. The Hero's attacks and targets are random. Cards say “Confuse”.
+- **Burn / Poison / Wound / Confuse / Stun (verbs)**: Put one counter of that status on the target; if it already has one, add another.
 - **Stunned**: Status. The Hero can't activate abilities or play cards. It can still attack and equip from inventory. Cards say “Stun”.
 - **Dies / Dead**: At 0 HP a Hero dies and is turned face down. Its equipment goes to your inventory. It can’t act, make Aura, earn Gold or be healed until revived.
 - **Heal**: Restore HP, never above max. Only from cards, abilities or the Inn. A heal turned into damage or HP loss (such as by Inversion Stone) isn’t a heal.
@@ -758,7 +761,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Echo (Bard)**: At your next Dawn, play the card again for free. You may choose new targets.
 - **Harmonize X (Bard)**: Exhaust X ready Heroes to gain the effect after the colon.
 - **Guard X (Paladin)**: Absorbs the first X damage that would be dealt to this Hero, before DEF is applied. Wears off in the Dusk Phase.
-- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, add X Poison counters to the target if it has none. Poisonous with no number adds Poison counters equal to the damage dealt.
+- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt.
 - **Stealth (Rogue)**: This Hero can’t be targeted by enemy cards or abilities. It can still be attacked.
 - **Lifelink (Cleric)**: When this Hero deals damage, heal it that much.
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.

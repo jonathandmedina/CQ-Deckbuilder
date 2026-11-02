@@ -120,7 +120,7 @@ function strOf(s,o,vs){
     eqList(o).forEach(e=>v+=e.pstr||0);
     if(heroIs(o,"Barbarian"))v+=trophies(pl);
     pl.heroes.forEach(h=>{if(h!==o&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
-    if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?5:3;
+    if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
     if(o.name==="Radiant Sentinel"&&defOf(s,o)>=5)v+=2;
     if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2;
     if(heroIs(o,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre")v+=(x.ctr&&x.ctr.fury)||0});
@@ -349,7 +349,7 @@ function die(s,h){const pl=P(s,h.owner);h.fl.dyingDone=false;pl.t.died=(pl.t.die
       ask(s,pil.pid,`Pillage the Dead: ${e.name}`,hs.map(x=>({label:`Equip to ${x.name} (free)`,v:x.uid})).concat([{label:"Put it in your inventory",v:"inv"},{label:"Discard it",v:"disc"}]),"pillage",{uid:e.uid,name:"Pillage the Dead"})})}
   else gear.forEach(e=>toInv(s,h.owner,e));
   if(h.name==="Verdant Sage")makeSummon(s,h.owner,"Spectral Elk");
-  if(heroIs(h,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre"){x.ctr=x.ctr||{};if((x.ctr.fury||0)<3){x.ctr.fury=(x.ctr.fury||0)+1;log(s,`Warrior's Pyre gets a Fury counter (${x.ctr.fury}).`,h.owner)}}});
+  if(heroIs(h,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre"){x.ctr=x.ctr||{};if(true){x.ctr.fury=(x.ctr.fury||0)+1;log(s,`Warrior's Pyre gets a Fury counter (${x.ctr.fury}).`,h.owner)}}});
   s.p.forEach((_,i)=>overflow(s,i));
 }
 function toDisc(s,o){const owner=o.owner;if(o.tok)return;const pl=P(s,owner);pl.disc.push({uid:o.uid,id:o.id,owner})}

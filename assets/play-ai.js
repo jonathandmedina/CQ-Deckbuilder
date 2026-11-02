@@ -12,7 +12,7 @@ AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e
       const tmp=(h.mods||[]).reduce((n,m)=>n+(m.until==="dusk"&&m.str>0?m.str:0),0)+(pl.pm.str||0);
       const tv=s.phase==="battle"&&!h.ex?W.tmpStr*tmp:0;
       v+=W.alive+W.hp*st.hp+W.str*Math.min(Math.max(0,st.str-tmp),12)+tv+W.def*Math.min(st.def,8)+W.aura*st.aura+W.lvl*h.lvl+W.guard*(h.guard+h.eqGuard)+h.plus*.5;
-      v-=W.status*(h.st.burn+h.st.poison+h.st.wound+h.st.confuse)+W.stun*h.st.stun;
+      if(h.fat&&!h.fl.fatRested)v-=2.5;v-=W.status*(h.st.burn+h.st.poison+h.st.wound+h.st.confuse)+W.stun*h.st.stun;
       if(s.phase==="battle"&&E.noAttack(s,h))v+=1.5;
       v+=E.eqList(h).length*.6+h.ench.reduce((n,e)=>n+(e.owner===p?1:-1.5),0)});
     pl.bf.forEach(o=>{if(o.kind==="summon"){const hp=E.hp(s,o),mx=Math.max(1,E.maxHp(s,o));v+=(W.sum+W.sumStr*E.str(s,o))*(0.6+0.4*Math.min(1,hp/mx))+W.sumHp*hp+(s.phase==="battle"?0.5*Math.min(E.defn(s,o),hp):0)}else v+=W.pillar});

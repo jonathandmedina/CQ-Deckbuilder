@@ -125,15 +125,15 @@ def("To the Armory",{run(c){E.pushChoose(c.s,c.pid,{title:"To the Armory: choose
 def("Take a Stand",{run(c){draw(c,dfn(c,c.actor));c.actor.fl.standRound=c.s.round}});
 def("Noble Choice",M(2,[{label:"Summon a 2/3 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains Guard 2",t:[HERO],run:c=>{if(c.t[0]){c.t[0].guard+=2;log(c,`${c.t[0].name} gains Guard 2.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
 /* ===== Barbarian ===== */
-def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:3})}});
-def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:5})}});
+def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:2})}});
+def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:4})}});
 def("Blood Frenzy",{t:[cls("Barbarian")],run(c){if(!c.t[0])return;E.loseHp(c.s,c.t[0],4,"Blood Frenzy");buff(c.t[0],{str:2})}});
 def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buff(c.actor,{str:1});const h=c.t[0];if(c.actor.lvl>=3&&h&&dfn(c,h)<str(c,c.actor)){h.ex=true;log(c,`${h.name} is exhausted.`)}}});
 def("Battered",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
-def("Pummel",{t:[HERO],run(c){const n=living(c.me).filter(h=>h.cls==="Barbarian").length;D(c,c.t[0],dstr(c,c.actor,c.t[0])*n)}});
+def("Pummel",{t:[HERO],run(c){const n=living(c.me).filter(h=>h.cls==="Barbarian").length;D(c,c.t[0],dstr(c,c.actor,c.t[0])*n);exMe(c)}});
 def("Awestruck",{t:[t("any","Hero or summon with less STR",(s,o,x)=>x.actor&&E.str(s,o)<E.str(s,x.actor))],run(c){st(c,c.t[0],"stun")}});
 def("Bloodthirst",{t:[EN],run(c){c.actor.ex=false;attack(c,c.actor,c.t[0],{after:"readyIfKill"})}});
-def("Unstoppable",{t:[EN],run(c){attack(c,c.actor,c.t[0],{ignoreDef:true,noHidden:true})}});
+def("Unstoppable",{t:[EN],run(c){attack(c,c.actor,c.t[0],{noHidden:true})}});
 def("Beat Down",{run(c){buff(c.actor,{str:2});const tg=rand(c,enemies(c).filter(e=>!E.stealth(c.s,e)&&!E.noAttack(c.s,e)));attack(c,c.actor,tg,{after:"exhaustTarget"})}});
 def("On the Job Training",{run(c){const tg=rand(c,living(c.op).filter(e=>!E.stealth(c.s,e)&&!E.noAttack(c.s,e)));attack(c,c.actor,tg,{after:"levelIfDmg"})}});
 def("Bruised",{run(c){c.actor.fl.bruisedRound=c.s.round}});
@@ -353,7 +353,7 @@ hab("Dark Channeler",[{label:"Lose 4 HP: gain 3 Aura",can:(s,pid,a)=>a.lvl<3,run
 hab("Divine Knight",[{label:"Ally +2 DEF this turn",t:[AL],run:c=>buff(c.t[0],{def:2})},{label:"Ally +5 DEF this turn",lvl:3,cost:2,t:[AL],run:c=>buff(c.t[0],{def:5})}]);
 hab("Essence Reaper",[{label:"Stun target enemy",lvl:3,t:[EN],run:c=>st(c,c.t[0],"stun")}]);
 hab("Inspiration Herald",[{label:"Ready another ally",t:[t("ally","another ally",(s,o,x)=>o.uid!==x.actor.uid&&o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}}]);
-hab("Rage Brute",[{label:"Double STR until end of next round",run:c=>{E.addMod(c.actor,{mulStr:2,until:c.s.round+1});log(c,`${c.actor.name}'s STR is doubled.`)}}]);
+hab("Rage Brute",[{label:"Fatigue: +STR equal to its STR this turn",ex:false,can:(s,pid,a)=>!a.fat,run:c=>{const n=E.str(c.s,c.actor);c.actor.fat=1;buff(c.actor,{str:n});log(c,`${c.actor.name} gets a Fatigue counter and gains +${n} STR this turn (it won't ready at the next Dawn).`)}}]);
 hab("Rootbinder",[{label:"Summons +1 STR this turn",run:c=>{c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}}]);
 hab("Songweaver",[{label:"Ally +2 STR this turn",t:[AL],run:c=>buff(c.t[0],{str:2})}]);
 hab("Storm Caller",[{label:"Deal 2 damage to each enemy Hero",cost:2,can:(s,pid,a)=>a.lvl<3,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,2,{card:true}))},{label:"Deal 3 damage to each enemy Hero",lvl:3,cost:2,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,3,{card:true}))}]);
@@ -375,7 +375,7 @@ def("Smash and Grab",{t:[t("item","item to destroy",(s,o,x)=>o.kind!=="card"||o.
   run(c){c.t.filter(Boolean).forEach(o=>{destroy(c,o);E.trophy(c.s,c.actor.uid)});exMe(c)}});
 hid("Die Swinging","dying",(s,pid,tr)=>{const f=E.find(s,tr.hero);return f&&f.pid===pid&&E.heroIs(f.o,"Barbarian")},c=>{const h=E.find(c.s,c.trig.hero).o;
   const cs=E.candidates(c.s,c.pid,{k:"enemy"},{attack:true,actor:h}).map(u=>E.resolveTarget(c.s,u)).filter(Boolean);
-  E.ask(c.s,c.pid,`Die Swinging: ${h.name} attacks before it dies (ignores DEF)`,E.targetOpts(c.s,c.pid,cs,E.dmgStr(c.s,h)),"dieSwing",{att:h.uid,name:"Die Swinging"})});
+  const t2=rand(c,cs);if(t2){E.log(c.s,`⚔ ${h.name} attacks ${t2.name} (random enemy) as it falls.`,c.pid);E.damage(c.s,h,t2,E.dmgStr(c.s,h,t2),{combat:true,ignoreDef:true,srcName:"Die Swinging"})}});
 A.dieSwing=(s,pid,pr,v)=>{const a=E.find(s,pr.data.att);const t2=E.resolveTarget(s,v);if(!a||!t2)return;E.log(s,`⚔ ${a.o.name} attacks ${t2.name} as it falls.`,pid);E.damage(s,a.o,t2,E.dmgStr(s,a.o,t2),{combat:true,ignoreDef:true,srcName:"Die Swinging"})};
 /* Bard */
 song("Come Together",{x:{label:"Harmonize X: how many ready Heroes to exhaust",max:(s,pid)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex).length,free:true},run(c){

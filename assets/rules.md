@@ -475,7 +475,7 @@ There are five status counters. At Dawn, each damaging status deals its damage, 
 
 Some cards use other counters, such as +1/+1 counters, Petal counters, Campfire counters, Fury counters and Fatigue counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
 
-- **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Heavy Bow puts one on its Hero whenever that Hero becomes exhausted.)
+- **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Heavy Bow puts one on its Hero whenever that Hero becomes exhausted; Rage Brute’s “Fatigue:” ability puts one on itself.)
 
 ## 16. Equipment
 
@@ -703,6 +703,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Ready**: Upright. The Hero can act.
 - **Exhausted**: Turned 90° right. The Hero can't take any action (including playing cards and equipping) until readied. Some players call this “tapped”.
 - **Exhaust (as a cost)**: “Exhaust:” before an ability means turn the Hero sideways to use it.
+- **Fatigue (as a cost)**: “Fatigue:” before an ability means put a Fatigue counter on the Hero to use it. The Hero stays ready and can still act this turn, but it doesn’t ready at your next Dawn (remove the counter instead). A Hero that already has a Fatigue counter can’t pay this cost.
 - **Basic attack**: Choose any target, resolve on-attack triggers, exhaust, calculate damage, set HP.
 - **Combat damage**: Damage dealt by an attack.
 - **Level (action)**: Exhaust the Hero, raise its level by 1, draw a card. Once per round, max Level 6.

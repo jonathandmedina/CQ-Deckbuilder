@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 1, 2026 (update 16)*
+*Version: November 2, 2026 (update 18)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -110,7 +110,7 @@ Tokens are cards created by effects rather than drawn from your library, such as
 
 | Token | Kind | Stats | Aura to equip | Text | Made by |
 |---|---|---|---|---|---|
-| Dagger | Equipment (Rogue, One-Handed) | +1 STR | 0 | Equipped Hero gains +1 STR. | Armed, Quick Inventory, Blademaster’s Choice |
+| Dagger | Equipment (Rogue, One-Handed) | +1 STR | 0 | Equipped Hero gains +1 STR. | Armed, Blademaster’s Choice |
 | Viper Fang Dagger | Equipment (Rogue, One-Handed) | +1 STR | 1 | Equipped Hero gains +1 STR and Poisonous 1. | Ritual of Fang |
 | Doll | Item | 0 STR, 0 DEF, 5 HP | — | Takes an inventory slot. It can be targeted and dealt damage like a Hero. At 0 HP it is destroyed. | Mocking Doll |
 | Soldier | Summon | 2/3 | — | | Conscript, Noble Choice, Rally the Troops |
@@ -179,6 +179,7 @@ Gold is the treasure your party earns by surviving each round.
 - At Dusk, gain 1 Gold for each of your Heroes that isn’t dead. Summons don’t earn Gold.
 - Gold carries over from round to round.
 - Gold can only be spent in the Town Phase.
+- Some cards let you **steal** Gold (see “Stealing Gold” in Other Rules).
 
 ## 7. Setting Up
 
@@ -588,6 +589,10 @@ If you need to draw and your library is empty, shuffle your discard pile to make
 ### Taking Control (Steal)
 
 When an effect lets you steal or take control of an object, it stays under your control while it is in play. As soon as it changes zones (destroyed, discarded, exiled, returned to hand), it goes to its owner’s zone, not yours.
+
+### Stealing Gold
+
+“Steal X Gold” means the target party loses up to X Gold and you gain that much. If it has less than X, you take all of it. Gold can be stolen at any time, but it can still only be spent in the Town Phase.
 
 ### Targeting Face-Down Cards
 

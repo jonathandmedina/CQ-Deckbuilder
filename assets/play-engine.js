@@ -155,10 +155,10 @@ function spellDmg(s,pid,actor){const pl=P(s,pid);let n=2*pl.bf.filter(o=>o.name=
 E.spellDmg=spellDmg;
 function noAttack(s,o){return o&&o.kind==="hero"&&modHas(o,"noAttack")}
 E.noAttack=noAttack;
-function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
-function cardProof(s,o){return o.kind==="hero"&&(hasEqN(o,"Cloak of Shadow")||modHas(o,"untarget"))}
+function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth")||hasEqN(o,"Shadow Cloak"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
+function cardProof(s,o){return o.kind==="hero"&&(hasEqN(o,"Cloak of Protection")||hasEqN(o,"Cloak of Shadow")||modHas(o,"untarget"))}
 function poisonous(s,h){if(h.kind!=="hero")return 0;let n=0;if(h.name==="Dark Fang")n=Math.max(n,h.lvl>=3?3:1);
-  eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger"||(e.x&&e.x.poison))n=Math.max(n,1)});
+  eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger"||(e.x&&e.x.poison))n=Math.max(n,1);if(e.name==="Poison-Tipped Dagger")n=Math.max(n,2)});
   if(h.cls==="Rogue"&&P(s,h.owner).pm.poisonous)n=Math.max(n,1);return n}
 function lifelink(s,h){return h.kind==="hero"&&((h.name==="Radiant Oracle"&&h.lvl>=3)||hasEqN(h,"Ring of Radiance")||modHas(h,"lifelink"))}
 function guardEq(h){let g=0;eqList(h).forEach(e=>{if(/(^|\. |\n)Guard 1/.test(def(e).rules||"")||/Guard 1\./.test(def(e).rules||""))g+=1});return g}
@@ -313,7 +313,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
       if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
       if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,1)}
       if(src.fl.bruisedRound===s.round&&dealt>0&&tgt.st)addStatus(s,tgt,"wound",1);
-      if(o.combat&&hasEqN(src,"Poison-Tipped Dagger")&&dealt>0&&tgt.st)addStatus(s,tgt,"poison",2);
+      if(o.combat&&dealt>0){const th=eqList(src).filter(e=>e.name==="Thief's Dagger").length;if(th)stealGold(s,src.owner,ctrl(s,tgt),th,"Thief's Dagger")} /* update 18 */
       if(o.combat&&dealt>0)eqList(src).forEach(e=>{if(e.x&&e.x.stun&&tgt.st)addStatus(s,tgt,"stun",1)});
       if(o.combat&&dealt>0&&(hasEqN(src,"Hammer of Ruin")||hasEqN(src,"Hammer"))){const it=P(s,ctrl(s,tgt)).inv.find(x=>!x.fd&&x.kind!=="equip");if(it){destroyObj(s,it);trophy(s,src.uid)}}
     }
@@ -321,6 +321,9 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   }
   checkDeaths(s);return dealt}
 E.damage=damage;
+/* Steal X Gold (update 18): the target party loses up to X Gold and you gain that much */
+function stealGold(s,pid,from,n,why){if(from==null||from===pid)return 0;const fp=P(s,from),tp=P(s,pid);const g=Math.max(0,Math.min(n,fp.gold||0));fp.gold-=g;tp.gold+=g;log(s,`${why?why+": ":""}${tp.name} steals ${g} Gold from ${fp.name}.`,pid);return g}
+E.stealGold=stealGold;
 function removeStatus(s,o,n){let r=0;for(let i=0;i<n;i++){const k=STATUS.find(k=>o.st[k]>0);if(!k)break;o.st[k]--;r++}if(r)log(s,`${o.name}: ${r} status counter${r>1?"s":""} removed.`);return r}
 E.removeStatus=removeStatus;
 

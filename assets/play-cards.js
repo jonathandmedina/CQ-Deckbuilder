@@ -144,7 +144,7 @@ def("Campfire",{enter(c){c.inst.ctr={camp:3}}});
 def("Lose Control",{t:[cls("Barbarian")],run(c){if(c.t[0])c.t[0].fl.loseCtrlRound=c.s.round}});
 /* ===== Rogue ===== */
 def("Surprise Attack",{t:[ANY],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]),{ignoreDef:true})}});
-def("Toxic Cloud",{run(c){enemies(c).forEach(e=>st(c,e,"poison",e.st.poison>0?2:1))}});
+def("Toxic Cloud",{run(c){enemies(c).forEach(e=>st(c,e,"poison",1))}}); /* update 18 */
 def("Acceleration Agent",{t:[ANY],run(c){const o=c.t[0];if(o&&o.st){o.st.poison*=3;log(c,`${o.name} now has ${o.st.poison} Poison counters.`)}}});
 def("Spread the Sickness",{t:[ANY],run(c){const o=c.t[0];if(o&&o.st){o.st.poison*=2;log(c,`${o.name} now has ${o.st.poison} Poison counters.`)}}});
 def("Overdose",{t:[t("any","Poisoned target",(s,o)=>o.st&&o.st.poison>0)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
@@ -155,7 +155,7 @@ def("Quick Inventory",{run(c){E.toInv(c.s,c.pid,E.makeEqToken(c.s,c.pid,"Dagger"
 def("Ritual of Fang",{run(c){E.toInv(c.s,c.pid,E.makeEqToken(c.s,c.pid,"Viper Fang Dagger"));log(c,"A Viper Fang Dagger token goes to inventory.")}});
 def("Blademaster's Choice",Object.assign(M(2,[{label:"+1 additional STR",run:c=>{c._x.str=1}},{label:"Poisonous 1",run:c=>{c._x.poison=1}},{label:"Stun on combat damage",run:c=>{c._x.stun=1}}]),{run(c){const x={};c._x=x;(c.modes||[]).forEach(i=>this.modes.opts[i]&&this.modes.opts[i].run(c));const e=E.makeEqToken(c.s,c.pid,"Dagger",x);if(x.str)e.pstr+=1;E.toInv(c.s,c.pid,e);log(c,"A custom Dagger token goes to inventory.")}}));
 def("Resourceful Maneuver",{t:[cls("Rogue")],can:(s,pid)=>s.p[pid].disc.some(x=>/Dagger/.test(x.id||"")&&E.DB[x.id].kind==="equip"),run(c){const pl=c.me;const i=pl.disc.findIndex(x=>/Dagger/.test(x.id||"")&&E.DB[x.id].kind==="equip");if(i<0||!c.t[0])return;const card=pl.disc.splice(i,1)[0];E.equipTo(c.s,c.t[0],E.eqObjFromCard(c.s,c.pid,card))}});
-def("Broken Blade",{can:(s,pid,a)=>a&&E.eqList(a).some(e=>/Dagger/.test(e.name)),run(c){const d=daggers(c.actor)[0];if(d){destroy(c,d);c.actor.fl.twiceRound=c.s.round;c.actor.fl.twiceUsed=false}}});
+def("Broken Blade",{t:[t("allyHero","your Hero with a Dagger",(s,o)=>E.eqList(o).some(e=>/Dagger/.test(e.name)))],can:(s,pid)=>E.living(s.p[pid]).some(h=>E.eqList(h).some(e=>/Dagger/.test(e.name))),run(c){const h=c.t[0];if(!h)return;const d=daggers(h)[0];if(d){destroy(c,d);h.ex=false;log(c,`${h.name} readies.`)}}}); /* update 18 */
 def("Flick Dagger",{can:(s,pid,a)=>a&&E.eqList(a).some(e=>/Dagger/.test(e.name)),run(c){const d=daggers(c.actor)[0];if(!d)return;destroy(c,d);const n=dstr(c,c.actor);enemies(c).forEach(e=>D(c,e,n))}});
 def("Death by a Thousand Cuts",{t:[ANY],run(c){let n=0;enemies(c).forEach(e=>n+=e.st.poison);living(c.me).filter(h=>h.cls==="Rogue").forEach(h=>n+=daggers(h).length);D(c,c.t[0],n);exMe(c)}});
 def("Cut Off",{t:[EHERO],run(c){const h=c.t[0];if(!h)return;const pl=c.s.p[h.owner];pl.heroes.splice(pl.heroes.indexOf(h),1);pl.heroes.push(h);log(c,`${h.name} is moved to the Closer position.`);attack(c,c.actor,h)}});
@@ -337,6 +337,8 @@ hid("Out of the Woods","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);re
 hid("Fade the Fury","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);const a=atkr(s,trig);return t2&&t2.o.kind==="hero"&&E.heroIs(t2.o,"Rogue")&&a&&a.o.kind==="hero"&&E.str(s,a.o)>=3},c=>{c.mods.cancel=true});
 hid("Shelter from the Storm",["attack","card"],(s,pid,trig)=>s.p[pid].bf.some(o=>o.kind==="summon"),c=>{c.me.t.shelter=true;summons(c.me).forEach(o=>{o.ex=true});log(c,"Summons can't be destroyed this turn and are exhausted.")});
 hid("Cancel","card",null,c=>{c.mods.cancel=true});
+/* Burgle (update 18): only while every opposing Hero that isn't dead is exhausted */
+hid("Burgle",["attack","card","afterDmg","party10","dusk"],(s,pid)=>{const op=E.living(s.p[1-pid]);return op.length>0&&op.every(h=>h.ex)&&(s.p[1-pid].gold||0)>0},c=>{E.stealGold(c.s,c.pid,1-c.pid,5,"Burgle")});
 hid("Narrow Escape","card",(s,pid,trig)=>trig.card&&trig.cost>=3&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"&&E.heroIs(f.o,"Rogue")}),c=>{c.mods.cancel=true});
 hid("Camouflage","card",(s,pid,trig)=>/Spell|Tactic/.test(trig.type||"")&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"}),c=>{const hs=(c.trig.targets||[]).map(u=>E.find(c.s,u)).filter(f=>f&&f.pid===c.pid&&f.o.kind==="hero");c.mods.prevent=(c.mods.prevent||[]).concat(hs.map(f=>f.o.uid));hs.forEach(f=>E.addMod(f.o,{untarget:1}))});
 hid("Timely Heals",["party10","attack","card"],(s,pid)=>(s.p[pid].t.took||0)>=10,c=>{living(c.me).forEach(h=>E.heal(c.s,c.actor,h,4,c.pid))});

@@ -44,7 +44,7 @@ const RAW_CARDS=[
 [2, "Boost Ritual", "2", "", "Spell", "", "Mage", "Conjure a Spell Damage Pillar. Exhaust this Hero.", 1],
 [1, "Brain Rot", "1", "", "Tactic", "", "Warlock", "Target player reveals their hand. Choose and discard any Tactic or Spell.", 1],
 [2, "Breath", "0", "", "Tactic", "Combo", "Monk", "Scry 1. Combo.", 1],
-[2, "Broken Blade", "1", "", "Tactic", "", "Rogue", "Destroy a Dagger equipped to this Hero. This Hero may attack twice this turn.", 1],
+[2, "Broken Blade", "1", "", "Tactic", "", "Rogue", "Destroy a Dagger equipped to a Hero you control. You may ready that Hero.", 2],
 [2, "Bruised", "1", "", "Tactic", "", "Barbarian", "This turn, whenever this Hero deals damage, you may Wound that target.", 2],
 [2, "Brute's Banner", "2", "", "Item", "Relic", "Barbarian", "At Dawn, your Barbarian with the highest STR gains +2 STR this turn.", 1],
 [2, "Bullseye", "1", "", "Tactic", "", "Ranger", "The next Arrow you activate this turn ignores DEF.", 1],
@@ -95,6 +95,7 @@ const RAW_CARDS=[
 [2, "Evolve", "4", "", "Tactic", "", "Druid", "Exile up to two summons you control. Summon copies of them with +1 STR and +1 HP. Exhaust this Hero.", 1],
 [2, "Exile", "4", "", "Tactic", "", "Generic", "Exile target non-Hero object.", 1],
 [2, "Extra Protection", "0", "", "Tactic", "", "Paladin", "This Hero gains Guard 1 this turn.", 1],
+[2, "Burgle", "0", "Hidden", "Tactic", "", "Rogue", "2{A}: Activate only if every opposing Hero that isn't dead is exhausted. Steal up to 5 Gold from target opposing party.", 1],
 [2, "Fade the Fury", "0", "Hidden", "Tactic", "", "Rogue", "1{A}: If a Rogue would be attacked by a Hero with 3 or more STR, cancel that attack.", 1],
 [2, "False Cure", "0", "", "Item", "Consumable", "Cleric", "1{A}: If target Hero would be healed, it loses that much HP instead.", 1],
 [1, "Farewell", "4", "Legendary", "Tactic", "", "Generic", "Destroy all non-Hero objects. Exhaust your party.", 1],
@@ -198,7 +199,6 @@ const RAW_CARDS=[
 [2, "Pump", "1", "", "Tactic", "", "Barbarian", "Target Barbarian gains +2 STR this turn.", 2],
 [2, "Purify", "1", "", "Tactic", "", "Cleric", "Remove 1 status counter from target ally and heal it 1 HP.", 1],
 [2, "Quick Change", "2", "", "Tactic", "", "Generic", "Move an Equipment from a Hero you control to another Hero you control. (You don't pay its Aura cost.)", 1],
-[2, "Quick Inventory", "1", "", "Tactic", "", "Rogue", "Create a Dagger token.", 1],
 [2, "Quickdraw", "3", "", "Tactic", "", "Ranger", "Look at the top 3 cards of your library. You may put any number of Arrow cards from among them into your inventory. Exhaust this Hero.", 1],
 [2, "Radiant Strike", "3", "", "Tactic", "", "Paladin", "Deal 3 Light damage, or 5 if this Hero has a Sword equipped. Exhaust this Hero.", 2],
 [2, "Rally the Troops", "5", "", "Tactic", "", "Paladin", "Summon two 2/3 Soldiers. Exhaust this Hero.", 3],
@@ -275,7 +275,7 @@ const RAW_CARDS=[
 [1, "Tooth Crystal", "3", "Legendary", "Item", "", "Generic", "Summons you control have +1 STR.", 1],
 [2, "Tooth or Horn", "2", "", "Tactic", "", "Druid", "Choose one: A friendly summon gains +3 STR or +3 DEF this turn.", 1],
 [2, "Topaz", "1", "", "Item", "Gemstone", "Generic", "At Dawn, you may exile this and exhaust a Hero to gain 2 Aura.", 1],
-[2, "Toxic Cloud", "3", "", "Tactic", "", "Rogue", "Poison each enemy. Enemies that were already Poisoned are Poisoned twice instead.", 2],
+[2, "Toxic Cloud", "3", "", "Tactic", "", "Rogue", "Poison each enemy.", 3],
 [1, "Tri-Shot", "0", "Legendary", "Item", "Arrow", "Ranger", "4{A}: Deal 5 damage to the first Hero, 3 damage to the second Hero and 1 damage to the third Hero in target opposing party. This damage ignores DEF.", 1],
 [2, "Trophy Rack", "4", "", "Item", "Relic", "Barbarian", "Whenever a Barbarian you control destroys an item or Equipment, put a Trophy counter on Trophy Rack (max 3). Barbarians you control have +1 STR for each Trophy counter.", 2],
 [2, "Unburden", "2", "", "Tactic", "", "Paladin", "This Hero loses all its DEF this turn and gains that much STR this turn.", 1],
@@ -388,7 +388,7 @@ const RAW_EQUIP=[
 ["Celestial Harp", "", "Instrument", "Bard", "When you play your second Song each turn, heal your party for 1 HP.", "1", "Two-Handed", "0", "0", 1],
 ["Chalice of Life", "", "Weapon", "Cleric", "At Dawn, heal all Heroes in your party for 1 HP.", "3", "Two-Handed", "0", "0", 1],
 ["Chest Plate of Riverstead", "", "Armor", "Generic", "Equipped Hero gains +1 DEF.", "1", "Chest", "0", "1", 1],
-["Cloak of Shadow", "", "Accessory", "Generic", "This Hero can't be the target of cards or abilities.", "3", "Accessory", "0", "0", 1],
+["Cloak of Protection", "", "Accessory", "Generic", "This Hero can't be the target of cards or abilities.", "3", "Accessory", "0", "0", 2],
 ["Dagger of Riverstead", "", "Weapon", "Generic", "Equipped Hero gains +1 STR.", "1", "One-Handed", "1", "0", 1],
 ["Drums of War", "", "Instrument", "Bard", "Other Heroes in your party gain +1 STR while this Hero is ready.", "1", "Two-Handed", "0", "0", 1],
 ["Feather Blade", "Legendary", "Weapon", "Rogue", "Equipped Hero gains +1 STR.", "0", "One-Handed", "1", "0", 1],
@@ -402,21 +402,24 @@ const RAW_EQUIP=[
 ["Jun Lao's Headband", "Legendary", "Armor", "Monk", "When you trigger Combo, look at the top two cards of your library instead of one.", "2", "Head", "0", "0", 1],
 ["Knight's Sword", "", "Weapon", "Paladin", "Sword. Equipped Hero gains +2 STR and Guard 1.", "3", "One-Handed", "2", "0", 1],
 ["Leg Armor of Riverstead", "", "Armor", "Generic", "Equipped Hero gains +1 DEF.", "1", "Legs", "0", "1", 1],
+["Long Dagger", "", "Weapon", "Rogue", "Equipped Hero gains +2 STR.", "2", "One-Handed", "2", "0", 1],
 ["Long Sword", "", "Weapon", "Generic", "Equipped Hero gains +4 STR.", "3", "Two-Handed", "4", "0", 1],
 ["Longbow", "", "Weapon", "Ranger", "Equipped Hero gains +1 DEF. Arrows it activates deal +1 damage.", "3", "Two-Handed", "0", "1", 2],
 ["Mace of Dawn", "", "Weapon", "Cleric", "Equipped Hero gains +1 STR. Whenever it attacks, heal any target for 1 HP.", "2", "One-Handed", "1", "0", 1],
 ["Mystic Quiver", "", "Accessory", "Ranger", "Arrows the equipped Hero activates cost 1 less Aura to activate.", "3", "Accessory", "0", "0", 2],
-["Poison-Tipped Dagger", "", "Weapon", "Rogue", "When this Hero deals combat damage, Poison the defending target twice.", "2", "One-Handed", "0", "0", 2],
+["Poison-Tipped Dagger", "", "Weapon", "Rogue", "Equipped Hero has Poisonous 2.", "2", "One-Handed", "0", "0", 3],
 ["Ring of Power", "", "Accessory", "Mage", "Equipped Hero gains +2 Spell Damage.", "3", "Accessory", "0", "0", 1],
 ["Ring of Radiance", "Legendary", "Accessory", "Cleric", "Equipped Hero gains Lifelink.", "2", "Accessory", "0", "0", 1],
 ["Ring of Riverstead", "", "Accessory", "Generic", "Equipped Hero gains +1 DEF.", "1", "Accessory", "0", "1", 1],
 ["Ring of Vocation", "", "Accessory", "Generic", "As you equip this, choose a class. The equipped Hero is that class in addition to its own.", "2", "Accessory", "0", "0", 1],
 ["Ritual Athame", "", "Weapon", "Warlock", "Equipped Hero gains +1 STR. Once per turn, when you lose HP to pay a cost, deal 1 Dark damage to any target.", "1", "One-Handed", "1", "0", 1],
 ["Sacred Vestments", "", "Armor", "Cleric", "Equipped Hero gains +1 DEF. Healing it does is increased by 1.", "2", "Chest", "0", "1", 1],
+["Shadow Cloak", "", "Accessory", "Rogue", "The equipped Hero has Stealth.", "3", "Accessory", "0", "0", 1],
 ["Shillelagh", "", "Weapon", "Druid", "Equipped Hero gains +1 STR. Exhaust a summon you control: This Hero gains +1 STR this turn.", "1", "One-Handed", "1", "0", 1],
 ["Silver Fiddle", "", "Instrument", "Bard", "Song cards played by the equipped Hero cost 1 less Aura.", "3", "Two-Handed", "0", "0", 1],
 ["Sword of Eliazar", "Legendary", "Weapon", "Paladin", "Equipped Hero gains +5 STR. When this is destroyed while equipped, summon a 3/5 Eliazar.", "3", "Two-Handed", "5", "0", 3],
 ["Sword of Riverstead", "", "Weapon", "Generic", "Equipped Hero gains +2 STR.", "2", "One-Handed", "2", "0", 1],
+["Thief's Dagger", "", "Weapon", "Rogue", "Equipped Hero gains +1 STR. Whenever this Hero deals combat damage, steal 1 Gold from the defending player's party.", "2", "One-Handed", "1", "0", 1],
 ["Tower Shield", "", "Armor", "Paladin", "Equipped Hero gains +2 DEF.", "2", "One-Handed", "0", "2", 1],
 ["Unpiercing Chestplate", "", "Armor", "Paladin", "Attacks and cards with Piercing that target the equipped Hero lose Piercing.", "1", "Chest", "0", "0", 1],
 ["Vambrace of Light", "", "Armor", "Paladin", "Guard 1.", "1", "Arms", "0", "0", 1],
@@ -426,7 +429,7 @@ const RAW_EQUIP=[
 ["Heavy Bow", "", "Weapon", "Ranger", "Arrows the equipped Hero activates deal double damage. Whenever this Hero becomes exhausted, put a Fatigue counter on it.", "4", "Two-Handed", "0", "0", 1],
 ];
 const RAW_TOKENS=[
-["Dagger", "Equipment", "Weapon", "Rogue", "1", "0", "", "0", "One-Handed", "Equipped Hero gains +1 STR.", "Armed; Quick Inventory; Blademaster's Choice", 1],
+["Dagger", "Equipment", "Weapon", "Rogue", "1", "0", "", "0", "One-Handed", "Equipped Hero gains +1 STR.", "Armed; Blademaster's Choice", 1],
 ["Viper Fang Dagger", "Equipment", "Weapon", "Rogue", "1", "0", "", "1", "One-Handed", "Equipped Hero gains +1 STR and Poisonous 1.", "Ritual of Fang", 1],
 ["Doll", "Item", "", "Generic", "0", "0", "5", "0", "", "Takes an inventory slot. It can be targeted and dealt damage like a Hero. At 0 HP it is destroyed.", "Mocking Doll", 1],
 ["Soldier", "Summon", "Soldier", "Paladin", "2", "", "3", "0", "", "", "Conscript; Noble Choice; Rally the Troops", 3],
@@ -449,12 +452,13 @@ const RAW_TOKENS=[
 ["Spell Damage Pillar", "Pillar", "", "Mage", "", "", "", "0", "", "Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves.", "Boost Ritual; Volt Jab; Lightning Lance; Lightning Rod; Ritual of Power; Splitting Ritual; Doubling Ritual", 2],
 ["Pain Pillar", "Pillar", "", "Warlock", "", "", "", "0", "", "At Dusk, target loses X HP, where X is the number of Pain Pillars you control.", "Dark Insight; Ritual of Pain; Splitting Ritual; Doubling Ritual", 1]
 ];
-const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Quick Inventory": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
+const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
-const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves"};
+const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection"};
 
 /* Deprecated cards: removed from play, kept for the record and so old saved games still load. Same row format as RAW_CARDS.
    Decks that contain one are flagged as not legal; they don't appear in the card list, deck builder or prints. */
 const DEPRECATED_CARDS=[
-[2, "Pop Rocks", "6", "", "Spell", "", "Mage", "Deal 1 damage to all enemies three times. Exhaust this Hero.", 1]];
+[2, "Pop Rocks", "6", "", "Spell", "", "Mage", "Deal 1 damage to all enemies three times. Exhaust this Hero.", 1],
+[2, "Quick Inventory", "1", "", "Tactic", "", "Rogue", "Create a Dagger token.", 1]];

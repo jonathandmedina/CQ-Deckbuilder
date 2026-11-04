@@ -127,7 +127,7 @@ function strOf(s,o,vs){
     let v=b+o.bon.str+o.plus+modSum(o,"str")+(pl.pm.str||0);
     eqList(o).forEach(e=>v+=e.pstr||0);
     if(heroIs(o,"Barbarian"))v+=trophies(pl);
-    pl.heroes.forEach(h=>{if(h!==o&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
+    pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
     if(o.name==="Radiant Sentinel"&&defOf(s,o)>=5)v+=2;
     if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2;
@@ -164,13 +164,13 @@ E.spellDmg=spellDmg;
 function noAttack(s,o){return o&&o.kind==="hero"&&modHas(o,"noAttack")}
 E.noAttack=noAttack;
 function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth")||hasEqN(o,"Shadow Cloak"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
-function cardProof(s,o){return o.kind==="hero"&&(hasEqN(o,"Cloak of Protection")||hasEqN(o,"Cloak of Shadow")||modHas(o,"untarget"))}
+function cardProof(s,o,enemy){return o.kind==="hero"&&(eqList(o).some(e=>(e.name==="Cloak of Protection"||e.name==="Cloak of Shadow")&&(!isUp(s,e)||enemy!==false))||modHas(o,"untarget"))}
 function poisonous(s,h){if(h.kind!=="hero")return 0;let n=0;if(h.name==="Dark Fang")n=Math.max(n,h.lvl>=3?3:1);
   eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger"||(e.x&&e.x.poison))n=Math.max(n,1);if(e.name==="Poison-Tipped Dagger")n=Math.max(n,isUp(s,e)?3:2)});
   if(h.cls==="Rogue"&&P(s,h.owner).pm.poisonous)n=Math.max(n,1);return n}
 function lifelink(s,h){return h.kind==="hero"&&((h.name==="Radiant Oracle"&&h.lvl>=3)||hasEqN(h,"Ring of Radiance")||modHas(h,"lifelink"))}
 /* Guard from one piece of equipment (upgraded Knight's Sword: Guard 2). before=true: the value before its upgrade */
-function eqGuardOf(s,e,before){if(!before&&e.name==="Knight's Sword"&&isUp(s,e))return 2;const r=def(e).rules||"";return(/(^|\. |\n)Guard 1/.test(r)||/Guard 1\./.test(r))?1:0}
+function eqGuardOf(s,e,before){const d=def(e);const r=(!before&&d.up&&isUp(s,e)?d.up.rules:d.rules)||"";const m=/(?:^|\. |\n|and )Guard (\d+)/.exec(r);return m?+m[1]:0}
 function guardEq(h,s){let g=0;eqList(h).forEach(e=>{g+=s?eqGuardOf(s,e):eqGuardOf({},e,true)});return g}
 E.guardEq=guardEq;E.hasEq=hasEqN;E.living=living;E.invHas=invHas;E.invCount=invCount;E.P=P;E.cardProof=cardProof;E.heroByUid=(s,u)=>heroByUid(s,u);E.poisonous=poisonous;E.lifelink=lifelink;E.stealth=stealth;
 
@@ -317,7 +317,8 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before Guard/DEF)`:""}.`);
   if(dealt>0&&tgt.kind==="hero"){const tp=P(s,tgt.owner);const before=tp.t.took||0;tp.t.took=before+dealt;if(before<10&&tp.t.took>=10&&s.phase==="battle"){s.trig10=(s.trig10||[]).concat([tgt.owner])}if(tgt.fl.loseCtrlRound===s.round){if(hpOf(s,tgt)<1)tgt.dmg=maxHp(s,tgt)-1;tgt.ex=false}}
   if(src&&!o.noTrig){
-    if(dealt>0&&lifelink(s,src))heal(s,src,src,dealt);
+    if(dealt>0&&lifelink(s,src)){const room=src.kind==="hero"?Math.min(dealt,src.dmg||0):dealt;heal(s,src,src,dealt);
+      if(src.kind==="hero"&&hasUpN(s,src,"Ring of Radiance")&&dealt>room){const t=living(P(s,src.owner)).filter(h=>h!==src&&h.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(t)heal(s,src,t,dealt-room)}}
     const pz=o.poisonous==="dmg"?dealt:poisonous(s,src);if(pz&&tgt.st)addStatus(s,tgt,"poison",pz); /* update 16: Poisonous stacks (Poison the target X times) */
     if(src.kind==="hero"){
       if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
@@ -450,7 +451,7 @@ E.cardCost=cardCost;
 function consumeCostFlags(s,pid,actor,d){const pl=P(s,pid);
   if(d.cls==="Mage"&&pl.fl.mageNext)pl.fl.mageNext=false;
   if(d.sub==="Trap"&&pl.fl.trapNext)pl.fl.trapNext=false;
-  if(d.type==="Summon"&&actor&&hasEqN(actor,"Antler Crown"))actor.fl.antler=s.round;
+  if(d.type==="Summon"&&actor&&hasEqN(actor,"Antler Crown")){if(actor.fl.antler!==s.round&&hasUpN(s,actor,"Antler Crown"))pl.t.nextBark=(pl.t.nextBark||0)+1;actor.fl.antler=s.round}
   /* Petal Shrine waits for a Combo card it can actually make cheaper */
   if(d.sub==="Combo"&&pl.fl.petalDisc&&(d.cost==="X"||num(d.cost)>0))pl.fl.petalDisc=false}
 
@@ -483,12 +484,14 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
   list=list.filter(o=>{
     if(o.kind==="hero"&&isEnemy(o)&&stealth(s,o)&&!o.dead&&viaCard)return false;
     if(!viaCard&&o.kind==="hero"&&isEnemy(o)&&modHas(o,"noAttack"))return false; /* Levitate: can't be attacked this turn */ /* Stealth: can't be targeted by enemy cards or abilities, but can be attacked */
-    if(viaCard&&cardProof(s,o))return false;
+    if(viaCard&&cardProof(s,o,isEnemy(o)))return false;
     if(viaCard&&o.kind==="card"&&/can't be targeted/i.test(def(o).rules||"")&&def(o).type==="Item")return false; /* Arrow of Craftsmanship */
     if(spec.f&&!spec.f(s,o,ctx))return false;return true});
   /* Dazzling Melody: enemies must target the taunting Hero with attacks, cards and abilities (when it is a legal choice) */
   const op=P(s,opp(pid));const taunt=op.heroes.find(h=>!h.dead&&h.fl.tauntRound===s.round);
   if(taunt&&list.some(o=>o.uid===taunt.uid)&&list.some(o=>isEnemy(o)))list=list.filter(o=>!isEnemy(o)||o.uid===taunt.uid);
+  /* upgraded Breastplate of Bravery: opposing attacks must target the equipped Hero (attacks only) */
+  if(!viaCard){const bb=op.heroes.find(h=>!h.dead&&hasUpN(s,h,"Breastplate of Bravery"));if(bb&&list.some(o=>o.uid===bb.uid))list=list.filter(o=>!isEnemy(o)||o.uid===bb.uid)}
   return list.map(o=>o.uid)}
 E.candidates=candidates;
 function resolveTarget(s,t){if(typeof t==="string"&&t[0]==="P")return{kind:"player",pid:+t.slice(1),name:s.p[+t.slice(1)].name};const f=find(s,t);return f?f.o:null}
@@ -848,8 +851,12 @@ function resolveCont(s,pid,cont,mods){
   if(d.type==="Spell"){living(pl).forEach(h=>{if(h.name==="Diviner Mage")pushScry(s,pid,1)})}
   if(d.type==="Song"&&actor&&!actor.dead&&heroIs(actor,"Bard")){living(pl).filter(h=>h.name==="Harmony Sage").forEach(hs=>heal(s,hs,actor,1,pid))}
   if(d.type==="Song"){if(invHas(pl,"The Forbidden Tuner")){const t=bestDamageTarget(s,pid,1,{pierce:1});if(t)damage(s,{name:"The Forbidden Tuner"},t,1,{pierce:1,card:true})}
-    if(actor&&hasEqN(actor,"War Lute")){const t=autoTarget(s,pid,"strAlly");if(t)addMod(t,{str:1})}
-    if(actor&&hasEqN(actor,"Celestial Harp")&&pl.t.songs===2)living(pl).forEach(h=>heal(s,actor,h,1))}
+    if(actor&&hasEqN(actor,"War Lute")){const t=autoTarget(s,pid,"strAlly");if(t)addMod(t,{str:hasUpN(s,actor,"War Lute")?2:1})}
+    if(actor&&hasEqN(actor,"Celestial Harp")&&pl.t.songs===2)living(pl).forEach(h=>heal(s,actor,h,1));
+    if(actor&&hasUpN(s,actor,"Celestial Harp")&&pl.t.songs===1){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,actor,t,1)}
+    if(actor&&hasUpN(s,actor,"Silver Fiddle")&&actor.fl.fiddleRound!==s.round){actor.fl.fiddleRound=s.round;log(s,"Upgraded Silver Fiddle: draw a card.",pid);draw(s,pid,1)}}
+  /* upgraded Jun Lao's Headband: whenever you play a Combo card, the equipped Hero gains +1 STR this turn */
+  if(d.sub==="Combo"||E.hasCombo(d))living(pl).forEach(h=>{if(hasUpN(s,h,"Jun Lao's Headband")){addMod(h,{str:1});log(s,`Jun Lao's Headband: ${h.name} +1 STR this turn.`,pid)}});
   if(d.sub==="Combo"&&actor&&actor.name==="Sage Monk"&&!actor.dead&&actor.fl.sageRound!==s.round&&pl.lib.length){actor.fl.sageRound=s.round;log(s,"Sage Monk: first Combo card this turn, Scry 1.",pid);pushScry(s,pid,1)}
   if(E.hasCombo(d)){const added=s.pend.length-pend0;
     /* Combo waits until the card's own Scry/choice prompts are answered */
@@ -859,7 +866,7 @@ function resolveCont(s,pid,cont,mods){
 ASK.lightningRod=(s,pid,pr,v)=>{if(v==null)return;const h=heroByUid(s,v);if(!h||h.ex)return;h.ex=true;log(s,`Lightning Rod: ${h.name} is exhausted.`,pid);makePillar(s,pid,"Spell Damage Pillar")};
 ASK.splitKick=(s,pid,pr,v)=>{if(v==null)return;copyCard(s,pid,pr.data.actor,pr.data.id,[v].concat(pr.data.rest||[]),pr.data.modes,pr.data.x)};
 function arrowBonus(s,pid,actor){const pl=P(s,pid);let b=0,ign=false,pierce=0;
-  if(actor){if(actor.name==="Hawkeye")b+=actor.lvl>=6?2:actor.lvl>=3?1:0;if(hasEqN(actor,"Longbow"))b+=hasUpN(s,actor,"Longbow")?2:1;if(hasUpN(s,actor,"Heavy Bow"))pierce+=1}
+  if(actor){if(actor.name==="Hawkeye")b+=actor.lvl>=6?2:actor.lvl>=3?1:0;if(hasEqN(actor,"Longbow"))b+=hasUpN(s,actor,"Longbow")?2:1;if(hasUpN(s,actor,"Mystic Quiver")&&actor.fl.quiverRound!==s.round){actor.fl.quiverRound=s.round;b+=1}if(hasUpN(s,actor,"Heavy Bow"))pierce+=1}
   const n=pl.fl.arrowNext;if(n){b+=n.dmg||0;if(n.ign)ign=true}
   if(pl.fl.rapidPierce)pierce+=1;pierce+=pl.fl.multiPierce||0;b+=pl.fl.multi||0;
   return{dmg:b,ignoreDef:ign,pierce,mult:actor&&hasEqN(actor,"Heavy Bow")?2:1}}
@@ -910,7 +917,7 @@ function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);let tgt=resolve
   if(mods.stepIn&&mods.stepIn.from===cont.tgt){const p=find(s,mods.stepIn.to);if(p&&!p.o.dead){log(s,`${p.o.name} steps in and takes the attack.`);tgt=p.o}}
   let str=(o.band?bandTotal(s,att,o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o).filter(m=>!m.dead),tgt):dmgStr(s,att,tgt))+(mods.str||0)+(o.str||0);
   if(att.kind==="hero"&&att.name==="Skullcrusher"&&att.attacks===2)str+=3;
-  let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0)+(att.kind==="hero"?eqList(att).filter(e=>isUp(s,e)&&(e.name==="Sword of Riverstead"||e.name==="Long Dagger")).length:0);
+  let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0)+(att.kind==="hero"?eqList(att).filter(e=>isUp(s,e)&&(e.name==="Sword of Riverstead"||e.name==="Long Dagger"||e.name==="Shadow Cloak")).length:0);
   const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att));
   let dealt=0;
   if(mods.noDamage){log(s,`The attack deals no damage.`)}
@@ -927,7 +934,7 @@ function postAttack(s,pid,cont,dealt){const f=find(s,cont.att);const o=cont.o||{
     if(att.fl.runBackRound===s.round&&!att.fl.runBackUsed){att.fl.runBackUsed=true;att.ex=false;log(s,`Run It Back: ${att.name} readies.`,pid)}
     if(att.fl.twiceRound===s.round&&!att.fl.twiceUsed){att.fl.twiceUsed=true;att.ex=false;log(s,`${att.name} may attack again.`,pid)}
     if(att.fl.loseCtrlRound===s.round){}
-    if(dealt>0&&tgt&&tgt.kind==="hero"&&hasEqN(att,"Gauntlets of Growth")&&att.fl.gauntRound!==s.round&&att.lvl<6){att.fl.gauntRound=s.round;levelUp(s,att,"str");att.ex=true}}
+    if(dealt>0&&tgt&&tgt.kind==="hero"&&hasEqN(att,"Gauntlets of Growth")&&att.fl.gauntRound!==s.round&&att.lvl<6){att.fl.gauntRound=s.round;levelUp(s,att,"str");if(!hasUpN(s,att,"Gauntlets of Growth"))att.ex=true}}
   checkDeaths(s)}
 
 /* ---------- scry / choose prompts ---------- */

@@ -633,7 +633,7 @@ async function exportPnP(d,mode){mode=mode||"all";const plan=printPlan(d);
     const toks=tokensFor(d);
     if(toks.length){y+=half*0.22+0.2;pdf.setFont("helvetica","bold");pdf.text("Tokens to print",0.75,y);pdf.setFont("helvetica","normal");y+=0.25;
       const th=Math.ceil(toks.length/2);toks.forEach((t,i)=>pdf.text(`${t.q} ${t.c.name} (${tokenStatLine(t.c)})`,i<th?0.9:4.5,y+(i%th)*0.22));}
-    pdf.setFontSize(9);pdf.setTextColor(90);pdf.text("Print at 100% (no scaling). Cut on the gray lines. Cards are 2.5 x 3.5 in, standard sleeve size. Upgraded weapon sides (marked with a star) print after the deck: sleeve each behind its weapon and flip it when you upgrade at the Blacksmith. The last page has optional card backs.",0.75,10.4,{maxWidth:7});pdf.setTextColor(0);
+    pdf.setFontSize(9);pdf.setTextColor(90);pdf.text("Print at 100% (no scaling). Cut on the gray lines. Cards are 2.5 x 3.5 in, standard sleeve size. Upgraded equipment sides (marked with a star) print after the deck: sleeve each behind its card and flip it when you upgrade at the Blacksmith. The last page has optional card backs.",0.75,10.4,{maxWidth:7});pdf.setTextColor(0);
     const cards=mode==="upd"?plan.upd:plan.all,cache=new Map();
     if(mode==="upd"){pdf.setFontSize(10);pdf.text("This printing only has cards updated since "+(plan.rec?new Date(plan.rec.at).toLocaleDateString():"the last print")+": "+[...new Set([...plan.upd,...plan.updToks].map(c=>c.name+" (v"+(c.ver||1)+")"))].join(", "),0.75,9.6,{maxWidth:7});pdf.setFontSize(11)}
     const W=750,H=1050,mx=0.5,my=0.25,cw=2.5,ch=3.5;
@@ -641,7 +641,7 @@ async function exportPnP(d,mode){mode=mode||"all";const plan=printPlan(d);
     const page=(items,getImg)=>{pdf.addPage();items.forEach((c,i)=>{const x=mx+(i%3)*cw,yy=my+Math.floor(i/3)*ch;pdf.addImage(getImg(c),"JPEG",x,yy,cw,ch,undefined,"FAST")});
       pdf.setDrawColor(170);pdf.setLineWidth(0.005);for(let i=0;i<=3;i++){pdf.line(mx+i*cw,0,mx+i*cw,11);pdf.line(0,my+i*ch,8.5,my+i*ch)}};
     for(let i=0;i<cards.length;i+=9){page(cards.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
-    /* upgraded weapon sides (update 19): one per copy, sleeve it behind the weapon and flip when you upgrade */
+    /* upgraded equipment sides (updates 19-20): one per copy, sleeve it behind the card and flip when you upgrade */
     const ups=cards.filter(c=>c.up).map(upFace);
     for(let i=0;i<ups.length;i+=9){page(ups.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
     const tokCards=mode==="upd"?plan.updToks:plan.toks;

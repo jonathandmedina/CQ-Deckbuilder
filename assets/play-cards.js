@@ -473,7 +473,7 @@ hab("Hexcaster",[{label:"Lose 2 HP: opponents can't use Consumable items this tu
 /* Equipment with a colon ability (uses the Hero's action) */
 const EQ2=root.CQ_EQACT=root.CQ_EQACT||{};
 EQ2["Shillelagh"]={label:"Exhaust a summon: +1 STR this turn",t:[t("allySummon","ready summon to exhaust",(s,o)=>!o.ex)],can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&!o.ex),run:c=>{const sm=c.t[0];if(!sm||sm.ex)return;sm.ex=true;buff(c.actor,{str:1});log(c,`${sm.name} is exhausted; ${c.actor.name} gains +1 STR this turn.`)}};
-EQ2["Helm of Aura"]={label:"Sacrifice: gain 1 Aura",run:c=>{destroy(c,c.inst);c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)}};
+EQ2["Helm of Aura"]={label:"Sacrifice: gain Aura (2 if upgraded)",run:c=>{const n=E.isUp(c.s,c.inst)?2:1;destroy(c,c.inst);c.me.aura+=n;log(c,`${c.me.name} gains ${n} Aura.`)}};
 OPS.bottom=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){const c=pl.lib.splice(i,1)[0];pl.lib.unshift(c);E.log(s,`${pl.name} puts the card on the bottom of their library.`,pid)}})};
 OPS.discard=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.hand.findIndex(c=>c.uid===u);if(i>=0){const c=pl.hand.splice(i,1)[0];pl.disc.push(c);E.log(s,`${pl.name} discards ${E.DB[c.id].name}.`,pid)}})};
 OPS.opDiscard=(s,pid,pr,picks)=>{const pl=s.p[pr.target];picks.forEach(u=>{const i=pl.hand.findIndex(c=>c.uid===u);if(i>=0){const c=pl.hand.splice(i,1)[0];pl.disc.push(c);E.log(s,`${pl.name} discards ${E.DB[c.id].name}.`,pid)}})};

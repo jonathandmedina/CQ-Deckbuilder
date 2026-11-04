@@ -114,6 +114,12 @@ button.card:hover{border-color:var(--cc)}
 .c-rules p{margin:0 0 4px}
 .lv{display:inline-block;font-size:.72rem;font-weight:700;letter-spacing:.06em;padding:0 6px;border-radius:4px;background:var(--ink);color:var(--surface);vertical-align:1px}
 .aura{display:inline-block;width:.72em;height:.9em;background:var(--accent);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);vertical-align:-1px;margin-left:1px}
+.c-foot .flip{margin-left:auto;display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;border:1px solid var(--card-line);background:var(--card-paper);color:var(--card-ink);font-size:15px;line-height:1;cursor:pointer;flex:none}
+.c-foot .flip:hover,.c-foot .flip:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.card.upside{box-shadow:0 0 0 2px #D9A53A,var(--shadow)}
+.card.upside .c-rules{background:linear-gradient(180deg,rgba(217,165,58,.10),transparent 70%)}
+.upstar{color:#FFD45C;text-shadow:0 0 2px #000}
+.upcost{color:#9A6B00}
 .cver{font-style:normal;font-size:.7rem;font-weight:700;letter-spacing:.03em;color:var(--muted);border:1px solid var(--card-line);border-radius:4px;padding:0 4px;margin-left:4px}
 .c-foot{display:flex;gap:6px;align-items:center;padding:8px 12px;border-top:1px solid var(--card-line);font-size:.8rem;color:var(--muted);flex-wrap:wrap}
 .stats{display:flex;gap:4px;width:100%}
@@ -278,7 +284,7 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261102b">
+<link rel="stylesheet" href="assets/retro.css?v=20261103a">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -303,14 +309,14 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261102b"></script>
-<script src="assets/app.js?v=20261102b"></script>
-<script src="assets/play-engine.js?v=20261102b"></script>
-<script src="assets/play-cards.js?v=20261102b"></script>
-<script src="assets/play-ai.js?v=20261102b"></script>
-<script src="assets/play-ui.js?v=20261102b"></script>
-<script src="assets/changelog-data.js?v=20261102b"></script>
-<script src="assets/changelog.js?v=20261102b"></script>
+<script src="assets/cards-data.js?v=20261103a"></script>
+<script src="assets/app.js?v=20261103a"></script>
+<script src="assets/play-engine.js?v=20261103a"></script>
+<script src="assets/play-cards.js?v=20261103a"></script>
+<script src="assets/play-ai.js?v=20261103a"></script>
+<script src="assets/play-ui.js?v=20261103a"></script>
+<script src="assets/changelog-data.js?v=20261103a"></script>
+<script src="assets/changelog.js?v=20261103a"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinBtn");if(!b)return;var cur=document.documentElement.dataset.skin;

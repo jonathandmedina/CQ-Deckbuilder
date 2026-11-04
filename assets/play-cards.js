@@ -14,7 +14,9 @@ const allies=c=>[...living(c.me),...summons(c.me)];
 function D(c,tg,n,o){o=o||{};if(!tg||tg.kind==="player")return 0;
   if(c.mods&&c.mods.stepIn&&tg.uid===c.mods.stepIn.from){const p=E.find(c.s,c.mods.stepIn.to);if(p&&!p.o.dead){log(c,`${p.o.name} steps in and takes the damage.`);tg=p.o}}
   if(c.mods&&(c.mods.preventAll||c.mods.prevent&&c.mods.prevent.includes(tg.uid))){log(c,`Damage to ${tg.name} is prevented.`);E.stat(c.s,"prev",E.ctrl(c.s,tg),c.mods.by||"Prevent",n);return 0}
-  let a=n;if(c.def&&c.def.type==="Spell"&&!o.noSpell)a+=E.spellDmg(c.s,c.pid,c.actor);
+  let a=n;if(c.def&&c.def.type==="Spell"&&!o.noSpell){a+=E.spellDmg(c.s,c.pid,c.actor);
+    /* upgraded Apprentice's Wand: once per turn, a spell this Hero casts deals +1 more damage to one target */
+    if(c.actor&&c.actor.fl&&E.hasUp(c.s,c.actor,"Apprentice's Wand")&&c.actor.fl.wandRound!==c.s.round){c.actor.fl.wandRound=c.s.round;a+=1}}
   if(c.def&&c.def.sub==="Combo"&&c.actor&&E.hasEq(c.actor,"Iron Hand Wraps"))a+=1;
   if(c.arrowBonus){a+=c.arrowBonus.dmg;if(c.arrowBonus.ignoreDef)o.ignoreDef=true;o.pierce=(o.pierce||0)+c.arrowBonus.pierce;if(c.arrowBonus.mult>1)a*=c.arrowBonus.mult}
   if(c.def&&c.def.sub==="Combo"&&c.me.fl.stunner){c.me.fl.stunner=false;E.addStatus(c.s,tg,"stun",1)}
@@ -35,7 +37,7 @@ const dstr=(c,o,vs)=>E.dmgStr(c.s,o,vs);
 const hp=(c,o)=>E.hp(c.s,o);
 const attack=(c,att,tg,o)=>{if(att&&tg)c.s.qatk={pid:c.pid,att:att.uid,tgt:tg.uid,o:o||{}}};
 const rand=(c,arr)=>arr.length?arr[E.ri(c.s,arr.length)]:null;
-const daggers=h=>E.eqList(h).filter(e=>/Dagger/.test(e.name));
+const daggers=(h,s)=>E.eqList(h).filter(e=>s?E.isDagger(s,e):/Dagger/.test(e.name));
 const combosPlayed=c=>c.me.t.combos||0;
 const destroy=(c,o,ex)=>{if(!o)return;if(o.kind==="summon"&&!ex&&o.ctrl!==c.pid&&c.s.p[o.ctrl].t.shelter){log(c,`${o.name} can't be destroyed this turn (Shelter from the Storm).`);return}E.destroyObj(c.s,o,ex)};
 function M(n,opts){return{modes:{n,opts},run(c){const base=(this.t||[]).length;let i=base;(c.modes||[]).forEach(mi=>{const m=opts[mi];if(!m)return;const k=(m.t||[]).length;m.run(Object.assign({},c,{t:c.t.slice(i,i+k)}));i+=k})}}}
@@ -155,9 +157,9 @@ def("Quick Inventory",{run(c){E.toInv(c.s,c.pid,E.makeEqToken(c.s,c.pid,"Dagger"
 def("Ritual of Fang",{run(c){E.toInv(c.s,c.pid,E.makeEqToken(c.s,c.pid,"Viper Fang Dagger"));log(c,"A Viper Fang Dagger token goes to inventory.")}});
 def("Blademaster's Choice",Object.assign(M(2,[{label:"+1 additional STR",run:c=>{c._x.str=1}},{label:"Poisonous 1",run:c=>{c._x.poison=1}},{label:"Stun on combat damage",run:c=>{c._x.stun=1}}]),{run(c){const x={};c._x=x;(c.modes||[]).forEach(i=>this.modes.opts[i]&&this.modes.opts[i].run(c));const e=E.makeEqToken(c.s,c.pid,"Dagger",x);if(x.str)e.pstr+=1;E.toInv(c.s,c.pid,e);log(c,"A custom Dagger token goes to inventory.")}}));
 def("Resourceful Maneuver",{t:[cls("Rogue")],can:(s,pid)=>s.p[pid].disc.some(x=>/Dagger/.test(x.id||"")&&E.DB[x.id].kind==="equip"),run(c){const pl=c.me;const i=pl.disc.findIndex(x=>/Dagger/.test(x.id||"")&&E.DB[x.id].kind==="equip");if(i<0||!c.t[0])return;const card=pl.disc.splice(i,1)[0];E.equipTo(c.s,c.t[0],E.eqObjFromCard(c.s,c.pid,card))}});
-def("Broken Blade",{t:[t("allyHero","your Hero with a Dagger",(s,o)=>E.eqList(o).some(e=>/Dagger/.test(e.name)))],can:(s,pid)=>E.living(s.p[pid]).some(h=>E.eqList(h).some(e=>/Dagger/.test(e.name))),run(c){const h=c.t[0];if(!h)return;const d=daggers(h)[0];if(d){destroy(c,d);h.ex=false;log(c,`${h.name} readies.`)}}}); /* update 18 */
-def("Flick Dagger",{can:(s,pid,a)=>a&&E.eqList(a).some(e=>/Dagger/.test(e.name)),run(c){const d=daggers(c.actor)[0];if(!d)return;destroy(c,d);const n=dstr(c,c.actor);enemies(c).forEach(e=>D(c,e,n))}});
-def("Death by a Thousand Cuts",{t:[ANY],run(c){let n=0;enemies(c).forEach(e=>n+=e.st.poison);living(c.me).filter(h=>h.cls==="Rogue").forEach(h=>n+=daggers(h).length);D(c,c.t[0],n);exMe(c)}});
+def("Broken Blade",{t:[t("allyHero","your Hero with a Dagger",(s,o)=>E.eqList(o).some(e=>E.isDagger(s,e)))],can:(s,pid)=>E.living(s.p[pid]).some(h=>E.eqList(h).some(e=>E.isDagger(s,e))),run(c){const h=c.t[0];if(!h)return;const d=daggers(h,c.s)[0];if(d){destroy(c,d);h.ex=false;log(c,`${h.name} readies.`)}}}); /* update 18 */
+def("Flick Dagger",{can:(s,pid,a)=>a&&E.eqList(a).some(e=>E.isDagger(s,e)),run(c){const d=daggers(c.actor,c.s)[0];if(!d)return;destroy(c,d);const n=dstr(c,c.actor);enemies(c).forEach(e=>D(c,e,n))}});
+def("Death by a Thousand Cuts",{t:[ANY],run(c){let n=0;enemies(c).forEach(e=>n+=e.st.poison);living(c.me).filter(h=>h.cls==="Rogue").forEach(h=>n+=daggers(h,c.s).length);D(c,c.t[0],n);exMe(c)}});
 def("Cut Off",{t:[EHERO],run(c){const h=c.t[0];if(!h)return;const pl=c.s.p[h.owner];pl.heroes.splice(pl.heroes.indexOf(h),1);pl.heroes.push(h);log(c,`${h.name} is moved to the Closer position.`);attack(c,c.actor,h)}});
 def("Synchronous Strike",{t:[ANY],run(c){const rs=living(c.me).filter(h=>h.cls==="Rogue");let n=0;rs.forEach(h=>{n+=dstr(c,h);h.ex=true});D(c,c.t[0],n)}});
 def("Larceny",{t:[t("item","enemy item",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner)],run(c){steal(c,c.t[0])}});
@@ -455,7 +457,7 @@ def("Sure Fire Choice",M(2,[{label:"Return a non-Legendary Arrow from your disca
   {label:"Ready a Ranger",t:[t("allyHero","Ranger to ready",(s,o)=>E.heroIs(o,"Ranger"))],run:c=>{const h=c.t[0];if(h&&h.ex){h.ex=false;log(c,`${h.name} readies.`)}}}]));
 OPS.setTrap=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.hand.findIndex(x=>x.uid===u);if(i>=0){const c=pl.hand.splice(i,1)[0];pl.inv.push(Object.assign({kind:"card",fd:true,name:E.DB[c.id].name},c));E.log(s,`${pl.name} sets a Trap face down.`,pid)}})};
 /* Rogue */
-def("Hack and Slash",{run(c){if(daggers(c.actor).length>=2){c.actor.fl.hackRound=c.s.round;log(c,`${c.actor.name}'s next attack this turn hits two targets.`)}else log(c,`${c.actor.name} doesn't have two Daggers equipped.`)}});
+def("Hack and Slash",{run(c){if(daggers(c.actor,c.s).length>=2){c.actor.fl.hackRound=c.s.round;log(c,`${c.actor.name}'s next attack this turn hits two targets.`)}else log(c,`${c.actor.name} doesn't have two Daggers equipped.`)}});
 hid("Miscalculation","card",(s,pid,tr)=>(tr.targets||[]).some(u=>s.p[pid].inv.some(o=>o.uid===u&&o.fd&&o.name==="Miscalculation")),c=>{c.mods.cancel=true;draw(c,2)});
 hid("Pillage the Dead","dying",(s,pid,tr)=>{const f=E.find(s,tr.hero);return f&&f.pid!==pid&&E.eqList(f.o).length>0},c=>{c.s.pillage={pid:c.pid};log(c,"Pillage the Dead: you'll take that Hero's equipment.")});
 def("Shadow Strike",{t:[rogueEx,t("enemy","attack target")],can:(s,pid)=>s.p[pid].heroes.some(h=>!h.dead&&h.ex&&E.heroIs(h,"Rogue")),run(c){const r=c.t[0],tg=c.t[1];if(r&&tg)attack(c,r,tg,{ignoreDef:true,noExhaust:true})}});

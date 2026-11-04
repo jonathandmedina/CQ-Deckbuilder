@@ -190,3 +190,6 @@ html[data-skin="retro"] .pl-banner .bl .hit{color:#ff9a9a}
 html[data-skin="retro"] .pl-stats{background:var(--win);border-color:var(--accent)}
 html[data-skin="retro"] .tg.must,html[data-skin="retro"] .ps .must{color:#ff9a9a!important;border-color:#ff9a9a}
 html[data-skin="retro"] .pl-stats h3{font-size:1.15rem;line-height:1.2}
+html[data-skin="retro"] .c-foot .flip{background:radial-gradient(circle,#2a3486 0%,#0c1040 100%);border:2px solid #E4E6F6;color:#fff;border-radius:4px}
+html[data-skin="retro"] .card.upside{outline:2px solid #FFD45C;outline-offset:-1px}
+html[data-skin="retro"] .upcost{color:#FFD45C}

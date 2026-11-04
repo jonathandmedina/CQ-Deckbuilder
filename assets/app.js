@@ -20,6 +20,10 @@ const CARDS=[
   ...RAW_CARDS.map(r=>({id:r[1],kind:"card",name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7],ver:r[8]||1})),
   ...RAW_EQUIP.map(r=>({id:r[0],kind:"equip",name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:+r[7]||0,pdef:+r[8]||0,ver:r[9]||1}))
 ];
+/* Weapon upgrades (update 19): one fixed upgrade per weapon, flipped to its upgraded side at the Blacksmith. c.up = {cost, rules, pstr, pdef} */
+{const UPG=(typeof EQUIP_UPGRADES!=="undefined")?EQUIP_UPGRADES:{};CARDS.forEach(c=>{const u=c.kind==="equip"&&UPG[c.name];if(u)c.up={cost:+u[0],rules:u[1],pstr:+u[2]||0,pdef:+u[3]||0}})}
+/* the upgraded side of a weapon, shaped like a normal card (used by the flip view and Print & Play) */
+function upFace(c){return Object.assign({},c,{id:c.id+"#up",face:"up",rules:c.up.rules,pstr:c.up.pstr,pdef:c.up.pdef})}
 const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?" · "+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],ver:r[11]||1,sup:""}));
 const TOKEN_BY_NAME=new Map(TOKENS.map(t=>[t.name,t]));
 const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
@@ -213,14 +217,16 @@ function footHTML(c){
   if(c.kind==="hero")return`<div class="stats">${[["STR",c.str],["DEF",c.def],["AURA",c.aura],["HP",c.hp]].map(([k,v])=>`<div class="stat s-${k.toLowerCase()}"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
   if(c.kind==="token"){const st=tokenStats(c);if(st)return`<div class="stats">${st.map(([k,v])=>`<div class="stat"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
     return c.tkind==="Equipment"?[esc(c.region),"+"+esc(c.str)+" STR","Token"].join(" · "):"Pillar token"}
-  if(c.kind==="equip"){const b=[esc(c.region)];if(c.pstr)b.push("+"+c.pstr+" STR");if(c.pdef)b.push("+"+c.pdef+" DEF");return b.join(" · ")}
+  if(c.kind==="equip"){const b=[esc(c.region)];if(c.pstr)b.push("+"+c.pstr+" STR");if(c.pdef)b.push("+"+c.pdef+" DEF");if(c.face==="up")b.push(`<b class="upcost">Upgraded · ${c.up.cost} Gold</b>`);
+    return b.join(" · ")+(c.up?`<span class="flip" role="button" tabindex="0" data-flip title="${c.face==="up"?"Flip back to the normal side":`Flip to see the upgrade (${c.up.cost} Gold at the Blacksmith)`}" aria-label="${c.face==="up"?"Show normal side":"Show upgraded side"}">⟳</span>`:"")}
   return c.sup==="Legendary"?"1 copy per deck":"Up to 2 copies";
 }
 function cardHTML(c,o={}){
+  if(o.flipped&&c.up&&c.face!=="up")c=upFace(c);
   const tag=o.button?"button":"article";
   const attrs=o.button?` type="button" data-act="${o.button}" data-id="${esc(c.id)}"`:"";
-  return`<${tag} class="card${o.picked?" picked":""}${c.kind==="token"?" token":""}${o.maxed?" maxed":""}" style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}"${attrs}>
-  <div class="c-head"><span class="c-name">${esc(c.name)}</span>${hasGem(c)?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
+  return`<${tag} class="card${o.picked?" picked":""}${c.kind==="token"?" token":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}"${attrs}>
+  <div class="c-head"><span class="c-name">${esc(c.name)}${c.face==="up"?` <span class="upstar" title="Upgraded side">★</span>`:""}</span>${hasGem(c)?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
   <div class="c-rules">${rulesHTML(c.rules||"")}</div>
   <div class="c-foot">${footHTML(c)}</div>
@@ -534,7 +540,7 @@ function drawCard(ctx,c,W,H){
   const hb=120*s;ctx.save();rr(ctx,ix,iy,iw,ih,18*s);ctx.clip();ctx.fillStyle=col;ctx.fillRect(ix,iy,iw,hb);ctx.restore();
   const gemR=52*s,gem=hasGem(c);
   const nameMax=iw-40*s-(gem?gemR*2+10*s:0);
-  ctx.fillStyle=tcol;const ns=fitText(ctx,c.name,F_DISP,58*s,nameMax,700);ctx.font=`700 ${ns}px ${F_DISP}`;ctx.fillText(c.name,ix+22*s,iy+hb/2+ns*0.34);
+  const nm=c.name+(c.face==="up"?" ★":"");ctx.fillStyle=tcol;const ns=fitText(ctx,nm,F_DISP,58*s,nameMax,700);ctx.font=`700 ${ns}px ${F_DISP}`;ctx.fillText(nm,ix+22*s,iy+hb/2+ns*0.34);
   if(gem){const gx=ix+iw-gemR-16*s,gy=iy+hb/2;ctx.fillStyle="#FBFBF8";hex(ctx,gx,gy,gemR);ctx.fill();ctx.strokeStyle="rgba(0,0,0,.25)";ctx.lineWidth=3*s;hex(ctx,gx,gy,gemR-6*s);ctx.stroke();
     ctx.fillStyle="#1C232E";ctx.font=`800 ${52*s}px ${F_DISP}`;ctx.textAlign="center";ctx.fillText(String(c.cost),gx,gy+18*s);ctx.textAlign="left"}
   // type line
@@ -561,7 +567,7 @@ function drawCard(ctx,c,W,H){
     st.forEach(([k,v],i)=>{const bx=ix+22*s+i*(bw+14*s),by=footY+18*s,bh=footH-40*s;ctx.strokeStyle=col;ctx.lineWidth=4*s;rr(ctx,bx,by,bw,bh,12*s);ctx.stroke();
       ctx.textAlign="center";ctx.fillStyle="#1C232E";ctx.font=`800 ${50*s}px ${F_DISP}`;ctx.fillText(String(v),bx+bw/2,by+bh*0.55);ctx.font=`700 ${22*s}px ${F_BODY}`;ctx.fillStyle="#5A6474";ctx.fillText(k,bx+bw/2,by+bh-14*s);ctx.textAlign="left"});
   }else{
-    let ft=c.kind==="token"?(c.tkind==="Equipment"?[c.region,"+"+c.str+" STR","Token"].join("  ·  "):"Pillar token"):c.kind==="equip"?[c.region,c.pstr?"+"+c.pstr+" STR":"",c.pdef?"+"+c.pdef+" DEF":""].filter(Boolean).join("  ·  "):(c.sup==="Legendary"?"Legendary · 1 per deck":"");
+    let ft=c.kind==="token"?(c.tkind==="Equipment"?[c.region,"+"+c.str+" STR","Token"].join("  ·  "):"Pillar token"):c.kind==="equip"?[c.region,c.pstr?"+"+c.pstr+" STR":"",c.pdef?"+"+c.pdef+" DEF":"",c.face==="up"?"UPGRADED ("+c.up.cost+" Gold)":(c.up?"Upgrade: "+c.up.cost+" Gold":"")].filter(Boolean).join("  ·  "):(c.sup==="Legendary"?"Legendary · 1 per deck":"");
     ctx.font=`700 ${30*s}px ${F_BODY}`;ctx.fillStyle="#4C5563";ctx.fillText(ft,ix+22*s,footY+50*s);
   }
   ctx.font=`700 ${20*s}px ${F_DISP}`;ctx.fillStyle=tcol;ctx.globalAlpha=.85;ctx.textAlign="center";ctx.fillText("CRYSTAL QUEST",W/2,H-6*s);
@@ -627,7 +633,7 @@ async function exportPnP(d,mode){mode=mode||"all";const plan=printPlan(d);
     const toks=tokensFor(d);
     if(toks.length){y+=half*0.22+0.2;pdf.setFont("helvetica","bold");pdf.text("Tokens to print",0.75,y);pdf.setFont("helvetica","normal");y+=0.25;
       const th=Math.ceil(toks.length/2);toks.forEach((t,i)=>pdf.text(`${t.q} ${t.c.name} (${tokenStatLine(t.c)})`,i<th?0.9:4.5,y+(i%th)*0.22));}
-    pdf.setFontSize(9);pdf.setTextColor(90);pdf.text("Print at 100% (no scaling). Cut on the gray lines. Cards are 2.5 x 3.5 in, standard sleeve size. The last page has optional card backs.",0.75,10.4,{maxWidth:7});pdf.setTextColor(0);
+    pdf.setFontSize(9);pdf.setTextColor(90);pdf.text("Print at 100% (no scaling). Cut on the gray lines. Cards are 2.5 x 3.5 in, standard sleeve size. Upgraded weapon sides (marked with a star) print after the deck: sleeve each behind its weapon and flip it when you upgrade at the Blacksmith. The last page has optional card backs.",0.75,10.4,{maxWidth:7});pdf.setTextColor(0);
     const cards=mode==="upd"?plan.upd:plan.all,cache=new Map();
     if(mode==="upd"){pdf.setFontSize(10);pdf.text("This printing only has cards updated since "+(plan.rec?new Date(plan.rec.at).toLocaleDateString():"the last print")+": "+[...new Set([...plan.upd,...plan.updToks].map(c=>c.name+" (v"+(c.ver||1)+")"))].join(", "),0.75,9.6,{maxWidth:7});pdf.setFontSize(11)}
     const W=750,H=1050,mx=0.5,my=0.25,cw=2.5,ch=3.5;
@@ -635,6 +641,9 @@ async function exportPnP(d,mode){mode=mode||"all";const plan=printPlan(d);
     const page=(items,getImg)=>{pdf.addPage();items.forEach((c,i)=>{const x=mx+(i%3)*cw,yy=my+Math.floor(i/3)*ch;pdf.addImage(getImg(c),"JPEG",x,yy,cw,ch,undefined,"FAST")});
       pdf.setDrawColor(170);pdf.setLineWidth(0.005);for(let i=0;i<=3;i++){pdf.line(mx+i*cw,0,mx+i*cw,11);pdf.line(0,my+i*ch,8.5,my+i*ch)}};
     for(let i=0;i<cards.length;i+=9){page(cards.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
+    /* upgraded weapon sides (update 19): one per copy, sleeve it behind the weapon and flip when you upgrade */
+    const ups=cards.filter(c=>c.up).map(upFace);
+    for(let i=0;i<ups.length;i+=9){page(ups.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
     const tokCards=mode==="upd"?plan.updToks:plan.toks;
     for(let i=0;i<tokCards.length;i+=9){page(tokCards.slice(i,i+9),img);await new Promise(r=>setTimeout(r,0))}
     const back=cardCanvas(null,W,H).toDataURL("image/jpeg",0.9);page(Array(9).fill({}),()=>back);
@@ -757,6 +766,13 @@ function rulesJump(id){const el=document.getElementById(id);if(el){el.hidden=fal
 /* ---------- events ---------- */
 function go(v){if(location.hash==="#"+v){S.view=v;render();scrollTo(0,0)}else location.hash=v}
 function setDeck(fn){fn(S.deck);S.dirty=true;saveDraft();render()}
+/* weapon flip icon: swap the tile between its normal and upgraded side in place */
+function flipTile(el){const card=el.closest(".card");const c=card&&BYID.get(card.dataset.cid);if(!c||!c.up)return;
+  const t=document.createElement("div");t.innerHTML=cardHTML(c,{flipped:!card.classList.contains("upside")});const n=t.firstElementChild;
+  ["c-head","c-type","c-rules","c-foot"].forEach(k=>{const a=card.querySelector(":scope > ."+k),b=n.querySelector(":scope > ."+k);if(a&&b)a.innerHTML=b.innerHTML});
+  card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus()}
+document.addEventListener("click",e=>{const f=e.target.closest("[data-flip]");if(!f)return;e.preventDefault();e.stopPropagation();flipTile(f)},true);
+document.addEventListener("keydown",e=>{const f=e.target.closest&&e.target.closest("[data-flip]");if(!f||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();flipTile(f)},true);
 document.addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]");if(!b||b.tagName==="SELECT"||b.tagName==="INPUT")return;
   const a=b.dataset.act,id=b.dataset.id,v=b.dataset.v;

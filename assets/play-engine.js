@@ -22,7 +22,15 @@ E.STATUS_NAME={burn:"Burned",poison:"Poisoned",wound:"Wounded",confuse:"Confused
 const POS=["Lead","Center","Closer"];E.POS=POS;
 E.INN_HEAL=3;E.INN_COST=5;E.SHOP_COST=4;E.CHURCH_COST=10;E.CHURCH_HP=5;E.HAND_MAX=5;
 /* Upgrades (Town, Blacksmith): items/equipment whose text has "Upgrade N Gold:" or "Upgrade X Gold:". Must be in play; stays upgraded for the whole game (tracked by card id in s.upg). */
-function upgradeCost(o){const m=/Upgrade[^:]*?(\d+|X) Gold/i.exec((DB[o.id]||{}).rules||"");if(!m)return null;return m[1]==="X"?{x:true}:{cost:+m[1]}}
+/* Weapon upgrades (update 19): one fixed upgrade per weapon from EQUIP_UPGRADES (cards-data.js): [cost, rules, +STR, +DEF]. Upgrading flips the weapon: its upgraded text and stats replace the normal side. */
+const UPGD=typeof EQUIP_UPGRADES!=="undefined"?EQUIP_UPGRADES:(root.EQUIP_UPGRADES||{});
+for(const n in UPGD){if(DB[n]){const u=UPGD[n];DB[n].up={cost:+u[0],rules:u[1],pstr:num(u[2]),pdef:num(u[3])}}}
+const isUp=(s,e)=>!!(e&&e.uid&&s.upg&&s.upg[e.uid]!=null);
+const hasUpN=(s,h,n)=>eqList(h).some(e=>e.name===n&&isUp(s,e));
+E.isUp=isUp;E.hasUp=hasUpN;
+/* Dagger check: name has "Dagger", or an upgraded Feather Blade ("This counts as a Dagger") */
+E.isDagger=(s,e)=>!!e&&(/Dagger/.test(e.name)||(e.name==="Feather Blade"&&isUp(s,e)));
+function upgradeCost(o){const d=DB[o.id]||{};if(d.up)return{cost:d.up.cost,weapon:true};const m=/Upgrade[^:]*?(\d+|X) Gold/i.exec((DB[o.id]||{}).rules||"");if(!m)return null;return m[1]==="X"?{x:true}:{cost:+m[1]}}
 E.upgradeCost=upgradeCost;
 function upgradables(s,pid){const pl=s.p[pid];const objs=[...pl.inv.filter(o=>!o.fd&&o.id),...pl.heroes.flatMap(h=>Object.values(h.eq).filter(e=>e&&e!=="2H"))];
   return objs.filter(o=>upgradeCost(o)&&!(s.upg&&s.upg[o.uid]!=null))}
@@ -158,10 +166,12 @@ E.noAttack=noAttack;
 function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth")||hasEqN(o,"Shadow Cloak"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
 function cardProof(s,o){return o.kind==="hero"&&(hasEqN(o,"Cloak of Protection")||hasEqN(o,"Cloak of Shadow")||modHas(o,"untarget"))}
 function poisonous(s,h){if(h.kind!=="hero")return 0;let n=0;if(h.name==="Dark Fang")n=Math.max(n,h.lvl>=3?3:1);
-  eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger"||(e.x&&e.x.poison))n=Math.max(n,1);if(e.name==="Poison-Tipped Dagger")n=Math.max(n,2)});
+  eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger"||(e.x&&e.x.poison))n=Math.max(n,1);if(e.name==="Poison-Tipped Dagger")n=Math.max(n,isUp(s,e)?3:2)});
   if(h.cls==="Rogue"&&P(s,h.owner).pm.poisonous)n=Math.max(n,1);return n}
 function lifelink(s,h){return h.kind==="hero"&&((h.name==="Radiant Oracle"&&h.lvl>=3)||hasEqN(h,"Ring of Radiance")||modHas(h,"lifelink"))}
-function guardEq(h){let g=0;eqList(h).forEach(e=>{if(/(^|\. |\n)Guard 1/.test(def(e).rules||"")||/Guard 1\./.test(def(e).rules||""))g+=1});return g}
+/* Guard from one piece of equipment (upgraded Knight's Sword: Guard 2). before=true: the value before its upgrade */
+function eqGuardOf(s,e,before){if(!before&&e.name==="Knight's Sword"&&isUp(s,e))return 2;const r=def(e).rules||"";return(/(^|\. |\n)Guard 1/.test(r)||/Guard 1\./.test(r))?1:0}
+function guardEq(h,s){let g=0;eqList(h).forEach(e=>{g+=s?eqGuardOf(s,e):eqGuardOf({},e,true)});return g}
 E.guardEq=guardEq;E.hasEq=hasEqN;E.living=living;E.invHas=invHas;E.invCount=invCount;E.P=P;E.cardProof=cardProof;E.heroByUid=(s,u)=>heroByUid(s,u);E.poisonous=poisonous;E.lifelink=lifelink;E.stealth=stealth;
 
 /* ---------- basic operations ---------- */
@@ -197,7 +207,7 @@ E.targetOpts=targetOpts;
 /* lose HP as part of paying a cost (Ritual Athame watches for this) */
 function costHp(s,pid,h,n,why){if(!h||n<=0)return;loseHp(s,h,n,why);const pl=P(s,pid);
   const at=living(pl).find(x=>hasEqN(x,"Ritual Athame")&&x.fl.athameRound!==s.round);
-  if(at&&!s.over){at.fl.athameRound=s.round;const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);ask(s,pid,"Ritual Athame: deal 1 Dark damage to any target",targetOpts(s,pid,ts,1).concat([{label:"No damage",v:null}]),"dmgTo",{n:1,name:"Ritual Athame",type:"Dark",src:at.uid})}}
+  if(at&&!s.over){at.fl.athameRound=s.round;const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);{const an=eqList(at).some(e=>e.name==="Ritual Athame"&&isUp(s,e))?2:1;ask(s,pid,`Ritual Athame: deal ${an} Dark damage to any target`,targetOpts(s,pid,ts,an).concat([{label:"No damage",v:null}]),"dmgTo",{n:an,name:"Ritual Athame",type:"Dark",src:at.uid})}}}
 E.costHp=costHp;
 ASK.dmgTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t)return;const src=pr.data.src?find(s,pr.data.src):null;damage(s,src?src.o:{name:pr.data.name,ctrl:pid},t,pr.data.n,{card:true,type:pr.data.type,srcName:pr.data.name,noTrig:!src})};
 /* Trophy Rack: a Barbarian you control destroyed an item or Equipment */
@@ -313,9 +323,12 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
       if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
       if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,1)}
       if(src.fl.bruisedRound===s.round&&dealt>0&&tgt.st)addStatus(s,tgt,"wound",1);
-      if(o.combat&&dealt>0){const th=eqList(src).filter(e=>e.name==="Thief's Dagger").length;if(th)stealGold(s,src.owner,ctrl(s,tgt),th,"Thief's Dagger")} /* update 18 */
+      if(o.combat&&dealt>0){const th=eqList(src).filter(e=>e.name==="Thief's Dagger").reduce((n,e)=>n+(isUp(s,e)?2:1),0);if(th)stealGold(s,src.owner,ctrl(s,tgt),th,"Thief's Dagger")} /* update 18 */
       if(o.combat&&dealt>0)eqList(src).forEach(e=>{if(e.x&&e.x.stun&&tgt.st)addStatus(s,tgt,"stun",1)});
-      if(o.combat&&dealt>0&&(hasEqN(src,"Hammer of Ruin")||hasEqN(src,"Hammer"))){const it=P(s,ctrl(s,tgt)).inv.find(x=>!x.fd&&x.kind!=="equip");if(it){destroyObj(s,it);trophy(s,src.uid)}}
+      if(o.combat&&dealt>0&&(hasEqN(src,"Hammer of Ruin")||hasEqN(src,"Hammer"))){const dp=P(s,ctrl(s,tgt));let it=dp.inv.find(x=>!x.fd&&x.kind!=="equip");
+        /* upgraded Hammer of Ruin: an item or a piece of equipment (picks the most expensive) */
+        if(hasUpN(s,src,"Hammer of Ruin")){const c=[...dp.inv.filter(x=>!x.fd&&x.kind!=="doll"),...living(dp).flatMap(h=>eqList(h))];c.sort((a,b)=>num(def(b).cost||b.cost)-num(def(a).cost||a.cost));it=c[0]||null}
+        if(it){if(it.kind==="equip")log(s,`Hammer of Ruin destroys ${it.name}.`);destroyObj(s,it);trophy(s,src.uid)}}
     }
     if(src.kind==="summon"&&src.name==="Woods Beast"&&dealt>0)draw(s,src.ctrl,1);
   }
@@ -365,7 +378,7 @@ function destroyObj(s,o,exile){const f=find(s,o.uid);if(!f)return;const pl=P(s,f
   if(f.zone==="bf"){pl.bf.splice(pl.bf.indexOf(o),1)}
   else if(f.zone==="inv"){pl.inv.splice(pl.inv.indexOf(o),1)}
   else if(f.zone==="eq"){f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;
-    if(o.name==="Sword of Eliazar"&&!exile)makeSummon(s,f.pid,"Eliazar")}
+    if(o.name==="Sword of Eliazar"&&!exile){const m=makeSummon(s,f.pid,"Eliazar");if(isUp(s,o)){m.str+=1;m.hp+=1;log(s,`Upgraded Sword of Eliazar: Eliazar is ${m.str}/${m.hp}.`,f.pid)}}}
   else if(f.zone==="ench"){f.hero.ench.splice(f.hero.ench.indexOf(o),1)}
   log(s,`${o.name}${o.kind==="summon"?" (summon)":""} is ${exile?"exiled":"destroyed"}.`);
   if(o.kind==="summon"){const c=o.ctrl;
@@ -395,7 +408,7 @@ E.makeDoll=(s,pid)=>{const o={uid:nid(s),kind:"doll",name:"Doll",dmg:0,owner:pid
 E.copySummon=(s,pid,o,bonus)=>{const c=makeSummon(s,pid,o.name);c.str=o.str+(bonus||0);c.hp=o.hp+(bonus||0);return c};
 
 /* ---------- equipment ---------- */
-function eqObjFromCard(s,pid,card){const d=DB[card.id];return{uid:card.uid,kind:"equip",id:card.id,name:d.name,cls:d.cls,region:d.region,pstr:d.pstr,pdef:d.pdef,cost:num(d.cost),owner:card.owner,tok:false,x:null}}
+function eqObjFromCard(s,pid,card){const d=DB[card.id];const up=d.up&&s.upg&&s.upg[card.uid]!=null?d.up:null;return{uid:card.uid,kind:"equip",id:card.id,name:d.name,cls:d.cls,region:d.region,pstr:up?up.pstr:d.pstr,pdef:up?up.pdef:d.pdef,cost:num(d.cost),owner:card.owner,tok:false,x:null}}
 E.eqObjFromCard=eqObjFromCard;
 function canUseEq(s,h,e){if(!h||h.kind!=="hero"||h.dead)return false;
   const cls=e.cls;if(cls!=="Generic"&&!heroIs(h,cls))return false;
@@ -410,8 +423,8 @@ function equipTo(s,h,e){const pid=h.owner;const r=e.region;let slot;
     else if(!h.eq.H1)h.eq.H1=e;else if(!h.eq.H2)h.eq.H2=e;else{displaced.push(h.eq.H1);h.eq.H1=e}}
   else{const k=r in h.eq?r:"Accessory";if(h.eq[k])displaced.push(h.eq[k]);h.eq[k]=e}
   e.ctrl=pid;
-  if(/Guard 1/.test(def(e).rules||""))h.eqGuard+=1;
-  log(s,`${h.name} equips ${e.name}.`,pid);
+  h.eqGuard+=eqGuardOf(s,e);
+  log(s,`${h.name} equips ${e.name}${isUp(s,e)?" (upgraded)":""}.`,pid);
   if(e.name==="Shimmering Cloak"){const x=P(s,pid).t.healed||0;if(x>0){addMod(h,{def:x});log(s,`Shimmering Cloak: ${h.name} gains +${x} DEF this turn (${x} HP healed this turn).`,pid)}else log(s,"Shimmering Cloak: no healing yet this turn, so no DEF bonus.",pid)}
   displaced.forEach(d=>{if(d&&d!=="2H"){log(s,`${d.name} goes to inventory.`,pid);toInv(s,pid,d)}})}
 E.equipTo=equipTo;
@@ -666,7 +679,10 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"dawnDone":s.dawnDone[pid]=true;if(s.dawnDone.every(Boolean))startBattle(s);return;
   case"inn":{const h=heroByUid(s,a.hero);pl.gold-=5;s.town.used=Object.assign({},s.town.used,{inn:true});log(s,`${pl.name} stays at the Inn (5 Gold).`,pid);heal(s,null,h,E.INN_HEAL);return}
   case"church":{const h=heroByUid(s,a.hero);pl.gold-=E.CHURCH_COST;s.town.used=Object.assign({},s.town.used,{church:true});h.dead=false;h.dmg=Math.max(0,maxHp(s,h)-E.CHURCH_HP);h.ex=false;log(s,`${pl.name} pays the Church ${E.CHURCH_COST} Gold: ${h.name} is resurrected with ${E.CHURCH_HP} HP.`,pid);return}
-  case"upgrade":{const o=find(s,a.uid).o;const u=upgradeCost(o);const x=u.x?Math.max(1,Math.min(a.x|0,pl.gold)):u.cost;pl.gold-=x;s.upg=s.upg||{};s.upg[o.uid]=u.x?x:1;log(s,`${pl.name} upgrades ${o.name} at the Blacksmith (${x} Gold)${u.x?`: +${x} damage`:""}.`,pid);return}
+  case"upgrade":{const o=find(s,a.uid).o;const u=upgradeCost(o);const x=u.x?Math.max(1,Math.min(a.x|0,pl.gold)):u.cost;pl.gold-=x;s.upg=s.upg||{};s.upg[o.uid]=u.x?x:1;
+    if(u.weapon){const up=DB[o.id].up;const had=eqGuardOf(s,o,true);o.pstr=up.pstr;o.pdef=up.pdef;const f2=find(s,o.uid);if(f2&&f2.zone==="eq"&&f2.hero){f2.hero.eqGuard+=Math.max(0,eqGuardOf(s,o)-had)}
+      log(s,`${pl.name} upgrades ${o.name} at the Blacksmith (${x} Gold) and flips it: ${up.rules}`,pid);return}
+    log(s,`${pl.name} upgrades ${o.name} at the Blacksmith (${x} Gold)${u.x?`: +${x} damage`:""}.`,pid);return}
   case"shop":pl.gold-=4;s.town.used=Object.assign({},s.town.used,{shop:true});log(s,`${pl.name} visits the Shop (4 Gold).`,pid);draw(s,pid,1);return;
   case"leave":log(s,`${pl.name} leaves Town.`,pid);s.town.i++;s.town.used={};if(s.town.i>=s.town.order.length){s.town=null;startRound(s)}return;
   case"pass":log(s,`${pl.name} passes.`,pid);s.passed[pid]=true;endBonus(s);advance(s,pid);return;
@@ -686,7 +702,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
   }
   if(a.type==="multiBow"){s.cur={pid,type:"multiBow"};const a0=actorFor(s,pid);if(a0)pl.t.lastActor=a0.uid;s.dmgTo=[0,0];const ar=pl.inv.filter(o=>o.kind==="card"&&!o.fd&&def(o).sub==="Arrow");
     let pick=(a.uids||[]).map(u=>ar.find(o=>o.uid===u)).filter(Boolean);if(!pick.length)pick=ar.slice().sort((x,y)=>(itemCost(s,pid,null,x))-(itemCost(s,pid,null,y))).slice(0,a.n||1);
-    pick.forEach(o=>destroyObj(s,o));pl.fl.multi=(pl.fl.multi||0)+3*pick.length;
+    pick.forEach(o=>destroyObj(s,o));const mbUp=a0&&hasUpN(s,a0,"Multi Bow");pl.fl.multi=(pl.fl.multi||0)+(mbUp?4:3)*pick.length;if(mbUp)pl.fl.multiPierce=2;
     log(s,`Multi Bow: ${pl.name} destroys ${pick.length} Arrow${pick.length>1?"s":""}; the next Arrow deals +${pl.fl.multi} damage.`,pid);return}
   if(a.type==="useFree"){const o=find(s,a.uid).o;const isc=SC()[o.name];const c=isc.act.cost||0;if(c)pl.aura-=c;
     log(s,`${pl.name} activates ${o.name}${c?` (${c} Aura)`:""} (no action used).`,pid);
@@ -803,7 +819,7 @@ function resolveCont(s,pid,cont,mods){
     if(cont.arrow)ctx.arrowBonus=arrowBonus(s,pid,actor);
     withSrc(s,cont.itemName,()=>isc.act.run(ctx));
     if(cont.refire){const pl=P(s,pid);const i=pl.disc.findIndex(c=>c.uid===cont.item);if(i>=0){const c=pl.disc.splice(i,1)[0];toInv(s,pid,c);log(s,`Refire: ${cont.itemName} returns to ${pl.name}'s inventory.`,pid)}}
-    if(cont.arrow){const pl=P(s,pid);pl.t.arrows=(pl.t.arrows||0)+1;pl.fl.arrowNext=null;pl.fl.multi=0;
+    if(cont.arrow){const pl=P(s,pid);pl.t.arrows=(pl.t.arrows||0)+1;pl.fl.arrowNext=null;pl.fl.multi=0;pl.fl.multiPierce=0;
       /* Wild Archer: after YOUR first Arrow each turn (any Hero firing it), ready it; L3: also after every Arrow it fires itself */
       living(pl).filter(h=>h.name==="Wild Archer"&&h.ex&&(pl.t.arrows===1||(h===actor&&h.lvl>=3))).forEach(h=>{h.ex=false;log(s,`${h.name} readies.`,pid)})}
     checkDeaths(s);return}
@@ -843,9 +859,9 @@ function resolveCont(s,pid,cont,mods){
 ASK.lightningRod=(s,pid,pr,v)=>{if(v==null)return;const h=heroByUid(s,v);if(!h||h.ex)return;h.ex=true;log(s,`Lightning Rod: ${h.name} is exhausted.`,pid);makePillar(s,pid,"Spell Damage Pillar")};
 ASK.splitKick=(s,pid,pr,v)=>{if(v==null)return;copyCard(s,pid,pr.data.actor,pr.data.id,[v].concat(pr.data.rest||[]),pr.data.modes,pr.data.x)};
 function arrowBonus(s,pid,actor){const pl=P(s,pid);let b=0,ign=false,pierce=0;
-  if(actor){if(actor.name==="Hawkeye")b+=actor.lvl>=6?2:actor.lvl>=3?1:0;if(hasEqN(actor,"Longbow"))b+=1}
+  if(actor){if(actor.name==="Hawkeye")b+=actor.lvl>=6?2:actor.lvl>=3?1:0;if(hasEqN(actor,"Longbow"))b+=hasUpN(s,actor,"Longbow")?2:1;if(hasUpN(s,actor,"Heavy Bow"))pierce+=1}
   const n=pl.fl.arrowNext;if(n){b+=n.dmg||0;if(n.ign)ign=true}
-  if(pl.fl.rapidPierce)pierce=1;b+=pl.fl.multi||0;
+  if(pl.fl.rapidPierce)pierce+=1;pierce+=pl.fl.multiPierce||0;b+=pl.fl.multi||0;
   return{dmg:b,ignoreDef:ign,pierce,mult:actor&&hasEqN(actor,"Heavy Bow")?2:1}}
 function comboTrigger(s,pid,actor){const pl=P(s,pid);if(!actor||actor.dead)return;
   living(pl).forEach(h=>{if(h.name==="Monastery Stalwart")addMod(h,{def:1})});
@@ -874,7 +890,7 @@ function startAttack(s,pid,attUid,tgtUid,o){const f=find(s,attUid);if(!f)return;
   if(o.band){const mem=o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o);mem.forEach(m=>{m.ex=true;m.attacks=(m.atkRound===s.round?m.attacks:0)+1;m.atkRound=s.round});
     const parts=[att,...mem].map(m=>`${m.name} ${dmgStr(s,m,tgt)}`);log(s,`⚔ Band attack on ${tgt.name}: ${parts.join(" + ")}${bandBonus(s,att,mem)?` + ${bandBonus(s,att,mem)} bonus`:""} = ${bandTotal(s,att,mem,tgt)} STR.`,pid)}
   else log(s,`⚔ ${att.name} attacks ${tgt.name}.`,pid);
-  if(att.kind==="hero"){if(att.name==="Dawn Priest"||hasEqN(att,"Mace of Dawn")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,att,t,1)}}
+  if(att.kind==="hero"){if(att.name==="Dawn Priest"||hasEqN(att,"Mace of Dawn")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,att,t,hasUpN(s,att,"Mace of Dawn")?2:1)}}
   /* Caltrops: whenever an enemy attacks a Hero you control, the attacker loses 2 HP (per copy) */
   if(tgt.kind==="hero"&&tp!==pid){const n=invCount(P(s,tp),"Caltrops");if(n){loseHp(s,att,2*n,"Caltrops");stat(s,"dmg",tp,"Caltrops",2*n)}}
   const trig={kind:"attack",attacker:attUid,target:tgtUid,pid,noHidden:!!o.noHidden,str:o.band?bandTotal(s,att,o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o),tgt):dmgStr(s,att,tgt),band:o.band||null};
@@ -894,7 +910,7 @@ function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);let tgt=resolve
   if(mods.stepIn&&mods.stepIn.from===cont.tgt){const p=find(s,mods.stepIn.to);if(p&&!p.o.dead){log(s,`${p.o.name} steps in and takes the attack.`);tgt=p.o}}
   let str=(o.band?bandTotal(s,att,o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o).filter(m=>!m.dead),tgt):dmgStr(s,att,tgt))+(mods.str||0)+(o.str||0);
   if(att.kind==="hero"&&att.name==="Skullcrusher"&&att.attacks===2)str+=3;
-  let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0);
+  let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0)+(att.kind==="hero"?eqList(att).filter(e=>isUp(s,e)&&(e.name==="Sword of Riverstead"||e.name==="Long Dagger")).length:0);
   const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att));
   let dealt=0;
   if(mods.noDamage){log(s,`The attack deals no damage.`)}
@@ -1032,7 +1048,7 @@ function doDawn(s){
     pl.heroes.forEach(h=>{if(h.dead)return;
       if(h.fat){h.fat=0;h.fl.fatRested=true;h.ex=true;log(s,`${h.name} is Fatigued and doesn't ready this Dawn (Fatigue counter removed).`,pid)}
       else if(h.med&&h.keepMed){h.plus++;h.fl.fatRested=false;log(s,`${h.name} keeps Meditating (+1/+1 counter).`,pid)}else{if(h.med){h.med=false;h.fl.medEnd=true}h.ex=false;h.fl.fatRested=false}
-      h.eqGuard=guardEq(h)});
+      h.eqGuard=guardEq(h,s)});
     pl.bf.forEach(o=>{if(o.kind==="summon")o.ex=false});
     pl.inv.forEach(o=>{if(o.exh)o.exh=false});
     let aura=0;living(pl).forEach(h=>{if(h.fl.noAuraRound===s.round)return;aura+=auraStat(h);h.ench.forEach(e=>{if(e.name==="Aura Leech")aura-=1})});
@@ -1051,7 +1067,7 @@ function doDawn(s){
     pl.inv.filter(o=>o.name==="Campfire"&&!o.fd).forEach(o=>{o.ctr=o.ctr||{};if(o.ctr.camp==null)o.ctr.camp=3;o.ctr.camp--;log(s,"Campfire burns down (heals the party 1 HP).",pid);living(pl).forEach(h=>heal(s,null,h,1,pid));if(o.ctr.camp<=0){pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,"Campfire is exiled.",pid)}});
     if(invHas(pl,"Brute's Banner")){const b=living(pl).filter(h=>h.cls==="Barbarian").sort((a,b)=>strOf(s,b)-strOf(s,a))[0];if(b){b.fl.bannerRound=s.round;log(s,`Brute's Banner: ${b.name} +2 STR this turn.`,pid)}}
     living(pl).forEach(h=>{if(h.name==="Lightbringer"){const lt=living(pl).filter(o=>o!==h&&o.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(lt)heal(s,h,lt,1)}
-      if(hasEqN(h,"Chalice of Life"))living(pl).forEach(o=>heal(s,h,o,1));
+      if(hasEqN(h,"Chalice of Life")){living(pl).forEach(o=>heal(s,h,o,1));if(hasUpN(s,h,"Chalice of Life")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,h,t,2)}}
       h.ench.forEach(e=>{if(e.name==="Sanctuary")heal(s,null,h,1,e.owner)})});
     /* Echo */
     const ech=pl.echo.splice(0);ech.forEach(e=>{const d=DB[e.card.id];const actor=living(pl).find(h=>heroIs(h,d.cls)||d.cls==="Generic");
@@ -1078,7 +1094,7 @@ function doDusk(s){
   s.duskAsked=false;
   s.phase="dusk";log(s,`— Dusk —`);
   /* Heavy Bow: a Hero that became exhausted this round gets a Fatigue counter */
-  s.p.forEach((pl,pid)=>living(pl).forEach(h=>{if(h.ex&&!h.fat&&!h.fl.fatRested&&hasEqN(h,"Heavy Bow")){h.fat=1;log(s,`Heavy Bow: ${h.name} gets a Fatigue counter (it won't ready at the next Dawn).`,pid)}}));
+  s.p.forEach((pl,pid)=>living(pl).forEach(h=>{if(h.ex&&!h.fat&&!h.fl.fatRested&&hasEqN(h,"Heavy Bow")){if(hasUpN(s,h,"Heavy Bow")&&pl.aura>=1){pl.aura-=1;log(s,`Upgraded Heavy Bow: ${pl.name} pays 1 Aura so ${h.name} doesn't get a Fatigue counter.`,pid);return}h.fat=1;log(s,`Heavy Bow: ${h.name} gets a Fatigue counter (it won't ready at the next Dawn).`,pid)}}));
   [s.init,opp(s.init)].forEach(pid=>{const pl=P(s,pid);
     const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;
     if(pp){const t=autoTarget(s,pid,"enemy");if(t&&t.kind==="hero")loseHp(s,t,pp,"Pain Pillar")}

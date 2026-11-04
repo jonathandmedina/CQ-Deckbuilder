@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 2, 2026 (update 18)*
+*Version: November 3, 2026 (update 19)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -537,12 +537,16 @@ Whenever more cards need to go into your inventory than you have empty slots, yo
 
 ### Upgrading
 
-Some items and equipment have an **Upgrade** cost in Gold (for example, “Upgrade X Gold: This Arrow deals +X more damage”). At the Blacksmith in Town, you may upgrade any of them:
+Some items and equipment have an **Upgrade** cost in Gold (for example, “Upgrade X Gold: This Arrow deals +X more damage”).
+
+**Every weapon has one fixed upgrade.** Its back side (the upgraded side) shows the Upgrade cost and the weapon’s new text and stats, which replace the front side’s. Stronger weapons have bigger upgrades that cost more Gold (3 to 7). In Deck Forge, press the flip icon (⟳) on a weapon to see its upgraded side.
+
+At the Blacksmith in Town, you may upgrade any of them:
 
 - The object must be in play: on a Hero, in your inventory, or on the battlefield. You can’t upgrade a card in your hand, library or discard pile.
 - Pay the Gold. For an Upgrade X cost, choose X and pay X Gold.
-- Flip the card to its upgraded side (with proxies, put an upgrade counter on it and note X). Its Upgrade effect is now active.
-- Each object can be upgraded once.
+- Flip the card to its upgraded side (with proxies, put an upgrade counter on it and note X; Print & Play prints each weapon’s upgraded side to sleeve behind it). Its Upgrade effect is now active.
+- Each object can be upgraded once. A weapon has only its one upgrade.
 - **Upgrades are permanent.** An upgraded object stays upgraded for the rest of the game, even if it is destroyed, discarded, exiled or changes zones. (An upgraded Arrow is still upgraded when it comes back from your discard pile.)
 
 ## 17. Keywords

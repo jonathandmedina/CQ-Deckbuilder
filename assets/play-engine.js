@@ -324,6 +324,8 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
       if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
       if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,1)}
       if(src.fl.bruisedRound===s.round&&dealt>0&&tgt.st)addStatus(s,tgt,"wound",1);
+      /* Mind Rend (update 21): the damaged party discards a card (its owner chooses) */
+      if(src.fl.rendRound===s.round&&dealt>0){const dp=ctrl(s,tgt);const dpl=P(s,dp);if(dpl.hand.length){log(s,`Mind Rend: ${dpl.name} discards a card.`);pushChoose(s,dp,{title:"Mind Rend: discard a card",cards:dpl.hand.map(c=>c.uid),min:1,max:1,op:"discard"})}}
       if(o.combat&&dealt>0){const th=eqList(src).filter(e=>e.name==="Thief's Dagger").reduce((n,e)=>n+(isUp(s,e)?2:1),0);if(th)stealGold(s,src.owner,ctrl(s,tgt),th,"Thief's Dagger")} /* update 18 */
       if(o.combat&&dealt>0)eqList(src).forEach(e=>{if(e.x&&e.x.stun&&tgt.st)addStatus(s,tgt,"stun",1)});
       if(o.combat&&dealt>0&&(hasEqN(src,"Hammer of Ruin")||hasEqN(src,"Hammer"))){const dp=P(s,ctrl(s,tgt));let it=dp.inv.find(x=>!x.fd&&x.kind!=="equip");
@@ -434,7 +436,13 @@ E.unequip=unequip;
 function eqCost(s,h,e){let c=e.tok?(e.cost||0):num(def(e).cost);
   if(h.name==="Blessed Champion")c-=h.lvl>=3?2:1;c+=burden(h);return Math.max(0,c)}
 E.eqCost=eqCost;
-const burden=h=>h.ench.filter(e=>e.name==="Burden").length;
+const burden=h=>h.ench.filter(e=>e.name==="Slow Down").length; /* update 21: Slow Down (old Burden text) = +1 Aura per copy */
+/* update 21: Burden = whenever that Hero plays a card, activates an ability or attacks, Fatigue it */
+function burdenFat(s,h){if(!h||h.kind!=="hero"||h.dead||!(h.ench||[]).some(e=>e.name==="Burden"))return;h.fat=(h.fat||0)+1;h.fl.fatRested=false;log(s,`Burden: ${h.name} is Fatigued (it won't ready at the next Dawn).`,h.owner)}
+E.burdenFat=burdenFat;
+/* update 21: Chains of Darkness = that Hero is Confused while it's attached, and must pay 1 Aura to attack */
+const chained=h=>!!(h&&h.kind==="hero"&&(h.ench||[]).some(e=>e.name==="Chains of Darkness"));E.chained=chained;
+const confused=h=>!!(h&&((h.st&&h.st.confuse>0)||chained(h)));E.confused=confused;
 
 /* ---------- costs ---------- */
 function cardCost(s,pid,actor,d,x){let c=d.cost==="X"?(x||0):num(d.cost);const pl=P(s,pid);
@@ -561,7 +569,7 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
       if(canPlayCard(s,pid,a,c)){seen.add(c.id);out.push({type:"play",uid:c.uid})}});
     /* Call of Nature: a Summon card exiled this turn can be played */
     (pl.t.nature||[]).forEach(u=>{const c=pl.exile.find(x=>x.uid===u);if(c&&canPlayCard(s,pid,a,c))out.push({type:"play",uid:u})});
-    if(!a.fl.noAttack)out.push({type:"attack",att:a.uid});
+    if(!a.fl.noAttack&&!(chained(a)&&pl.aura<1))out.push({type:"attack",att:a.uid});
     if(a.lvl<6&&a.fl.leveled!==s.round&&a.fl.noLevel!==s.round&&!arrested(a)){const st=(a.lvl+1)%2===0;
       if(st)["str","def","aura"].forEach(k=>out.push({type:"level",stat:k}));else out.push({type:"level"})}
     if(a.fl.stepped!==s.round)out.push({type:"step"});
@@ -580,7 +588,7 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
     out.push({type:"manualAbility"});}
   }
   pl.bf.forEach(o=>{if(o.kind==="summon"&&!o.ex&&!o.st.stun)out.push({type:"attack",att:o.uid})});
-  {const bm=bandMembers(s,pid);if(bm.length>=2){if(a&&bm.includes(a))out.push({type:"band",att:a.uid});bm.forEach(o=>{if(o.kind==="summon")out.push({type:"band",att:o.uid})})}}
+  {const bm=bandMembers(s,pid);if(bm.length>=2){if(a&&bm.includes(a)&&!(chained(a)&&pl.aura<1))out.push({type:"band",att:a.uid});bm.forEach(o=>{if(o.kind==="summon")out.push({type:"band",att:o.uid})})}}
   /* item abilities with no Hero cost (Energy Stone): any time you have priority, no action used */
   pl.inv.forEach(o=>{if(o.kind!=="card"||o.fd)return;const isc=SC()[def(o).name];if(isc&&isc.act&&isc.act.free&&!nulled(s,o.name)&&(!isc.act.can||isc.act.can(s,pid,null,o))&&(isc.act.cost||0)<=pl.aura)out.push({type:"useFree",uid:o.uid})});
   pl.heroes.forEach(h=>{if(h.dead&&!h.surr)SOULS.forEach((_,i)=>out.push({type:"soul",hero:h.uid,ch:i}))});
@@ -718,16 +726,16 @@ function doAct(s,pid,a){const pl=P(s,pid);
   if(a.type==="band"){const all=bandMembers(s,pid);let mem=(a.members||all.map(o=>o.uid)).filter(u=>u!==a.att&&all.some(o=>o.uid===u));
     if(!mem.length){startAttack(s,pid,a.att,a.targets[0],{});return}
     startAttack(s,pid,a.att,a.targets[0],{band:mem});return}
-  if(a.type==="eqAct"){const f=find(s,a.uid);const x=(root.CQ_EQACT||{})[f.o.name];if(x.cost)pay(s,pid,actor,x.cost);log(s,`${actor.name} uses ${f.o.name}.`,pid);
+  if(a.type==="eqAct"){const f=find(s,a.uid);const x=(root.CQ_EQACT||{})[f.o.name];if(x.cost)pay(s,pid,actor,x.cost);burdenFat(s,actor);log(s,`${actor.name} uses ${f.o.name}.`,pid);
     withSrc(s,f.o.name,()=>x.run(mkCtx(s,pid,actor,DB[f.o.id]||{name:f.o.name},f.o,a.targets||[])));checkDeaths(s);return}
   if(a.type==="level"){actor.ex=true;levelUp(s,actor,a.stat,true);draw(s,pid,1);actor.fl.leveled=s.round;return}
   if(a.type==="step"){actor.fl.stepped=s.round;log(s,`${actor.name} steps back and will act last this round, after the Closer.`,pid);return}
-  if(a.type==="ability"){const ab=HS()[actor.name][a.idx];const c=abilityCost(s,pid,actor,ab);if(ab.ex!==false)actor.ex=true;pay(s,pid,actor,c);
+  if(a.type==="ability"){const ab=HS()[actor.name][a.idx];const c=abilityCost(s,pid,actor,ab);if(ab.ex!==false)actor.ex=true;pay(s,pid,actor,c);burdenFat(s,actor);
     log(s,`${actor.name} uses its ability${ab.label?`: ${ab.label}`:""}.`,pid);
     const trig={kind:"card",ability:true,src:actor,pid,targets:a.targets||[],cost:c,cls:actor.cls,type:"Ability",idx:a.idx};
     queueResolve(s,pid,{k:"ability",actor:actor.uid,idx:a.idx,targets:a.targets||[]},trig);return}
   if(a.type==="manualAbility"){log(s,`${actor.name} uses an ability (resolved by hand). Pay its costs in the panel.`,pid);s.pend.unshift({type:"manual",pid,title:`${actor.name}: ability`,text:DB[actor.id].rules,actor:actor.uid});return}
-  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];const c=itemCost(s,pid,actor,o);pay(s,pid,actor,c);
+  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];const c=itemCost(s,pid,actor,o);pay(s,pid,actor,c);burdenFat(s,actor);
     if((def(o).sub==="Arrow"&&!(s.bonus&&s.bonus.rapid&&s.bonus.uid===actor.uid))||isc.act.ex)actor.ex=true;
     log(s,`${actor.name} activates ${o.name}.`,pid);
     if(isc.act.exile||def(o).sub==="Arrow"){pl.inv.splice(pl.inv.indexOf(o),1);if(isc.act.exile)pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});else pl.disc.push({uid:o.uid,id:o.id,owner:o.owner})}
@@ -759,12 +767,12 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   const x=(d.cost==="X"||(sc&&sc.x))?Math.max(0,Math.min(a.x|0,99)):0;
   const cost=o.free?0:cardCost(s,pid,actor,d,x);
   if(cost>pl.aura){log(s,`Not enough Aura for ${d.name}.`,pid);return}
-  pay(s,pid,actor,cost);consumeCostFlags(s,pid,actor,d);
+  pay(s,pid,actor,cost);consumeCostFlags(s,pid,actor,d);if(actor)burdenFat(s,actor);
   zone.splice(zone.indexOf(c),1);
   pl.t.cards=(pl.t.cards||0)+1;
   let targets=a.targets||[];
   /* Confused: targets are random among all legal */
-  if(actor&&actor.st.confuse&&sc){const specs=specsFor(sc,a.modes);targets=specs.map((sp,i)=>{if(targets[i]==null)return null;const cs=candidates(s,pid,Object.assign({},sp,{k:sp.k.replace(/^(enemy|ally)/,"").replace(/^$/,"any").replace(/^Hero$/,"hero").replace(/^Summon$/,"summon")}),{actor,card:d});return cs.length?cs[ri(s,cs.length)]:targets[i]});log(s,`${actor.name} is Confused: targets are chosen at random.`)}
+  if(actor&&confused(actor)&&sc){const specs=specsFor(sc,a.modes);targets=specs.map((sp,i)=>{if(targets[i]==null)return null;const cs=candidates(s,pid,Object.assign({},sp,{k:sp.k.replace(/^(enemy|ally)/,"").replace(/^$/,"any").replace(/^Hero$/,"hero").replace(/^Summon$/,"summon")}),{actor,card:d});return cs.length?cs[ri(s,cs.length)]:targets[i]});log(s,`${actor.name} is Confused: targets are chosen at random.`)}
   log(s,`${actor?actor.name:pl.name} plays ${d.name}${o.combo?" (Combo)":o.free?" (free)":""}${cost?` for ${cost} Aura`:""}${targets.filter(Boolean).length?" → "+targets.filter(Boolean).map(t=>{const r=resolveTarget(s,t);return r?r.name:"?"}).join(", "):""}.`,pid);
   if(d.sup!=="Hidden"){s.prevCard=s.lastCard;s.lastCard={id:c.id,pid,targets,modes:a.modes,x,round:s.round,type:d.type}}
   if(d.type==="Song")pl.t.songs=(pl.t.songs||0)+1;
@@ -849,6 +857,10 @@ function resolveCont(s,pid,cont,mods){
   if(s.bonus&&s.bonus.pid===pid&&s.bonus.dup&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)){s.bonus.dup=false;log(s,`Echo Performer duplicates ${d.name}.`,pid);copyTargets(s,pid,{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,picked:[],orig:cont.targets||[]})}
   /* triggers on card played */
   if(d.type==="Spell"){living(pl).forEach(h=>{if(h.name==="Diviner Mage")pushScry(s,pid,1)})}
+  /* Staff of Doom (update 21): the first Spell the equipped Hero plays each turn (every Spell when upgraded): target Hero loses HP equal to its Aura cost */
+  if(d.type==="Spell"&&actor&&!actor.dead&&hasEqN(actor,"Staff of Doom")&&(hasUpN(s,actor,"Staff of Doom")||actor.fl.staffRound!==s.round)){actor.fl.staffRound=s.round;
+    const n=d.cost==="X"?(cont.x||0):num(d.cost);const hs=inPlayTargets(s).filter(o=>o.kind==="hero"&&(!stealth(s,o)||ctrl(s,o)===pid));
+    if(n>0&&hs.length)ask(s,pid,`Staff of Doom: target Hero loses ${n} HP`,targetOpts(s,pid,hs.filter(o=>ctrl(s,o)!==pid),n).concat(targetOpts(s,pid,hs.filter(o=>ctrl(s,o)===pid),n)).concat([{label:"No one",v:null}]),"loseTo",{n,name:"Staff of Doom"})}
   if(d.type==="Song"&&actor&&!actor.dead&&heroIs(actor,"Bard")){living(pl).filter(h=>h.name==="Harmony Sage").forEach(hs=>heal(s,hs,actor,1,pid))}
   if(d.type==="Song"){if(invHas(pl,"The Forbidden Tuner")){const t=bestDamageTarget(s,pid,1,{pierce:1});if(t)damage(s,{name:"The Forbidden Tuner"},t,1,{pierce:1,card:true})}
     if(actor&&hasEqN(actor,"War Lute")){const t=autoTarget(s,pid,"strAlly");if(t)addMod(t,{str:hasUpN(s,actor,"War Lute")?2:1})}
@@ -863,6 +875,7 @@ function resolveCont(s,pid,cont,mods){
     if(added>0)s.pend.splice(added,0,{type:"comboGo",pid,actor:actor&&actor.uid});else comboTrigger(s,pid,actor)}
   }
   checkDeaths(s)}
+ASK.loseTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t||t.dead)return;loseHp(s,t,pr.data.n,pr.data.name);stat(s,"dmg",pid,pr.data.name,pr.data.n)};
 ASK.lightningRod=(s,pid,pr,v)=>{if(v==null)return;const h=heroByUid(s,v);if(!h||h.ex)return;h.ex=true;log(s,`Lightning Rod: ${h.name} is exhausted.`,pid);makePillar(s,pid,"Spell Damage Pillar")};
 ASK.splitKick=(s,pid,pr,v)=>{if(v==null)return;copyCard(s,pid,pr.data.actor,pr.data.id,[v].concat(pr.data.rest||[]),pr.data.modes,pr.data.x)};
 function arrowBonus(s,pid,actor){const pl=P(s,pid);let b=0,ign=false,pierce=0;
@@ -891,8 +904,11 @@ function bandTotal(s,att,mem,tgt){return[att,...mem].reduce((n,m)=>n+dmgStr(s,m,
 E.bandTotal=bandTotal;
 function startAttack(s,pid,attUid,tgtUid,o){const f=find(s,attUid);if(!f)return;const att=f.o;const tgt=resolveTarget(s,tgtUid);if(!tgt)return;
   if(!o.noExhaust)att.ex=true;
-  /* Resistance Shield: pay 1 Aura to attack its owner's Heroes */
-  const tp=ctrl(s,tgt);if(tgt.kind==="hero"&&invHas(P(s,tp),"Resistance Shield")&&tp!==pid){P(s,pid).aura=Math.max(0,P(s,pid).aura-1);log(s,"Resistance Shield: attacker pays 1 Aura.",pid)}
+  const tp=ctrl(s,tgt);
+  /* Chains of Darkness (update 21, was Resistance Shield): the chained Hero pays 1 Aura to attack */
+  if(!o.free&&chained(att)){P(s,pid).aura=Math.max(0,P(s,pid).aura-1);log(s,`Chains of Darkness: ${att.name} pays 1 Aura to attack.`,pid)}
+  if(o.band)o.band.forEach(u=>{const m=find(s,u);if(m&&chained(m.o)){P(s,pid).aura=Math.max(0,P(s,pid).aura-1);log(s,`Chains of Darkness: ${m.o.name} pays 1 Aura to attack.`,pid)}});
+  burdenFat(s,att);if(o.band)o.band.forEach(u=>{const m=find(s,u);if(m)burdenFat(s,m.o)});
   att.attacks=(att.atkRound===s.round?att.attacks:0)+1;att.atkRound=s.round;if(att.fl&&att.fl.forceAtk){delete att.fl.forceAtk}
   if(o.band){const mem=o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o);mem.forEach(m=>{m.ex=true;m.attacks=(m.atkRound===s.round?m.attacks:0)+1;m.atkRound=s.round});
     const parts=[att,...mem].map(m=>`${m.name} ${dmgStr(s,m,tgt)}`);log(s,`⚔ Band attack on ${tgt.name}: ${parts.join(" + ")}${bandBonus(s,att,mem)?` + ${bandBonus(s,att,mem)} bonus`:""} = ${bandTotal(s,att,mem,tgt)} STR.`,pid)}
@@ -1014,8 +1030,13 @@ function autoTarget(s,pid,kind){const me=P(s,pid),op=P(s,opp(pid));
 E.autoTarget=autoTarget;
 
 /* ---------- flow ---------- */
+/* Cloak of Hate (update 21): whenever its Hero becomes exhausted (ready -> exhausted), deal 2 Dark damage to any target */
+function cloakCheck(s){s.p.forEach((pl,pid)=>pl.heroes.forEach(h=>{const was=!!h.fl.exSeen;h.fl.exSeen=!!(h.ex&&!h.dead);
+  if(h.ex&&!was&&!h.dead&&hasEqN(h,"Cloak of Hate")){const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);
+    eqList(h).filter(e=>e.name==="Cloak of Hate").forEach(()=>ask(s,pid,`Cloak of Hate: ${h.name} is exhausted, deal 2 Dark damage to any target`,targetOpts(s,pid,ts,2).concat([{label:"No damage",v:null}]),"dmgTo",{n:2,name:"Cloak of Hate",type:"Dark",src:h.uid}))}}))}
 function settle(s){let guard=0;
   while(!s.over&&guard++<200){
+    if(s.phase==="battle")cloakCheck(s);
     if(s.pend.length){if(s.pend[0].type==="comboGo"){const pr=s.pend.shift();comboTrigger(s,pr.pid,pr.actor?heroByUid(s,pr.actor):null);continue}
       if(s.pend[0].type==="attackGo"){const pr=s.pend.shift();const f=find(s,pr.cont.att);if(f&&!f.o.dead)queueResolve(s,pr.pid,pr.cont,pr.trig);continue}
       if(s.pend[0].type==="bottomRest"){const pr=s.pend.shift();const pl=P(s,pr.pid);let n=0;pr.uids.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){pl.lib.unshift(pl.lib.splice(i,1)[0]);n++}});if(n)log(s,`${pl.name} puts ${n} revealed card${n>1?"s":""} on the bottom of their library.`,pr.pid);continue}

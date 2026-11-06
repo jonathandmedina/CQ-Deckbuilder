@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 4, 2026 (update 20)*
+*Version: November 5, 2026 (update 21)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -276,10 +276,12 @@ When you have priority, you take one action with the Hero in the marked position
 The Hero must be ready, the card must be Generic or match the Hero’s class, and you must have enough Aura.
 
 1. Announce the card and its targets.
-2. Pay its Aura cost.
+2. Pay its Aura cost and any additional cost.
 3. Open a trigger window (see Triggers and the Stack).
 4. Resolve as much of the card as you can.
 5. Put the card in your discard pile, unless it stays in play (items, equipment, enchantments).
+
+**Additional costs.** Some cards have a line that starts “As an additional cost to play this card, …” (for example, Dark Jab: “this Hero loses 2 HP”). It always sits on its own line. Pay it when you pay the card’s Aura cost.
 
 Playing a card doesn’t exhaust the Hero unless the card says “Exhaust this Hero” or creates a summon (see Summons).
 
@@ -476,7 +478,7 @@ There are five status counters. At Dawn, each damaging status deals its damage, 
 
 Some cards use other counters, such as +1/+1 counters, Petal counters, Campfire counters, Fury counters and Fatigue counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
 
-- **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Heavy Bow puts one on its Hero whenever that Hero becomes exhausted; Rage Brute’s “Fatigue:” ability puts one on itself.)
+- **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Burden puts one on its Hero whenever that Hero plays a card, activates an ability or attacks; Heavy Bow puts one on its Hero whenever that Hero becomes exhausted; Rage Brute’s “Fatigue:” ability puts one on itself.)
 
 ## 16. Equipment
 
@@ -671,7 +673,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Gain Aura**: Add Aura to your pool right away. (Older cards say “generate”.)
 - **Gold**: Second resource. Earned in the Dusk Phase (1 per living Hero), kept between rounds, spent only in the Town Phase.
 - **Upgrade cost**: Gold paid at the Blacksmith to flip an item or piece of equipment to its upgraded side. It stays upgraded for the whole game, even if it changes zones.
-- **Fatigue counter**: A Hero with one doesn’t ready at your next Dawn; remove the counter instead.
+- **Fatigue counter**: A Hero with one doesn’t ready at your next Dawn; remove the counter instead. “Fatigue it” means put a Fatigue counter on it (Burden).
 - **Maximum hand size**: 5. At Dusk, discard down to 5.
 
 ### Card types and zones

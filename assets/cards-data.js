@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-04 (update 20: equipment upgrades).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-05 (update 21: Warlock changes).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -42,13 +42,13 @@ const RAW_CARDS=[
 [2, "Blunt Force", "3", "", "Tactic", "", "Barbarian", "Target Barbarian gains +4 STR this turn.", 2],
 [2, "Blunt-Point Force", "0", "", "Item", "Arrow", "Ranger", "2{A}: Deal 3 damage. If damage is dealt this way, the defending player discards a card.", 2],
 [2, "Boost Ritual", "2", "", "Spell", "", "Mage", "Conjure a Spell Damage Pillar. Exhaust this Hero.", 1],
-[1, "Brain Rot", "1", "", "Tactic", "", "Warlock", "Target player reveals their hand. Choose and discard any Tactic or Spell.", 1],
+[1, "Brain Rot", "1", "", "Tactic", "", "Warlock", "Target player reveals their hand. Choose and discard any Tactic, Spell or Song.", 2],
 [2, "Breath", "0", "", "Tactic", "Combo", "Monk", "Scry 1. Combo.", 1],
 [2, "Broken Blade", "1", "", "Tactic", "", "Rogue", "Destroy a Dagger equipped to a Hero you control. You may ready that Hero.", 2],
 [2, "Bruised", "1", "", "Tactic", "", "Barbarian", "This turn, whenever this Hero deals damage, you may Wound that target.", 2],
 [2, "Brute's Banner", "2", "", "Item", "Relic", "Barbarian", "At Dawn, your Barbarian with the highest STR gains +2 STR this turn.", 1],
 [2, "Bullseye", "1", "", "Tactic", "", "Ranger", "The next Arrow you activate this turn ignores DEF.", 1],
-[2, "Burden", "4", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. Cards that Hero plays and abilities it activates cost 1 more Aura.", 1],
+[2, "Burden", "4", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. Whenever that Hero plays a card, activates an ability or attacks, Fatigue it.", 2],
 [2, "Call of Nature", "0", "", "Tactic", "", "Druid", "Exile a Summon card from your discard pile. You may play it this turn.", 1],
 [2, "Camouflage", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: Prevent all damage from a Spell or Tactic that would target a friendly Hero. That Hero can't be targeted for the rest of this turn.", 1],
 [2, "Campfire", "2", "", "Item", "", "Barbarian", "This enters with 3 Campfire counters. At Dawn, remove a Campfire counter and heal each Hero in your party for 1 HP. When the last counter is removed, exile this.", 2],
@@ -56,6 +56,7 @@ const RAW_CARDS=[
 [2, "Captain's Banner", "3", "", "Item", "Relic", "Paladin", "Soldiers you control have +1 STR and +1 HP.", 1],
 [2, "Carry Radiance", "0", "", "Tactic", "", "Cleric", "Target Cleric gains Lifelink this turn.", 1],
 [2, "Chain Lightning", "7", "", "Spell", "", "Mage", "Deal 4 Lightning damage to each enemy Hero. Stun each Hero dealt damage this way. Exhaust this Hero.", 2],
+[2, "Chains of Darkness", "3", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero is Confused as long as this is attached, and must pay 1{A} to attack.", 2],
 [2, "Charged Barrage", "3", "", "Tactic", "", "Paladin", "Exhaust this Hero. It gains +4 DEF this turn. If no damage is dealt to this Hero this turn, at Dusk it deals damage equal to its STR to each enemy.", 1],
 [2, "\"Choices\"", "3", "", "Song", "", "Bard", "Choose two:\n- Mill 2 (move the top 2 cards of your library to your discard pile).\n- Equip a Bard Equipment from your hand or inventory to this Hero without paying its Aura cost.\n- Return a Song from your discard pile to your hand.", 3],
 [2, "\"Come Together\"", "3", "", "Song", "", "Bard", "Harmonize X: Reveal the top X cards of your library. You may play a revealed Bard card without paying its Aura cost.", 1],
@@ -64,10 +65,10 @@ const RAW_CARDS=[
 [2, "\"Crescendo\"", "4", "", "Song", "", "Bard", "Deal 3 damage. Harmonize 2: Deal 3 damage to each enemy instead.", 1],
 [1, "Curse of Exhaustion", "5", "Legendary", "Spell", "", "Warlock", "Exhaust all Heroes in target party. Exhaust this Hero.", 1],
 [2, "Cut Off", "3", "", "Tactic", "", "Rogue", "Move target enemy Hero to the Closer position. This Hero attacks it.", 1],
-[2, "Dark Arts", "2", "", "Spell", "", "Warlock", "Lose up to 6 HP, target enemy loses that much HP.", 2],
+[2, "Dark Arts", "2", "", "Spell", "", "Warlock", "As an additional cost to play this card, this Hero loses X HP.\nTarget enemy loses X HP.", 3],
 [2, "Dark Insight", "3", "", "Spell", "", "Warlock", "Draw a card. Conjure a Pain Pillar. Exhaust this Hero.", 1],
-[2, "Dark Jab", "3", "", "Spell", "", "Warlock", "As an additional cost, this Hero loses 2 HP. Target enemy loses 3 HP. Confuse it.", 3],
-[2, "Dark Lance", "4", "", "Spell", "", "Warlock", "As an additional cost, this Hero loses 3 HP. Target enemy loses 4 HP. Confuse it.", 3],
+[2, "Dark Jab", "3", "", "Spell", "", "Warlock", "As an additional cost to play this card, this Hero loses 2 HP.\nTarget enemy loses 4 HP. Confuse it.", 4],
+[2, "Dark Lance", "4", "", "Spell", "", "Warlock", "As an additional cost to play this card, this Hero loses 3 HP.\nTarget enemy loses 5 HP. Confuse it.", 4],
 [2, "\"Dazzling Melody\"", "2", "", "Song", "", "Bard", "This turn, enemies can only attack this Hero, and enemy cards and abilities that target one of your Heroes or summons must target this Hero.", 2],
 [2, "Death by a Thousand Cuts", "5", "", "Tactic", "", "Rogue", "Deal damage to target equal to the number of Poison counters on all enemies plus the number of Daggers your Rogues have equipped. Exhaust this Hero.", 1],
 [2, "Deep Contemplation", "2", "", "Tactic", "", "Monk", "Draw a card. Put a +1/+1 counter on target Meditating Hero.", 1],
@@ -75,7 +76,7 @@ const RAW_CARDS=[
 [2, "Delevel", "3", "", "Tactic", "", "Generic", "Target Hero loses 1 level.", 1],
 [2, "Disarm", "3", "", "Tactic", "", "Generic", "Unequip target Equipment. It goes to its owner's inventory.", 1],
 [2, "Disenchant", "2", "", "Tactic", "", "Generic", "Destroy target Enchantment.", 1],
-[2, "Disorient", "2", "", "Spell", "", "Warlock", "Confuse any target.", 2],
+[2, "Disorient", "1", "", "Spell", "", "Warlock", "Confuse any target.", 3],
 [2, "Dissipate", "2", "", "Tactic", "", "Generic", "Destroy target non-Hero object that cost 3 Aura or less.", 1],
 [2, "Distract", "2", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero has -1 DEF.", 1],
 [2, "Divine Judgment", "5", "", "Tactic", "", "Paladin", "Deal damage equal to this Hero's DEF to each enemy. Exhaust this Hero.", 1],
@@ -107,6 +108,7 @@ const RAW_CARDS=[
 [2, "Flick Dagger", "2", "", "Tactic", "", "Rogue", "Destroy a Dagger equipped to this Hero. This Hero deals damage equal to its STR to each enemy.", 1],
 [2, "Flurry of Blows", "3", "", "Tactic", "Combo", "Monk", "Deal 2 damage twice. Piercing 1. Combo.", 1],
 [2, "Focus", "0", "", "Tactic", "", "Monk", "Attacks you make this turn gain Piercing 1.", 1],
+[2, "Fog of Darkness", "X", "", "Spell", "", "Warlock", "Confuse any target X times.", 1],
 [2, "Fortify", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: The next attack deals no damage.", 1],
 [2, "Frailty", "2", "", "Spell", "", "Warlock", "Set a Hero's DEF to 0.", 1],
 [2, "Frog in the Throat", "3", "", "Tactic", "", "Bard", "Target Hero loses all abilities for the rest of the turn. Echo.", 1],
@@ -164,13 +166,14 @@ const RAW_CARDS=[
 [2, "Medical Visit", "1", "", "Tactic", "", "Cleric", "Remove 2 status counters.", 1],
 [2, "Meditate", "1", "", "Tactic", "", "Monk", "Meditate. (Exhaust this Hero. It is now Meditating. At each Dawn, you may choose not to ready it. If you don't, it gets a +1/+1 counter. When it readies, it stops Meditating, and its +1/+1 counters are removed at the next Dusk.)", 1],
 [2, "Memory Loss", "2", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero discards a card whenever it levels up.", 1],
+[2, "Mind Rend", "2", "", "Spell", "", "Warlock", "Target Hero gains \"When this Hero deals damage this turn, the damaged party discards a card.\"", 1],
 [2, "Mirrored Chant", "3", "", "Tactic", "", "Bard", "Copy the last Spell, Tactic or Song any player played this turn. You may choose new targets for the copy. If that card has an X cost, the copy uses the X that was paid. The copy's costs count as paid.", 2],
 [2, "Miscalculation", "0", "Hidden", "Tactic", "", "Rogue", "0{A}: If this face-down card is targeted by an opponent's card or ability, cancel it. Draw 2 cards.", 1],
 [2, "Mocking Doll", "2", "", "Tactic", "", "Generic", "Create a Doll Item token and place it in an empty inventory slot.", 1],
 [2, "Narrow Escape", "0", "Hidden", "Tactic", "", "Rogue", "1{A}: If a Rogue would be targeted by a card that costs 3 Aura or more, cancel that card.", 1],
 [2, "Naturalize", "2", "", "Tactic", "", "Generic", "Destroy target item.", 1],
 [2, "Nature's Choice", "3", "", "Tactic", "", "Druid", "Choose two: Summon a 2/3 Elk; a summon gains +2 STR; or ready a summon.", 4],
-[2, "Night Terror", "7", "", "Spell", "", "Warlock", "As an additional cost, this Hero loses 4 HP. Each enemy loses 3 HP. Confuse them. Exhaust this Hero.", 3],
+[2, "Night Terror", "7", "", "Spell", "", "Warlock", "As an additional cost to play this card, this Hero loses 4 HP.\nEach enemy loses 3 HP. Confuse them. Exhaust this Hero.", 4],
 [2, "Noble Choice", "3", "", "Tactic", "", "Paladin", "Choose two: Summon a 2/3 Soldier; target Hero gains Guard 2; or draw a card.", 3],
 [2, "Noble Promotion", "2", "", "Tactic", "", "Paladin", "At this turn's Dusk, you gain initiative instead of it passing normally.", 1],
 [2, "Null Stone", "2", "", "Item", "", "Generic", "As Null Stone enters, name a card. Activated abilities of that card can't be activated.", 1],
@@ -208,7 +211,6 @@ const RAW_CARDS=[
 [2, "Refire", "1", "", "Tactic", "", "Ranger", "Activate an Arrow. If it resolves, put it back into your inventory.", 1],
 [2, "Refrain", "0", "Hidden", "Item", "Trap", "Bard", "Exhaust a Bard: Prevent all damage from target attack or Tactic.", 1],
 [2, "Reload", "0", "", "Tactic", "", "Ranger", "Look at the top card of your library. If it's an Arrow, put it into your inventory. If it isn't, you may put it on the bottom of your library.", 2],
-[2, "Resistance Shield", "3", "", "Item", "", "Warlock", "Each enemy must pay 1{A} to attack or target your Heroes.", 1],
 [2, "Resourceful Maneuver", "1", "", "Tactic", "", "Rogue", "Equip a Dagger from your discard pile to target Rogue.", 1],
 [2, "Resurrection", "5", "", "Tactic", "", "Cleric", "Revive target dead friendly Hero with 8 HP. It is exhausted. Exhaust this Hero.", 1],
 [2, "Retribution", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: If a friendly Hero would take damage, deal that much damage to the source also.", 1],
@@ -237,6 +239,7 @@ const RAW_CARDS=[
 [2, "Siphon Life", "3", "", "Spell", "", "Warlock", "Deal 2 Dark damage. Heal this Hero for the damage dealt.", 1],
 [2, "Sleep", "2", "", "Spell", "", "Mage", "Exhaust target Hero.", 1],
 [2, "Sleeping Potion", "0", "", "Item", "", "Generic", "2{A}, Exhaust a Hero you control, Exile: Exhaust target Hero.", 1],
+[2, "Slow Down", "4", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. Cards that Hero plays and abilities it activates cost 1 more Aura.", 1],
 [2, "Smash and Grab", "4", "", "Tactic", "", "Barbarian", "Destroy up to two target items that each cost 2 or less. Exhaust this Hero.\n{L3} Instead, destroy up to two target items. Exhaust this Hero.", 3],
 [2, "Smash to Smithereens", "4", "", "Tactic", "", "Generic", "Destroy all Pillars. Exhaust this Hero.", 1],
 [2, "Smoke Bomb", "0", "", "Item", "", "Generic", "1{A}, Exile: Target Hero gains Stealth this turn.", 1],
@@ -415,6 +418,8 @@ const RAW_EQUIP=[
 ["Ritual Athame", "", "Weapon", "Warlock", "Equipped Hero gains +1 STR. Once per turn, when you lose HP to pay a cost, deal 1 Dark damage to any target.", "1", "One-Handed", "1", "0", 2],
 ["Sacred Vestments", "", "Armor", "Cleric", "Equipped Hero gains +1 DEF. Healing it does is increased by 1.", "2", "Chest", "0", "1", 2],
 ["Shadow Cloak", "", "Accessory", "Rogue", "The equipped Hero has Stealth.", "3", "Accessory", "0", "0", 2],
+["Staff of Doom", "", "Weapon", "Warlock", "The first time the equipped Hero plays a Spell each turn, target Hero loses HP equal to that Spell's Aura cost.", "4", "Two-Handed", "0", "0", 1],
+["Cloak of Hate", "", "Accessory", "Warlock", "Equipped Hero gains +1 DEF. Whenever it becomes exhausted, deal 2 Dark damage to any target.", "3", "Accessory", "0", "1", 1],
 ["Shillelagh", "", "Weapon", "Druid", "Equipped Hero gains +1 STR. Exhaust a summon you control: This Hero gains +1 STR this turn.", "1", "One-Handed", "1", "0", 2],
 ["Silver Fiddle", "", "Instrument", "Bard", "Song cards played by the equipped Hero cost 1 less Aura.", "3", "Two-Handed", "0", "0", 2],
 ["Sword of Eliazar", "Legendary", "Weapon", "Paladin", "Equipped Hero gains +5 STR. When this is destroyed while equipped, summon a 3/5 Eliazar.", "3", "Two-Handed", "5", "0", 4],
@@ -455,7 +460,7 @@ const RAW_TOKENS=[
 const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
-const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection"};
+const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness"};
 
 /* Deprecated cards: removed from play, kept for the record and so old saved games still load. Same row format as RAW_CARDS.
    Decks that contain one are flagged as not legal; they don't appear in the card list, deck builder or prints. */
@@ -512,5 +517,7 @@ const EQUIP_UPGRADES={
 "Unpiercing Chestplate": [5, "Equipped Hero gains +1 DEF. Attacks and cards with Piercing that target the equipped Hero lose Piercing.", 0, 1],
 "Vambrace of Light": [3, "Guard 2.", 0, 0],
 "War Lute": [4, "Whenever the equipped Hero plays a Song, target ally gains +2 STR this turn.", 0, 0],
-"Shadow Cloak": [5, "The equipped Hero has Stealth, +1 STR and Piercing 1.", 1, 0]
+"Shadow Cloak": [5, "The equipped Hero has Stealth, +1 STR and Piercing 1.", 1, 0],
+"Staff of Doom": [6, "Whenever the equipped Hero plays a Spell, target Hero loses HP equal to that Spell's Aura cost.", 0, 0],
+"Cloak of Hate": [5, "Equipped Hero gains +2 DEF. Whenever it becomes exhausted, deal 2 Dark damage to any target.", 0, 2]
 };

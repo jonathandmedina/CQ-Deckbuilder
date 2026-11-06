@@ -70,12 +70,14 @@ def("Ritual of Power",{run(c){pillar(c,"Spell Damage Pillar",3);exMe(c)}});
 def("Levitate",{run(c){if(!c.actor)return;E.addMod(c.actor,{noAttack:1});log(c,`${c.actor.name} can't be attacked this turn.`)}});
 /* ===== Warlock ===== */
 const lifeCard=(pay,n)=>({t:[t("enemy","target enemy")],run(c){if(c.actor)E.loseHp(c.s,c.actor,pay,c.def.name+" cost");const o=c.t[0];if(o&&!o.dead){E.loseHp(c.s,o,n,c.def.name);st(c,o,"confuse")}}});
-def("Dark Jab",lifeCard(2,3));def("Dark Lance",lifeCard(3,4));
+def("Dark Jab",lifeCard(2,4));def("Dark Lance",lifeCard(3,5)); /* update 21: 4 and 5 */
 def("Night Terror",{run(c){if(c.actor)E.loseHp(c.s,c.actor,4,"Night Terror cost");enemies(c).forEach(e=>{if(!e.dead){E.loseHp(c.s,e,3,"Night Terror");st(c,e,"confuse")}});exMe(c)}});
 def("Siphon Life",{t:[t("any","damage target")],run(c){const d=D(c,c.t[0],2,{type:"Dark"});heal(c,c.actor,d)}});
-def("Dark Arts",{t:[EN],x:{label:"HP to lose (up to 6)",max:(s,pid,a)=>Math.min(6,a?E.hp(s,a)-1:6),free:true},run(c){const n=Math.min(6,c.x||0);if(n<=0)return;E.loseHp(c.s,c.actor,n,"Dark Arts");if(c.t[0])E.loseHp(c.s,c.t[0],n,"Dark Arts")}});
+def("Dark Arts",{t:[EN],x:{label:"HP to lose (X)",max:(s,pid,a)=>a?Math.max(0,E.hp(s,a)-1):6,free:true},run(c){const n=Math.max(0,c.x||0); /* update 21: no cap */if(n<=0)return;E.loseHp(c.s,c.actor,n,"Dark Arts");if(c.t[0])E.loseHp(c.s,c.t[0],n,"Dark Arts")}});
 def("Blood Offering",{run(c){E.loseHp(c.s,c.actor,3,"Blood Offering");c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)}});
 def("Disorient",{t:[ANY],run(c){st(c,c.t[0],"confuse")}});
+def("Fog of Darkness",{t:[ANY],run(c){if(c.x>0)st(c,c.t[0],"confuse",c.x)}}); /* update 21 */
+def("Mind Rend",{t:[HERO],run(c){const h=c.t[0];if(!h||h.dead)return;h.fl.rendRound=c.s.round;log(c,`${h.name}: when it deals damage this turn, the damaged party discards a card.`)}}); /* update 21 */
 def("Frailty",{t:[HERO],run(c){buff(c.t[0],{zeroDef:1});log(c,`${c.t[0].name}'s DEF is 0 until Dusk.`)}});
 def("Ritual of Pain",{run(c){pillar(c,"Pain Pillar");exMe(c)}});
 def("Dark Insight",{run(c){draw(c,1);pillar(c,"Pain Pillar");exMe(c)}});
@@ -84,9 +86,9 @@ def("Doubling Ritual",{run(c){const ps=c.me.bf.filter(o=>o.kind==="pillar");ps.f
 def("Curse of Exhaustion",{t:[t("player","target party")],run(c){const p=c.t[0];if(p)living(c.s.p[p.pid]).forEach(h=>h.ex=true);log(c,`${p?p.name:"?"}'s party is exhausted.`);exMe(c)}});
 def("Power Vacuum",{t:[t("enemyPlayer","target party")],run(c){const pl=c.op;const r=Math.min(pl.aura,c.x||0);pl.aura-=r;log(c,`${pl.name} loses ${r} Aura.`);exMe(c)}});
 def("Bewilder",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Bewilder: you may discard one card from their hand",cards:c.op.hand.map(x=>x.uid),min:0,max:1,op:"opDiscard",target:1-c.pid})}});
-def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic or Spell",cards:c.op.hand.filter(x=>/Tactic|Spell/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:1-c.pid})}});
+def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic, Spell or Song",cards:c.op.hand.filter(x=>/Tactic|Spell|Song/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:1-c.pid})}});
 const curse=(name)=>def(name,{t:[HERO],run(c){const h=c.t[0];if(!h)return"stay";h.ench.push({uid:c.inst.uid,id:c.def.id,name:c.def.name,kind:"card",owner:c.pid,ctrl:c.pid,cardUid:c.inst.uid});log(c,`${c.def.name} is attached to ${h.name}.`);return"stay"}});
-["Aura Leech","Blood Aura","Burden","Distract","Mark of Doom","Memory Loss","Weaken","Life Boost","Sanctuary","Arrested Development"].forEach(curse);
+["Aura Leech","Blood Aura","Burden","Slow Down","Chains of Darkness","Distract","Mark of Doom","Memory Loss","Weaken","Life Boost","Sanctuary","Arrested Development"].forEach(curse);
 /* ===== Cleric ===== */
 def("Healing Beam",{t:[t("any","heal target")],run(c){heal(c,c.t[0],5)}});
 def("Healing Touch",{t:[t("hero","Hero to heal")],run(c){heal(c,c.t[0],2)}});
@@ -316,7 +318,7 @@ song("Marching Cadence",{run(c){living(c.me).forEach(h=>h.fl.bandRound=c.s.round
 song("Duet",{t:[t("allyHero","ally Hero to band with",(s,o,x)=>!x||o!==x.actor)],run(c){const a=c.actor,b=c.t[0];[a,b].forEach(h=>{if(h)h.fl.bandRound=c.s.round});
   if((c.me.t.songs||0)>1&&a)a.fl.duetRound=c.s.round;log(c,`${a?a.name:"This Hero"}${b?" and "+b.name:""} gain Banding this turn${(c.me.t.songs||0)>1?"; their banded attack gets +2 STR":""}.`)}});
 /* passive items: handled in the engine by name (no script needed beyond entering play) */
-["Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Battle Horn","Trophy Rack","Lightning Rod","Tooth Crystal","Petal Shrine","Resistance Shield","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
+["Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Battle Horn","Trophy Rack","Lightning Rod","Tooth Crystal","Petal Shrine","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
 S["Almandine"].gem=c=>{c.actor=null;enemies(c).forEach(e=>E.damage(c.s,{name:"Almandine"},e,2,{card:true}))};
 S["Rose Quartz"].gem=c=>{living(c.me).forEach(h=>E.heal(c.s,null,h,3))};
 S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};

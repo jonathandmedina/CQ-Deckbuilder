@@ -7,7 +7,7 @@
 <meta name="description" content="Browse every Crystal Quest card, build decks, save them to your account, export print-and-play PDFs or Tabletop Simulator decks, and play games against the AI or friends online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script>/* theme: "retro" (default) or "clean"; set before CSS paints */(function(){var k="retro";try{k=localStorage.getItem("cq.skin")||"retro"}catch(e){}document.documentElement.dataset.skin=k==="clean"?"clean":"retro"})()</script>
+<script>/* theme: "retro" (default), "clean" or "art" (Card Art: Clean layout with card images); set before CSS paints */(function(){var k="retro";try{k=localStorage.getItem("cq.skin")||"retro"}catch(e){}document.documentElement.dataset.skin=(k==="clean"||k==="art")?k:"retro"})()</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Jersey+10&family=Pixelify+Sans:wght@400;700&display=swap">
 <style>
 /* Layout: sticky top bar with views (Cards, Deck Builder, My Decks, Best Decks, Rules, Play); builder is a two-pane pool + deck list that stacks on phones. */
@@ -63,7 +63,20 @@ button{cursor:pointer}
 @media (max-width:1279px){.discord-btn{margin-left:auto}}
 .acct{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--muted);min-width:0}
 .acct img{width:26px;height:26px;border-radius:50%}
-.skin-btn{flex:none}
+.skin-btn{flex:none;width:auto;padding:4px 8px;font-size:.85rem;cursor:pointer}
+/* Card Art theme: cards with finished art show the card image (upgraded equipment shows its back side) */
+html[data-skin="art"] .grid:not(.hand-grid){grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+@media (max-width:720px){html[data-skin="art"] .grid:not(.hand-grid){grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}}
+.card.art{background:radial-gradient(120% 70% at 50% 32%,color-mix(in srgb,var(--cc) 55%,#3a3a44),#121218 78%);border:0;border-radius:5%/3.6%;align-self:start}
+.card.art .c-art{display:block;width:100%;height:auto;aspect-ratio:5/7}
+.card.art .flip{position:absolute;top:17%;right:7%;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.7);background:rgba(15,18,26,.72);color:#fff;font-size:17px;line-height:1;cursor:pointer;z-index:2}
+.card.art .flip:hover,.card.art .flip:focus-visible{border-color:#D9A53A;color:#FFD27A;outline:none}
+.card.art .slotbadge{top:17%}
+.card.art .c-ctrl{border-top:0}
+button.card.art:hover{box-shadow:0 0 0 2px var(--cc),var(--shadow)}
+.card.art.upside{box-shadow:0 0 0 3px #D9A53A,var(--shadow)}
+.modal .card.art{max-width:400px;width:100%;margin-inline:auto}
+html[data-skin="retro"] select.skin-btn{font-family:var(--display);font-size:1rem;letter-spacing:.03em;padding:2px 8px}
 @media (max-width:720px){.top .brand{order:-2}.skin-btn{order:-1;margin-left:auto;padding:3px 8px;font-size:.75rem}}
 .acct b{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -284,7 +297,7 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261105a">
+<link rel="stylesheet" href="assets/retro.css?v=20261106a">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -299,7 +312,11 @@ button.card:hover{border-color:var(--cc)}
     <a href="#changelog" data-view="changelog">Changelog</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
-  <button type="button" class="btn sm skin-btn" id="skinBtn" title="Switch between the Retro and Clean themes"></button>
+  <select class="skin-btn" id="skinSel" aria-label="Theme" title="Theme">
+    <option value="retro">Retro theme</option>
+    <option value="clean">Clean theme</option>
+    <option value="art">Card Art theme</option>
+  </select>
   <a class="btn sm discord-btn" href="https://discord.gg/dvGaJRRkYg" target="_blank" rel="noopener">Join the Discord</a>
 </div></header>
 <main><div class="wrap" id="view"></div></main>
@@ -309,18 +326,17 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261105a"></script>
-<script src="assets/app.js?v=20261105a"></script>
-<script src="assets/play-engine.js?v=20261105a"></script>
-<script src="assets/play-cards.js?v=20261105a"></script>
-<script src="assets/play-ai.js?v=20261105a"></script>
-<script src="assets/play-ui.js?v=20261105a"></script>
-<script src="assets/changelog-data.js?v=20261105a"></script>
-<script src="assets/changelog.js?v=20261105a"></script>
+<script src="assets/cards-data.js?v=20261106a"></script>
+<script src="assets/app.js?v=20261106a"></script>
+<script src="assets/play-engine.js?v=20261106a"></script>
+<script src="assets/play-cards.js?v=20261106a"></script>
+<script src="assets/play-ai.js?v=20261106a"></script>
+<script src="assets/play-ui.js?v=20261106a"></script>
+<script src="assets/changelog-data.js?v=20261106a"></script>
+<script src="assets/changelog.js?v=20261106a"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
-<script>(function(){var b=document.getElementById("skinBtn");if(!b)return;var cur=document.documentElement.dataset.skin;
-b.textContent=cur==="retro"?"Clean theme":"Retro theme";b.setAttribute("aria-label","Switch to the "+(cur==="retro"?"Clean":"Retro")+" theme");
-b.addEventListener("click",function(){try{localStorage.setItem("cq.skin",cur==="retro"?"clean":"retro")}catch(e){}location.reload()})})()</script>
+<script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"retro";
+b.addEventListener("change",function(){try{localStorage.setItem("cq.skin",b.value)}catch(e){}location.reload()})})()</script>
 </body>
 </html>

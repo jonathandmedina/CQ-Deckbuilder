@@ -1,19 +1,21 @@
 "use strict";
 /* ---------- data ---------- */
 const CLASSES=["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock"];
-/* Three themes: "retro" (default, SNES-style menus, class icons), "clean", and "art" (Clean layout, but cards with finished art show the card image). Printed cards always use the clean palette. */
+/* Three themes: "retro" (default, SNES-style menus, class icons), "clean", and "art" (Card Art: storybook RPG menus in assets/art.css; cards with finished art show the card image). Printed cards always use the clean palette. */
 const SKIN=["clean","art"].includes(document.documentElement.dataset.skin)?document.documentElement.dataset.skin:"retro";
 /* Card Art theme: card images in assets/art/<kind>/<Name>-face.webp (upgraded side: -up.webp). Name = card name with every non-letter/digit as "_". */
 const artKey=n=>String(n).replace(/[^A-Za-z0-9]/g,"_");
-const CARD_ART={equip:new Set(["Antler_Crown", "Apprentice_s_Wand", "Arm_Guard_of_Riverstead", "Boots_of_Riverstead", "Breastplate_of_Bravery", "Bronze_Chest_Plate", "Celestial_Harp", "Chalice_of_Life", "Chest_Plate_of_Riverstead", "Cloak_of_Hate", "Cloak_of_Protection", "Dagger_of_Riverstead", "Drums_of_War", "Feather_Blade", "Gauntlets_of_Growth", "Great_Axe", "Greaves_of_Light", "Hammer_of_Ruin", "Heavy_Bow", "Helm_of_Aura", "Helm_of_Protection", "Iron_Hand_Wraps", "Jun_Lao_s_Headband", "Knight_s_Sword", "Leg_Armor_of_Riverstead", "Long_Dagger", "Long_Sword", "Longbow", "Mace_of_Dawn", "Multi_Bow", "Mystic_Quiver", "Poison_Tipped_Dagger", "Ring_of_Power", "Ring_of_Radiance", "Ring_of_Riverstead", "Ring_of_Vocation", "Ritual_Athame", "Sacred_Vestments", "Shadow_Cloak", "Shillelagh", "Shimmering_Cloak", "Silver_Fiddle", "Staff_of_Doom", "Sword_of_Eliazar", "Sword_of_Riverstead", "Thief_s_Dagger", "Tower_Shield", "Unpiercing_Chestplate", "Vambrace_of_Light", "War_Lute"])};
-const ART_VER="1";
+const CARD_ART={card:new Set(["_Ballad_of_Blades_"]),equip:new Set(["Antler_Crown", "Apprentice_s_Wand", "Arm_Guard_of_Riverstead", "Boots_of_Riverstead", "Breastplate_of_Bravery", "Bronze_Chest_Plate", "Celestial_Harp", "Chalice_of_Life", "Chest_Plate_of_Riverstead", "Cloak_of_Hate", "Cloak_of_Protection", "Dagger_of_Riverstead", "Drums_of_War", "Feather_Blade", "Gauntlets_of_Growth", "Great_Axe", "Greaves_of_Light", "Hammer_of_Ruin", "Heavy_Bow", "Helm_of_Aura", "Helm_of_Protection", "Iron_Hand_Wraps", "Jun_Lao_s_Headband", "Knight_s_Sword", "Leg_Armor_of_Riverstead", "Long_Dagger", "Long_Sword", "Longbow", "Mace_of_Dawn", "Multi_Bow", "Mystic_Quiver", "Poison_Tipped_Dagger", "Ring_of_Power", "Ring_of_Radiance", "Ring_of_Riverstead", "Ring_of_Vocation", "Ritual_Athame", "Sacred_Vestments", "Shadow_Cloak", "Shillelagh", "Shimmering_Cloak", "Silver_Fiddle", "Staff_of_Doom", "Sword_of_Eliazar", "Sword_of_Riverstead", "Thief_s_Dagger", "Tower_Shield", "Unpiercing_Chestplate", "Vambrace_of_Light", "War_Lute"])};
+const ART_VER="2";
+/* images that are blank templates (no rules text / Hero numbers baked in): the site draws those on top. Key: kind/Name-face or kind/Name-up */
+const ART_BLANK=new Set(["card/_Ballad_of_Blades_-face","equip/Antler_Crown-face"]);
 const hasArt=c=>SKIN==="art"&&!!CARD_ART[c.kind]&&CARD_ART[c.kind].has(artKey(c.name));
 const CLASS_COLOR_CLEAN={Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
 const CLASS_TEXT_CLEAN={Cleric:"#231A00",Monk:"#2A1500"};
 /* retro colors are sampled from the class icons */
 const CLASS_COLOR_RETRO={Barbarian:"#BE1029",Bard:"#A9327C",Cleric:"#CAAF65",Druid:"#A8622F",Mage:"#0271B9",Monk:"#51A5C5",Paladin:"#DE8600",Ranger:"#567428",Rogue:"#4B6170",Warlock:"#4D1791",Generic:"#6D6F80",Artificer:"#507B7F",Blacksmith:"#673839",Necromancer:"#466E6B"};
 const CLASS_TEXT_RETRO={Cleric:"#1A1206",Monk:"#06222E",Paladin:"#1E1000"};
-const CLASS_COLOR=SKIN==="retro"?CLASS_COLOR_RETRO:CLASS_COLOR_CLEAN, CLASS_TEXT=SKIN==="retro"?CLASS_TEXT_RETRO:CLASS_TEXT_CLEAN;
+const CLASS_COLOR=SKIN!=="clean"?CLASS_COLOR_RETRO:CLASS_COLOR_CLEAN, CLASS_TEXT=SKIN!=="clean"?CLASS_TEXT_RETRO:CLASS_TEXT_CLEAN;
 const cc=c=>CLASS_COLOR[c]||"#777", ct=c=>CLASS_TEXT[c]||"#FFFFFF";
 const ICON_CLS=new Set(["Generic","Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock","Artificer","Blacksmith","Necromancer"]);
 const ICON_BASE=new URL("assets/",document.baseURI).href;
@@ -244,9 +246,24 @@ function cardHTML(c,o={}){
 function flipHTML(c){return c.up?`<span class="flip" role="button" tabindex="0" data-flip title="${c.face==="up"?"Flip back to the normal side":`Flip to see the upgrade (${c.up.cost} Gold at the Blacksmith)`}" aria-label="${c.face==="up"?"Show normal side":"Show upgraded side"}">⟳</span>`:""}
 function artSrc(c){return`${ICON_BASE}art/${c.kind}/${artKey(c.name)}-${c.face==="up"?"up":"face"}.webp?v=${ART_VER}`}
 function artAlt(c){return`${c.name}${c.face==="up"?" (upgraded)":""}: ${String(c.rules||"").replace(/\{A\}/g," Aura")}`}
+/* Card Image Template (Card Art theme): the image is a blank Component.Studio export; rules text and numbers are laid over it.
+   Positions are in px of the 825x1125 export (bleed included); the image is cropped 37px each side, so the overlay box is 751x1051.
+   rules: [left, top, width, height]; nums: [field, centerX, centerY]. Kinds with baked-in numbers list no nums. */
+const ART_TPL={
+  hero:{rules:[110,752,612,282],nums:[["aura",705,132],["str",223,610],["hp",406,577],["def",593,610]]},
+  card:{rules:[110,760,612,280],nums:[]},
+  equip:{rules:[110,760,612,180],nums:[]}
+};
+const artPos=(x,y)=>`left:${((x-37)/751*100).toFixed(3)}%;top:${((y-37)/1051*100).toFixed(3)}%`;
+function artNum(c,f){if(f==="aura"&&c.kind!=="hero")f="cost";
+  if(f==="str"&&c.kind==="equip")return"+"+(c.pstr||0);if(f==="def"&&c.kind==="equip")return"+"+(c.pdef||0);
+  const v=c[f];return v==null||v===""?"":String(v)}
+function artRulesHTML(t){return String(t||"").split("\n").filter(p=>p.trim()).map(p=>"<p>"+esc(p).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,'<span class="lvl">LVL $1</span>')+"</p>").join("")}
+function artOverlayHTML(c){const t=ART_TPL[c.kind];if(!t||!ART_BLANK.has(`${c.kind}/${artKey(c.name)}-${c.face==="up"?"up":"face"}`))return"";const[l,tp,w,h]=t.rules;
+  return`<div class="art-ov" aria-hidden="true"><div class="ov-rules" style="${artPos(l,tp)};width:${(w/751*100).toFixed(3)}%;height:${(h/1051*100).toFixed(3)}%">${artRulesHTML(c.rules)}</div>${t.nums.map(([f,x,y])=>`<b class="ov-num" style="${artPos(x,y)}">${esc(artNum(c,f))}</b>`).join("")}</div>`}
 function artCardHTML(c,o,tag,attrs){
   return`<${tag} class="card art${o.picked?" picked":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}" title="${esc(c.name)}${c.face==="up"?" (upgraded)":""} · ${esc(c.cls)} · v${c.ver||1}"${attrs}>
-  <img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">
+  <div class="art-frame"><img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">${artOverlayHTML(c)}</div>
   ${flipHTML(c)}
   ${o.slot?`<span class="slotbadge">${o.slot}</span>`:""}
   ${o.ctrl||""}
@@ -787,7 +804,7 @@ function setDeck(fn){fn(S.deck);S.dirty=true;saveDraft();render()}
 /* weapon flip icon: swap the tile between its normal and upgraded side in place */
 function flipTile(el){const card=el.closest(".card");const c=card&&BYID.get(card.dataset.cid);if(!c||!c.up)return;
   const t=document.createElement("div");t.innerHTML=cardHTML(c,{flipped:!card.classList.contains("upside")});const n=t.firstElementChild;
-  if(card.classList.contains("art")){["img.c-art",".flip"].forEach(k=>{const a=card.querySelector(":scope > "+k),b=n.querySelector(":scope > "+k);if(a&&b)a.replaceWith(b)});card.title=n.title;card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus();return}
+  if(card.classList.contains("art")){[".art-frame",".flip"].forEach(k=>{const a=card.querySelector(":scope > "+k),b=n.querySelector(":scope > "+k);if(a&&b)a.replaceWith(b)});card.title=n.title;card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus();return}
   ["c-head","c-type","c-rules","c-foot"].forEach(k=>{const a=card.querySelector(":scope > ."+k),b=n.querySelector(":scope > ."+k);if(a&&b)a.innerHTML=b.innerHTML});
   card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus()}
 document.addEventListener("click",e=>{const f=e.target.closest("[data-flip]");if(!f)return;e.preventDefault();e.stopPropagation();flipTile(f)},true);

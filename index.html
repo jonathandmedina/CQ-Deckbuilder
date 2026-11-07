@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script>/* theme: "retro" (default), "clean" or "art" (Card Art: Clean layout with card images); set before CSS paints */(function(){var k="retro";try{k=localStorage.getItem("cq.skin")||"retro"}catch(e){}document.documentElement.dataset.skin=(k==="clean"||k==="art")?k:"retro"})()</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Jersey+10&family=Pixelify+Sans:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Jersey+10&family=Pirata+One&family=EB+Garamond:wght@400;500;600;700&family=Pixelify+Sans:wght@400;700&display=swap">
 <style>
 /* Layout: sticky top bar with views (Cards, Deck Builder, My Decks, Best Decks, Rules, Play); builder is a two-pane pool + deck list that stacks on phones. */
 :root{
@@ -69,6 +69,14 @@ html[data-skin="art"] .grid:not(.hand-grid){grid-template-columns:repeat(auto-fi
 @media (max-width:720px){html[data-skin="art"] .grid:not(.hand-grid){grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}}
 .card.art{background:radial-gradient(120% 70% at 50% 32%,color-mix(in srgb,var(--cc) 55%,#3a3a44),#121218 78%);border:0;border-radius:5%/3.6%;align-self:start}
 .card.art .c-art{display:block;width:100%;height:auto;aspect-ratio:5/7}
+/* Card Image Template: rules text and numbers drawn over the blank card export (sizes are export px / 751 overlay width) */
+.card.art .art-frame{position:relative;container-type:inline-size}
+.art-ov{position:absolute;inset:0;pointer-events:none;font-family:"Pirata One",var(--display);color:#fff}
+.ov-rules{position:absolute;overflow:hidden;font-size:4.128cqw;line-height:1.1;letter-spacing:.015em;text-align:left;text-shadow:0 .4cqw .25cqw rgba(0,0,0,.85)}
+.ov-rules p{margin:0 0 .53cqw}
+.ov-rules .aura{width:.7em;height:.85em}
+.ov-rules .lvl{display:inline-block;font:1.6cqw/1 "Pixelify Sans",monospace;font-weight:700;color:#d8d8de;background:#4a4a52;border:.25cqw solid #8a8a94;padding:.4cqw .8cqw .3cqw;margin-right:.6cqw;vertical-align:.5cqw;text-shadow:none;letter-spacing:.05em}
+.ov-num{position:absolute;transform:translate(-50%,-50%);font-size:7.323cqw;line-height:1;font-weight:400;color:#ffc100;-webkit-text-stroke:1.332cqw #000;paint-order:stroke fill;text-shadow:0 .4cqw .25cqw rgba(0,0,0,.85);white-space:nowrap}
 .card.art .flip{position:absolute;top:17%;right:7%;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.7);background:rgba(15,18,26,.72);color:#fff;font-size:17px;line-height:1;cursor:pointer;z-index:2}
 .card.art .flip:hover,.card.art .flip:focus-visible{border-color:#D9A53A;color:#FFD27A;outline:none}
 .card.art .slotbadge{top:17%}
@@ -297,7 +305,8 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261106a">
+<link rel="stylesheet" href="assets/retro.css?v=20261107a">
+<link rel="stylesheet" href="assets/art.css?v=20261107a">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -326,14 +335,14 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261106a"></script>
-<script src="assets/app.js?v=20261106a"></script>
-<script src="assets/play-engine.js?v=20261106a"></script>
-<script src="assets/play-cards.js?v=20261106a"></script>
-<script src="assets/play-ai.js?v=20261106a"></script>
-<script src="assets/play-ui.js?v=20261106a"></script>
-<script src="assets/changelog-data.js?v=20261106a"></script>
-<script src="assets/changelog.js?v=20261106a"></script>
+<script src="assets/cards-data.js?v=20261107a"></script>
+<script src="assets/app.js?v=20261107a"></script>
+<script src="assets/play-engine.js?v=20261107a"></script>
+<script src="assets/play-cards.js?v=20261107a"></script>
+<script src="assets/play-ai.js?v=20261107a"></script>
+<script src="assets/play-ui.js?v=20261107a"></script>
+<script src="assets/changelog-data.js?v=20261107a"></script>
+<script src="assets/changelog.js?v=20261107a"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"retro";

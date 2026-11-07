@@ -55,6 +55,15 @@ button{cursor:pointer}
 .tabs a{padding:7px 11px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:500}
 .tabs a:hover{color:var(--ink);background:var(--sunk)}
 .tabs a[aria-current="page"]{color:var(--ink);background:var(--sunk);box-shadow:inset 0 -2px 0 var(--accent)}
+.tab-dd{position:relative;display:inline-flex}
+.tab-sub{display:none;position:absolute;top:100%;left:0;z-index:40;min-width:160px;flex-direction:column;gap:2px;padding:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow)}
+.tab-dd:hover .tab-sub,.tab-dd:focus-within .tab-sub{display:flex}
+.tab-sub a{white-space:nowrap}
+.subtabs{display:flex;gap:6px;margin:0 0 10px;flex-wrap:wrap}
+.subtabs a{padding:5px 12px;border:1px solid var(--line);border-radius:999px;color:var(--muted);text-decoration:none;font-weight:500}
+.subtabs a[aria-current="page"]{color:var(--accent-ink);background:var(--accent);border-color:var(--accent)}
+.rules.quick{max-width:780px}
+.party-h{margin:4px 0 2px}
 .bhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .bhead h1{margin-bottom:0}
 .btn.newdeck{font-weight:700}
@@ -79,6 +88,12 @@ html[data-skin="art"] .grid:not(.hand-grid){grid-template-columns:repeat(auto-fi
 .ov-rules{position:absolute;overflow:hidden;font-size:4.128cqw;line-height:1.1;letter-spacing:.015em;text-align:left;text-shadow:0 .4cqw .25cqw rgba(0,0,0,.85)}
 .ov-rules p{margin:0 0 .53cqw}
 .ov-rules .aura{width:.7em;height:.85em}
+.ov-rules .rem{font-style:italic;font-size:.9em;color:#e9dfcb}
+.c-rules .rem{font-style:italic;font-size:.92em;color:var(--muted)}
+/* Play tab: point at one of your Heroes to light up the hand cards it can play */
+.pl-hand.for-hero .hc:not(.fits){opacity:.35;filter:grayscale(.7)}
+.pl-hand.for-hero .hc.fits .card{outline:3px solid #5fc8ff;outline-offset:1px}
+.pl-hand .hc{transition:opacity .15s,filter .15s}
 .ov-rules .lvl{display:inline-block;height:1.15em;width:auto;vertical-align:-.3em;margin-right:.2em;image-rendering:pixelated}
 .ov-num{position:absolute;transform:translate(-50%,-50%);font-size:7.323cqw;line-height:1;font-weight:400;color:#ffc100;-webkit-text-stroke:1.332cqw #000;paint-order:stroke fill;text-shadow:0 .4cqw .25cqw rgba(0,0,0,.85);white-space:nowrap}
 .card.art .flip{position:absolute;top:17%;right:7%;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1px solid rgba(255,255,255,.7);background:rgba(15,18,26,.72);color:#fff;font-size:17px;line-height:1;cursor:pointer;z-index:2}
@@ -87,7 +102,7 @@ html[data-skin="art"] .grid:not(.hand-grid){grid-template-columns:repeat(auto-fi
 .card.art .c-ctrl{border-top:0}
 button.card.art:hover{box-shadow:0 0 0 2px var(--cc),var(--shadow)}
 .card.art.upside{box-shadow:0 0 0 3px #D9A53A,var(--shadow)}
-.modal .card.art{max-width:400px;width:100%;margin-inline:auto}
+.modal .card.art{max-width:min(600px,calc((90vh - 150px)*5/7));width:100%;margin-inline:auto}
 html[data-skin="retro"] select.skin-btn{font-family:var(--display);font-size:1rem;letter-spacing:.03em;padding:2px 8px}
 @media (max-width:720px){.top .brand{order:-2}.skin-btn{order:-1;margin-left:auto;padding:3px 8px;font-size:.75rem}}
 .acct b{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -234,6 +249,9 @@ button.card:hover{border-color:var(--cc)}
 .modal .box{background:var(--surface);border-radius:16px;padding:18px;max-width:420px;width:100%;max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
 .modal .card{box-shadow:none}
 .modal .c-rules{font-size:1rem}
+/* a selected card opens 1.5x its usual view size */
+.modal .box:has(> .card){max-width:630px}
+.modal .box:has(> .card)>.card:not(.art){width:min(384px,calc((100vw - 90px)/1.5));zoom:1.5;align-self:center}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:10px 16px;border-radius:10px;z-index:60;font-size:.92rem;max-width:calc(100vw - 32px);box-shadow:var(--shadow)}
 .busy{position:fixed;inset:0;z-index:55;background:rgba(10,14,20,.45);display:grid;place-items:center;color:#fff;font-family:var(--display);font-size:1.3rem}
 
@@ -309,8 +327,8 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261107c">
-<link rel="stylesheet" href="assets/art.css?v=20261107c">
+<link rel="stylesheet" href="assets/retro.css?v=20261108a">
+<link rel="stylesheet" href="assets/art.css?v=20261108a">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -320,7 +338,7 @@ button.card:hover{border-color:var(--cc)}
     <a href="#build" data-view="build">Deck Builder</a>
     <a href="#decks" data-view="decks">My Decks</a>
     <a href="#best" data-view="best">Best Decks</a>
-    <a href="#rules" data-view="rules">Rules</a>
+    <span class="tab-dd"><a href="#rules" data-view="rules" aria-haspopup="true">Rules</a><span class="tab-sub" role="menu"><a href="#rules" role="menuitem">Full Rules</a><a href="#quickstart" data-view="quickstart" role="menuitem">Quick Start</a></span></span>
     <a href="#play" data-view="play">Play</a>
     <a href="#changelog" data-view="changelog">Changelog</a>
   </nav>
@@ -339,14 +357,14 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261107c"></script>
-<script src="assets/app.js?v=20261107c"></script>
-<script src="assets/play-engine.js?v=20261107c"></script>
-<script src="assets/play-cards.js?v=20261107c"></script>
-<script src="assets/play-ai.js?v=20261107c"></script>
-<script src="assets/play-ui.js?v=20261107c"></script>
-<script src="assets/changelog-data.js?v=20261107c"></script>
-<script src="assets/changelog.js?v=20261107c"></script>
+<script src="assets/cards-data.js?v=20261108a"></script>
+<script src="assets/app.js?v=20261108a"></script>
+<script src="assets/play-engine.js?v=20261108a"></script>
+<script src="assets/play-cards.js?v=20261108a"></script>
+<script src="assets/play-ai.js?v=20261108a"></script>
+<script src="assets/play-ui.js?v=20261108a"></script>
+<script src="assets/changelog-data.js?v=20261108a"></script>
+<script src="assets/changelog.js?v=20261108a"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"retro";

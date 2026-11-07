@@ -258,7 +258,7 @@ const artPos=(x,y)=>`left:${((x-37)/751*100).toFixed(3)}%;top:${((y-37)/1051*100
 function artNum(c,f){if(f==="aura"&&c.kind!=="hero")f="cost";
   if(f==="str"&&c.kind==="equip")return"+"+(c.pstr||0);if(f==="def"&&c.kind==="equip")return"+"+(c.pdef||0);
   const v=c[f];return v==null||v===""?"":String(v)}
-function artRulesHTML(t){return String(t||"").split("\n").filter(p=>p.trim()).map(p=>"<p>"+esc(p).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,'<span class="lvl">LVL $1</span>')+"</p>").join("")}
+function artRulesHTML(t){return String(t||"").split("\n").filter(p=>p.trim()).map(p=>"<p>"+esc(p).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,`<img class="lvl" src="${ICON_BASE}lvl$1.png" alt="Level $1" width="145" height="65">`)+"</p>").join("")}
 function artOverlayHTML(c){const t=ART_TPL[c.kind];if(!t||!ART_BLANK.has(`${c.kind}/${artKey(c.name)}-${c.face==="up"?"up":"face"}`))return"";const[l,tp,w,h]=t.rules;
   return`<div class="art-ov" aria-hidden="true"><div class="ov-rules" style="${artPos(l,tp)};width:${(w/751*100).toFixed(3)}%;height:${(h/1051*100).toFixed(3)}%">${artRulesHTML(c.rules)}</div>${t.nums.map(([f,x,y])=>`<b class="ov-num" style="${artPos(x,y)}">${esc(artNum(c,f))}</b>`).join("")}</div>`}
 function artCardHTML(c,o,tag,attrs){

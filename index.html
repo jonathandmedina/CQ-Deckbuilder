@@ -90,6 +90,13 @@ html[data-skin="art"] .grid:not(.hand-grid){grid-template-columns:repeat(auto-fi
 .ov-rules .aura{width:.7em;height:.85em}
 .ov-rules .rem{font-style:italic;font-size:.9em;color:#e9dfcb}
 .c-rules .rem{font-style:italic;font-size:.92em;color:var(--muted)}
+/* stat words in card text take their icon colours (darker on the light Clean theme, bright on dark cards) */
+.kw{font-weight:inherit}
+.kw-str{color:#c4161c}.kw-def{color:#2b8a2b}.kw-hp{color:#5b4fa8}.kw-aura{color:#137aa8}
+html[data-skin="retro"] .kw-str,html[data-skin="art"] .kw-str,.ov-rules .kw-str{color:#ff5a5a}
+html[data-skin="retro"] .kw-def,html[data-skin="art"] .kw-def,.ov-rules .kw-def{color:#7be04f}
+html[data-skin="retro"] .kw-hp,html[data-skin="art"] .kw-hp,.ov-rules .kw-hp{color:#b3a6f2}
+html[data-skin="retro"] .kw-aura,html[data-skin="art"] .kw-aura,.ov-rules .kw-aura{color:#55e3ee}
 /* Play tab: point at one of your Heroes to light up the hand cards it can play */
 .pl-hand.for-hero .hc:not(.fits){opacity:.35;filter:grayscale(.7)}
 .pl-hand.for-hero .hc.fits .card{outline:3px solid #5fc8ff;outline-offset:1px}
@@ -327,8 +334,8 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261108a">
-<link rel="stylesheet" href="assets/art.css?v=20261108a">
+<link rel="stylesheet" href="assets/retro.css?v=20261108b">
+<link rel="stylesheet" href="assets/art.css?v=20261108b">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -357,14 +364,14 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261108a"></script>
-<script src="assets/app.js?v=20261108a"></script>
-<script src="assets/play-engine.js?v=20261108a"></script>
-<script src="assets/play-cards.js?v=20261108a"></script>
-<script src="assets/play-ai.js?v=20261108a"></script>
-<script src="assets/play-ui.js?v=20261108a"></script>
-<script src="assets/changelog-data.js?v=20261108a"></script>
-<script src="assets/changelog.js?v=20261108a"></script>
+<script src="assets/cards-data.js?v=20261108b"></script>
+<script src="assets/app.js?v=20261108b"></script>
+<script src="assets/play-engine.js?v=20261108b"></script>
+<script src="assets/play-cards.js?v=20261108b"></script>
+<script src="assets/play-ai.js?v=20261108b"></script>
+<script src="assets/play-ui.js?v=20261108b"></script>
+<script src="assets/changelog-data.js?v=20261108b"></script>
+<script src="assets/changelog.js?v=20261108b"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"retro";

@@ -65,7 +65,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"
 const REMINDERS=[
   [/\bBanding\b/,()=>"Units with Banding can attack together, adding their STR. Every attacker is exhausted."],
   [/\bBarkborn\b/,()=>"It gains DEF equal to its HP this turn."],
-  [/\bCombo\b(?!\s+(?:cards?|counters?)\b)/,()=>"Then reveal your top card. If it's a Combo card, you may play it or one from your hand."],
+  [/\bCombo\b(?!\s+(?:cards?|counters?)\b)/,()=>"Reveal the top card of your library. If it's a Combo card, you may play it or a Combo card from your hand."],
   [/\bSpell Damage Pillars?\b/,()=>"Your next spell deals 2 extra damage, then sacrifice the Pillar."],
   [/\bPain Pillars?\b/,()=>"At Dusk, target loses 1 HP for each Pain Pillar you control."],
   [/\bConjure\b(?![^.]*\bPillar\b)/,()=>"Create a Pillar token on the battlefield."],
@@ -102,8 +102,11 @@ function withReminders(text){
     Object.keys(byEnd).map(Number).sort((a,b)=>b-a).forEach(e=>{line=line.slice(0,e)+` {R:${byEnd[e].join(" ")}}`+line.slice(e)});
     return line}).join("\n")}
 const remHTML=h=>h.replace(/\{R:(.*?)\}/g,'<i class="rem">($1)</i>');
+/* stat words on cards: STR, DEF and HP are spelled out (Strength, Defense, Health Points) and they and Aura take the colour of their icons; a number right before the word is coloured with it */
+const STAT_WORDS=[[/((?:[+\u2212-]?\d+|X) )?\bSTR\b/g,"str","Strength"],[/((?:[+\u2212-]?\d+|X) )?\bDEF\b/g,"def","Defense"],[/((?:[+\u2212-]?\d+|X) )?\bHP\b/g,"hp","Health Points"],[/((?:[+\u2212-]?\d+|X) )?\bAura\b/g,"aura","Aura"]];
+const statWords=h=>STAT_WORDS.reduce((t,[re,k,w])=>t.replace(re,(m,n)=>`<b class="kw kw-${k}">${n||""}${w}</b>`),h);
 function rulesHTML(t){
-  return withReminders(t).split("\n").filter(p=>p.trim()).map(p=>"<p>"+remHTML(esc(p)).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,'<span class="lv">LV $1</span>')+"</p>").join("");
+  return withReminders(t).split("\n").filter(p=>p.trim()).map(p=>"<p>"+remHTML(statWords(esc(p))).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,'<span class="lv">LV $1</span>')+"</p>").join("");
 }
 function rulesPlain(t){return t.replace(/\{A\}/g," Aura").replace(/\{L(\d)\}/g,"[Level $1]")}
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -306,7 +309,7 @@ function artText(c,f){
   if(f==="region")return esc(c.region||"");
   if(f==="upgrade")return c.face==="up"?"Upgraded!":c.up?`Upgrade: ${esc(c.up.cost)}<i class="coin" aria-label="Gold"></i>`:"";
   return""}
-function artRulesHTML(t){return withReminders(t).split("\n").filter(p=>p.trim()).map(p=>"<p>"+remHTML(esc(p)).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,`<img class="lvl" src="${ICON_BASE}lvl$1.png" alt="Level $1" width="145" height="65">`)+"</p>").join("")}
+function artRulesHTML(t){return withReminders(t).split("\n").filter(p=>p.trim()).map(p=>"<p>"+remHTML(statWords(esc(p))).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,`<img class="lvl" src="${ICON_BASE}lvl$1.png" alt="Level $1" width="145" height="65">`)+"</p>").join("")}
 function artOverlayHTML(c){const t=ART_TPL[c.kind];if(!t)return"";const[l,tp,w,h]=t.rules;
   return`<div class="art-ov" aria-hidden="true">${t.text.map(([f,x,y,wd])=>{const v=artText(c,f);return v?`<div class="ov-line ov-${f}" style="${artPos(x,y)};width:${(wd/751*100).toFixed(3)}%"><span class="ov-fit">${v}</span></div>`:""}).join("")}<div class="ov-rules" style="${artPos(l,tp)};width:${(w/751*100).toFixed(3)}%;height:${(h/1051*100).toFixed(3)}%">${artRulesHTML(c.rules)}</div>${t.nums.map(([f,x,y])=>{const v=artNum(c,f);return v?`<b class="ov-num" style="${artPos(x,y)}">${esc(v)}</b>`:""}).join("")}</div>`}
 /* shrink one-line card text (names, type lines, regions) that is wider than its bar */

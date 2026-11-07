@@ -60,8 +60,50 @@ function tokensFor(d){
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+/* Keyword reminder text: a short, italic "(…)" after the sentence that uses a keyword. Added when cards are shown
+   (tiles, the Card Art template, the Play tab), once per keyword per card, and skipped when the card already explains it. */
+const REMINDERS=[
+  [/\bBanding\b/,()=>"Units with Banding can attack together, adding their STR. Every attacker is exhausted."],
+  [/\bBarkborn\b/,()=>"It gains DEF equal to its HP this turn."],
+  [/\bCombo\b(?!\s+(?:cards?|counters?)\b)/,()=>"Then reveal your top card. If it's a Combo card, you may play it or one from your hand."],
+  [/\bSpell Damage Pillars?\b/,()=>"Your next spell deals 2 extra damage, then sacrifice the Pillar."],
+  [/\bPain Pillars?\b/,()=>"At Dusk, target loses 1 HP for each Pain Pillar you control."],
+  [/\bConjure\b(?![^.]*\bPillar\b)/,()=>"Create a Pillar token on the battlefield."],
+  [/\bEcho\b(?!\s+cop)/,()=>"At your next Dawn, play this card again for free."],
+  [/\bEnraged\b/,()=>"At or below half its maximum HP."],
+  [/\bGuard (\d+|X)\b/,m=>`Prevents the next ${m[1]} damage to it, before DEF, until Dusk.`],
+  [/\bHarmonize (\d+|X)\b/,m=>`Exhaust ${m[1]} ready Heroes you control.`],
+  [/\bLifelink\b/,()=>"When it deals damage, it heals that much."],
+  [/\bMeditates?\b/,()=>"Exhaust it. Each Dawn it stays exhausted, it gets a +1/+1 counter."],
+  [/\bMills? (\d+|X)\b/,m=>`Move the top ${m[1]==="1"?"card":m[1]+" cards"} of the library to the discard pile.`],
+  [/\bPiercing (\d+|X)\b/,m=>`The attack ignores ${m[1]} of the target's DEF.`],
+  [/\bPoisonous(?: (\d+|X))?\b/,m=>m[1]?`When it deals damage, Poison the target ${m[1]==="1"?"once":m[1]+" times"}.`:"When it deals damage, Poison the target once for each damage dealt."],
+  [/\bScry (\d+|X)\b/,m=>m[1]==="1"?"Look at the top card of your library. You may put it on the bottom.":`Look at the top ${m[1]} cards of your library. Put any on the bottom and the rest back in any order.`],
+  [/\bSpell Damage \+(\d+|X)\b/,m=>`Your spells deal ${m[1]} extra damage.`],
+  [/\bStealth\b/,()=>"It can't be targeted by enemy cards or abilities, but it can be attacked."],
+  [/\bStun\b/,()=>"It can't play cards or activate abilities."],
+  [/\bConfuse\b/,()=>"Its attacks and targets are chosen at random."],
+  [/\bBurn\b(?! counters?)/,()=>"It takes 1 damage at Dawn."],
+  [/\bPoison\b(?! counters?)/,()=>"It takes 1 damage at Dawn."],
+  [/\bWound\b(?! counters?)/,()=>"It takes 1 damage at Dawn."],
+  [/\bFatigue\b(?! counters?)/,()=>"It doesn't ready at the next Dawn."]
+];
+function withReminders(text){
+  return String(text||"").split("\n").map(line=>{
+    const adds=[];const seen=new Set();
+    for(const [re,fn] of REMINDERS){const m=line.match(re);if(!m)continue;
+      const at=m.index;
+      const before=line.slice(0,at);if((before.match(/\(/g)||[]).length>(before.match(/\)/g)||[]).length)continue; /* already inside a ( … ) */
+      const rest=line.slice(at);const em=rest.match(/[.!?](?=\s|$)/);const end=em?at+em.index+1:line.length;
+      if(/^\s*\(/.test(line.slice(end))||line.slice(at,end).includes("("))continue; /* the card already explains it */
+      const txt=fn(m);if(seen.has(txt))continue;seen.add(txt);adds.push([end,txt])}
+    adds.sort((a,b)=>b[0]-a[0]||0);
+    const byEnd={};adds.forEach(([e,t])=>{(byEnd[e]=byEnd[e]||[]).unshift(t)});
+    Object.keys(byEnd).map(Number).sort((a,b)=>b-a).forEach(e=>{line=line.slice(0,e)+` {R:${byEnd[e].join(" ")}}`+line.slice(e)});
+    return line}).join("\n")}
+const remHTML=h=>h.replace(/\{R:(.*?)\}/g,'<i class="rem">($1)</i>');
 function rulesHTML(t){
-  return t.split("\n").filter(p=>p.trim()).map(p=>"<p>"+esc(p).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,'<span class="lv">LV $1</span>')+"</p>").join("");
+  return withReminders(t).split("\n").filter(p=>p.trim()).map(p=>"<p>"+remHTML(esc(p)).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,'<span class="lv">LV $1</span>')+"</p>").join("");
 }
 function rulesPlain(t){return t.replace(/\{A\}/g," Aura").replace(/\{L(\d)\}/g,"[Level $1]")}
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -264,11 +306,13 @@ function artText(c,f){
   if(f==="region")return esc(c.region||"");
   if(f==="upgrade")return c.face==="up"?"Upgraded!":c.up?`Upgrade: ${esc(c.up.cost)}<i class="coin" aria-label="Gold"></i>`:"";
   return""}
-function artRulesHTML(t){return String(t||"").split("\n").filter(p=>p.trim()).map(p=>"<p>"+esc(p).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,`<img class="lvl" src="${ICON_BASE}lvl$1.png" alt="Level $1" width="145" height="65">`)+"</p>").join("")}
+function artRulesHTML(t){return withReminders(t).split("\n").filter(p=>p.trim()).map(p=>"<p>"+remHTML(esc(p)).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,`<img class="lvl" src="${ICON_BASE}lvl$1.png" alt="Level $1" width="145" height="65">`)+"</p>").join("")}
 function artOverlayHTML(c){const t=ART_TPL[c.kind];if(!t)return"";const[l,tp,w,h]=t.rules;
   return`<div class="art-ov" aria-hidden="true">${t.text.map(([f,x,y,wd])=>{const v=artText(c,f);return v?`<div class="ov-line ov-${f}" style="${artPos(x,y)};width:${(wd/751*100).toFixed(3)}%"><span class="ov-fit">${v}</span></div>`:""}).join("")}<div class="ov-rules" style="${artPos(l,tp)};width:${(w/751*100).toFixed(3)}%;height:${(h/1051*100).toFixed(3)}%">${artRulesHTML(c.rules)}</div>${t.nums.map(([f,x,y])=>{const v=artNum(c,f);return v?`<b class="ov-num" style="${artPos(x,y)}">${esc(v)}</b>`:""}).join("")}</div>`}
 /* shrink one-line card text (names, type lines, regions) that is wider than its bar */
-function fitArt(root){(root||document).querySelectorAll(".ov-fit").forEach(e=>{const box=e.parentElement;if(!box.clientWidth)return;e.style.fontSize="";const r=box.clientWidth/e.scrollWidth;if(r<1)e.style.fontSize=(r*0.98*100).toFixed(1)+"%"})}
+function fitArt(root){root=root||document;root.querySelectorAll(".ov-fit").forEach(e=>{const box=e.parentElement;if(!box.clientWidth)return;e.style.fontSize="";const r=box.clientWidth/e.scrollWidth;if(r<1)e.style.fontSize=(r*0.98*100).toFixed(1)+"%"});
+  /* rules: keep the standard size; only cards whose rules + reminder text overflow the box step down until they fit */
+  root.querySelectorAll(".ov-rules").forEach(e=>{if(!e.clientHeight)return;e.style.fontSize="";let k=1;while(e.scrollHeight>e.clientHeight+1&&k>0.6){k-=0.04;e.style.fontSize=(4.128*k).toFixed(3)+"cqw"}})}
 if(SKIN==="art"){let q=0;const run=()=>{q=0;fitArt()};const later=()=>{if(!q)q=requestAnimationFrame(run)};
   new MutationObserver(m=>{if(m.some(x=>x.addedNodes.length))later()}).observe(document.documentElement,{childList:true,subtree:true});
   document.fonts&&document.fonts.ready.then(later);addEventListener("load",later)}
@@ -308,12 +352,13 @@ const SORTS=[["class","Class"],["name","Name"],["cost","Aura cost"],["type","Car
 
 /* ---------- views ---------- */
 function render(){
-  document.querySelectorAll("#tabs a").forEach(a=>{if(a.dataset.view===S.view)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  document.querySelectorAll("#tabs a[data-view]").forEach(a=>{if(a.dataset.view===S.view||(a.dataset.view==="rules"&&S.view==="quickstart"&&!a.closest(".tab-sub")))a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   const v=$("#view");
   if(S.view==="catalog")v.innerHTML=viewCatalog();
   else if(S.view==="build")v.innerHTML=viewBuild();
   else if(S.view==="account")v.innerHTML=viewAccount();
   else if(S.view==="rules"){v.innerHTML=viewRules();if(!S.rules)loadRules()}
+  else if(S.view==="quickstart"){v.innerHTML=viewQuick();if(!S.quick)loadQuick()}
   else if(S.view==="play"){if(window.CQPlay)window.CQPlay.mount(v);else v.innerHTML='<p class="lede">Loading the game…</p>'}
   else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
   else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
@@ -353,7 +398,7 @@ function viewBuild(){
     const f={cls:S.b.heroCls,type:"Hero",sort:"class",q:""};
     const list=filterSort(HEROES,f);
     return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button></div>${stepsHTML()}
-    <p class="lede">Pick three Heroes for your party, in order. Their classes decide which cards you can add next: cards of those classes plus Generic cards.</p>
+    <h2 class="party-h">Choose your party.</h2><p class="lede">Pick three Heroes for your party, in order. Then pick from their specific class cards or generic cards to build your strategy.</p>
     ${partySlots(d)}
     <div class="bar">${classChips(S.b.heroCls,"hero-cls",CLASSES)}</div>
     <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${d.heroes.length===3?"":"disabled"}>Continue to cards →</button>
@@ -788,9 +833,9 @@ async function loadRules(){
   if(S.view==="rules")render();
 }
 function viewRules(){
-  if(!S.rules)return`<h1>Rules</h1><p class="lede">${S.rulesErr?"The rules didn't load. Check your connection and reload the page.":"Loading the rules…"}</p>`;
+  if(!S.rules)return`${rulesSubtabs("rules")}<h1>Rules</h1><p class="lede">${S.rulesErr?"The rules didn't load. Check your connection and reload the page.":"Loading the rules…"}</p>`;
   const R=S.rules;
-  return`<h1>${R.title||"Rules"}</h1>${R.sub.map(x=>`<p class="lede">${x}</p>`).join("")}
+  return`${rulesSubtabs("rules")}<h1>${R.title||"Rules"}</h1>${R.sub.map(x=>`<p class="lede">${x}</p>`).join("")}
   <div class="rules-wrap">
     <nav class="rtoc" aria-label="Rules sections">
       <label class="field col" for="rules-q">Search the rules<input type="search" id="rules-q" data-act="rules-q" placeholder="e.g. Hidden, Guard, Town"></label>
@@ -800,6 +845,19 @@ function viewRules(){
     </nav>
     <article class="rules">${R.html}</article>
   </div>`;
+}
+/* Rules sub-menu: the full rules and the Quick Start guide (assets/quickstart.md, a separate document) */
+function rulesSubtabs(cur){return`<nav class="subtabs" aria-label="Rules pages"><a href="#rules"${cur==="rules"?' aria-current="page"':""}>Full Rules</a><a href="#quickstart"${cur==="quickstart"?' aria-current="page"':""}>Quick Start</a></nav>`}
+S.quick=null;S.quickErr=false;
+async function loadQuick(){
+  try{const r=await fetch("assets/quickstart.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.quick=mdToHtml(await r.text());S.quickErr=false}
+  catch(e){S.quickErr=true}
+  if(S.view==="quickstart")render();
+}
+function viewQuick(){
+  if(!S.quick)return`${rulesSubtabs("quickstart")}<h1>Quick Start</h1><p class="lede">${S.quickErr?"The Quick Start guide didn't load. Check your connection and reload the page.":"Loading…"}</p>`;
+  const R=S.quick;
+  return`${rulesSubtabs("quickstart")}<h1>${R.title||"Quick Start"}</h1>${R.sub.map(x=>`<p class="lede">${x}</p>`).join("")}<article class="rules quick">${R.html}</article>`;
 }
 function rulesFilter(q){
   q=q.trim().toLowerCase();let n=0;
@@ -893,7 +951,7 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.querySelectorAll(".modal");if(ms.length)ms[ms.length-1].remove();return}
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
-function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","play","best","changelog"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","quickstart","play","best","changelog"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

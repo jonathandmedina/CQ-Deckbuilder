@@ -146,6 +146,14 @@ const CSS=`
 @media (max-width:1000px){.pl-game{grid-template-columns:minmax(0,1fr)}.pl-side{position:static;max-height:none}.pl-log{max-height:260px}}
 @media (max-width:620px){.pl-heroes{gap:5px}.ph{padding:6px 6px}.ph-name{font-size:.9rem}.ph-stats span{font-size:.58rem}.ph-stats b{font-size:.82rem}.pl-hand .hc{flex-basis:160px}.pl-row .lbl{width:100%}}
 `;
+/* Hero highlight: point at (or focus) one of your Heroes to light up the hand cards it can play (its class or Generic) */
+function heroHL(ph){const hand=document.querySelector(".pl-hand");if(!hand)return;const note=document.querySelector(".pl-hand-h .hl-note");
+  const s=U.s&&view&&view();const pl=s&&s.p&&s.p[U.me];const h=ph&&pl&&(pl.heroes||[]).find(x=>x.uid===ph.dataset.u);
+  if(!h||h.dead){hand.classList.remove("for-hero");hand.querySelectorAll(".hc.fits").forEach(e=>e.classList.remove("fits"));if(note)note.textContent="outline = playable now · point at one of your Heroes to see the cards it can play";return}
+  let n=0;hand.classList.add("for-hero");hand.querySelectorAll(".hc").forEach(e=>{const ok=e.dataset.cls==="Generic"||e.dataset.cls===h.cls;e.classList.toggle("fits",ok);if(ok)n++});
+  if(note)note.textContent=`${h.name} (${h.cls}) can play ${n} of these`}
+["mouseover","focusin"].forEach(ev=>document.addEventListener(ev,e=>{const ph=e.target.closest&&e.target.closest(".ph[data-u]");if(ph)heroHL(ph)}));
+["mouseout","focusout"].forEach(ev=>document.addEventListener(ev,e=>{const ph=e.target.closest&&e.target.closest(".ph[data-u]");if(ph&&!(e.relatedTarget&&ph.contains(e.relatedTarget)))heroHL(null)}));
 function injectCSS(){if(document.getElementById("pl-css"))return;const st=document.createElement("style");st.id="pl-css";st.textContent=CSS;document.head.appendChild(st)}
 
 /* ---------- decks ---------- */
@@ -514,8 +522,8 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"fix"}\' title="Open the manual panel to correct something the engine missed">Rules fix</button>');
   return out.join("")}
 function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(o=>o.type==="play").map(o=>{const c=pl.hand.find(x=>x.uid===o.uid);return c&&c.id}));
-  const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
-  return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · green outline = playable now</span></div><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div></section>`}
+  const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}" data-cls="${esc(card.cls||"Generic")}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
+  return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · <span class="hl-note">outline = playable now · point at one of your Heroes to see the cards it can play</span></span></div><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div></section>`}
 function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1,k:"burn",name:"Soldier"});
   const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","STR up (this turn)"],["nstr","STR down (this turn)"],["def","DEF up (this turn)"],["ndef","DEF down (this turn)"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"],["mill","Mill (top cards → discard)"],["equipfree","Equip for free"],["revealtop","Reveal top cards of a library"],["revmove","Move a revealed card"]].sort((x,y)=>x[1].localeCompare(y[1]));
   const az=(arr,nm)=>arr.slice().sort((x,y)=>nm(x).localeCompare(nm(y)));const cn=c=>(E.DB[c.id]||{name:c.name||""}).name;

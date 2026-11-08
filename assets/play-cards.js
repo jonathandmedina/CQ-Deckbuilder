@@ -2,7 +2,7 @@
    resolves by hand through the manual panel. ctx (c): {s,pid,me,op,actor,def,t:[targets],x,modes,comboed,mods,trig,E} */
 "use strict";
 (function(root){
-const E=root.CQE;const S={},H={},OPS={};root.CQ_SCRIPTS=S;root.CQ_HERO_SCRIPTS=H;root.CQ_CHOOSE_OPS=OPS;
+const E=root.CQE;const S={},H={},OPS={},HARM={};root.CQ_SCRIPTS=S;root.CQ_HERO_SCRIPTS=H;root.CQ_CHOOSE_OPS=OPS;
 const t=(k,label,f,extra)=>Object.assign({k,label,f},extra||{});
 const ANY=t("any"),EN=t("enemy"),AL=t("ally"),HERO=t("hero","target Hero"),EHERO=t("enemyHero"),AHERO=t("allyHero","target ally Hero"),SUM=t("summon"),ITEM=t("item"),EQ=t("equip","equipment"),PIL=t("pillar");
 const cls=c=>t("allyHero","target "+c,(s,o)=>E.heroIs(o,c));
@@ -192,15 +192,15 @@ const song=(n,o)=>{S['"'+n+'"']=o};
 song("Ballad of Blades",S["Ballad of Blades"]);
 song("Crescendo",Object.assign({t:[ANY]},{modes:{n:1,opts:[{label:"Deal 3 damage"},{label:"Harmonize 2: 3 damage to each enemy"}]},can:()=>true,run(c){
   const harm=(c.modes||[])[0]===1&&living(c.me).filter(h=>!h.ex).length>=2;
-  if(harm){living(c.me).filter(h=>!h.ex).slice(0,2).forEach(h=>h.ex=true);enemies(c).forEach(e=>D(c,e,3))}else D(c,c.t[0],3)}}));
+  if(harm)harmonize(c,2,"crescendo");else D(c,c.t[0],3)}}));
 song("Dazzling Melody",{run(c){c.actor.fl.tauntRound=c.s.round;log(c,`${c.actor.name} dazzles: this turn enemies can only attack ${c.actor.name}, and their cards and abilities must target it.`)}});
 song("Lullaby",{t:[t("any","target with 1 or less STR",(s,o)=>E.str(s,o)<=1)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
 song("Peace",{t:[HERO],run(c){st(c,c.t[0],"stun");if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
 song("Rousing Chorus",{t:[AL],run(c){buff(c.t[0],{str:1})}});
 song("Song of Healing",{run(c){living(c.me).filter(h=>E.heroIs(h,"Bard")).forEach(o=>heal(c,o,2))}});
-song("Call and Response",{can:(s,pid,a)=>s.p[pid].heroes.some(h=>!h.dead&&!h.ex&&h!==a),run(c){const h=living(c.me).find(h=>!h.ex&&h!==c.actor);if(!h){log(c,"No ready Hero to Harmonize.");return}h.ex=true;log(c,`Harmonize: ${h.name} is exhausted.`);draw(c,2)}});
-song("Solo Act",{can:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length>=2,run(c){living(c.me).filter(h=>!h.ex&&h!==c.actor).slice(0,2).forEach(h=>h.ex=true);c.me.fl.songDisc=true;log(c,"Songs cost 2 less this turn.")}});
-song("Understanding",{modes:{n:1,opts:[{label:"Scry 3"},{label:"Scry 3, Harmonize 1: draw a card"}]},run(c){scry(c,3);if((c.modes||[])[0]===1){const h=living(c.me).find(h=>!h.ex&&h!==c.actor)||c.actor;h.ex=true;draw(c,1)}}});
+song("Call and Response",{can:(s,pid,a)=>s.p[pid].heroes.some(h=>!h.dead&&!h.ex),run(c){if(!living(c.me).some(h=>!h.ex)){log(c,"No ready Hero to Harmonize.");return}harmonize(c,1,"draw2")}});
+song("Solo Act",{can:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length>=2,run(c){harmonize(c,2,"soloAct",{notActor:true,verb:"Solo Act"})}});
+song("Understanding",{modes:{n:1,opts:[{label:"Scry 3"},{label:"Scry 3, Harmonize 1: draw a card"}]},run(c){if((c.modes||[])[0]===1&&living(c.me).some(h=>!h.ex))harmonize(c,1,"understanding");else scry(c,3)}});
 song("Opening Act",{run(c){const first=(c.me.t.cards||0)===1;const top=c.me.lib.splice(-3);log(c,`Revealed: ${top.map(x=>E.DB[x.id].name).join(", ")}.`);const si=top.findIndex(x=>E.DB[x.id].type==="Song");if(si>=0){c.me.hand.push(top.splice(si,1)[0]);log(c,"A Song goes to hand.")}c.me.disc.push(...top);if(first){c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)}}});
 def("Embolden",{t:[HERO],run(c){buff(c.t[0],{str:2})}});
 def("Strong Stance",{t:[HERO],run(c){buff(c.t[0],{def:2})}});
@@ -371,6 +371,24 @@ hab("Warden of the Woods",[{label:"Summon a 1/3 Squirrel",cost:1,run:c=>summon(c
 
 /* ===== Update 15: the last by-hand cards ===== */
 const A=E.ASK;
+/* Harmonize X: the player chooses which ready Heroes to exhaust, one at a time (no choice when every ready Hero must go).
+   The card's effect runs from HARM[k] after the last pick, so it always follows the exhausting. */
+function harmonize(c,n,k,o){o=o||{};
+  const d={k,left:n,total:n,picked:[],actor:c.actor&&c.actor.uid,notActor:!!o.notActor,card:c.def&&c.def.id,name:c.def&&c.def.name,verb:o.verb||"Harmonize",tu:c.tu||[],modes:c.modes||null,x:c.x==null?null:c.x};
+  harmAsk(c.s,c.pid,d)}
+function harmCands(s,pid,d){return s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&!(d.notActor&&h.uid===d.actor))}
+function harmAsk(s,pid,d){const cs=harmCands(s,pid,d);
+  if(cs.length<=d.left){cs.forEach(h=>{h.ex=true;d.picked.push(h.uid)});d.left=0;harmDone(s,pid,d);return}
+  E.ask(s,pid,`${d.name||"Harmonize"} · ${d.verb} ${d.total}: choose a ready Hero to exhaust${d.total>1?` (${d.picked.length+1} of ${d.total})`:""}`,
+    cs.map(h=>({label:h.name+(h.uid===d.actor?" (playing this card)":""),v:h.uid})),"harmPick",d)}
+A.harmPick=(s,pid,pr,v)=>{const d=pr.data;const h=E.heroByUid(s,v);if(h&&!h.dead&&!h.ex){h.ex=true;d.picked.push(h.uid);d.left--}if(d.left>0)harmAsk(s,pid,d);else harmDone(s,pid,d)};
+function harmDone(s,pid,d){const nm=d.picked.map(u=>(E.heroByUid(s,u)||{}).name).filter(Boolean);
+  if(nm.length)E.log(s,`${d.verb} ${nm.length}: ${nm.join(", ")} ${nm.length>1?"are":"is"} exhausted.`,pid);
+  const f=HARM[d.k];if(!f)return;const c=E.mkCtx(s,pid,E.heroByUid(s,d.actor),E.DB[d.card],null,d.tu,{modes:d.modes,x:d.x});f(c,nm.length)}
+HARM.crescendo=c=>{enemies(c).forEach(e=>D(c,e,3))};
+HARM.draw2=c=>{draw(c,2)};
+HARM.understanding=c=>{scry(c,3,{draw:1})};
+HARM.soloAct=c=>{c.me.fl.songDisc=true;log(c,"Songs cost 2 less this turn.")};
 const rogueEx=t("allyHero","exhausted Rogue",(s,o)=>o.ex&&E.heroIs(o,"Rogue"));
 /* Barbarian */
 def("Blood Price",{t:[t("allyHero","Barbarian",(s,o)=>E.heroIs(o,"Barbarian"))],x:{label:"X (HP the Barbarian loses)",max:(s,pid)=>Math.max(0,...s.p[pid].heroes.filter(h=>!h.dead&&E.heroIs(h,"Barbarian")).map(h=>E.hp(s,h)-1)),free:true},
@@ -385,12 +403,13 @@ hid("Die Swinging","dying",(s,pid,tr)=>{const f=E.find(s,tr.hero);return f&&f.pi
 A.dieSwing=(s,pid,pr,v)=>{const a=E.find(s,pr.data.att);const t2=E.resolveTarget(s,v);if(!a||!t2)return;E.log(s,`⚔ ${a.o.name} attacks ${t2.name} as it falls.`,pid);E.damage(s,a.o,t2,E.dmgStr(s,a.o,t2),{combat:true,ignoreDef:true,srcName:"Die Swinging"})};
 /* Bard */
 song("Come Together",{x:{label:"Harmonize X: how many ready Heroes to exhaust",max:(s,pid)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex).length,free:true},run(c){
-  const ready=living(c.me).filter(h=>!h.ex).sort((a,b)=>(a===c.actor)-(b===c.actor));const n=Math.min(c.x||0,ready.length,c.me.lib.length);if(!n){log(c,"Harmonize 0: nothing is revealed.");return}
-  ready.slice(0,n).forEach(h=>{h.ex=true});log(c,`Harmonize ${n}: ${ready.slice(0,n).map(h=>h.name).join(", ")} ${n>1?"are":"is"} exhausted.`);
+  const ready=living(c.me).filter(h=>!h.ex);const n=Math.min(c.x||0,ready.length,c.me.lib.length);if(!n){log(c,"Harmonize 0: nothing is revealed.");return}
+  harmonize(c,n,"comeTogether")}});
+HARM.comeTogether=(c,n)=>{
   const top=c.me.lib.slice(-n).reverse();log(c,`${c.me.name} reveals ${top.map(x=>E.DB[x.id].name).join(", ")}.`);
   c.s.pend.unshift({type:"bottomRest",pid:c.pid,uids:top.map(x=>x.uid)});
   const bard=top.filter(x=>E.DB[x.id].cls==="Bard"&&E.DB[x.id].sup!=="Hidden");
-  if(bard.length)c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:bard.map(x=>x.uid),free:true,title:"\"Come Together\": you may play a revealed Bard card without paying its Aura cost"});else log(c,"No Bard card was revealed.")}});
+  if(bard.length)c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:bard.map(x=>x.uid),free:true,title:"\"Come Together\": you may play a revealed Bard card without paying its Aura cost"});else log(c,"No Bard card was revealed.")};
 def("Frog in the Throat",{t:[HERO],run(c){E.silence(c.s,c.t[0])}});
 def("Mirrored Chant",{can:(s,pid)=>{const L=s.lastCard;return!!(L&&L.round===s.round&&/Spell|Tactic|Song/.test(L.type||"")&&E.DB[L.id].name!=="Mirrored Chant")},
   run(c){const L=c.s.prevCard;if(!L||L.round!==c.s.round||!/Spell|Tactic|Song/.test(L.type||"")||E.DB[L.id].name==="Mirrored Chant"){log(c,"Mirrored Chant: there's no Spell, Tactic or Song to copy.");return}

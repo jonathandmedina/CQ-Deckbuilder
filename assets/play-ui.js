@@ -50,7 +50,7 @@ const CSS=`
 .pl-heroes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .ph{position:relative;cursor:pointer;border:1.5px solid var(--line);border-left:5px solid var(--cc);border-radius:12px;padding:8px 10px;background:var(--card-paper);color:var(--card-ink);display:flex;flex-direction:column;gap:4px;text-align:left;min-width:0;transition:transform .15s,opacity .15s}
 .ph.ex{opacity:.72;transform:rotate(-1.5deg)}
-.ph.dead{filter:grayscale(1);opacity:.5}
+.ph.dead{filter:grayscale(.35);opacity:.8}
 .ph.actor{box-shadow:0 0 0 3px var(--ok)}
 .ph.cand,.ps.cand,.pi.cand,.pp.cand{outline:3px solid var(--warn);outline-offset:2px;cursor:crosshair}
 .ph.mansel,.ps.mansel,.pi.mansel{outline:3px dashed var(--accent);outline-offset:2px}
@@ -190,6 +190,21 @@ const CSS=`
 .ph-pop .tot{border-top:1px solid rgba(255,255,255,.3);margin-top:1.5cqw;padding-top:1.5cqw;font-weight:700}
 .ph.hasart .tags{justify-content:center}
 .ph.hasart .hpbar{margin-top:auto}
+/* Surrender soul: dark, gloomy button under a dead Hero */
+html .ph .btn.soul-btn{margin-top:4px;width:100%;justify-content:center;font-family:inherit;font-size:.85rem;padding:5px 8px;color:#cfc6e6!important;letter-spacing:.04em;border:1px solid #3b3150!important;border-radius:6px!important;
+  background:radial-gradient(120% 140% at 50% 0%,#3a2f52 0%,#1b1626 55%,#0c0a12 100%)!important;box-shadow:inset 0 0 10px rgba(0,0,0,.85),0 0 8px rgba(90,60,140,.35)!important;text-shadow:0 0 6px rgba(160,120,255,.5)!important}
+html .ph .btn.soul-btn::before,html .ph .btn.soul-btn::after{display:none!important}
+html .ph .btn.soul-btn:hover,html .ph .btn.soul-btn:focus-visible{color:#efe8ff!important;border-color:#6d55a3!important;box-shadow:inset 0 0 10px rgba(0,0,0,.85),0 0 14px rgba(130,90,210,.65)!important;filter:none}
+/* a surrendered soul is greyed out for good */
+.ph.surr{filter:grayscale(1);opacity:.45}
+.ph.surr.hasart{filter:grayscale(1) brightness(.8);opacity:.6}
+.ph.surr .ph-back .rib{background:rgba(60,60,64,.9)}
+/* Rules fix stacked above Concede at the right */
+.pl-acts{align-items:center}
+.pl-endcol{margin-left:auto;display:inline-flex;flex-direction:column;align-items:stretch;gap:4px}
+.pl-endcol .pl-concede{margin-left:0}
+.pl-acts .btn.pass{display:inline-flex;align-items:center;gap:6px}
+.pass-ico{flex:none}
 `;
 /* Hero highlight: point at (or focus) one of your Heroes to light up the hand cards it can play (its class or Generic) */
 function heroHL(ph){const hand=document.querySelector(".pl-hand");if(!hand)return;const note=document.querySelector(".pl-hand-h .hl-note");
@@ -380,7 +395,7 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const actor=s.phase==="battle"&&s.prio===pid&&!s.pend.length?E.actorFor(s,pid):null;
   const cands=U.tgt?new Set(U.tgt.slots[U.tgt.i].cands):new Set();
   const slots=E.slots(s,pid);
-  const heroes=pl.heroes.map((h,i)=>heroHTML(s,h,i,actor,cands)).join("");
+  const heroes=pl.heroes.map((h,i)=>heroHTML(s,h,i,actor,cands,mine?opts:[])).join("");
   const bf=pl.bf.map(o=>o.kind==="summon"?summonHTML(s,o,cands):`<span class="pp${cands.has(o.uid)?" cand":""}" data-pa="obj" data-u="${o.uid}">${esc(o.name)}</span>`).join("")||'<span class="pl-note">No summons or Pillars</span>';
   const inv=[];for(let i=0;i<slots;i++){const o=pl.inv[i];if(!o){inv.push('<span class="pi">Empty slot</span>');continue}
     const c=o.kind==="equip"?(o.cls||"Generic"):o.kind==="doll"?"Generic":((E.DB[o.id]||{}).cls||"Generic");
@@ -454,7 +469,7 @@ function invCounts(s,o,pid){const out=[];if(o.fd||!o.name)return out;const pl=s.
   if(o.name==="Trophy Rack"&&o.ctr&&o.ctr.trophy)out.push(`${o.ctr.trophy} Trophy`);
   return out.map(x=>` <span>${esc(x)}</span>`).join("")}
 function statB(v,base){return`<b class="${v>base?"up":v<base?"dn":""}">${v}</b>`}
-function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id];const tags=[];
+function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB[h.id];const tags=[];
   if(h.dead)tags.push(`<span class="tg bad">${h.surr?"Surrendered":"Dead"}</span>`);
   if(h.ex&&!h.dead)tags.push('<span class="tg">Exhausted</span>');
   if(h.med)tags.push(`<span class="tg good">Meditating${h.keepMed?"":" (wakes)"}</span>`);
@@ -473,20 +488,21 @@ function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id
   const isActor=actor&&actor.uid===h.uid;
   const pct=Math.max(0,Math.min(100,h.dead?0:st.hp/st.max*100));
   const hpBar=`<span class="hpbar${low?" low":""}" style="--p:${pct}%"><i style="width:${pct}%"></i><span>${h.dead?"0":st.hp} / ${st.max} HP</span></span>`;
-  const cls=`ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}`;
+  const soul=h.dead&&!h.surr&&(opts||[]).some(o=>o.type==="soul"&&o.hero===h.uid)?`<button type="button" class="btn soul-btn" data-pa="soul" data-h="${h.uid}" title="Sacrifice this dead Hero for one small effect. It can never be revived.">Surrender soul…</button>`:"";
+  const cls=`ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${h.surr?" surr":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}`;
   const top=`<span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
   const extra=`${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}`;
   if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
-    ${top}${heroCardHTML(s,h,d,st)}${extra}${hpBar}
+    ${top}${heroCardHTML(s,h,d,st)}${extra}${hpBar}${soul}
   </div>`;
   return`<div role="button" tabindex="0" class="${cls}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
     ${top}
     <span class="ph-name">${esc(h.name)}</span><span class="ph-cls"><span class="dot"></span>${esc(h.cls)}</span>
     <span class="ph-stats"><span class="s-str">${statB(st.str,d.str)}STR</span><span class="s-def">${statB(st.def,d.def)}DEF</span><span class="s-aura">${statB(st.aura,d.aura)}AURA</span></span>
-    ${extra}${hpBar}
+    ${extra}${hpBar}${soul}
   </div>`}
 /* ---------- Hero card images (Card Art export) with live stats ---------- */
-function heroArt(d){try{return!!(d&&typeof CARD_ART!=="undefined"&&CARD_ART.hero.has(artKey(d.name)))}catch(e){return false}}
+function heroArt(d){try{return!!(d&&typeof SKIN!=="undefined"&&SKIN==="art"&&typeof CARD_ART!=="undefined"&&CARD_ART.hero.has(artKey(d.name)))}catch(e){return false}}
 const STAT_NAME={str:"Strength",def:"Defense",aura:"Aura",hp:"Health Points"};
 function heroCardHTML(s,h,d,st){
   const c={kind:"hero",name:d.name,cls:d.cls,rules:d.rules||"",aura:"",str:"",hp:"",def:""};
@@ -527,7 +543,7 @@ function auraBarHTML(s,pl){const max=pl.heroes.reduce((n,h)=>n+(h.dead?0:E.heroS
 function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});
   return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${E.hasBanding(s,o)?"<span class=\"band\">Banding</span>":""}${E.forcedTarget&&E.forcedTarget(s,o)?`<span class="must" style="color:#C0392B;font-weight:700">Must attack ${esc(nameOf(E.forcedTarget(s,o)))}</span>`:""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}</button>`}
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
-function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false;
+function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false,fixBtn="";
   const mineTurn=opts.length>0;
   if(s.over){prompt=(s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`)+(s.conceded!=null?(s.conceded===me?" You conceded.":` ${esc(s.p[s.conceded].name)} conceded.`):"");acts=`<button class="btn primary" data-pa="leave">Back to lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}`}
   else if(U.tgt){const sl=U.tgt.slots[U.tgt.i];prompt=`Choose ${esc(sl.label)} for ${esc(U.tgt.label)}${U.tgt.slots.length>1?` (${U.tgt.i+1}/${U.tgt.slots.length})`:""}. Click a highlighted ${sl.k==="player"||sl.k==="enemyPlayer"?"party button":"target"}.`;
@@ -556,7 +572,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   else if(s.phase==="battle"){if(s.prio!==me){wait=true;prompt=`${esc(s.p[s.prio].name)} is acting…`}else{const a=E.actorFor(s,me);const refire=s.bonus&&s.bonus.pid===me&&s.bonus.only==="arrow";const fz=a&&E.forcedTarget(s,a);
       const bb=s.bonus&&s.bonus.pid===me?s.bonus:null;
       prompt=bb&&bb.only==="bard"?`Echo Performer: <b>${esc(a?a.name:"")}</b> plays a Bard Tactic or Song (pay its Aura cost); it will be duplicated.`:bb&&bb.rapid?`Rapid Shot: <b>${esc(a?a.name:"")}</b> activates Arrows (Piercing 1), then it's exhausted.`:bb&&bb.free?`Line It Up: <b>${esc(a?a.name:"")}</b> may fire an Arrow for free.`:refire?`Refire: <b>${esc(a?a.name:"")}</b> activates an Arrow (pay its Aura). If it resolves, it returns to your inventory.`:a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}${fz?` — it <b>must attack ${esc(nameOf(fz))}</b> (Arrow of Persuasion)`:""}. ${fz?"Attack, or choose a summon action:":"Play a highlighted card, or choose an action:"}`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
-      acts=battleActs(s,opts)}}
+      acts=battleActs(s,opts);fixBtn=FIX_BTN}}
   if(U.busy){wait=true;prompt="Sending…"}
   const oppActing=!s.over&&wait&&!U.busy&&(pr?pr.pid!==me:(s.phase==="battle"&&s.prio!==me)||(s.phase==="town"&&s.town&&s.town.order[s.town.i]!==me));
   const oppInfo=oppActing?oppInfoHTML(s):"";
@@ -564,7 +580,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const posm=`<span class="posm" title="Position marker">${[...E.POS,"Last"].map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
-    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${s.over?statsHTML(s):""}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":'<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>'}</div>`:""}${ban?"":man}</section>`}
+    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${s.over?statsHTML(s):""}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
 /* opponent's turn: what they have to work with */
 function oppInfoHTML(s){const op=E.opp(U.me);const pl=s.p[op];const a=s.phase==="battle"&&s.prio===op?E.actorFor(s,op):null;
   return`<div class="pl-oppinfo">${a?`<span>Acting: <b>${esc(a.name)}</b></span>`:""}<span>Hand <b>${pl.hand.length}</b></span><span>Aura <b>${pl.aura}</b></span><span>Gold <b>${pl.gold}</b></span><span>Library <b>${pl.lib.length}</b></span></div>`}
@@ -605,14 +621,13 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
   opts.filter(o=>o.type==="equipInv").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Equip ${f.o.name} (${E.eqCost(s,a,f.o)})`))});
   opts.filter(o=>o.type==="take").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Take ${f.o.name} from ${f.hero.name} (${E.eqCost(s,a,f.o)})`))});
-  if(opts.some(o=>o.type==="soul"))out.push('<button class="btn" data-pa="soul">Surrender a soul…</button>');
   out.push('<span class="sep"></span>');
   if(opts.some(o=>o.type==="manualAbility")&&a&&/Exhaust|\{A\}:/.test(E.DB[a.id].rules)&&!window.CQ_HERO_SCRIPTS[a.name])out.push(btn({type:"manualAbility"},`Use ${a.name}'s ability (by hand)`));
   if(opts.some(o=>o.type==="skipBonus"))out.push(btn({type:"skipBonus"},s.bonus&&s.bonus.only==="bard"?"Skip (don't play a card)":s.bonus&&s.bonus.queue&&s.bonus.queue.length?"Skip this Ranger":"Skip (don't activate an Arrow)"));
-  else out.push(btn({type:"pass"},"Pass for the round"));
+  else out.push(`<button class="btn pass" data-pa="do" data-a='${esc(JSON.stringify({type:"pass"}))}'><svg class="pass-ico" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M2 10h11M9 4.5 15 10l-6 5.5" fill="none" stroke="#1f9d48" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Pass for the round</button>`);
   if(U.net)out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"giveAction"}\' title="Let your opponent resolve something by hand (a card they control, a choice). Control comes back to you without using your action.">Give opponent an action</button>');
-  out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"fix"}\' title="Open the manual panel to correct something the engine missed">Rules fix</button>');
   return out.join("")}
+const FIX_BTN='<button class="btn sm pl-fix" data-pa="do" data-a=\'{"type":"fix"}\' title="Open the manual panel to correct something the engine missed">Rules fix</button>';
 function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(o=>o.type==="play").map(o=>{const c=pl.hand.find(x=>x.uid===o.uid);return c&&c.id}));
   const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}" data-cls="${esc(card.cls||"Generic")}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
   return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · <span class="hl-note">outline = playable now · point at one of your Heroes to see the cards it can play</span></span></div><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div></section>`}
@@ -784,7 +799,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
       <div class="actions">${ok?`<button class="btn primary go" data-pa="play" data-u="${c.uid}">Play${d.sup==="Hidden"?" face down":d.type==="Item"?" to inventory":""} (${E.cardCost(s,U.me,E.actorFor(s,U.me),d,0)}${d.cost==="X"?"+X":""} Aura)</button>`:""}<button class="btn" data-pa="close">Close</button></div>`);return}
   if(k==="play"){closeModal();begin({type:"play",uid:b.dataset.u});return}
   if(k==="disc"||k==="exile"){showPile(+b.dataset.p,k==="disc"?"disc":"exile");return}
-  if(k==="soul"){const opts=legal().filter(o=>o.type==="soul");const heroes=[...new Set(opts.map(o=>o.hero))];
+  if(k==="soul"){const opts=legal().filter(o=>o.type==="soul"&&(!b.dataset.h||o.hero===b.dataset.h));const heroes=[...new Set(opts.map(o=>o.hero))];
     modal(`<h2>Surrender a soul</h2><p class="pl-note">A surrendered Hero can never be revived. Uses your priority; no Hero is exhausted.</p>${heroes.map(h=>`<h3>${esc(nameOf(h))}</h3><div class="actions" style="flex-direction:column;align-items:stretch">${opts.filter(o=>o.hero===h).map(o=>btn(o,E.SOULS[o.ch])).join("")}</div>`).join("")}<div class="actions"><button class="btn" data-pa="close">Cancel</button></div>`);return}
   if(k==="mode"){const i=+b.dataset.i;const c=U.modeCtx;const n=Math.min(c.sc.modes.n,c.sc.modes.opts.length);if(U.modeSel.includes(i))U.modeSel=U.modeSel.filter(x=>x!==i);else{if(n===1)U.modeSel=[i];else if(U.modeSel.length<n)U.modeSel.push(i)}c.draw();return}
   if(k==="band-t"){const u=b.dataset.u;U.bandSel=U.bandSel.includes(u)?U.bandSel.filter(x=>x!==u):U.bandSel.concat([u]);U.bandCtx.draw();return}

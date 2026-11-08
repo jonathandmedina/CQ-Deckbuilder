@@ -209,7 +209,7 @@ function costHp(s,pid,h,n,why){if(!h||n<=0)return;loseHp(s,h,n,why);const pl=P(s
   const at=living(pl).find(x=>hasEqN(x,"Ritual Athame")&&x.fl.athameRound!==s.round);
   if(at&&!s.over){at.fl.athameRound=s.round;const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);{const an=eqList(at).some(e=>e.name==="Ritual Athame"&&isUp(s,e))?2:1;ask(s,pid,`Ritual Athame: deal ${an} Dark damage to any target`,targetOpts(s,pid,ts,an).concat([{label:"No damage",v:null}]),"dmgTo",{n:an,name:"Ritual Athame",type:"Dark",src:at.uid})}}}
 E.costHp=costHp;
-ASK.dmgTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t)return;const src=pr.data.src?find(s,pr.data.src):null;damage(s,src?src.o:{name:pr.data.name,ctrl:pid},t,pr.data.n,{card:true,type:pr.data.type,srcName:pr.data.name,noTrig:!src})};
+ASK.dmgTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t)return;const src=pr.data.src?find(s,pr.data.src):null;damage(s,src?src.o:{name:pr.data.name,ctrl:pid},t,pr.data.n,{card:true,type:pr.data.type,pierce:pr.data.pierce,srcName:pr.data.name,noTrig:!src})};
 /* Trophy Rack: a Barbarian you control destroyed an item or Equipment */
 function trophy(s,byUid){const h=heroByUid(s,byUid);if(!h||!heroIs(h,"Barbarian"))return;const pl=P(s,h.owner);
   pl.inv.forEach(x=>{if(!x.fd&&x.name==="Trophy Rack"){x.ctr=x.ctr||{};if((x.ctr.trophy||0)<3){x.ctr.trophy=(x.ctr.trophy||0)+1;log(s,`Trophy Rack gets a Trophy counter (${x.ctr.trophy}).`,h.owner)}}})}
@@ -862,7 +862,9 @@ function resolveCont(s,pid,cont,mods){
     const n=d.cost==="X"?(cont.x||0):num(d.cost);const hs=inPlayTargets(s).filter(o=>o.kind==="hero"&&(!stealth(s,o)||ctrl(s,o)===pid));
     if(n>0&&hs.length)ask(s,pid,`Staff of Doom: target Hero loses ${n} HP`,targetOpts(s,pid,hs.filter(o=>ctrl(s,o)!==pid),n).concat(targetOpts(s,pid,hs.filter(o=>ctrl(s,o)===pid),n)).concat([{label:"No one",v:null}]),"loseTo",{n,name:"Staff of Doom"})}
   if(d.type==="Song"&&actor&&!actor.dead&&heroIs(actor,"Bard")){living(pl).filter(h=>h.name==="Harmony Sage").forEach(hs=>heal(s,hs,actor,1,pid))}
-  if(d.type==="Song"){if(invHas(pl,"The Forbidden Tuner")){const t=bestDamageTarget(s,pid,1,{pierce:1});if(t)damage(s,{name:"The Forbidden Tuner"},t,1,{pierce:1,card:true})}
+  if(d.type==="Song"){const tun=pl.inv.find(o=>!o.fd&&o.name==="The Forbidden Tuner");if(tun){const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);
+      /* the player picks the target (best damage target listed first; the AI takes option 0) */
+      if(ts.length)ask(s,pid,"The Forbidden Tuner: deal 1 damage to any target (Piercing 1)",targetOpts(s,pid,ts,1),"dmgTo",{n:1,name:"The Forbidden Tuner",pierce:1,src:tun.uid})}
     if(actor&&hasEqN(actor,"War Lute")){const t=autoTarget(s,pid,"strAlly");if(t)addMod(t,{str:hasUpN(s,actor,"War Lute")?2:1})}
     if(actor&&hasEqN(actor,"Celestial Harp")&&pl.t.songs===2)living(pl).forEach(h=>heal(s,actor,h,1));
     if(actor&&hasUpN(s,actor,"Celestial Harp")&&pl.t.songs===1){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,actor,t,1)}

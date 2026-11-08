@@ -110,6 +110,15 @@ html[data-skin="retro"] .kw-aura,html[data-skin="art"] .kw-aura,.ov-rules .kw-au
 button.card.art:hover{box-shadow:0 0 0 2px var(--cc),var(--shadow)}
 .card.art.upside{box-shadow:0 0 0 3px #D9A53A,var(--shadow)}
 .modal .card.art{max-width:min(600px,calc((90vh - 150px)*5/7));width:100%;margin-inline:auto}
+.art-rate{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--muted,#8a8f99);margin-top:-4px}
+.art-rate[hidden]{display:none}
+.art-rate .ar-l{font-weight:600;letter-spacing:.02em}
+.art-rate .ar-b{display:inline-grid;place-items:center;width:32px;height:28px;border-radius:999px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;padding:0;opacity:.8}
+.art-rate .ar-b:hover,.art-rate .ar-b:focus-visible{opacity:1;outline:none;box-shadow:0 0 0 2px rgba(217,165,58,.55)}
+.art-rate .ar-down svg{transform:scaleY(-1)}
+.art-rate .ar-up[aria-pressed="true"]{background:#2E8B57;border-color:#2E8B57;color:#fff;opacity:1}
+.art-rate .ar-down[aria-pressed="true"]{background:#B23A3A;border-color:#B23A3A;color:#fff;opacity:1}
+.art-rate .ar-s b{color:var(--ink,inherit)}
 html[data-skin="retro"] select.skin-btn{font-family:var(--display);font-size:1rem;letter-spacing:.03em;padding:2px 8px}
 @media (max-width:720px){.top .brand{order:-2}.skin-btn{order:-1;margin-left:auto;padding:3px 8px;font-size:.75rem}}
 .acct b{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -334,8 +343,8 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261108c">
-<link rel="stylesheet" href="assets/art.css?v=20261108c">
+<link rel="stylesheet" href="assets/retro.css?v=20261108d">
+<link rel="stylesheet" href="assets/art.css?v=20261108d">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -364,14 +373,14 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261108c"></script>
-<script src="assets/app.js?v=20261108c"></script>
-<script src="assets/play-engine.js?v=20261108c"></script>
-<script src="assets/play-cards.js?v=20261108c"></script>
-<script src="assets/play-ai.js?v=20261108c"></script>
-<script src="assets/play-ui.js?v=20261108c"></script>
-<script src="assets/changelog-data.js?v=20261108c"></script>
-<script src="assets/changelog.js?v=20261108c"></script>
+<script src="assets/cards-data.js?v=20261108d"></script>
+<script src="assets/app.js?v=20261108d"></script>
+<script src="assets/play-engine.js?v=20261108d"></script>
+<script src="assets/play-cards.js?v=20261108d"></script>
+<script src="assets/play-ai.js?v=20261108d"></script>
+<script src="assets/play-ui.js?v=20261108d"></script>
+<script src="assets/changelog-data.js?v=20261108d"></script>
+<script src="assets/changelog.js?v=20261108d"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"art";

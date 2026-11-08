@@ -322,6 +322,7 @@ if(SKIN==="art"){let q=0;const run=()=>{q=0;fitArt()};const later=()=>{if(!q)q=r
 function artCardHTML(c,o,tag,attrs){
   return`<${tag} class="card art${o.picked?" picked":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}" title="${esc(c.name)}${c.face==="up"?" (upgraded)":""} · ${esc(c.cls)} · v${c.ver||1}"${attrs}>
   <div class="art-frame"><img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">${artOverlayHTML(c)}</div>
+  ${o.rate?artRateTileHTML(c):""}
   ${flipHTML(c)}
   ${o.slot?`<span class="slotbadge">${o.slot}</span>`:""}
   ${o.ctrl||""}
@@ -380,7 +381,7 @@ function viewCatalog(){
     <label class="field" for="cat-sort">Sort by ${selectHTML("cat-sort","cat-sort",f.sort,SORTS)}</label>
     <span class="count">${list.length} shown</span>
   </div>
-  <div class="grid">${gridWithGroups(list,f,c=>cardHTML(c,{button:"inspect"}))}</div>`;
+  <div class="grid">${gridWithGroups(list,f,c=>cardHTML(c,{button:"inspect",rate:1}))}</div>`;
 }
 const HSTATS=[["STR","str"],["DEF","def"],["AURA","aura"],["HP","hp"]];
 function heroStatsHTML(h,cls="hstats"){return`<span class="${cls}">${HSTATS.map(([k,f])=>`<span><b>${esc(h[f])}</b><i>${k}</i></span>`).join("")}</span>`}
@@ -407,7 +408,7 @@ function viewBuild(){
     <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${d.heroes.length===3?"":"disabled"}>Continue to cards →</button>
       <span class="count">${d.heroes.length}/3 Heroes chosen</span>
       ${d.heroes.length||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
-    <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
+    <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",rate:1,picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
   }
   const pcls=partyClasses(d);
   const f=S.b;
@@ -426,7 +427,7 @@ function viewBuild(){
         <button type="button" class="btn sm" data-act="to-heroes">Change Heroes</button>
       </div>
       <div class="grid">${gridWithGroups(pool,f,c=>{const q=d.cards[c.id]||0,m=maxCopies(c);
-        return cardHTML(c,{maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
+        return cardHTML(c,{rate:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
     </section>
     ${deckPanel(d)}
   </div>`;
@@ -524,46 +525,71 @@ function viewDecks(){
   <textarea id="import-text" placeholder="# My deck&#10;Heroes: Ember Mage, Dawn Priest, Night Stalker&#10;2 Flame Jab&#10;1 Aura Crystal"></textarea>
   <div class="actions"><button type="button" class="btn" data-act="import">Import into builder</button></div></div>`;
 }
-/* ---------- art ratings (zoomed card view, Card Art theme only) ----------
+/* ---------- art ratings (Card Art theme only: zoomed card view + card grid tiles) ----------
    Anyone can rate; one vote per browser (random voter id in localStorage "cq.voter").
-   Supabase: table art_votes is locked (RLS, no policies); the RPCs get_art_rating / cast_art_vote do all reads and writes.
-   If the SQL hasn't been run yet the RPC fails and the widget simply stays hidden. */
+   Supabase: table art_votes is locked (RLS, no policies); RPCs get_art_ratings (all cards, one call per page load),
+   get_art_rating (one card, refreshed when a card is zoomed) and cast_art_vote do all reads and writes.
+   If the SQL isn't installed the first call fails and every rating bar stays hidden. */
 const ART_VOTER=(()=>{try{let v=localStorage.getItem("cq.voter");if(!v||!/^[0-9a-f-]{36}$/i.test(v)){
   if(crypto.randomUUID)v=crypto.randomUUID();else{const b=new Uint8Array(16);crypto.getRandomValues(b);b[6]=b[6]&15|64;b[8]=b[8]&63|128;const h=[...b].map(x=>x.toString(16).padStart(2,"0")).join("");v=`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`}
   localStorage.setItem("cq.voter",v)}return v}catch(e){return null}})();
 const artRateKey=c=>c.kind+":"+artKey(c.name);
-const ART_RATE=new Map(); // key -> {ups,downs,mine}
+const ART_RATE=new Map(); // key -> {ups,downs,mine}; cards with no votes have no entry
+let ART_RATE_OK=null;     // null = loading, true = ratings available, false = not installed / offline
+const ZERO_RATE={ups:0,downs:0,mine:0};
 const THUMB='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2 21h4V9H2v12zm20-11a2 2 0 0 0-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L13.2 1 6.6 7.6c-.4.4-.6.9-.6 1.4V19a2 2 0 0 0 2 2h9c.8 0 1.5-.5 1.8-1.2l3-7.1c.1-.2.2-.5.2-.7v-2z"/></svg>';
+const canRate=c=>!!(SB&&ART_VOTER&&c&&hasArt(c)&&ART_RATE_OK!==false);
+const rateText=(r,short)=>{const n=r.ups+r.downs;return n?`<b>${Math.round(r.ups*100/n)}%</b>${short?` <span class="ar-n">(${n})</span>`:` liked · ${n} ${n===1?"vote":"votes"}`}`:(short?`<span class="ar-n">No votes</span>`:"No ratings yet")};
+/* zoomed view: real buttons */
 function artRateHTML(c){
-  if(!SB||!ART_VOTER||!c||!hasArt(c))return"";
-  const k=artRateKey(c);
-  return`<div class="art-rate" data-key="${esc(k)}" hidden><span class="ar-l">Rate the art</span>
-    <button type="button" class="ar-b ar-up" data-act="art-vote" data-v="1" aria-pressed="false" title="I like this art" aria-label="Thumbs up the art">${THUMB}</button>
-    <button type="button" class="ar-b ar-down" data-act="art-vote" data-v="-1" aria-pressed="false" title="Not a fan of this art" aria-label="Thumbs down the art">${THUMB}</button>
-    <span class="ar-s" aria-live="polite"></span></div>`}
+  if(!canRate(c))return"";const k=artRateKey(c),r=ART_RATE.get(k)||ZERO_RATE;
+  return`<div class="art-rate" data-key="${esc(k)}"${ART_RATE_OK?"":" hidden"}><span class="ar-l">Rate the art</span>
+    <button type="button" class="ar-b ar-up" data-act="art-vote" data-v="1" aria-pressed="${r.mine===1}" title="I like this art" aria-label="Thumbs up the art">${THUMB}</button>
+    <button type="button" class="ar-b ar-down" data-act="art-vote" data-v="-1" aria-pressed="${r.mine===-1}" title="Not a fan of this art" aria-label="Thumbs down the art">${THUMB}</button>
+    <span class="ar-s" aria-live="polite">${rateText(r)}</span></div>`}
+/* grid tiles: the tile is often a <button>, so the thumbs are role=button spans handled in the capture phase (like the flip button) */
+function artRateTileHTML(c){
+  if(!canRate(c))return"";const k=artRateKey(c),r=ART_RATE.get(k)||ZERO_RATE;
+  return`<div class="art-rate tile" data-key="${esc(k)}"${ART_RATE_OK?"":" hidden"}>
+    <span class="ar-b ar-up" role="button" tabindex="0" data-artvote="1" aria-pressed="${r.mine===1}" title="I like this art" aria-label="Thumbs up the art of ${esc(c.name)}">${THUMB}</span>
+    <span class="ar-b ar-down" role="button" tabindex="0" data-artvote="-1" aria-pressed="${r.mine===-1}" title="Not a fan of this art" aria-label="Thumbs down the art of ${esc(c.name)}">${THUMB}</span>
+    <span class="ar-s">${rateText(r,true)}</span></div>`}
 function paintArtRate(el,r){
-  el.hidden=false;const n=r.ups+r.downs;
+  el.hidden=false;
   el.querySelector(".ar-up").setAttribute("aria-pressed",r.mine===1?"true":"false");
   el.querySelector(".ar-down").setAttribute("aria-pressed",r.mine===-1?"true":"false");
-  el.querySelector(".ar-s").innerHTML=n?`<b>${Math.round(r.ups*100/n)}%</b> liked · ${n} ${n===1?"vote":"votes"}`:"No ratings yet";
+  el.querySelector(".ar-s").innerHTML=rateText(r,el.classList.contains("tile"));
 }
+function paintArtKey(k){const r=ART_RATE.get(k)||ZERO_RATE;document.querySelectorAll(".art-rate").forEach(el=>{if(el.dataset.key===k)paintArtRate(el,r)})}
+function artRateOff(){ART_RATE_OK=false;document.querySelectorAll(".art-rate").forEach(el=>el.remove())}
 const artRow=d=>{const r=Array.isArray(d)?d[0]:d;return r?{ups:+r.ups||0,downs:+r.downs||0,mine:+r.mine||0}:null};
+async function loadAllArtRates(){
+  if(!SB||!ART_VOTER||SKIN!=="art")return;
+  try{const{data,error}=await SB.rpc("get_art_ratings",{p_voter:ART_VOTER});
+    if(error||!Array.isArray(data)){artRateOff();return}
+    ART_RATE.clear();data.forEach(r=>ART_RATE.set(r.card_key,{ups:+r.ups||0,downs:+r.downs||0,mine:+r.mine||0}));
+    ART_RATE_OK=true;document.querySelectorAll(".art-rate").forEach(el=>paintArtRate(el,ART_RATE.get(el.dataset.key)||ZERO_RATE))}
+  catch(e){artRateOff()}
+}
 async function loadArtRate(m){
-  const el=m&&m.querySelector(".art-rate");if(!el)return;const k=el.dataset.key;
-  if(ART_RATE.has(k))paintArtRate(el,ART_RATE.get(k));
+  const el=m&&m.querySelector(".art-rate");if(!el||ART_RATE_OK===false)return;const k=el.dataset.key;
   try{const{data,error}=await SB.rpc("get_art_rating",{p_card:k,p_voter:ART_VOTER});
-    const r=!error&&artRow(data);if(!r)return;ART_RATE.set(k,r);if(el.isConnected)paintArtRate(el,r)}catch(e){}
+    const r=!error&&artRow(data);if(!r)return;ART_RATE.set(k,r);if(ART_RATE_OK)paintArtKey(k);else if(el.isConnected)paintArtRate(el,r)}catch(e){}
 }
+const ART_BUSY=new Set();
 async function artVote(b){
-  const el=b.closest(".art-rate");if(!el||el.dataset.busy)return;const k=el.dataset.key;
-  const old=ART_RATE.get(k)||{ups:0,downs:0,mine:0};const want=+b.dataset.v===old.mine?0:+b.dataset.v;
-  const r={ups:old.ups-(old.mine===1)+(want===1),downs:old.downs-(old.mine===-1)+(want===-1),mine:want};
-  el.dataset.busy="1";paintArtRate(el,r);
+  const el=b.closest(".art-rate");if(!el)return;const k=el.dataset.key;if(ART_BUSY.has(k))return;
+  const v=+(b.dataset.v||b.dataset.artvote);
+  const old=ART_RATE.get(k)||ZERO_RATE;const want=v===old.mine?0:v;
+  ART_BUSY.add(k);ART_RATE.set(k,{ups:old.ups-(old.mine===1)+(want===1),downs:old.downs-(old.mine===-1)+(want===-1),mine:want});paintArtKey(k);
   try{const{data,error}=await SB.rpc("cast_art_vote",{p_card:k,p_voter:ART_VOTER,p_vote:want});
-    const x=!error&&artRow(data);if(!x)throw error||new Error("no data");ART_RATE.set(k,x);if(el.isConnected)paintArtRate(el,x)}
-  catch(e){paintArtRate(el,old);toast("Couldn't save your art rating. Try again.")}
-  finally{delete el.dataset.busy}
+    const x=!error&&artRow(data);if(!x)throw error||new Error("no data");ART_RATE.set(k,x)}
+  catch(e){ART_RATE.set(k,old);toast("Couldn't save your art rating. Try again.")}
+  finally{ART_BUSY.delete(k);paintArtKey(k)}
 }
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-artvote]");if(!t)return;e.preventDefault();e.stopPropagation();artVote(t)},true);
+document.addEventListener("keydown",e=>{const t=e.target.closest&&e.target.closest("[data-artvote]");if(!t||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();artVote(t)},true);
+loadAllArtRates();
 function inspect(c){
   const d=S.deck,can=c.kind!=="hero"&&c.kind!=="token"&&d.heroes.length===3&&allowed(c,d);
   const q=d.cards[c.id]||0;
@@ -597,7 +623,7 @@ function handBody(){
     <button type="button" class="btn" data-act="hand-new">New hand</button>
   </div>
   <p class="note">${H.lib.length?(canMull?"Setup: draw 4, then you may mulligan once (shuffle your hand back and draw 4 new cards). Draw a card works like the Dawn draw.":"Draw a card works like the Dawn draw. Press D to draw, N for a new hand."):"Your library is empty."}</p>
-  <div class="grid hand-grid">${H.hand.map((id,i)=>cardHTML(BYID.get(id),{button:"inspect-hand",slot:H.fresh.has(i)?"NEW":""})).join("")}</div>`;
+  <div class="grid hand-grid">${H.hand.map((id,i)=>cardHTML(BYID.get(id),{button:"inspect-hand",rate:1,slot:H.fresh.has(i)?"NEW":""})).join("")}</div>`;
 }
 function renderHand(){const m=document.getElementById("handm");if(!m||!S.hand)return;m.querySelector(".box").innerHTML=handBody()}
 function openHand(d){

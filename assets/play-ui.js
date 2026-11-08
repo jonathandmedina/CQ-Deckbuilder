@@ -131,6 +131,7 @@ const CSS=`
 .pl-hand .hc .c-rules{font-size:.82rem}
 .pl-hand .hc .auto{position:absolute;right:8px;bottom:8px;font-size:.65rem;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:999px;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
 .pl-hand .hc .auto.m{color:var(--legend);border-color:var(--legend)}
+.pl-hand .hc:has(.c-foot .zoom) .auto{right:40px}
 .pl-hand-h{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--muted)}
 .pl-man{border:1.5px solid var(--legend);border-radius:12px;padding:10px 12px;background:color-mix(in srgb,var(--legend) 8%,var(--surface));display:flex;flex-direction:column;gap:8px}
 .pl-man .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -163,6 +164,7 @@ const CSS=`
 .ph-inner{position:relative;transform-style:preserve-3d;transition:transform .6s}
 .ph-face,.ph-back{backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:5%/3.6%;overflow:hidden;box-shadow:0 0 0 1px #000,0 4px 10px rgba(0,0,0,.45)}
 .ph-face{position:relative;container-type:inline-size;background:#121218}
+.ph-face>.zoom{position:absolute;top:17%;left:7%;width:26px;height:26px;border:1px solid rgba(255,255,255,.7);background:rgba(15,18,26,.72);color:#fff;z-index:3}
 .ph-face .c-art{display:block;width:100%;height:auto;aspect-ratio:5/7}
 .ph-back{position:absolute;inset:0;transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8%;
   background:radial-gradient(circle at 50% 45%,rgba(120,170,255,.28),transparent 55%),repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0 6px,transparent 6px 12px),linear-gradient(160deg,#1b2a6b,#0b1236 70%);
@@ -524,7 +526,7 @@ function heroCardHTML(s,h,d,st){
   seen[h.uid]=cur;
   const pop=U.statPop&&U.statPop.u===h.uid?statPopHTML(s,h,st,U.statPop.f):"";
   return`<div class="ph-card${h.dead?" down":""}${flipNow?" anim":""}"><div class="ph-inner"${flipNow?` style="${flipNow}"`:""}>
-    <div class="ph-face"><img class="c-art" src="${src}" alt="${esc(d.name)}" width="500" height="700" decoding="async">${artOverlayHTML(c)}${h.dead?"":nums}${pop}</div>
+    <div class="ph-face"><img class="c-art" src="${src}" alt="${esc(d.name)}" width="500" height="700" decoding="async">${artOverlayHTML(c)}${h.dead?"":nums}${pop}${cardOf(h.id)?zoomHTML(cardOf(h.id)):""}</div>
     <div class="ph-back" aria-hidden="${h.dead?"false":"true"}"><span class="gemb"></span><span class="cqt">Crystal<br>Quest</span><span class="rib">${h.surr?"Surrendered":"Dead"}<small>${esc(d.name)}</small></span></div>
   </div></div>`}
 function statPopHTML(s,h,st,f){const pl=s.p[h.owner];const rows=[];const r=(l,v,sign)=>rows.push(`<div><span>${esc(l)}</span><b>${sign&&v>0?"+":""}${v}</b></div>`);
@@ -695,7 +697,7 @@ function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f
   if(mine&&o.kind==="card")opts.filter(x=>x.type==="useFree"&&x.uid===u).forEach(x=>acts.push(btn(x,"Activate (no action)","go")));
   if(mine&&o.kind==="hero"&&o.med)acts.push(`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"wake",hero:u,v:o.keepMed}))}' ${s.phase==="dawn"?"":"disabled"}>${o.keepMed?"Wake at next Dawn":"Keep Meditating"}</button>`);
   const hidden=o.fd&&!mine;
-  modal(`${hidden?"<p>A face-down Hidden card.</p>":card?cardHTML(card,{flipped:E.isUp(s,o)}):`<h2>${esc(o.name)}</h2>`}
+  modal(`${hidden?"<p>A face-down Hidden card.</p>":card?cardHTML(card,{flipped:E.isUp(s,o),nozoom:1}):`<h2>${esc(o.name)}</h2>`}
     ${o.kind==="hero"?`<p class="pl-note">Level ${o.lvl}${o.bon.str||o.bon.def||o.bon.aura?` · level bonuses: ${["str","def","aura"].filter(k=>o.bon[k]).map(k=>`+${o.bon[k]} ${k.toUpperCase()}`).join(", ")}`:""}${o.dmg?` · ${o.dmg} damage taken`:""}</p>`:""}
     ${o.kind==="hero"&&o.ench.length?`<p class="pl-note">Enchantments: ${o.ench.map(e=>esc(e.name)).join(", ")}</p>`:""}
     <div class="actions">${acts.join("")}<button class="btn" data-pa="close">Close</button></div>`)}
@@ -795,7 +797,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="hand"){const c=s.p[U.me].hand.find(x=>x.uid===b.dataset.u);if(!c)return;if(U.tgt){toast("Finish choosing targets first, or press Cancel.");return}
     const ok=legal().some(o=>o.type==="play"&&s.p[U.me].hand.find(x=>x.uid===o.uid&&x.id===c.id));const d=E.DB[c.id];
     const why=ok?"":whyNot(s,c);
-    modal(`${cardHTML(cardOf(c.id))}<p class="pl-note">${E.isScripted(d.name)||d.kind==="equip"?"Resolves automatically.":"Resolves by hand: after you pay, a panel opens to apply the effect."}</p>${why?`<p class="note warn">${esc(why)}</p>`:""}
+    modal(`${cardHTML(cardOf(c.id),{nozoom:1})}<p class="pl-note">${E.isScripted(d.name)||d.kind==="equip"?"Resolves automatically.":"Resolves by hand: after you pay, a panel opens to apply the effect."}</p>${why?`<p class="note warn">${esc(why)}</p>`:""}
       <div class="actions">${ok?`<button class="btn primary go" data-pa="play" data-u="${c.uid}">Play${d.sup==="Hidden"?" face down":d.type==="Item"?" to inventory":""} (${E.cardCost(s,U.me,E.actorFor(s,U.me),d,0)}${d.cost==="X"?"+X":""} Aura)</button>`:""}<button class="btn" data-pa="close">Close</button></div>`);return}
   if(k==="play"){closeModal();begin({type:"play",uid:b.dataset.u});return}
   if(k==="disc"||k==="exile"){showPile(+b.dataset.p,k==="disc"?"disc":"exile");return}

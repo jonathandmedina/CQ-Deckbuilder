@@ -286,7 +286,7 @@ function cardHTML(c,o={}){
   <div class="c-head"><span class="c-name">${esc(c.name)}${c.face==="up"?` <span class="upstar" title="Upgraded side">★</span>`:""}</span>${hasGem(c)?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
   <div class="c-rules">${rulesHTML(c.rules||"")}</div>
-  <div class="c-foot">${footHTML(c)}${o.zoom?zoomHTML(c):""}</div>
+  <div class="c-foot">${footHTML(c)}${o.nozoom?"":zoomHTML(c)}</div>
   ${o.slot?`<span class="slotbadge">${o.slot}</span>`:""}
   ${o.ctrl||""}
 </${tag}>`;
@@ -324,11 +324,17 @@ function fitArt(root){root=root||document;root.querySelectorAll(".ov-fit").forEa
 if(SKIN==="art"){let q=0;const run=()=>{q=0;fitArt()};const later=()=>{if(!q)q=requestAnimationFrame(run)};
   new MutationObserver(m=>{if(m.some(x=>x.addedNodes.length))later()}).observe(document.documentElement,{childList:true,subtree:true});
   document.fonts&&document.fonts.ready.then(later);addEventListener("load",later)}
-/* magnifier on Deck Builder tiles: opens the zoomed card view (tiles there are clicked to pick/add, so zoom gets its own control) */
+/* magnifier on every card tile (except inside a zoomed view): opens the zoomed card view.
+   Deck Builder / Cards tab: inspect() (with Add to deck). Play tab: a plain zoom (card + art rating + Close) stacked over any open panel. */
 const ZOOM_SVG='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M10.5 7.5v6M7.5 10.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-function zoomHTML(c){const id=c.face==="up"?c.id.slice(0,-3):c.id;return`<span class="zoom" role="button" tabindex="0" data-zoom="${esc(id)}" title="Zoom in" aria-label="Zoom in on ${esc(c.name)}">${ZOOM_SVG}</span>`}
-document.addEventListener("click",e=>{const z=e.target.closest&&e.target.closest("[data-zoom]");if(!z)return;e.preventDefault();e.stopPropagation();const c=BYID.get(z.dataset.zoom);if(c)inspect(c)},true);
-document.addEventListener("keydown",e=>{const z=e.target.closest&&e.target.closest("[data-zoom]");if(!z||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();const c=BYID.get(z.dataset.zoom);if(c)inspect(c)},true);
+function zoomHTML(c){const id=c.face==="up"?c.id.slice(0,-3):c.id;return`<span class="zoom" role="button" tabindex="0" data-zoom="${esc(id)}"${c.face==="up"?' data-zup="1"':""} title="Zoom in" aria-label="Zoom in on ${esc(c.name)}">${ZOOM_SVG}</span>`}
+function zoomOnly(c){const l=$("#layer");const m=document.createElement("div");m.className="modal zoom-only";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);
+  m.innerHTML=`<div class="box">${cardHTML(c,{nozoom:1})}${artRateHTML(c)}<div class="actions"><button type="button" class="btn" data-act="close">Close</button></div></div>`;
+  m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m)}
+function zoomFrom(z){let c=BYID.get(z.dataset.zoom);if(!c)return;
+  if(z.closest("#play-root,#pl-modal")){if(z.dataset.zup&&c.up)c=upFace(c);zoomOnly(c)}else inspect(c)}
+document.addEventListener("click",e=>{const z=e.target.closest&&e.target.closest("[data-zoom]");if(!z)return;e.preventDefault();e.stopPropagation();zoomFrom(z)},true);
+document.addEventListener("keydown",e=>{const z=e.target.closest&&e.target.closest("[data-zoom]");if(!z||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();zoomFrom(z)},true);
 /* Deck Builder pool: left click a card adds a copy (data-act="inc"), right click removes one */
 document.addEventListener("contextmenu",e=>{const t=e.target.closest&&e.target.closest("[data-pool]");if(!t||e.target.closest(".c-ctrl,[data-zoom],[data-flip]"))return;e.preventDefault();
   const id=t.dataset.pool;if(!S.deck.cards[id])return;setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})});
@@ -336,7 +342,7 @@ function artCardHTML(c,o,tag,attrs){
   return`<${tag} class="card art${o.picked?" picked":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}" title="${esc(c.name)}${c.face==="up"?" (upgraded)":""} · ${esc(c.cls)} · v${c.ver||1}"${attrs}>
   <div class="art-frame"><img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">${artOverlayHTML(c)}</div>
   ${flipHTML(c)}
-  ${o.zoom?zoomHTML(c):""}
+  ${o.nozoom?"":zoomHTML(c)}
   ${o.slot?`<span class="slotbadge">${o.slot}</span>`:""}
   ${o.ctrl||""}
 </${tag}>`;
@@ -421,7 +427,7 @@ function viewBuild(){
     <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${d.heroes.length===3?"":"disabled"}>Continue to cards →</button>
       <span class="count">${d.heroes.length}/3 Heroes chosen</span>
       ${d.heroes.length||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
-    <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",zoom:1,picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
+    <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
   }
   const pcls=partyClasses(d);
   const f=S.b;
@@ -441,7 +447,7 @@ function viewBuild(){
       </div>
       <p class="note pool-tip">Click a card to add a copy, right-click to remove one. Use the magnifier to zoom in.</p>
       <div class="grid">${gridWithGroups(pool,f,c=>{const q=d.cards[c.id]||0,m=maxCopies(c);
-        return cardHTML(c,{pool:1,zoom:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
+        return cardHTML(c,{pool:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
     </section>
     ${deckPanel(d)}
   </div>`;
@@ -599,7 +605,7 @@ function inspect(c){
   const d=S.deck,can=c.kind!=="hero"&&c.kind!=="token"&&d.heroes.length===3&&allowed(c,d);
   const q=d.cards[c.id]||0;
   const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);
-  m.innerHTML=`<div class="box">${cardHTML(c)}${artRateHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)||deckTotal(d)>=DECK_SIZE?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
+  m.innerHTML=`<div class="box">${cardHTML(c,{nozoom:1})}${artRateHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)||deckTotal(d)>=DECK_SIZE?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});
   l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m);
 }
@@ -946,7 +952,7 @@ function go(v){if(location.hash==="#"+v){S.view=v;render();scrollTo(0,0)}else lo
 function setDeck(fn){fn(S.deck);S.dirty=true;saveDraft();render()}
 /* weapon flip icon: swap the tile between its normal and upgraded side in place */
 function flipTile(el){const card=el.closest(".card");const c=card&&BYID.get(card.dataset.cid);if(!c||!c.up)return;
-  const t=document.createElement("div");t.innerHTML=cardHTML(c,{flipped:!card.classList.contains("upside"),zoom:!!card.querySelector(".c-foot .zoom")});const n=t.firstElementChild;
+  const t=document.createElement("div");t.innerHTML=cardHTML(c,{flipped:!card.classList.contains("upside"),nozoom:!card.querySelector(".zoom")});const n=t.firstElementChild;
   if(card.classList.contains("art")){[".art-frame",".flip"].forEach(k=>{const a=card.querySelector(":scope > "+k),b=n.querySelector(":scope > "+k);if(a&&b)a.replaceWith(b)});card.title=n.title;card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus();return}
   ["c-head","c-type","c-rules","c-foot"].forEach(k=>{const a=card.querySelector(":scope > ."+k),b=n.querySelector(":scope > ."+k);if(a&&b)a.innerHTML=b.innerHTML});
   card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus()}
@@ -993,7 +999,7 @@ document.addEventListener("click",async e=>{
   else if(a==="hand-draw"){handDraw()}
   else if(a==="hand-mull"){handMull()}
   else if(a==="hand-new"){if(S.hand){dealHand(S.hand.d);renderHand()}}
-  else if(a==="inspect-hand"){const c=BYID.get(id);if(c){const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);m.innerHTML=`<div class="box">${cardHTML(c)}${artRateHTML(c)}<div class="actions"><button type="button" class="btn" data-act="close">Close</button></div></div>`;m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m)}}
+  else if(a==="inspect-hand"){const c=BYID.get(id);if(c){const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);m.innerHTML=`<div class="box">${cardHTML(c,{nozoom:1})}${artRateHTML(c)}<div class="actions"><button type="button" class="btn" data-act="close">Close</button></div></div>`;m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m)}}
   else if(a==="pnp"){const d=deckBySrc(b.dataset.src);if(d)choosePrint(d)}
   else if(a==="pnp-go"){const d=deckBySrc(b.dataset.src);b.closest(".modal")?.remove();if(d)exportPnP(d,v)}
   else if(a==="tts"){const d=deckBySrc(b.dataset.src);if(d)exportTTS(d)}

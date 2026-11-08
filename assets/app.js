@@ -524,13 +524,53 @@ function viewDecks(){
   <textarea id="import-text" placeholder="# My deck&#10;Heroes: Ember Mage, Dawn Priest, Night Stalker&#10;2 Flame Jab&#10;1 Aura Crystal"></textarea>
   <div class="actions"><button type="button" class="btn" data-act="import">Import into builder</button></div></div>`;
 }
+/* ---------- art ratings (zoomed card view, Card Art theme only) ----------
+   Anyone can rate; one vote per browser (random voter id in localStorage "cq.voter").
+   Supabase: table art_votes is locked (RLS, no policies); the RPCs get_art_rating / cast_art_vote do all reads and writes.
+   If the SQL hasn't been run yet the RPC fails and the widget simply stays hidden. */
+const ART_VOTER=(()=>{try{let v=localStorage.getItem("cq.voter");if(!v||!/^[0-9a-f-]{36}$/i.test(v)){
+  if(crypto.randomUUID)v=crypto.randomUUID();else{const b=new Uint8Array(16);crypto.getRandomValues(b);b[6]=b[6]&15|64;b[8]=b[8]&63|128;const h=[...b].map(x=>x.toString(16).padStart(2,"0")).join("");v=`${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`}
+  localStorage.setItem("cq.voter",v)}return v}catch(e){return null}})();
+const artRateKey=c=>c.kind+":"+artKey(c.name);
+const ART_RATE=new Map(); // key -> {ups,downs,mine}
+const THUMB='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M2 21h4V9H2v12zm20-11a2 2 0 0 0-2-2h-6.3l1-4.6v-.3c0-.4-.2-.8-.4-1.1L13.2 1 6.6 7.6c-.4.4-.6.9-.6 1.4V19a2 2 0 0 0 2 2h9c.8 0 1.5-.5 1.8-1.2l3-7.1c.1-.2.2-.5.2-.7v-2z"/></svg>';
+function artRateHTML(c){
+  if(!SB||!ART_VOTER||!c||!hasArt(c))return"";
+  const k=artRateKey(c);
+  return`<div class="art-rate" data-key="${esc(k)}" hidden><span class="ar-l">Rate the art</span>
+    <button type="button" class="ar-b ar-up" data-act="art-vote" data-v="1" aria-pressed="false" title="I like this art" aria-label="Thumbs up the art">${THUMB}</button>
+    <button type="button" class="ar-b ar-down" data-act="art-vote" data-v="-1" aria-pressed="false" title="Not a fan of this art" aria-label="Thumbs down the art">${THUMB}</button>
+    <span class="ar-s" aria-live="polite"></span></div>`}
+function paintArtRate(el,r){
+  el.hidden=false;const n=r.ups+r.downs;
+  el.querySelector(".ar-up").setAttribute("aria-pressed",r.mine===1?"true":"false");
+  el.querySelector(".ar-down").setAttribute("aria-pressed",r.mine===-1?"true":"false");
+  el.querySelector(".ar-s").innerHTML=n?`<b>${Math.round(r.ups*100/n)}%</b> liked · ${n} ${n===1?"vote":"votes"}`:"No ratings yet";
+}
+const artRow=d=>{const r=Array.isArray(d)?d[0]:d;return r?{ups:+r.ups||0,downs:+r.downs||0,mine:+r.mine||0}:null};
+async function loadArtRate(m){
+  const el=m&&m.querySelector(".art-rate");if(!el)return;const k=el.dataset.key;
+  if(ART_RATE.has(k))paintArtRate(el,ART_RATE.get(k));
+  try{const{data,error}=await SB.rpc("get_art_rating",{p_card:k,p_voter:ART_VOTER});
+    const r=!error&&artRow(data);if(!r)return;ART_RATE.set(k,r);if(el.isConnected)paintArtRate(el,r)}catch(e){}
+}
+async function artVote(b){
+  const el=b.closest(".art-rate");if(!el||el.dataset.busy)return;const k=el.dataset.key;
+  const old=ART_RATE.get(k)||{ups:0,downs:0,mine:0};const want=+b.dataset.v===old.mine?0:+b.dataset.v;
+  const r={ups:old.ups-(old.mine===1)+(want===1),downs:old.downs-(old.mine===-1)+(want===-1),mine:want};
+  el.dataset.busy="1";paintArtRate(el,r);
+  try{const{data,error}=await SB.rpc("cast_art_vote",{p_card:k,p_voter:ART_VOTER,p_vote:want});
+    const x=!error&&artRow(data);if(!x)throw error||new Error("no data");ART_RATE.set(k,x);if(el.isConnected)paintArtRate(el,x)}
+  catch(e){paintArtRate(el,old);toast("Couldn't save your art rating. Try again.")}
+  finally{delete el.dataset.busy}
+}
 function inspect(c){
   const d=S.deck,can=c.kind!=="hero"&&c.kind!=="token"&&d.heroes.length===3&&allowed(c,d);
   const q=d.cards[c.id]||0;
   const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);
-  m.innerHTML=`<div class="box">${cardHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)||deckTotal(d)>=DECK_SIZE?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
+  m.innerHTML=`<div class="box">${cardHTML(c)}${artRateHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)||deckTotal(d)>=DECK_SIZE?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});
-  l.appendChild(m);m.querySelector("[data-act=close]").focus();
+  l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m);
 }
 
 /* ---------- test draw: starting hand + draw a card ---------- */
@@ -889,6 +929,7 @@ document.addEventListener("click",async e=>{
   else if(a==="hero-cls"){S.b.heroCls=v;render()}
   else if(a==="b-cls"){S.b.cls=v;render()}
   else if(a==="inspect"){inspect(BYID.get(id))}
+  else if(a==="art-vote"){artVote(b)}
   else if(a==="pick-hero"){let added=false;setDeck(d=>{const i=d.heroes.indexOf(id);if(i>=0)d.heroes.splice(i,1);else if(d.heroes.length<3){d.heroes.push(id);added=true}else toast("Your party is full. Remove a Hero first.")});if(added&&S.deck.heroes.length===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
   else if(a==="unhero"){setDeck(d=>{d.heroes=d.heroes.filter(h=>h!==id)});if(S.deck.heroes.length<3){S.b.step="heroes";render()}}
   else if(a==="to-cards"){if(S.deck.heroes.length===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
@@ -920,7 +961,7 @@ document.addEventListener("click",async e=>{
   else if(a==="hand-draw"){handDraw()}
   else if(a==="hand-mull"){handMull()}
   else if(a==="hand-new"){if(S.hand){dealHand(S.hand.d);renderHand()}}
-  else if(a==="inspect-hand"){const c=BYID.get(id);if(c){const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);m.innerHTML=`<div class="box">${cardHTML(c)}<div class="actions"><button type="button" class="btn" data-act="close">Close</button></div></div>`;m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m);m.querySelector("[data-act=close]").focus()}}
+  else if(a==="inspect-hand"){const c=BYID.get(id);if(c){const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);m.innerHTML=`<div class="box">${cardHTML(c)}${artRateHTML(c)}<div class="actions"><button type="button" class="btn" data-act="close">Close</button></div></div>`;m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m)}}
   else if(a==="pnp"){const d=deckBySrc(b.dataset.src);if(d)choosePrint(d)}
   else if(a==="pnp-go"){const d=deckBySrc(b.dataset.src);b.closest(".modal")?.remove();if(d)exportPnP(d,v)}
   else if(a==="tts"){const d=deckBySrc(b.dataset.src);if(d)exportTTS(d)}

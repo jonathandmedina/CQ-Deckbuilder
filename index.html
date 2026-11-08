@@ -119,14 +119,17 @@ button.card.art:hover{box-shadow:0 0 0 2px var(--cc),var(--shadow)}
 .art-rate .ar-up[aria-pressed="true"]{background:#2E8B57;border-color:#2E8B57;color:#fff;opacity:1}
 .art-rate .ar-down[aria-pressed="true"]{background:#B23A3A;border-color:#B23A3A;color:#fff;opacity:1}
 .art-rate .ar-s b{color:var(--ink,inherit)}
-.art-rate.tile{margin:0;padding:5px 8px;gap:6px;justify-content:flex-start;font-size:.78rem;background:rgba(0,0,0,.28);border-radius:0 0 8px 8px;color:rgba(255,255,255,.82)}
-.art-rate.tile .ar-b{width:28px;height:22px}
-.art-rate.tile .ar-b svg{width:13px;height:13px}
-.art-rate.tile .ar-s{margin-left:auto;white-space:nowrap}
-.art-rate.tile .ar-s b{color:#fff}
 .art-rate .ar-n{opacity:.75}
-.card.maxed>.art-rate.tile{opacity:1;filter:none}
-@media (max-width:720px){.art-rate.tile{padding:4px 6px;gap:4px}.art-rate.tile .ar-b{width:24px;height:20px}}
+.zoom{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;cursor:zoom-in;flex:none;line-height:1}
+.c-foot .zoom{margin-left:auto;width:24px;height:24px;border:1px solid var(--card-line);background:var(--card-paper);color:var(--card-ink)}
+.c-foot .flip+.zoom{margin-left:0}
+.c-foot:has(.zoom) .stats{width:auto;flex:1}
+.c-foot .zoom:hover,.c-foot .zoom:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.card.art>.zoom{position:absolute;top:17%;left:7%;border:1px solid rgba(255,255,255,.7);background:rgba(15,18,26,.72);color:#fff;z-index:2}
+.card.art>.zoom:hover,.card.art>.zoom:focus-visible{border-color:#D9A53A;color:#FFD27A;outline:none}
+.card[data-pool]{cursor:pointer;user-select:none}
+.card[data-pool]:hover{border-color:var(--cc)}
+.card.art[data-pool]:hover{box-shadow:0 0 0 2px var(--cc),var(--shadow)}
 html[data-skin="retro"] select.skin-btn{font-family:var(--display);font-size:1rem;letter-spacing:.03em;padding:2px 8px}
 @media (max-width:720px){.top .brand{order:-2}.skin-btn{order:-1;margin-left:auto;padding:3px 8px;font-size:.75rem}}
 .acct b{color:var(--ink);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -351,8 +354,8 @@ button.card:hover{border-color:var(--cc)}
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261108g">
-<link rel="stylesheet" href="assets/art.css?v=20261108g">
+<link rel="stylesheet" href="assets/retro.css?v=20261108h">
+<link rel="stylesheet" href="assets/art.css?v=20261108h">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -381,14 +384,14 @@ button.card:hover{border-color:var(--cc)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261108g"></script>
-<script src="assets/app.js?v=20261108g"></script>
-<script src="assets/play-engine.js?v=20261108g"></script>
-<script src="assets/play-cards.js?v=20261108g"></script>
-<script src="assets/play-ai.js?v=20261108g"></script>
-<script src="assets/play-ui.js?v=20261108g"></script>
-<script src="assets/changelog-data.js?v=20261108g"></script>
-<script src="assets/changelog.js?v=20261108g"></script>
+<script src="assets/cards-data.js?v=20261108h"></script>
+<script src="assets/app.js?v=20261108h"></script>
+<script src="assets/play-engine.js?v=20261108h"></script>
+<script src="assets/play-cards.js?v=20261108h"></script>
+<script src="assets/play-ai.js?v=20261108h"></script>
+<script src="assets/play-ui.js?v=20261108h"></script>
+<script src="assets/changelog-data.js?v=20261108h"></script>
+<script src="assets/changelog.js?v=20261108h"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"art";

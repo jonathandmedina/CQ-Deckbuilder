@@ -145,6 +145,51 @@ const CSS=`
 .pl-legend{font-size:.78rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
 @media (max-width:1000px){.pl-game{grid-template-columns:minmax(0,1fr)}.pl-side{position:static;max-height:none}.pl-log{max-height:260px}}
 @media (max-width:620px){.pl-heroes{gap:5px}.ph{padding:6px 6px}.ph-name{font-size:.9rem}.ph-stats span{font-size:.58rem}.ph-stats b{font-size:.82rem}.pl-hand .hc{flex-basis:160px}.pl-row .lbl{width:100%}}
+
+/* resources: Aura bar + Gold chip; deck piles on the right */
+.pl-bar .pl-piles{margin-left:auto;display:inline-flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.pl-bar .res.aubar{position:relative;overflow:hidden;min-width:150px;padding:2px 12px;border:2px solid #3E7BFA;background:#0b1640;color:#fff;justify-content:center}
+.pl-bar .res.aubar>i.fill{position:absolute;inset:0 auto 0 0;width:var(--ap,0%);background:linear-gradient(180deg,#8fd0ff,#2f6fe0 55%,#1d4fb8);transition:width .35s}
+.pl-bar .res.aubar>*:not(.fill){position:relative}
+.pl-bar .res.aubar b{color:#fff;text-shadow:0 1px 2px #000}
+.pl-bar .res.aubar small{opacity:.9;text-shadow:0 1px 2px #000}
+.pl-bar .res.gold{border:2px solid #8a5a00;background:linear-gradient(180deg,#ffe58a,#f5b82e 55%,#c98a12);color:#3a2206;font-weight:700}
+.pl-bar .res.gold b{color:#3a2206}
+.pl-bar .coin{display:inline-block;width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6c4,#ffcc3c 45%,#b97808 80%);box-shadow:inset 0 0 0 1.5px #6b4300;position:relative;flex:none}
+.pl-bar .coin::after{content:"";position:absolute;inset:4px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(107,67,0,.55)}
+/* Hero slots as card images */
+.ph.hasart{align-items:stretch}
+.ph.hasart .ph-card{width:100%;max-width:230px;margin:0 auto;perspective:1100px;container-type:inline-size}
+.ph-inner{position:relative;transform-style:preserve-3d;transition:transform .6s}
+.ph-face,.ph-back{backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:5%/3.6%;overflow:hidden;box-shadow:0 0 0 1px #000,0 4px 10px rgba(0,0,0,.45)}
+.ph-face{position:relative;container-type:inline-size;background:#121218}
+.ph-face .c-art{display:block;width:100%;height:auto;aspect-ratio:5/7}
+.ph-back{position:absolute;inset:0;transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8%;
+  background:radial-gradient(circle at 50% 45%,rgba(120,170,255,.28),transparent 55%),repeating-linear-gradient(45deg,rgba(255,255,255,.05) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.05) 0 6px,transparent 6px 12px),linear-gradient(160deg,#1b2a6b,#0b1236 70%);
+  border:4cqw solid #0a0e26;outline:1.2cqw solid #c9b27a;outline-offset:-5.5cqw}
+.ph-back .gemb{width:22cqw;height:31cqw;margin-top:-14cqw;background:linear-gradient(135deg,#d6f1ff,#5fb0ff 45%,#2a4fc9 75%,#1a2a80);clip-path:polygon(50% 0,100% 38%,50% 100%,0 38%);filter:drop-shadow(0 0 3cqw rgba(140,200,255,.7));opacity:.85}
+.ph-back .cqt{font-family:"Pirata One",var(--display);font-size:9cqw;letter-spacing:.06em;color:#e9d9a6;text-shadow:0 .6cqw .4cqw #000;text-align:center;line-height:1}
+.ph-back .rib{position:absolute;left:0;right:0;bottom:9%;padding:2.5cqw 4cqw;background:rgba(120,18,18,.88);color:#fff;text-align:center;font-size:6.5cqw;font-weight:700;line-height:1.15;border-block:1px solid rgba(255,255,255,.35)}
+.ph-back .rib small{display:block;font-size:.75em;font-weight:400;opacity:.9}
+.ph-card.down .ph-inner{transform:rotateY(180deg)}
+.ph-card.down.anim .ph-inner{animation:phflip .8s ease both}
+.ph-card.anim:not(.down) .ph-inner{animation:phflip .8s ease reverse both}
+@keyframes phflip{from{transform:rotateY(0)}to{transform:rotateY(180deg)}}
+.ph.dead.hasart{filter:none;opacity:1}
+.ph.ex.hasart .ph-face{filter:brightness(.72)}
+/* live stat numbers on the card */
+.ph-num{position:absolute;transform:translate(-50%,-50%);font-family:"Pirata One",var(--display);font-size:8.2cqw;line-height:1;color:#ffc100;-webkit-text-stroke:1.4cqw #000;paint-order:stroke fill;text-shadow:0 .4cqw .25cqw rgba(0,0,0,.85);background:none;border:0;padding:1cqw 2cqw;cursor:help;border-radius:3cqw;font-variant-numeric:tabular-nums;z-index:2}
+.ph-num:hover,.ph-num:focus-visible,.ph-num.on{outline:.8cqw solid #fff;outline-offset:0;background:rgba(0,0,0,.35)}
+.ph-num.up{color:#7be04f} .ph-num.dn{color:#ff5a5a}
+.ph-num.bump{animation:phbump .7s ease}
+@keyframes phbump{0%{transform:translate(-50%,-50%) scale(1)}35%{transform:translate(-50%,-50%) scale(1.6)}100%{transform:translate(-50%,-50%) scale(1)}}
+.ph-pop{position:absolute;left:6%;right:6%;bottom:5%;z-index:3;background:rgba(10,12,28,.94);border:.8cqw solid #c9b27a;border-radius:3cqw;padding:3cqw 4cqw;color:#fff;font-family:Arial,sans-serif;font-size:5.4cqw;line-height:1.3;text-align:left;cursor:default}
+.ph-pop h4{margin:0 0 1.5cqw;font-size:6.4cqw;font-family:var(--display)}
+.ph-pop div{display:flex;justify-content:space-between;gap:3cqw}
+.ph-pop div b{font-variant-numeric:tabular-nums}
+.ph-pop .tot{border-top:1px solid rgba(255,255,255,.3);margin-top:1.5cqw;padding-top:1.5cqw;font-weight:700}
+.ph.hasart .tags{justify-content:center}
+.ph.hasart .hpbar{margin-top:auto}
 `;
 /* Hero highlight: point at (or focus) one of your Heroes to light up the hand cards it can play (its class or Generic) */
 function heroHL(ph){const hand=document.querySelector(".pl-hand");if(!hand)return;const note=document.querySelector(".pl-hand-h .hl-note");
@@ -282,6 +327,7 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   root.innerHTML=gameHTML(s);
   const lg=root.querySelector(".pl-log");if(lg&&atBottom)lg.scrollTop=lg.scrollHeight;
   const he=root.querySelector(".pl-hand");if(he)he.scrollLeft=hs;
+  try{if(typeof fitArt==="function")fitArt(root)}catch(e){}
   modals(s)}
 function lobbyHTML(){const ch=deckChoices();const resL=store2.get("cq.play.local",null),resH=store2.get("cq.play.host",null),resG=store2.get("cq.play.guest",null);
   if(!U.lobby.deck||!ch.some(d=>d.id===U.lobby.deck&&d.ok))U.lobby.deck=(ch.find(d=>d.ok)||{}).id||"";
@@ -345,11 +391,11 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const pc=[0,1].map(p=>`P${p}`).filter(u=>cands.has(u)&&u==="P"+pid).length;
   return`<section class="pl-zone${mine?"":" op"}" aria-label="${esc(pl.name)}'s side">
     <div class="pl-bar"><span class="nm">${esc(pl.name)}${mine?" (you)":""}</span>${isInit?'<span class="res init" title="Has initiative">Initiative</span>':""}${turnTag}
-      <span class="res au" title="Aura pool"><i class="aura"></i> <b>${pl.aura}</b> Aura</span><span class="res" title="Gold">● <b>${pl.gold}</b> Gold</span>
-      <span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
-      <button class="res" data-pa="disc" data-p="${pid}">Discard <b>${pl.disc.length}</b></button>${pl.exile.length?`<button class="res" data-pa="exile" data-p="${pid}">Exile <b>${pl.exile.length}</b></button>`:""}
-      ${pl.echo.length?`<span class="res">Echo <b>${pl.echo.length}</b></span>`:""}${mine?"":turnCounts(s,pid).join("")}${s.passed[pid]&&s.phase==="battle"?'<span class="res">Passed</span>':""}
-      ${pc?`<button class="btn sm" data-pa="pick" data-u="P${pid}" style="outline:3px solid var(--warn)">Target ${esc(pl.name)}'s party</button>`:""}</div>
+      ${auraBarHTML(s,pl)}<span class="res gold" title="Gold: earned at Dusk, spent in Town"><i class="coin" aria-hidden="true"></i> <b>${pl.gold}</b> Gold</span>
+      ${mine?"":turnCounts(s,pid).join("")}${s.passed[pid]&&s.phase==="battle"?'<span class="res">Passed</span>':""}
+      ${pc?`<button class="btn sm" data-pa="pick" data-u="P${pid}" style="outline:3px solid var(--warn)">Target ${esc(pl.name)}'s party</button>`:""}
+      <span class="pl-piles">${pl.echo.length?`<span class="res">Echo <b>${pl.echo.length}</b></span>`:""}<span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
+      <button class="res" data-pa="disc" data-p="${pid}">Discard <b>${pl.disc.length}</b></button>${pl.exile.length?`<button class="res" data-pa="exile" data-p="${pid}">Exile <b>${pl.exile.length}</b></button>`:""}</span></div>
     <div class="pl-heroes">${heroes}</div>
     <div class="pl-row"><span class="lbl">Battlefield</span>${bf}</div>
     <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div>
@@ -425,13 +471,59 @@ function heroHTML(s,h,i,actor,cands){const st=E.heroStats(s,h);const d=E.DB[h.id
   const gear=E.eqList(h).map(e=>`<button class="tg eq${U.man&&U.manT===e.uid?" mansel":""}${cands.has(e.uid)?" cand":""}" style="--cc:${cc(e.cls||"Generic")};--ci:${ci(e.cls||"Generic")}" data-pa="obj" data-u="${e.uid}">⚔ ${esc(e.name)}${E.isUp(s,e)?" ★":""}</button>`).concat(h.ench.map(e=>`<button class="tg eq${cands.has(e.uid)?" cand":""}" style="--cc:${cc((E.DB[e.id]||{}).cls||"Warlock")}" data-pa="obj" data-u="${e.uid}">✦ ${esc(e.name)}</button>`)).join("");
   const low=st.hp*3<=st.max;
   const isActor=actor&&actor.uid===h.uid;
-  return`<div role="button" tabindex="0" class="ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
-    <span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>
+  const pct=Math.max(0,Math.min(100,h.dead?0:st.hp/st.max*100));
+  const hpBar=`<span class="hpbar${low?" low":""}" style="--p:${pct}%"><i style="width:${pct}%"></i><span>${h.dead?"0":st.hp} / ${st.max} HP</span></span>`;
+  const cls=`ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}`;
+  const top=`<span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
+  const extra=`${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}`;
+  if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
+    ${top}${heroCardHTML(s,h,d,st)}${extra}${hpBar}
+  </div>`;
+  return`<div role="button" tabindex="0" class="${cls}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
+    ${top}
     <span class="ph-name">${esc(h.name)}</span><span class="ph-cls"><span class="dot"></span>${esc(h.cls)}</span>
-    <span class="hpbar${low?" low":""}" style="--p:${Math.max(0,Math.min(100,st.hp/st.max*100))}%"><i style="width:${Math.max(0,Math.min(100,st.hp/st.max*100))}%"></i><span>${h.dead?"0":st.hp} / ${st.max} HP</span></span>
     <span class="ph-stats"><span class="s-str">${statB(st.str,d.str)}STR</span><span class="s-def">${statB(st.def,d.def)}DEF</span><span class="s-aura">${statB(st.aura,d.aura)}AURA</span></span>
-    ${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}
+    ${extra}${hpBar}
   </div>`}
+/* ---------- Hero card images (Card Art export) with live stats ---------- */
+function heroArt(d){try{return!!(d&&typeof CARD_ART!=="undefined"&&CARD_ART.hero.has(artKey(d.name)))}catch(e){return false}}
+const STAT_NAME={str:"Strength",def:"Defense",aura:"Aura",hp:"Health Points"};
+function heroCardHTML(s,h,d,st){
+  const c={kind:"hero",name:d.name,cls:d.cls,rules:d.rules||"",aura:"",str:"",hp:"",def:""};
+  let src="";try{src=artSrc(c)}catch(e){src=`assets/art/hero/${artKey(d.name)}-face.webp`}
+  /* remember what was on screen last render: newly changed numbers pulse, a Hero that just died flips over */
+  if(U.heroSeenKey!==U.gameKey){U.heroSeen={};U.heroFx={};U.heroSeenKey=U.gameKey}
+  const seen=U.heroSeen,fx=U.heroFx[h.uid]||(U.heroFx[h.uid]={});const prev=seen[h.uid];const now=Date.now();
+  const cur={str:st.str,def:st.def,aura:st.aura,hp:h.dead?0:st.hp,dead:!!h.dead};
+  if(prev&&prev.dead!==cur.dead)fx.flip=now;
+  ["str","def","aura","hp"].forEach(f=>{if(prev&&prev[f]!==cur[f])fx[f]=now});
+  /* an effect that is still playing keeps its place across re-renders (negative animation-delay) */
+  const live=(t,ms)=>t&&now-t<ms?`animation-delay:-${now-t}ms;`:"";
+  const flipNow=live(fx.flip,800);
+  const base={str:h.base?h.base.str:d.str,def:h.base?h.base.def:d.def,aura:h.base?h.base.aura:d.aura,hp:st.max};
+  const nums=(ART_TPL.hero.nums||[]).map(([f,x,y])=>{const v=cur[f];const b=f==="hp"?st.max:base[f];
+    const dir=v>b?" up":v<b?" dn":"";const bd=flipNow?"":live(fx[f],700);const bump=bd?" bump":"";const on=U.statPop&&U.statPop.u===h.uid&&U.statPop.f===f?" on":"";
+    const tip=f==="hp"?`Health Points ${v} of ${st.max}`:`${STAT_NAME[f]} ${v} (printed ${b})`;
+    return`<button type="button" class="ph-num${dir}${bump}${on}" style="${artPos(x,y)};${bd}" data-pa="stat" data-u="${h.uid}" data-f="${f}" title="${esc(tip)} · click for details" aria-label="${esc(tip)}">${v}</button>`}).join("");
+  seen[h.uid]=cur;
+  const pop=U.statPop&&U.statPop.u===h.uid?statPopHTML(s,h,st,U.statPop.f):"";
+  return`<div class="ph-card${h.dead?" down":""}${flipNow?" anim":""}"><div class="ph-inner"${flipNow?` style="${flipNow}"`:""}>
+    <div class="ph-face"><img class="c-art" src="${src}" alt="${esc(d.name)}" width="500" height="700" decoding="async">${artOverlayHTML(c)}${h.dead?"":nums}${pop}</div>
+    <div class="ph-back" aria-hidden="${h.dead?"false":"true"}"><span class="gemb"></span><span class="cqt">Crystal<br>Quest</span><span class="rib">${h.surr?"Surrendered":"Dead"}<small>${esc(d.name)}</small></span></div>
+  </div></div>`}
+function statPopHTML(s,h,st,f){const pl=s.p[h.owner];const rows=[];const r=(l,v,sign)=>rows.push(`<div><span>${esc(l)}</span><b>${sign&&v>0?"+":""}${v}</b></div>`);
+  const eq=k=>E.eqList(h).reduce((n,e)=>n+((k==="str"?e.pstr:e.pdef)||0),0);
+  const mods=k=>(h.mods||[]).reduce((n,m)=>n+(m[k]||0),0);
+  if(f==="hp"){r("Printed",st.max-(h.ench||[]).filter(e=>e.name==="Life Boost").length*2);const lb=(h.ench||[]).filter(e=>e.name==="Life Boost").length*2;if(lb)r("Life Boost",lb,true);r("Damage taken",-(h.dmg||0));
+    return`<div class="ph-pop" role="dialog" aria-label="Health Points" data-pa="stat" data-u="${h.uid}" data-f="hp"><h4>Health Points</h4>${rows.join("")}<div class="tot"><span>Now</span><b>${st.hp} / ${st.max}</b></div></div>`}
+  const b=h.base?h.base[f]:0,lv=(h.bon&&h.bon[f])||0;r("Printed",b);if(lv)r("Level points",lv,true);
+  if(f!=="aura"){if(h.plus)r("+1/+1 counters",h.plus,true);const e=eq(f);if(e)r("Equipment",e,true);const m=mods(f);if(m)r("This turn",m,true);
+    const rest=st[f]-b-lv-(h.plus||0)-e-m;if(rest)r("Abilities and other cards",rest,true)}
+  else{const rest=st.aura-b-lv;if(rest)r("Other",rest,true)}
+  const note=f==="aura"?`<div style="opacity:.8;font-size:.85em;margin-top:1.5cqw"><span>Party Aura pool: ${pl.aura}</span></div>`:"";
+  return`<div class="ph-pop" role="dialog" aria-label="${STAT_NAME[f]}" data-pa="stat" data-u="${h.uid}" data-f="${f}"><h4>${STAT_NAME[f]}</h4>${rows.join("")}<div class="tot"><span>Now</span><b>${st[f]}</b></div>${note}</div>`}
+function auraBarHTML(s,pl){const max=pl.heroes.reduce((n,h)=>n+(h.dead?0:E.heroStats(s,h).aura),0);const p=max?Math.min(100,pl.aura/max*100):0;
+  return`<span class="res aubar" title="Aura pool: ${pl.aura} left of ${max} (your living Heroes' Aura). Refreshes at Dawn; unspent Aura is lost at Dusk." style="--ap:${p.toFixed(1)}%"><i class="fill"></i><i class="aura"></i> <b>${pl.aura}</b><small>/ ${max} Aura</small></span>`}
 function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});
   return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${E.hasBanding(s,o)?"<span class=\"band\">Banding</span>":""}${E.forcedTarget&&E.forcedTarget(s,o)?`<span class="must" style="color:#C0392B;font-weight:700">Must attack ${esc(nameOf(E.forcedTarget(s,o)))}</span>`:""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}</button>`}
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
@@ -641,7 +733,10 @@ function pickX(a,d,sc){const s=view();const pl=s.p[U.me];const actor=E.actorFor(
 
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!b)return;if(!b.closest("#play-root")&&!b.closest("#pl-modal"))return;
-  const k=b.dataset.pa;const s=view();
+  let k=b.dataset.pa;const s=view();
+  if(k==="stat"&&(U.tgt||(s&&s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===U.me))){k="obj"}
+  else if(k==="stat"){e.stopPropagation();const u=b.dataset.u,f=b.dataset.f;U.statPop=U.statPop&&U.statPop.u===u&&U.statPop.f===f?null:{u,f};render();return}
+  if(U.statPop&&k!=="stat"){U.statPop=null;document.querySelectorAll("#play-root .ph-pop").forEach(x=>x.remove());document.querySelectorAll("#play-root .ph-num.on").forEach(x=>x.classList.remove("on"))}
   if(k==="deck"||k==="ai"||k==="code"||k==="name"||k==="man-op"||k==="man-n"||k==="man-k"||k==="man-name"||k==="man-card")return;
   if(k==="close"){closeModal();return}
   if(k==="start-ai"){startAI();return}

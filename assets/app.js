@@ -275,13 +275,13 @@ function footHTML(c){
 function cardHTML(c,o={}){
   if(o.flipped&&c.up&&c.face!=="up")c=upFace(c);
   const tag=o.button?"button":"article";
-  const attrs=o.button?` type="button" data-act="${o.button}" data-id="${esc(c.id)}"`:"";
+  const attrs=o.button?` type="button" data-act="${o.button}" data-id="${esc(c.id)}"`:o.pool?` data-act="inc" data-pool="${esc(c.id)}" data-id="${esc(c.id)}"`:"";
   if(hasArt(c))return artCardHTML(c,o,tag,attrs);
   return`<${tag} class="card${o.picked?" picked":""}${c.kind==="token"?" token":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}"${attrs}>
   <div class="c-head"><span class="c-name">${esc(c.name)}${c.face==="up"?` <span class="upstar" title="Upgraded side">★</span>`:""}</span>${hasGem(c)?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
   <div class="c-rules">${rulesHTML(c.rules||"")}</div>
-  <div class="c-foot">${footHTML(c)}</div>
+  <div class="c-foot">${footHTML(c)}${o.zoom?zoomHTML(c):""}</div>
   ${o.slot?`<span class="slotbadge">${o.slot}</span>`:""}
   ${o.ctrl||""}
 </${tag}>`;
@@ -319,11 +319,19 @@ function fitArt(root){root=root||document;root.querySelectorAll(".ov-fit").forEa
 if(SKIN==="art"){let q=0;const run=()=>{q=0;fitArt()};const later=()=>{if(!q)q=requestAnimationFrame(run)};
   new MutationObserver(m=>{if(m.some(x=>x.addedNodes.length))later()}).observe(document.documentElement,{childList:true,subtree:true});
   document.fonts&&document.fonts.ready.then(later);addEventListener("load",later)}
+/* magnifier on Deck Builder tiles: opens the zoomed card view (tiles there are clicked to pick/add, so zoom gets its own control) */
+const ZOOM_SVG='<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M10.5 7.5v6M7.5 10.5h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+function zoomHTML(c){const id=c.face==="up"?c.id.slice(0,-3):c.id;return`<span class="zoom" role="button" tabindex="0" data-zoom="${esc(id)}" title="Zoom in" aria-label="Zoom in on ${esc(c.name)}">${ZOOM_SVG}</span>`}
+document.addEventListener("click",e=>{const z=e.target.closest&&e.target.closest("[data-zoom]");if(!z)return;e.preventDefault();e.stopPropagation();const c=BYID.get(z.dataset.zoom);if(c)inspect(c)},true);
+document.addEventListener("keydown",e=>{const z=e.target.closest&&e.target.closest("[data-zoom]");if(!z||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();const c=BYID.get(z.dataset.zoom);if(c)inspect(c)},true);
+/* Deck Builder pool: left click a card adds a copy (data-act="inc"), right click removes one */
+document.addEventListener("contextmenu",e=>{const t=e.target.closest&&e.target.closest("[data-pool]");if(!t||e.target.closest(".c-ctrl,[data-zoom],[data-flip]"))return;e.preventDefault();
+  const id=t.dataset.pool;if(!S.deck.cards[id])return;setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})});
 function artCardHTML(c,o,tag,attrs){
   return`<${tag} class="card art${o.picked?" picked":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}" title="${esc(c.name)}${c.face==="up"?" (upgraded)":""} · ${esc(c.cls)} · v${c.ver||1}"${attrs}>
   <div class="art-frame"><img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">${artOverlayHTML(c)}</div>
-  ${o.rate?artRateTileHTML(c):""}
   ${flipHTML(c)}
+  ${o.zoom?zoomHTML(c):""}
   ${o.slot?`<span class="slotbadge">${o.slot}</span>`:""}
   ${o.ctrl||""}
 </${tag}>`;
@@ -381,7 +389,7 @@ function viewCatalog(){
     <label class="field" for="cat-sort">Sort by ${selectHTML("cat-sort","cat-sort",f.sort,SORTS)}</label>
     <span class="count">${list.length} shown</span>
   </div>
-  <div class="grid">${gridWithGroups(list,f,c=>cardHTML(c,{button:"inspect",rate:1}))}</div>`;
+  <div class="grid">${gridWithGroups(list,f,c=>cardHTML(c,{button:"inspect"}))}</div>`;
 }
 const HSTATS=[["STR","str"],["DEF","def"],["AURA","aura"],["HP","hp"]];
 function heroStatsHTML(h,cls="hstats"){return`<span class="${cls}">${HSTATS.map(([k,f])=>`<span><b>${esc(h[f])}</b><i>${k}</i></span>`).join("")}</span>`}
@@ -408,7 +416,7 @@ function viewBuild(){
     <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${d.heroes.length===3?"":"disabled"}>Continue to cards →</button>
       <span class="count">${d.heroes.length}/3 Heroes chosen</span>
       ${d.heroes.length||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
-    <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",rate:1,picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
+    <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",zoom:1,picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
   }
   const pcls=partyClasses(d);
   const f=S.b;
@@ -426,8 +434,9 @@ function viewBuild(){
         <label class="field" for="b-sort">Sort by ${selectHTML("b-sort","b-sort",f.sort,SORTS)}</label>
         <button type="button" class="btn sm" data-act="to-heroes">Change Heroes</button>
       </div>
+      <p class="note pool-tip">Click a card to add a copy, right-click to remove one. Use the magnifier to zoom in.</p>
       <div class="grid">${gridWithGroups(pool,f,c=>{const q=d.cards[c.id]||0,m=maxCopies(c);
-        return cardHTML(c,{rate:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
+        return cardHTML(c,{pool:1,zoom:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
     </section>
     ${deckPanel(d)}
   </div>`;
@@ -547,18 +556,11 @@ function artRateHTML(c){
     <button type="button" class="ar-b ar-up" data-act="art-vote" data-v="1" aria-pressed="${r.mine===1}" title="I like this art" aria-label="Thumbs up the art">${THUMB}</button>
     <button type="button" class="ar-b ar-down" data-act="art-vote" data-v="-1" aria-pressed="${r.mine===-1}" title="Not a fan of this art" aria-label="Thumbs down the art">${THUMB}</button>
     <span class="ar-s" aria-live="polite">${rateText(r)}</span></div>`}
-/* grid tiles: the tile is often a <button>, so the thumbs are role=button spans handled in the capture phase (like the flip button) */
-function artRateTileHTML(c){
-  if(!canRate(c))return"";const k=artRateKey(c),r=ART_RATE.get(k)||ZERO_RATE;
-  return`<div class="art-rate tile" data-key="${esc(k)}"${ART_RATE_OK?"":" hidden"}>
-    <span class="ar-b ar-up" role="button" tabindex="0" data-artvote="1" aria-pressed="${r.mine===1}" title="I like this art" aria-label="Thumbs up the art of ${esc(c.name)}">${THUMB}</span>
-    <span class="ar-b ar-down" role="button" tabindex="0" data-artvote="-1" aria-pressed="${r.mine===-1}" title="Not a fan of this art" aria-label="Thumbs down the art of ${esc(c.name)}">${THUMB}</span>
-    <span class="ar-s">${rateText(r,true)}</span></div>`}
 function paintArtRate(el,r){
   el.hidden=false;
   el.querySelector(".ar-up").setAttribute("aria-pressed",r.mine===1?"true":"false");
   el.querySelector(".ar-down").setAttribute("aria-pressed",r.mine===-1?"true":"false");
-  el.querySelector(".ar-s").innerHTML=rateText(r,el.classList.contains("tile"));
+  el.querySelector(".ar-s").innerHTML=rateText(r);
 }
 function paintArtKey(k){const r=ART_RATE.get(k)||ZERO_RATE;document.querySelectorAll(".art-rate").forEach(el=>{if(el.dataset.key===k)paintArtRate(el,r)})}
 function artRateOff(){ART_RATE_OK=false;document.querySelectorAll(".art-rate").forEach(el=>el.remove())}
@@ -579,7 +581,7 @@ async function loadArtRate(m){
 const ART_BUSY=new Set();
 async function artVote(b){
   const el=b.closest(".art-rate");if(!el)return;const k=el.dataset.key;if(ART_BUSY.has(k))return;
-  const v=+(b.dataset.v||b.dataset.artvote);
+  const v=+b.dataset.v;
   const old=ART_RATE.get(k)||ZERO_RATE;const want=v===old.mine?0:v;
   ART_BUSY.add(k);ART_RATE.set(k,{ups:old.ups-(old.mine===1)+(want===1),downs:old.downs-(old.mine===-1)+(want===-1),mine:want});paintArtKey(k);
   try{const{data,error}=await SB.rpc("cast_art_vote",{p_card:k,p_voter:ART_VOTER,p_vote:want});
@@ -587,8 +589,6 @@ async function artVote(b){
   catch(e){ART_RATE.set(k,old);toast("Couldn't save your art rating. Try again.")}
   finally{ART_BUSY.delete(k);paintArtKey(k)}
 }
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-artvote]");if(!t)return;e.preventDefault();e.stopPropagation();artVote(t)},true);
-document.addEventListener("keydown",e=>{const t=e.target.closest&&e.target.closest("[data-artvote]");if(!t||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();artVote(t)},true);
 loadAllArtRates();
 function inspect(c){
   const d=S.deck,can=c.kind!=="hero"&&c.kind!=="token"&&d.heroes.length===3&&allowed(c,d);
@@ -623,7 +623,7 @@ function handBody(){
     <button type="button" class="btn" data-act="hand-new">New hand</button>
   </div>
   <p class="note">${H.lib.length?(canMull?"Setup: draw 4, then you may mulligan once (shuffle your hand back and draw 4 new cards). Draw a card works like the Dawn draw.":"Draw a card works like the Dawn draw. Press D to draw, N for a new hand."):"Your library is empty."}</p>
-  <div class="grid hand-grid">${H.hand.map((id,i)=>cardHTML(BYID.get(id),{button:"inspect-hand",rate:1,slot:H.fresh.has(i)?"NEW":""})).join("")}</div>`;
+  <div class="grid hand-grid">${H.hand.map((id,i)=>cardHTML(BYID.get(id),{button:"inspect-hand",slot:H.fresh.has(i)?"NEW":""})).join("")}</div>`;
 }
 function renderHand(){const m=document.getElementById("handm");if(!m||!S.hand)return;m.querySelector(".box").innerHTML=handBody()}
 function openHand(d){
@@ -941,7 +941,7 @@ function go(v){if(location.hash==="#"+v){S.view=v;render();scrollTo(0,0)}else lo
 function setDeck(fn){fn(S.deck);S.dirty=true;saveDraft();render()}
 /* weapon flip icon: swap the tile between its normal and upgraded side in place */
 function flipTile(el){const card=el.closest(".card");const c=card&&BYID.get(card.dataset.cid);if(!c||!c.up)return;
-  const t=document.createElement("div");t.innerHTML=cardHTML(c,{flipped:!card.classList.contains("upside")});const n=t.firstElementChild;
+  const t=document.createElement("div");t.innerHTML=cardHTML(c,{flipped:!card.classList.contains("upside"),zoom:!!card.querySelector(".c-foot .zoom")});const n=t.firstElementChild;
   if(card.classList.contains("art")){[".art-frame",".flip"].forEach(k=>{const a=card.querySelector(":scope > "+k),b=n.querySelector(":scope > "+k);if(a&&b)a.replaceWith(b)});card.title=n.title;card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus();return}
   ["c-head","c-type","c-rules","c-foot"].forEach(k=>{const a=card.querySelector(":scope > ."+k),b=n.querySelector(":scope > ."+k);if(a&&b)a.innerHTML=b.innerHTML});
   card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus()}
@@ -949,6 +949,7 @@ document.addEventListener("click",e=>{const f=e.target.closest("[data-flip]");if
 document.addEventListener("keydown",e=>{const f=e.target.closest&&e.target.closest("[data-flip]");if(!f||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();flipTile(f)},true);
 document.addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]");if(!b||b.tagName==="SELECT"||b.tagName==="INPUT")return;
+  if(b.dataset.pool&&e.target.closest(".c-ctrl"))return;
   const a=b.dataset.act,id=b.dataset.id,v=b.dataset.v;
   if(a==="close"){b.closest(".modal")?.remove();return}
   if(a==="cat-cls"){S.cat.cls=v;store.set("cq.cat",S.cat);render()}

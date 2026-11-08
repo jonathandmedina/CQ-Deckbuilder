@@ -502,7 +502,7 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
     ${extra}${hpBar}${soul}
   </div>`}
 /* ---------- Hero card images (Card Art export) with live stats ---------- */
-function heroArt(d){try{return!!(d&&typeof SKIN!=="undefined"&&SKIN==="art"&&typeof CARD_ART!=="undefined"&&CARD_ART.hero.has(artKey(d.name)))}catch(e){return false}}
+function heroArt(d){try{return!!(d&&typeof SKIN!=="undefined"&&SKIN==="art"&&typeof CARD_ART!=="undefined"&&hasArt({kind:"hero",name:d.name,cls:d.cls}))}catch(e){return false}}
 const STAT_NAME={str:"Strength",def:"Defense",aura:"Aura",hp:"Health Points"};
 function heroCardHTML(s,h,d,st){
   const c={kind:"hero",name:d.name,cls:d.cls,rules:d.rules||"",aura:"",str:"",hp:"",def:""};

@@ -68,8 +68,6 @@ button{cursor:pointer}
 .bhead h1{margin-bottom:0}
 .btn.newdeck{font-weight:700}
 .newdeck-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.rb-list{margin:8px 0 10px 18px;padding:0;max-height:220px;overflow:auto}
-.rb-list li{margin:3px 0}
 .discord-btn{flex:none;text-decoration:none;color:var(--ink)}
 @media (max-width:1279px){.discord-btn{margin-left:auto}}
 .acct{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--muted);min-width:0}
@@ -289,6 +287,22 @@ button.card:hover{border-color:var(--cc)}
 
 /* test hand */
 .modal .box.wide{max-width:980px}
+/* zoom arrows: step through the list the zoomed card came from (Clean: chevrons; Retro/Card Art: the menu hand pointer) */
+.modal .znav{position:fixed;top:50%;z-index:3;width:50px;height:68px;padding:0;justify-content:center;transform:translateY(-50%);box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.modal .znav.prev{left:max(8px,calc(50% - 315px - 64px))}
+.modal .znav.next{right:max(8px,calc(50% - 315px - 64px))}
+.modal .znav.prev .zchev{transform:scaleX(-1)}
+.modal .znav:disabled{visibility:hidden}
+.modal .zcount{align-self:center;margin-right:auto;color:var(--muted);font-variant-numeric:tabular-nums;font-size:.92rem}
+html:is([data-skin="retro"],[data-skin="art"]) .modal .znav .zchev{display:none}
+html:is([data-skin="retro"],[data-skin="art"]) .modal .znav::before{content:"";flex:none;width:38px;height:21px;background:var(--hand) center/contain no-repeat;filter:drop-shadow(1px 1px 0 #000)}
+html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev::before{transform:scaleX(-1)}
+html:is([data-skin="retro"],[data-skin="art"]) .modal .znav:hover:not(:disabled)::before{animation:znav-nudge .5s steps(2) infinite}
+@keyframes znav-nudge{50%{translate:3px 0}}
+html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disabled)::before{animation-name:znav-nudge-l}
+@keyframes znav-nudge-l{50%{translate:-3px 0}}
+@media (max-width:760px){.modal .znav{width:40px;height:56px;opacity:.9}.modal.has-znav{padding-inline:52px}}
+@media (max-width:480px){.modal.has-znav{padding-inline:42px}.modal .znav{width:34px;height:50px}.modal .znav::before{width:28px!important}}
 .handbtn{justify-content:center}
 .btn.primary.go{background:var(--ok);border-color:var(--ok);color:var(--accent-ink)}
 .btn.primary.go:hover:not(:disabled){filter:brightness(1.08)}

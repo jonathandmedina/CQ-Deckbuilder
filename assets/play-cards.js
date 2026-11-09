@@ -187,25 +187,29 @@ def("Balanced Choice",M(2,[{label:"Scry 2",run:c=>scry(c,2)},{label:"Target Hero
 def("Well Trained",{t:[HERO],modes:{n:1,opts:[{label:"If it reaches an even Level, gain +1 STR"},{label:"If it reaches an even Level, gain +1 DEF"},{label:"If it reaches an even Level, gain +1 AURA"}]},run(c){if(combosPlayed(c)>=3&&c.t[0])E.levelUp(c.s,c.t[0],["str","def","aura"][(c.modes||[])[0]||0])}});
 def("Stunner",{run(c){c.me.fl.stunner=true}});
 /* ===== Bard ===== */
-def("Ballad of Blades",{t:[t("ally","ally to boost")],run(c){const n=(c.me.t.songs||0)>1?3:2;if(c.t[0]){buff(c.t[0],{str:n});log(c,`${c.t[0].name} gains +${n} STR this turn.`)}}});S['"Ballad of Blades"']=S["Ballad of Blades"];
+def("Ballad of Blades",{t:[t("ally","another ally to boost",(s,o,x)=>!x||!x.actor||o!==x.actor)],run(c){const n=(c.me.t.songs||0)>1?3:2;if(c.t[0]){buff(c.t[0],{str:n});log(c,`${c.t[0].name} gains +${n} STR this turn.`)}}});S['"Ballad of Blades"']=S["Ballad of Blades"];
 const song=(n,o)=>{S['"'+n+'"']=o};
 song("Ballad of Blades",S["Ballad of Blades"]);
 song("Crescendo",Object.assign({t:[ANY]},{modes:{n:1,opts:[{label:"Deal 3 damage"},{label:"Harmonize 2: 3 damage to each enemy"}]},can:()=>true,run(c){
-  const harm=(c.modes||[])[0]===1&&living(c.me).filter(h=>!h.ex).length>=2;
+  const harm=(c.modes||[])[0]===1&&living(c.me).filter(h=>!h.ex&&h!==c.actor).length>=2;
   if(harm)harmonize(c,2,"crescendo");else D(c,c.t[0],3)}}));
-song("Dazzling Melody",{run(c){c.actor.fl.tauntRound=c.s.round;log(c,`${c.actor.name} dazzles: this turn enemies can only attack ${c.actor.name}, and their cards and abilities must target it.`)}});
-song("Lullaby",{t:[t("any","target with 1 or less STR",(s,o)=>E.str(s,o)<=1)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
-song("Peace",{t:[HERO],run(c){st(c,c.t[0],"stun");if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
-song("Rousing Chorus",{t:[AL],run(c){buff(c.t[0],{str:1})}});
-song("Song of Healing",{run(c){living(c.me).filter(h=>E.heroIs(h,"Bard")).forEach(o=>heal(c,o,2))}});
-song("Call and Response",{can:(s,pid,a)=>s.p[pid].heroes.some(h=>!h.dead&&!h.ex),run(c){if(!living(c.me).some(h=>!h.ex)){log(c,"No ready Hero to Harmonize.");return}harmonize(c,1,"draw2")}});
+/* update 23: the opponent tips you 1 Gold out of their Gold (counts as your Tip for the round) */
+song("Dazzling Melody",{t:[t("enemyPlayer","target opponent")],run(c){const pl=c.me;if(pl.fl.tipRound===c.s.round){log(c,"Dazzling Melody: you already got a Tip this round.");return}pl.fl.tipRound=c.s.round;
+  const g=E.stealGold(c.s,c.pid,1-c.pid,1,"Dazzling Melody (Tip)");if(!g)log(c,"Dazzling Melody: the opponent has no Gold to tip.")}});
+song("Lullaby",{t:[t("any","target with 0 or less STR",(s,o)=>E.str(s,o)<=0)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
+song("Peace",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{zeroStr:1});log(c,`${c.t[0].name}'s Strength becomes 0 until Dusk.`)}if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
+/* update 23: Harmonize X (other ready Heroes): draw X+1 cards and gain X+1 Aura */
+song("Rousing Chorus",{x:{label:"Harmonize X: how many other ready Heroes to exhaust",max:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length,free:true},run(c){
+  const n=Math.min(c.x||0,living(c.me).filter(h=>!h.ex&&h!==c.actor).length);if(!n){HARM.rousing(c,0);return}harmonize(c,n,"rousing")}});
+song("Song of Healing",{run(c){c.s.p.forEach(pl=>living(pl).forEach(o=>heal(c,o,2)))}});
+song("Call and Response",{modes:{n:1,opts:[{label:"Draw a card"},{label:"Draw a card, Harmonize 1: draw an additional card"}]},run(c){draw(c,1);if((c.modes||[])[0]===1&&living(c.me).some(h=>!h.ex&&h!==c.actor))harmonize(c,1,"draw1")}});
 song("Solo Act",{can:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length>=2,run(c){harmonize(c,2,"soloAct",{notActor:true,verb:"Solo Act"})}});
-song("Understanding",{modes:{n:1,opts:[{label:"Scry 3"},{label:"Scry 3, Harmonize 1: draw a card"}]},run(c){if((c.modes||[])[0]===1&&living(c.me).some(h=>!h.ex))harmonize(c,1,"understanding");else scry(c,3)}});
-song("Opening Act",{run(c){const first=(c.me.t.cards||0)===1;const top=c.me.lib.splice(-3);log(c,`Revealed: ${top.map(x=>E.DB[x.id].name).join(", ")}.`);const si=top.findIndex(x=>E.DB[x.id].type==="Song");if(si>=0){c.me.hand.push(top.splice(si,1)[0]);log(c,"A Song goes to hand.")}c.me.disc.push(...top);if(first){c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)}}});
-def("Embolden",{t:[HERO],run(c){buff(c.t[0],{str:2})}});
+song("Understanding",{modes:{n:1,opts:[{label:"Scry 3"},{label:"Scry 3, Harmonize 1: draw a card"}]},run(c){if((c.modes||[])[0]===1&&living(c.me).some(h=>!h.ex&&h!==c.actor))harmonize(c,1,"understanding");else scry(c,3)}});
+song("Opening Act",{run(c){const first=(c.me.t.acts||0)<=1;const top=c.me.lib.splice(-3);log(c,`Revealed: ${top.map(x=>E.DB[x.id].name).join(", ")}.`);const si=top.findIndex(x=>E.DB[x.id].type==="Song");if(si>=0){c.me.hand.push(top.splice(si,1)[0]);log(c,"A Song goes to hand.")}c.me.disc.push(...top);if(first){c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)}}});
+def("Embolden",{run(c){c.me.fl.emb={round:c.s.round,n:1};log(c,"The next time an ally would gain Strength this turn, it gains double that instead.")}});
 def("Strong Stance",{t:[HERO],run(c){buff(c.t[0],{def:2})}});
 def("Weakening Dirge",{run(c){c.me.pm.enemyStr=(c.me.pm.enemyStr||0)+1;log(c,"Enemies get -1 STR this turn.")}});
-def("Mead Offering",{run(c){c.op.aura+=2;log(c,`${c.op.name} gains 2 Aura.`);draw(c,2)}});
+def("Mead Offering",{run(c){c.s.p.forEach(pl=>{pl.aura+=2});log(c,"All parties gain 2 Aura.")}});
 def("Standing Ovation",{run(c){living(c.me).forEach(h=>h.ex=false);log(c,`${c.me.name}'s Heroes ready.`)}});
 def("Tempo Change",{run(c){c.s.bonus={pid:c.pid,uid:c.actor.uid,n:3};log(c,`${c.actor.name} takes two additional actions.`)}});
 /* ===== Ranger ===== */
@@ -290,7 +294,11 @@ def("Potion",item(2,[t("hero","Hero to heal")],c=>heal(c,c.t[0],3),{exile:true})
 def("Revitalize",item(2,[],c=>{c.me.aura+=4;log(c,`${c.me.name} gains 4 Aura.`)},{exile:true}));
 def("Smoke Bomb",item(1,[AHERO],c=>buff(c.t[0],{stealth:1}),{exile:true}));
 def("Vial of Venom",item(1,[ANY],c=>st(c,c.t[0],"poison",2),{exile:true}));
-def("Energizing Ale",item(2,[t("allyHero","target Bard",(s,o)=>E.heroIs(o,"Bard"))],c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}},{exile:true}));
+def("Energizing Ale",item(2,[t("ally","another ally",(s,o,x)=>!x||!x.actor||o!==x.actor)],c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}},{exile:true}));
+def("Fireball Flask",item(2,[AL],c=>{if(c.t[0]){buff(c.t[0],{str:3});log(c,`${c.t[0].name} gets +3 STR this turn.`)}},{exile:true}));
+def("Undeniable Performance",{run(c){c.me.fl.tipFromRound=c.s.round;log(c,"Tips you get this turn come out of an opposing party's Gold.")}});
+song("Toast to the House",{run(c){c.s.p.forEach((pl,i)=>E.draw(c.s,i,1));log(c,"All parties draw a card.");E.tip(c.s,c.pid,"Toast to the House")}});
+song("Sing Along",{t:[AHERO],run(c){if(c.t[0]){c.t[0].fl.singRound=c.s.round;log(c,`${c.t[0].name}'s next Tactic or Song this turn gains Echo.`)}}});
 def("Harmonic Flask",item(2,[],c=>{if((c.modes||[])[0]===1){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}else heal(c,c.actor,2)},{exile:true,modes:{n:1,opts:[{label:"Heal this Hero for 2 HP"},{label:"Remove up to 2 status counters from target Hero",t:[t("hero","Hero to clear (2 status)")]}]}}));
 /* "Choices": choose two of Mill 2 / equip an Equipment from hand or inventory to this Hero for free / return a Song from discard to hand */
 song("Choices",{modes:{n:2,opts:[{label:"Mill 2"},{label:"Equip a Bard Equipment from your hand or inventory to this Hero (free)"},{label:"Return a Song from your discard pile to your hand"}]},run(c){const m=c.modes||[];const pl=c.me;
@@ -314,11 +322,11 @@ def("Reclaim",{t:[],can:(s,pid)=>s.p[pid].disc.length>0,run(c){const pl=c.me;if(
   E.pushChoose(c.s,c.pid,{title:"Reclaim: return a card from your discard pile to your hand",cards:pl.disc.map(x=>x.uid),min:1,max:1,op:"fromDisc"})}});
 /* Banding cards: the engine reads these flags (E.hasBanding) and offers "Band attack" */
 def("Unity of the Herd",{run(c){c.me.fl.summonBandRound=c.s.round;log(c,"Friendly summons gain Banding this turn.")}});
-song("Marching Cadence",{run(c){living(c.me).forEach(h=>h.fl.bandRound=c.s.round);log(c,"Heroes in your party gain Banding this turn.");exMe(c)}});
-song("Duet",{t:[t("allyHero","ally Hero to band with",(s,o,x)=>!x||o!==x.actor)],run(c){const a=c.actor,b=c.t[0];[a,b].forEach(h=>{if(h)h.fl.bandRound=c.s.round});
-  if((c.me.t.songs||0)>1&&a)a.fl.duetRound=c.s.round;log(c,`${a?a.name:"This Hero"}${b?" and "+b.name:""} gain Banding this turn${(c.me.t.songs||0)>1?"; their banded attack gets +2 STR":""}.`)}});
+song("Marching Cadence",{run(c){living(c.me).forEach(h=>h.fl.bandRound=c.s.round);log(c,"Heroes in your party gain Banding this turn.")}});
+song("Duet",{t:[t("allyHero","another ally to band with",(s,o,x)=>!x||o!==x.actor)],run(c){const a=c.actor,b=c.t[0];[a,b].forEach(h=>{if(h){h.fl.bandRound=c.s.round;buff(h,{str:1})}});
+  log(c,`${a?a.name:"This Hero"}${b?" and "+b.name:""} gain +1 STR and Banding this turn.`)}});
 /* passive items: handled in the engine by name (no script needed beyond entering play) */
-["Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Battle Horn","Trophy Rack","Lightning Rod","Tooth Crystal","Petal Shrine","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
+["Tip Jar","Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Battle Horn","Trophy Rack","Lightning Rod","Tooth Crystal","Petal Shrine","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
 S["Almandine"].gem=c=>{c.actor=null;enemies(c).forEach(e=>E.damage(c.s,{name:"Almandine"},e,2,{card:true}))};
 S["Rose Quartz"].gem=c=>{living(c.me).forEach(h=>E.heal(c.s,null,h,3))};
 S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};
@@ -361,7 +369,7 @@ hab("Essence Reaper",[{label:"Stun target enemy",lvl:3,t:[EN],run:c=>st(c,c.t[0]
 hab("Inspiration Herald",[{label:"Ready another ally",t:[t("ally","another ally",(s,o,x)=>o.uid!==x.actor.uid&&o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}}]);
 hab("Rage Brute",[{label:"Fatigue: +STR equal to its STR this turn",ex:false,can:(s,pid,a)=>!a.fat,run:c=>{const n=E.str(c.s,c.actor);c.actor.fat=1;buff(c.actor,{str:n});log(c,`${c.actor.name} gets a Fatigue counter and gains +${n} STR this turn (it won't ready at the next Dawn).`)}}]);
 hab("Rootbinder",[{label:"Summons +1 STR this turn",run:c=>{c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}}]);
-hab("Songweaver",[{label:"Ally +2 STR this turn",t:[AL],run:c=>buff(c.t[0],{str:2})}]);
+/* Songweaver (update 23): passive, Songs it plays have Echo (engine) */
 hab("Storm Caller",[{label:"Deal 2 damage to each enemy Hero",cost:2,can:(s,pid,a)=>a.lvl<3,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,2,{card:true}))},{label:"Deal 3 damage to each enemy Hero",lvl:3,cost:2,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,3,{card:true}))}]);
 hab("Wild Shifter",[{label:"Ready a summon you control",can:(s,pid,a)=>a.lvl<3&&s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}},{label:"Ready up to two summons you control",lvl:3,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex),t("allySummon","second exhausted summon (optional)",(s,o)=>o.ex,{opt:true,distinct:true})],run:c=>{c.t.filter(Boolean).forEach(o=>{if(o.ex){o.ex=false;log(c,`${o.name} readies.`)}})}}]);
 hab("Rootfolk Elder",[{label:"Next summon this turn has Barkborn",can:(s,pid,a)=>a.lvl<3,run:c=>{c.me.t.nextBark=(c.me.t.nextBark||0)+1;log(c,"The next summon that enters this turn has Barkborn.")}},{label:"All summons that enter this turn have Barkborn",lvl:3,run:c=>{c.me.t.allBark=(c.me.t.allBark||0)+1;log(c,"All summons that enter this turn have Barkborn.")}}]);
@@ -376,7 +384,7 @@ const A=E.ASK;
 function harmonize(c,n,k,o){o=o||{};
   const d={k,left:n,total:n,picked:[],actor:c.actor&&c.actor.uid,notActor:!!o.notActor,card:c.def&&c.def.id,name:c.def&&c.def.name,verb:o.verb||"Harmonize",tu:c.tu||[],modes:c.modes||null,x:c.x==null?null:c.x};
   harmAsk(c.s,c.pid,d)}
-function harmCands(s,pid,d){return s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&!(d.notActor&&h.uid===d.actor))}
+function harmCands(s,pid,d){return s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h.uid!==d.actor)} /* update 23: Harmonize exhausts OTHER ready Heroes */
 function harmAsk(s,pid,d){const cs=harmCands(s,pid,d);
   if(cs.length<=d.left){cs.forEach(h=>{h.ex=true;d.picked.push(h.uid)});d.left=0;harmDone(s,pid,d);return}
   E.ask(s,pid,`${d.name||"Harmonize"} · ${d.verb} ${d.total}: choose a ready Hero to exhaust${d.total>1?` (${d.picked.length+1} of ${d.total})`:""}`,
@@ -387,6 +395,8 @@ function harmDone(s,pid,d){const nm=d.picked.map(u=>(E.heroByUid(s,u)||{}).name)
   const f=HARM[d.k];if(!f)return;const c=E.mkCtx(s,pid,E.heroByUid(s,d.actor),E.DB[d.card],null,d.tu,{modes:d.modes,x:d.x});f(c,nm.length)}
 HARM.crescendo=c=>{enemies(c).forEach(e=>D(c,e,3))};
 HARM.draw2=c=>{draw(c,2)};
+HARM.draw1=c=>{draw(c,1)};
+HARM.rousing=(c,n)=>{draw(c,n+1);c.me.aura+=n+1;log(c,`${c.me.name} draws ${n+1} and gains ${n+1} Aura.`)};
 HARM.understanding=c=>{scry(c,3,{draw:1})};
 HARM.soloAct=c=>{c.me.fl.songDisc=true;log(c,"Songs cost 2 less this turn.")};
 const rogueEx=t("allyHero","exhausted Rogue",(s,o)=>o.ex&&E.heroIs(o,"Rogue"));
@@ -402,20 +412,27 @@ hid("Die Swinging","dying",(s,pid,tr)=>{const f=E.find(s,tr.hero);return f&&f.pi
   const t2=rand(c,cs);if(t2){E.log(c.s,`⚔ ${h.name} attacks ${t2.name} (random enemy) as it falls.`,c.pid);E.damage(c.s,h,t2,E.dmgStr(c.s,h,t2),{combat:true,ignoreDef:true,srcName:"Die Swinging"})}});
 A.dieSwing=(s,pid,pr,v)=>{const a=E.find(s,pr.data.att);const t2=E.resolveTarget(s,v);if(!a||!t2)return;E.log(s,`⚔ ${a.o.name} attacks ${t2.name} as it falls.`,pid);E.damage(s,a.o,t2,E.dmgStr(s,a.o,t2),{combat:true,ignoreDef:true,srcName:"Die Swinging"})};
 /* Bard */
-song("Come Together",{x:{label:"Harmonize X: how many ready Heroes to exhaust",max:(s,pid)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex).length,free:true},run(c){
-  const ready=living(c.me).filter(h=>!h.ex);const n=Math.min(c.x||0,ready.length,c.me.lib.length);if(!n){log(c,"Harmonize 0: nothing is revealed.");return}
+song("Come Together",{x:{label:"Harmonize X: how many other ready Heroes to exhaust",max:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length,free:true},run(c){
+  const n=Math.min(c.x||0,living(c.me).filter(h=>!h.ex&&h!==c.actor).length);if(!n){HARM.comeTogether(c,0);return}
   harmonize(c,n,"comeTogether")}});
 HARM.comeTogether=(c,n)=>{
-  const top=c.me.lib.slice(-n).reverse();log(c,`${c.me.name} reveals ${top.map(x=>E.DB[x.id].name).join(", ")}.`);
+  const k=Math.min(n+2,c.me.lib.length);if(!k){log(c,"Your library is empty.");return}
+  const top=c.me.lib.slice(-k).reverse();log(c,`${c.me.name} reveals ${top.map(x=>E.DB[x.id].name).join(", ")}.`);
   c.s.pend.unshift({type:"bottomRest",pid:c.pid,uids:top.map(x=>x.uid)});
-  const bard=top.filter(x=>E.DB[x.id].cls==="Bard"&&E.DB[x.id].sup!=="Hidden");
-  if(bard.length)c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:bard.map(x=>x.uid),free:true,title:"\"Come Together\": you may play a revealed Bard card without paying its Aura cost"});else log(c,"No Bard card was revealed.")};
+  /* update 23: any revealed card a Hero you control can play (its class or Generic); that Hero plays it for free */
+  const actors={};const heroes=living(c.me).filter(h=>E.canPlayCards?E.canPlayCards(h):true);
+  top.forEach(x=>{const d=E.DB[x.id];if(!d||d.sup==="Hidden")return;const pick=(c.actor&&(d.cls==="Generic"||E.heroIs(c.actor,d.cls)))?c.actor:heroes.find(h=>d.cls==="Generic"||E.heroIs(h,d.cls));if(pick)actors[x.uid]=pick.uid});
+  const ok=Object.keys(actors);
+  if(ok.length)c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,actors,cands:ok,free:true,title:"\"Come Together\": you may play a revealed card without paying its Aura cost"});else log(c,"No revealed card can be played by your Heroes.")};
 def("Frog in the Throat",{t:[HERO],run(c){E.silence(c.s,c.t[0])}});
 def("Mirrored Chant",{can:(s,pid)=>{const L=s.lastCard;return!!(L&&L.round===s.round&&/Spell|Tactic|Song/.test(L.type||"")&&E.DB[L.id].name!=="Mirrored Chant")},
   run(c){const L=c.s.prevCard;if(!L||L.round!==c.s.round||!/Spell|Tactic|Song/.test(L.type||"")||E.DB[L.id].name==="Mirrored Chant"){log(c,"Mirrored Chant: there's no Spell, Tactic or Song to copy.");return}
     log(c,`Mirrored Chant copies ${E.DB[L.id].name}${L.x?` (X = ${L.x})`:""}.`);E.copyTargets(c.s,c.pid,{id:L.id,actor:c.actor&&c.actor.uid,modes:L.modes||[],x:L.x||0,picked:[],orig:L.targets||[]})}});
-hid("Rapacious Encore","afterDmg",(s,pid,tr)=>tr.amount>0,c=>{const n=c.trig.amount;const ts=E.candidates(c.s,c.pid,{k:"any"},{}).map(u=>E.resolveTarget(c.s,u)).filter(Boolean);
-  E.ask(c.s,c.pid,`Rapacious Encore: deal ${n} damage to any target`,E.targetOpts(c.s,c.pid,ts,n),"dmgTo",{n,name:"Rapacious Encore",src:c.actor&&c.actor.uid})});
+/* update 23: Rapacious Encore is a 1-Aura Tactic: play a Song from your discard pile (pay its Aura cost), then deal damage equal to that cost, Piercing (ignores all DEF) */
+def("Rapacious Encore",{can:(s,pid,a)=>s.p[pid].disc.some(x=>{const d=E.DB[x.id];return d&&d.type==="Song"&&E.cardCost(s,pid,a,d,0)+E.cardCost(s,pid,a,E.DB["Rapacious Encore"],0)<=s.p[pid].aura}),
+  run(c){const songs=c.me.disc.filter(x=>{const d=E.DB[x.id];return d&&d.type==="Song"&&E.cardCost(c.s,c.pid,c.actor,d,0)<=c.me.aura});
+    if(!songs.length||!c.actor){log(c,"Rapacious Encore: no Song in your discard pile you can pay for.");return}
+    c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:songs.map(x=>x.uid),pay:true,fromDisc:true,encore:true,title:"Rapacious Encore: play a Song from your discard pile (pay its Aura cost)"})}});
 def("Sonic Recall",{t:[HERO],run(c){exMe(c);const songs=c.me.disc.filter(x=>E.DB[x.id].type==="Song");if(!songs.length){log(c,"No Songs in your discard pile: 0 damage.");return}
   E.pushChoose(c.s,c.pid,{title:"Sonic Recall: shuffle any number of Songs into your library (X)",cards:songs.map(x=>x.uid),min:0,max:songs.length,op:"sonicRecall",tgt:c.t[0]&&c.t[0].uid,actor:c.actor.uid})}});
 OPS.sonicRecall=(s,pid,pr,picks)=>{const pl=s.p[pid];let n=0;picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){pl.lib.push(pl.disc.splice(i,1)[0]);n++}});if(n)E.shuffle(s,pl.lib);E.log(s,`${pl.name} shuffles ${n} Song${n===1?"":"s"} into their library.`,pid);

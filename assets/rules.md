@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 8, 2026 (update 23)*
+*Version: November 9, 2026 (update 23)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -221,7 +221,7 @@ All players do these steps together:
 1. **Ready.** Ready all your exhausted cards. You may choose to keep a Meditating Hero exhausted (see Meditate). A Hero with a Fatigue counter doesn’t ready; remove the counter instead.
 2. **Refresh Aura.** Your Aura pool becomes the total Aura of your Heroes that aren’t dead.
 3. **Status damage.** Each Burned, Poisoned or Wounded counter deals 1 damage. Then remove one of each status counter from each Hero and summon.
-4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when Echo copies are played and Gemstones can be used.
+4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when exiled Echo cards are played again and Gemstones can be used.
 5. **Draw.** Each player draws a card.
 
 A Hero exhausted during Dawn, for example by a Gemstone, stays exhausted for the whole Battle Phase.
@@ -313,7 +313,7 @@ Arrows are Ranger items in your inventory. Activating one is an action: pay its 
 3. Raise its level by 1. The first time a Hero levels (from 0 to 1), place its level die on it showing 1. After that, turn the die up by 1.
 4. Draw a card.
 
-Each Hero can level up once per round, up to Level 6. Every two levels a Hero gains (when it reaches Level 2, Level 4 and Level 6), you may add +1 to one of its stats: STR, DEF or Aura. A Hero that reaches Level 6 has gained 3 stat points. Track the bonuses with counters. STR and DEF bonuses apply immediately. An Aura bonus is added to your pool starting at the next Dawn.
+Each Hero can level up once per round, up to Level 6. Every two levels a Hero gains (when it reaches Level 2, Level 4 and Level 6), you may add +1 to one of its stats: STR, DEF or Aura. A Hero that reaches Level 6 has gained 3 stat points. Track the bonuses with counters. STR and DEF bonuses apply immediately. An Aura bonus is added to your pool starting at the next Dawn. Losing a level: if an effect makes a Hero lose a level and that leaves it on an odd level (2→1, 4→3 or 6→5), it also loses the stat point it got for that level (its owner chooses which level bonus to remove).
 
 ### Step Back
 
@@ -393,7 +393,7 @@ You must have a ready Hero to trigger a Hidden card. If all your matching Heroes
 
 **Damage dealt = STR (for attacks) or the card’s damage amount (for cards) − the target’s DEF.** Damage can’t go below 0.
 
-- **Piercing X** ignores X points of the target’s DEF.
+- **Piercing X** ignores X points of the target’s DEF for any damage it deals. **Piercing** with no number ignores all of it.
 - **Spell Damage +X** adds X to the damage your spells deal.
 - **Spell Damage Pillars are used up.** All of your Spell Damage Pillars add +2 each to the next Spell you play (any Spell, even one that deals no damage), then they are sacrificed after that Spell resolves. Pillars that the Spell itself conjures (such as Lightning Lance or Ritual of Power) stay for your next Spell.
 - **“Each enemy Hero”** hits only Heroes, not summons. **“All enemies”** and **“each enemy”** include summons.
@@ -554,22 +554,23 @@ At the Blacksmith in Town, you may upgrade any of them:
 
 | Keyword | Meaning |
 |---|---|
-| **Banding** | Lets Heroes and summons group together for one attack. When a Hero or summon with Banding attacks, any number of other ready friendly Heroes and summons with Banding may join it. Add their STR to the attack, then exhaust every attacker. Nothing has Banding naturally; only cards grant it. |
+| **Banding** | Lets Heroes and summons group together for one attack. When you declare an attack with a Hero or summon that has Banding, you may band it with any number of other ready allies that have Banding. Add the STR of every banded attacker together for the attack, then exhaust all of them. Nothing has Banding naturally; only cards grant it. |
 | **Barkborn** | When a summon with Barkborn enters, it gains DEF equal to its HP until Dusk. Barkborn stacks: each time a summon has Barkborn, add that DEF again. Cards and abilities can give the next summon (or every summon) that enters this turn Barkborn. |
 | **Combo** | When a card with Combo finishes resolving (including any Scry it makes), reveal the top card of your library. If its subtype is Combo, you may play it, or a Combo card from your hand, by paying its Aura cost. This doesn’t use another action. A Hidden card with Combo triggers it when revealed. A **Combo card** is a card with the Combo subtype; only those count as “Combo cards you have played this turn.” |
 | **Conjure** | Create a Pillar token on the battlefield. |
-| **Echo** | At your next Dawn, play this card again for free (no Aura cost). Any of your Heroes of the card’s class plays the copy, and you may choose new targets. The copy doesn’t have Echo, so it only repeats once. Set the card aside until then, and discard it after. |
+| **Echo** | If you played this card from your hand, you may exile it as it resolves. If you do, play it again at your next Dawn without paying its Aura cost (any of your Heroes that can play it does, and you may choose new targets), then put it in your discard pile. A card played any other way (at Dawn, from your discard pile or library, or as a copy or duplicate) can’t Echo, so a card repeats only once. Cards that give Echo (Songweaver, Sing Along) follow the same rule. The Dawn replay counts as playing the card, so it triggers abilities like Tip Jar and The Forbidden Tuner. |
 | **Enraged** | A Hero is Enraged while it is at or below half its maximum HP. |
-| **Harmonize X** | Exhaust X ready Heroes you control to gain the effect after the colon. |
+| **Harmonize X** | Exhaust X other ready Heroes you control (not the Hero playing the card) to gain the effect after the colon. |
 | **Lifelink** | When this Hero deals damage, heal it that much. |
 | **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, you may keep it exhausted. If you do, it gets a +1/+1 counter. When it readies, it stops Meditating, and all its +1/+1 counters (including any from Monk Tactics) are removed at the next Dusk. |
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
-| **Piercing X** | This attack ignores X points of the target’s DEF. |
+| **Piercing X** | Damage from this ignores X points of the target’s DEF (attacks, spells, abilities and any other damage). Piercing with no number ignores all of the target’s DEF. |
 | **Poisonous X** | Whenever this Hero or card deals damage, Poison the target X times. **Poisonous** with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage. |
 | **Scry X** | Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order. |
 | **Spell Damage +X** | Your spells deal X extra damage. |
 | **Spell Damage Pillar** | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. |
+| **Tip** | Gain 1 Gold. You gain Gold from Tip only once per round (see Tip in Other Rules). |
 | **Stealth** | This Hero can’t be targeted by enemy cards or abilities. It can still be attacked. |
 | **+1/+1 counter** | +1 STR and +1 DEF while on the Hero. |
 
@@ -597,6 +598,10 @@ When an effect lets you steal or take control of an object, it stays under your 
 ### Stealing Gold
 
 “Steal X Gold” means the target party loses up to X Gold and you gain that much. If it has less than X, you take all of it. Gold can be stolen at any time, but it can still only be spent in the Town Phase.
+
+### Tip
+
+Tip: gain 1 Gold. You gain Gold from Tip only once per round. Undeniable Performance makes Tips come out of an opposing party’s Gold, and Dazzling Melody counts as your Tip for the round.
 
 ### Targeting Face-Down Cards
 
@@ -733,7 +738,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Reveal**: Show cards from your library to all players.
 - **Mill X**: Move the top X cards of your library to your discard pile.
 - **Scry X**: Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order.
-- **Duplicate**: Make a copy of a card or summon.
+- **Duplicate**: Make a copy of a card or summon. Copying a Spell, Tactic or Song (Mirrored Chant, Echo Performer): the copy is made after all of the original’s costs were paid and is exactly as it was played. X keeps the value that was paid, and additional costs (losing HP, exhausting, sacrificing) aren’t paid again. A copy isn’t played from your hand, so it never gets Echo.
 - **Choose two**: Pick two of the listed effects.
 - **X**: A number chosen by the player or set by the card.
 - **Trigger window**: Opens after an action is announced and paid for. Triggered abilities and Hidden cards resolve here, before the action.
@@ -767,18 +772,19 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Petal counter (Monk)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
 - **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn you may keep it exhausted and give it a +1/+1 counter. When it readies, its counters come off at the next Dusk.
 - **+1/+1 counter (Monk)**: +1 STR and +1 DEF. Meditating Heroes gain them, and some Monk Tactics add more.
-- **Piercing X (Monk)**: The attack ignores X points of the target's DEF.
-- **Echo (Bard)**: At your next Dawn, play the card again for free. You may choose new targets.
-- **Harmonize X (Bard)**: Exhaust X ready Heroes to gain the effect after the colon.
+- **Piercing X (Monk)**: Damage from this ignores X points of the target's DEF. Piercing with no number ignores all DEF.
+- **Echo (Bard)**: If you played it from your hand, exile it and play it again for free at your next Dawn (you may choose new targets), then discard it. A card only repeats once.
+- **Tip (Bard)**: Gain 1 Gold, only once per round.
+- **Harmonize X (Bard)**: Exhaust X other ready Heroes to gain the effect after the colon.
 - **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately (they add up).
 - **Stealth (Rogue)**: This Hero can’t be targeted by enemy cards or abilities. It can still be attacked.
 - **Lifelink (Cleric)**: When this Hero deals damage, heal it that much.
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.
 - **Conjure (Mage, Warlock)**: Create a Pillar token in play.
-- **Banding (Druid)**: Granted by cards only. Heroes and summons with Banding can attack together: add their STR, then exhaust them all.
+- **Banding (Druid, Bard)**: Granted by cards only. Heroes and summons with Banding can attack together: add their STR, then exhaust them all.
 - **Barkborn (Druid)**: When a summon with Barkborn enters, it gains DEF equal to its HP until Dusk. Barkborn stacks: a summon with Barkborn twice gains twice that DEF.
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Your next spell has +2 Spell Damage; sacrifice the Pillar after that spell resolves.
-- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026).
+- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026).
 - **Pain Pillar (Warlock)**: At Dusk, target loses X HP, where X is the number of Pain Pillars you control.

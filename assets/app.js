@@ -42,7 +42,7 @@ const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
 /* Renamed cards (cards-data.js CARD_RENAMES): old saved decks, share links, imports and Best Decks lists still find the card. */
 const RENAMES=(typeof CARD_RENAMES!=="undefined")?CARD_RENAMES:{};
 function fixRenames(d){if(!d)return false;let ch=false;const c=d.cards||{};
-  for(const o in RENAMES){if(c[o]!=null){const n=RENAMES[o];c[n]=Math.min(2,(c[n]||0)+c[o]);delete c[o];ch=true}}
+  for(const o in RENAMES){if(c[o]!=null){const n=RENAMES[o];c[n]=Math.min(3,(c[n]||0)+c[o]);delete c[o];ch=true}}
   if(Array.isArray(d.heroes))d.heroes=d.heroes.map(h=>{const nm=String(h).replace(/^h:/,"");if(RENAMES[nm]){ch=true;return"h:"+RENAMES[nm]}return h});
   return ch}
 function localDecks(){const l=store.get("cq.decks",[]);let ch=false;l.forEach(d=>{if(fixRenames(d))ch=true});if(ch)store.set("cq.decks",l);return l}
@@ -51,9 +51,9 @@ function tokenStats(c){if(c.tkind==="Summon")return[["STR",c.str],["HP",c.hp]];i
 function tokenStatLine(c){if(c.tkind==="Summon")return c.str+"/"+c.hp;if(c.tkind==="Item")return c.str+" STR, "+c.def+" DEF, "+c.hp+" HP";if(c.tkind==="Equipment")return"+"+c.str+" STR";return"Pillar"}
 const sortName=n=>n.replace(/^"|"$/g,"").toLowerCase();
 const costNum=c=>c.cost==="X"?99:(c.cost===""?-1:+c.cost);
-const maxCopies=c=>c.sup==="Legendary"?1:2;
+const maxCopies=c=>c.sup==="Legendary"?1:3;
 const clsOrder=c=>c==="Generic"?99:CLASSES.indexOf(c);
-const DECK_SIZE=30;
+const DECK_SIZE=50;
 /* tokens a deck can make: one entry per token, count = what every copy of every source makes */
 function tokensFor(d){
   const m=new Map();const add=(name,q)=>{for(const[t,n]of(TOKEN_SRC[name]||[]))m.set(t,(m.get(t)||0)+n*q)};
@@ -141,13 +141,50 @@ function issues(d){
   const out=[];
   if(d.heroes.length!==3)out.push(`Pick ${3-d.heroes.length} more Hero${3-d.heroes.length===1?"":"es"}.`);
   const t=deckTotal(d);
-  if(t<DECK_SIZE)out.push(`Add ${DECK_SIZE-t} more card${DECK_SIZE-t===1?"":"s"} (decks are exactly 30).`);
-  if(t>DECK_SIZE)out.push(`Remove ${t-DECK_SIZE} card${t-DECK_SIZE===1?"":"s"} (decks are exactly 30).`);
+  if(t<DECK_SIZE)out.push(`Add ${DECK_SIZE-t} more card${DECK_SIZE-t===1?"":"s"} (decks are exactly 50).`);
+  if(t>DECK_SIZE)out.push(`Remove ${t-DECK_SIZE} card${t-DECK_SIZE===1?"":"s"} (decks are exactly 50).`);
   for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(!c){out.push(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===id)?`${id} is deprecated (removed from play). Take it out of this deck.`:`"${id}" isn't in the card list anymore.`);continue}
-    if(q>maxCopies(c))out.push(`${c.name}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 2 copies"}.`);
+    if(q>maxCopies(c))out.push(`${c.name}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`);
     if(d.heroes.length&&!allowed(c,d))out.push(`${c.name} is ${c.cls}; no Hero in your party can play it.`);}
   return out;
 }
+
+/* ---------- 50-card rebuild (update 22) ----------
+   Decks moved from 30 cards / 2 copies to 50 cards / 3 copies (1 of each Legendary).
+   A deck "needs a rebuild" when it has 3 Heroes and 1–30 cards with no card above 2 copies (an old-format deck).
+   Auto Rebuild: 2-ofs become 3-ofs, 1-ofs become 2-ofs (Legendaries stay at 1), then the deck is rounded off to 50:
+   first by topping up its own cards (cheapest first), then with new cards from the party's classes (class with the
+   fewest cards first, cheapest first). If doubling goes over 50, former 1-ofs drop back (most expensive first). */
+function needsRebuild(d){if(!d||!d.heroes||d.heroes.length!==3)return false;const t=deckTotal(d);return t>0&&t<=30&&Object.values(d.cards).every(q=>q<=2)}
+function autoRebuild(d){
+  const old=d.cards||{},n={};const ok=c=>c&&(c.kind==="card"||c.kind==="equip")&&allowed(c,d);
+  const keys=Object.keys(old).filter(id=>ok(BYID.get(id)));
+  keys.forEach(id=>{const c=BYID.get(id);n[id]=Math.min(maxCopies(c),old[id]>=2?3:old[id]+1)});
+  let t=Object.values(n).reduce((a,b)=>a+b,0);const cost=id=>costNum(BYID.get(id));
+  if(t>DECK_SIZE){for(const id of keys.filter(id=>old[id]===1&&n[id]>1).sort((a,b)=>cost(b)-cost(a))){if(t<=DECK_SIZE)break;n[id]--;t--}}
+  if(t>DECK_SIZE){for(const id of keys.slice().sort((a,b)=>cost(b)-cost(a))){while(t>DECK_SIZE&&n[id]>1){n[id]--;t--}}}
+  if(t<DECK_SIZE){for(const id of keys.slice().sort((a,b)=>(old[b]-old[a])||(cost(a)-cost(b))||a.localeCompare(b))){while(t<DECK_SIZE&&n[id]<maxCopies(BYID.get(id))){n[id]++;t++}}}
+  if(t<DECK_SIZE){const cls=partyClasses(d);const pool=CARDS.filter(c=>ok(c)&&!n[c.id]&&c.cls!=="Generic"&&!(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===c.id)))
+      .sort((a,b)=>costNum(a)-costNum(b)||a.name.localeCompare(b.name));
+    const inCls=k=>Object.entries(n).reduce((a,[id,q])=>a+(BYID.get(id)?.cls===k?q:0),0);
+    while(t<DECK_SIZE){const order=cls.slice().sort((a,b)=>inCls(a)-inCls(b));let added=false;
+      for(const k of order){const c=pool.find(x=>x.cls===k&&!n[x.id]);if(!c)continue;const q=Math.min(maxCopies(c),DECK_SIZE-t);n[c.id]=q;t+=q;added=true;break}
+      if(!added){const c=CARDS.find(x=>ok(x)&&x.cls==="Generic"&&!n[x.id]);if(!c)break;const q=Math.min(maxCopies(c),DECK_SIZE-t);n[c.id]=q;t+=q}}}
+  return n}
+function rebuildList(){const out=S.decks.filter(needsRebuild);if(needsRebuild(S.deck)&&!out.some(d=>d.id===S.deck.id))out.push(S.deck);return out}
+async function rebuildDecks(list){let k=0;
+  for(const d of list){const nd={...d,heroes:d.heroes.slice(),cards:autoRebuild(d)};
+    if(d===S.deck||d.id===S.deck.id){S.deck.cards={...nd.cards};saveDraft();if(!S.decks.some(x=>x.id===d.id)){k++;continue}}
+    try{await persistDeck(nd);k++}catch(e){}}
+  return k}
+function rebuildPrompt(){const list=rebuildList();if(!list.length||document.getElementById("rbm"))return;
+  const key="cq.rb.shown."+(S.uid||"local");try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,"1")}catch(e){}
+  const l=$("#layer");const m=document.createElement("div");m.className="modal";m.id="rbm";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Rebuild your decks");
+  m.innerHTML=`<div class="box"><h2>Decks are now 50 cards</h2><p>Welcome back! The deck size has moved up to <b>50 cards</b>, and you can now include up to <b>3 copies</b> of a card (still 1 of each Legendary). Please rebuild your deck${list.length>1?"s":""}:</p>
+  <ul class="rb-list">${list.map(d=>`<li><b>${esc(d.name||"Untitled deck")}</b> — ${deckTotal(d)} cards${d===S.deck&&!S.decks.some(x=>x.id===d.id)?" (current draft)":""}</li>`).join("")}</ul>
+  <p class="note"><b>Auto Rebuild</b> turns each 2-of into a 3-of and each 1-of into a 2-of, then picks cards to round the deck off to 50. <b>Manual Rebuild</b> opens the Deck Builder so you can choose the new cards yourself.</p>
+  <div class="actions newdeck-acts"><button type="button" class="btn primary go" data-act="rb-auto">Auto Rebuild</button><button type="button" class="btn" data-act="rb-manual">Manual Rebuild</button></div></div>`;
+  l.appendChild(m)}
 
 /* ---------- account / storage (Supabase) ---------- */
 const CFG=window.CQ_CONFIG||{};
@@ -155,7 +192,7 @@ const SB=(CFG.supabaseUrl&&CFG.supabaseAnonKey&&!/YOUR_/.test(CFG.supabaseUrl+CF
   ?window.supabase.createClient(CFG.supabaseUrl,CFG.supabaseAnonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
 S.authMode="signin"; // signin | signup | reset | newpass
 async function initAccount(){
-  if(!SB){S.decks=localDecks();renderAcct();render();return}
+  if(!SB){S.decks=localDecks();renderAcct();render();rebuildPrompt();return}
   SB.auth.onAuthStateChange((ev,session)=>{
     if(ev==="PASSWORD_RECOVERY"){S.authMode="newpass";go("account")}
     setSession(session);
@@ -170,7 +207,7 @@ function setSession(session){
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
   lastUid=S.uid;
-  if(u)loadDecks();else{S.decks=localDecks();}
+  if(u)loadDecks();else{S.decks=localDecks();setTimeout(rebuildPrompt,50)}
   renderAcct();render();
 }
 async function loadDecks(){
@@ -180,6 +217,7 @@ async function loadDecks(){
   const fixed=S.decks.filter(fixRenames);
   if(fixed.length)SB.from("decks").upsert(fixed.map(d=>({...toRow(d),updated_at:new Date(d.updated||Date.now()).toISOString()}))).then(({error})=>{if(!error)toast(`Updated ${fixed.length} saved deck${fixed.length===1?"":"s"} for renamed cards.`)});
   if(S.view==="decks")render();
+  rebuildPrompt();
 }
 const toRow=d=>({id:d.id,user_id:S.uid,name:(d.name||"Untitled deck").slice(0,80),heroes:d.heroes.slice(0,3),cards:d.cards,updated_at:new Date().toISOString()});
 async function persistDeck(d){
@@ -275,7 +313,7 @@ function footHTML(c){
     return c.tkind==="Equipment"?[esc(c.region),"+"+esc(c.str)+" STR","Token"].join(" · "):"Pillar token"}
   if(c.kind==="equip"){const b=[esc(c.region)];if(c.pstr)b.push("+"+c.pstr+" STR");if(c.pdef)b.push("+"+c.pdef+" DEF");if(c.face==="up")b.push(`<b class="upcost">Upgraded · ${c.up.cost} Gold</b>`);
     return b.join(" · ")+(c.up?`<span class="flip" role="button" tabindex="0" data-flip title="${c.face==="up"?"Flip back to the normal side":`Flip to see the upgrade (${c.up.cost} Gold at the Blacksmith)`}" aria-label="${c.face==="up"?"Show normal side":"Show upgraded side"}">⟳</span>`:"")}
-  return c.sup==="Legendary"?"1 copy per deck":"Up to 2 copies";
+  return c.sup==="Legendary"?"1 copy per deck":"Up to 3 copies";
 }
 function cardHTML(c,o={}){
   if(o.flipped&&c.up&&c.face!=="up")c=upFace(c);
@@ -412,7 +450,7 @@ function partySlots(d){
 }
 function stepsHTML(){
   const st=S.b.step,h=S.deck.heroes.length===3;
-  return`<div class="steps"><div class="step ${st==="heroes"?"on":"done"}"><b>1</b>Choose 3 Heroes</div><i class="sep"></i><div class="step ${st==="cards"?"on":""}"><b>2</b>Build a 30-card deck</div></div>`;
+  return`<div class="steps"><div class="step ${st==="heroes"?"on":"done"}"><b>1</b>Choose 3 Heroes</div><i class="sep"></i><div class="step ${st==="cards"?"on":""}"><b>2</b>Build a 50-card deck</div></div>`;
 }
 function viewBuild(){
   const d=S.deck;
@@ -469,7 +507,7 @@ function deckPanel(d){
     <div><div class="curve-l">Aura curve</div><div class="curve">${curve.map((n,i)=>`<div><span>${n||""}</span><span class="b" style="height:${n/cmax*48}px"></span><span>${i===7?"7+":i}</span></div>`).join("")}</div></div>
     <ul class="issues ${iss.length?"bad":"good"}">${iss.length?iss.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Deck is legal and ready to play.</li>"}</ul>
     <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
-    ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 2 copies of a card, and 1 of each Legendary.</p>`}
+    ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 3 copies of a card, and 1 of each Legendary.</p>`}
     ${d.heroes.length?`<div class="dl heroes"><h4><span>Heroes</span><span>${d.heroes.length}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
     <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
     ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward the 30. Print &amp; Play includes them.</p></div>`:""})()}
@@ -504,7 +542,7 @@ function bestCard(r,rank){const d=bestDeck(r);const hs=d.heroes.map(h=>BYID.get(
     <div class="actions"><button type="button" class="btn sm" data-act="best-view" data-id="${esc(r.deck_key)}">View list</button><button type="button" class="btn sm primary" data-act="best-open" data-id="${esc(r.deck_key)}">Open in Deck Builder</button></div>
   </article>`}
 function viewBest(){const b=S.best;
-  const head=`<h1>Best Decks</h1><p class="lede">Decks with the highest win rate in finished Play-tab games (vs AI and online). A deck needs at least ${BEST_MIN_GAMES} games and over ${BEST_MIN_PCT}% wins to be listed. The same Heroes and 30 cards count as one deck, whoever plays it.</p>
+  const head=`<h1>Best Decks</h1><p class="lede">Decks with the highest win rate in finished Play-tab games (vs AI and online). A deck needs at least ${BEST_MIN_GAMES} games and over ${BEST_MIN_PCT}% wins to be listed. The same Heroes and 50 cards count as one deck, whoever plays it.</p>
     <div class="bar"><button type="button" class="btn sm" data-act="best-refresh">Refresh</button><a class="btn sm" href="#play">Play a game</a></div>`;
   if(!SB)return head+`<div class="empty">Win tracking needs the site's account service, which isn't reachable right now.</div>`;
   if(!b||b.loading&&!b.rows)return head+`<div class="empty">Loading results…</div>`;
@@ -530,8 +568,8 @@ function viewDecks(){
     return`<div class="deck"><h3>${esc(d.name)}</h3>
     <div class="pips">${d.heroes.map(h=>BYID.get(h)).filter(Boolean).map(h=>`<span class="pill" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><i class="dot"></i>${esc(h.name)}</span>`).join("")||'<span class="note">No Heroes yet</span>'}</div>
     <div class="note">${t}/${DECK_SIZE} cards${d.updated?" · saved "+new Date(d.updated).toLocaleDateString():""}</div>
-    <span class="status ${iss.length?"no":"ok"}">${iss.length?iss.length+" issue"+(iss.length>1?"s":""):"Legal deck"}</span>
-    <div class="actions"><button type="button" class="btn sm primary" data-act="open" data-id="${d.id}">Edit</button>
+    <span class="status ${iss.length?"no":"ok"}">${needsRebuild(d)?"Needs a rebuild (decks are now 50 cards)":iss.length?iss.length+" issue"+(iss.length>1?"s":""):"Legal deck"}</span>
+    <div class="actions">${needsRebuild(d)?`<button type="button" class="btn sm primary" data-act="rb-one" data-id="${d.id}">Auto Rebuild</button>`:""}<button type="button" class="btn sm${needsRebuild(d)?"":" primary"}" data-act="open" data-id="${d.id}">Edit</button>
       <button type="button" class="btn sm" data-act="hand" data-src="${d.id}">Test hand</button>
       <button type="button" class="btn sm" data-act="pnp" data-src="${d.id}">Print &amp; Play</button>
       <button type="button" class="btn sm" data-act="tts" data-src="${d.id}">TTS</button>
@@ -963,6 +1001,12 @@ document.addEventListener("click",async e=>{
   if(b.dataset.pool&&e.target.closest(".c-ctrl"))return;
   const a=b.dataset.act,id=b.dataset.id,v=b.dataset.v;
   if(a==="close"){b.closest(".modal")?.remove();return}
+  if(a==="rb-auto"||a==="rb-one"){const list=a==="rb-one"?S.decks.filter(d=>d.id===id):rebuildList();b.disabled=true;busy(true,"Rebuilding…");
+    const k=await rebuildDecks(list);busy(false);b.closest(".modal")?.remove();toast(`Rebuilt ${k} deck${k===1?"":"s"} to 50 cards.${k?" Open a deck to fine-tune it.":""}`);
+    if(a==="rb-auto"&&S.view!=="build")go("decks");render();return}
+  if(a==="rb-manual"){const list=rebuildList();b.closest(".modal")?.remove();const d=list[0];if(!d)return;
+    if(d!==S.deck){S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=false;saveDraft()}
+    S.b.step="cards";go("build");render();toast(`Add ${DECK_SIZE-deckTotal(S.deck)} cards to reach 50, then press Save deck.${list.length>1?" Your other decks are marked in My Decks.":""}`);return}
   if(a==="cat-cls"){S.cat.cls=v;store.set("cq.cat",S.cat);render()}
   else if(a==="hero-cls"){S.b.heroCls=v;render()}
   else if(a==="b-cls"){S.b.cls=v;render()}
@@ -972,8 +1016,8 @@ document.addEventListener("click",async e=>{
   else if(a==="unhero"){setDeck(d=>{d.heroes=d.heroes.filter(h=>h!==id)});if(S.deck.heroes.length<3){S.b.step="heroes";render()}}
   else if(a==="to-cards"){if(S.deck.heroes.length===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
   else if(a==="to-heroes"){S.b.step="heroes";render()}
-  else if(a==="inc"||a==="inc-close"){const c=BYID.get(id);if(!c)return;if(deckTotal(S.deck)>=DECK_SIZE){toast("Your deck already has 30 cards.");return}
-    if((S.deck.cards[id]||0)>=maxCopies(c)){toast(c.sup==="Legendary"?"Legendary cards are limited to 1 copy.":"You can include up to 2 copies.");return}
+  else if(a==="inc"||a==="inc-close"){const c=BYID.get(id);if(!c)return;if(deckTotal(S.deck)>=DECK_SIZE){toast("Your deck already has 50 cards.");return}
+    if((S.deck.cards[id]||0)>=maxCopies(c)){toast(c.sup==="Legendary"?"Legendary cards are limited to 1 copy.":"You can include up to 3 copies.");return}
     setDeck(d=>{d.cards[id]=(d.cards[id]||0)+1});if(a==="inc-close"){b.closest(".modal")?.remove();toast(`Added ${c.name}.`)}}
   else if(a==="dec"){setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})}
   else if(a==="prune"){setDeck(d=>{for(const k of Object.keys(d.cards)){const c=BYID.get(k);if(!c||!allowed(c,d))delete d.cards[k]}})}

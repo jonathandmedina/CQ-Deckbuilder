@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 5, 2026 (update 21)*
+*Version: November 8, 2026 (update 22)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -22,7 +22,7 @@ If a card’s text contradicts these rules, the card wins.
 Each player needs:
 
 - 3 Hero cards
-- A deck of exactly 30 cards
+- A deck of exactly 50 cards
 - A six-sided die for each Hero, to track its level
 - Counters for damage, status effects and other effects
 - A way to track Aura (a die or tokens)
@@ -41,8 +41,8 @@ Your party’s classes decide which cards you can play. A Hero can only play car
 
 ### Your Deck
 
-- Your deck is exactly 30 cards. Your three Heroes and any tokens don’t count toward the 30.
-- You may include up to 2 copies of any card with the same name.
+- Your deck is exactly 50 cards. Your three Heroes and any tokens don’t count toward the 50.
+- You may include up to 3 copies of any card with the same name.
 - You may include only 1 copy of each Legendary card.
 
 ## 4. The Cards
@@ -151,7 +151,7 @@ Every card shows a version number (v1, v2, v3…) in its bottom corner. When a c
 | **Party** | Your three Heroes, left to right in party order. |
 | **Battlefield** | Your summons and Pillar tokens. |
 | **Inventory** | 4 slots shared by your party, for items, Hidden cards, equipment tokens and unequipped equipment. |
-| **Library** | Your face-down draw pile. Your 30-card deck becomes your library at the start of the game. |
+| **Library** | Your face-down draw pile. Your 50-card deck becomes your library at the start of the game. |
 | **Hand** | Cards you have drawn but not yet played. The maximum hand size is 5: at Dusk, discard down to 5. You may hold more than 5 until then. |
 | **Discard pile** | Face up. Used, destroyed and discarded cards go here. |
 | **Exile zone** | Face up. Cards removed from the game. Exiled cards don’t come back unless a card says so. |
@@ -184,7 +184,7 @@ Gold is the treasure your party earns by surviving each round.
 ## 7. Setting Up
 
 1. Each player places their three Heroes in the party order they choose. Every Hero starts at Level 0, so keep its level die beside it until it first levels up.
-2. Shuffle your 30-card deck. It is now your library. Place it on the right side of your play area.
+2. Shuffle your 50-card deck. It is now your library. Place it on the right side of your play area.
 3. Leave room under your library for your discard pile and exile zone.
 4. Set your Gold to 0.
 5. Each player draws 4 cards.
@@ -248,7 +248,7 @@ This is where the fighting happens. Set the Position marker to **Lead**.
 All players do these steps together:
 
 1. **At Dusk effects.** Resolve abilities that happen “At Dusk”, such as Pain Pillars, using the stack.
-2. **End effects.** Effects that last “until Dusk”, “this turn” or “for the rest of the turn” end. Guard wears off.
+2. **End effects.** Effects that last “until Dusk”, “this turn” or “for the rest of the turn” end.
 3. **Lose Aura.** Remove all unspent Aura from your pool.
 4. **Collect Gold.** Gain 1 Gold for each of your Heroes that isn’t dead.
 5. **Hand size.** The maximum hand size is 5. If you have more than 5 cards in hand, discard cards of your choice until you have 5.
@@ -393,17 +393,16 @@ You must have a ready Hero to trigger a Hidden card. If all your matching Heroes
 
 **Damage dealt = STR (for attacks) or the card’s damage amount (for cards) − the target’s DEF.** Damage can’t go below 0.
 
-- **Guard X** absorbs the first X damage before DEF is applied.
 - **Piercing X** ignores X points of the target’s DEF.
 - **Spell Damage +X** adds X to the damage your spells deal.
 - **Spell Damage Pillars are used up.** All of your Spell Damage Pillars add +2 each to the next Spell you play (any Spell, even one that deals no damage), then they are sacrificed after that Spell resolves. Pillars that the Spell itself conjures (such as Lightning Lance or Ritual of Power) stay for your next Spell.
 - **“Each enemy Hero”** hits only Heroes, not summons. **“All enemies”** and **“each enemy”** include summons.
-- **Status damage** from Burned, Poisoned and Wounded ignores DEF and Guard.
-- **“Lose X HP”** isn’t damage. It ignores DEF and Guard.
+- **Status damage** from Burned, Poisoned and Wounded ignores DEF.
+- **“Lose X HP”** isn’t damage. It ignores DEF.
 
 On-hit effects that apply a status still apply, even if DEF reduces the damage to 0. If an effect depends on “damage dealt”, use the damage after DEF.
 
-*Example: a Hero with 5 STR attacks a Hero with 2 DEF and Guard 1. Guard absorbs 1 (leaving 4), then DEF reduces it by 2. The target takes 2 damage.*
+*Example: a Hero with 5 STR attacks a Hero with 2 DEF that played Extra Protection this turn (+1 DEF, so 3 DEF). The target takes 2 damage.*
 
 ### Healing
 
@@ -440,7 +439,7 @@ A dead Hero’s soul can still help your party. When you have priority during th
 - Surrendering a soul uses your priority like an action, but no Hero takes it and no one is exhausted. A trigger window opens as usual.
 - Surrendering a soul isn’t a card or ability, so it can’t be canceled. Its effect can still be prevented like any other (for example, damage prevention).
 - Each dead Hero’s soul can be surrendered only once.
-- The 2 damage works like card damage: the target’s Guard and DEF apply.
+- The 2 damage works like card damage: the target’s DEF applies.
 - Aura gained this way is lost at Dusk like any other Aura. Gold gained this way can be spent in the next Town Phase.
 - A surrendered Hero still counts as dead for winning and losing.
 
@@ -561,7 +560,6 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Conjure** | Create a Pillar token on the battlefield. |
 | **Echo** | At your next Dawn, play this card again for free (no Aura cost). Any of your Heroes of the card’s class plays the copy, and you may choose new targets. The copy doesn’t have Echo, so it only repeats once. Set the card aside until then, and discard it after. |
 | **Enraged** | A Hero is Enraged while it is at or below half its maximum HP. |
-| **Guard X** | Absorbs the first X damage that would be dealt to this Hero, before DEF. Wears off at Dusk. |
 | **Harmonize X** | Exhaust X ready Heroes you control to gain the effect after the colon. |
 | **Lifelink** | When this Hero deals damage, heal it that much. |
 | **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, you may keep it exhausted. If you do, it gets a +1/+1 counter. When it readies, it stops Meditating, and all its +1/+1 counters (including any from Monk Tactics) are removed at the next Dusk. |
@@ -610,7 +608,7 @@ A face-down card in an opponent’s inventory can be targeted by effects that ta
 
 **Dawn.** Both players ready their cards. Ava’s Heroes have 1, 2 and 1 Aura, so her pool is 4. Ben’s Ranger has a Poison counter, so it takes 1 damage, and the counter comes off. Both players draw.
 
-**Battle, Lead.** The marker is on Lead. Ava’s Paladin plays Extra Protection (Guard 1 until Dusk) and stays ready. Ben’s Barbarian makes a basic attack on Ava’s Mage: 4 STR − 1 DEF = 3 damage. The Barbarian exhausts.
+**Battle, Lead.** The marker is on Lead. Ava’s Paladin plays Extra Protection (+1 DEF until Dusk) and stays ready. Ben’s Barbarian makes a basic attack on Ava’s Mage: 4 STR − 1 DEF = 3 damage. The Barbarian exhausts.
 
 **Battle, Center.** The marker moves to Center. Ava’s Mage casts a spell that deals 4 damage to Ben’s Barbarian, which has 1 DEF, so it takes 3. Ben’s Cleric heals his Barbarian for 3.
 
@@ -618,7 +616,7 @@ A face-down card in an opponent’s inventory can be targeted by effects that ta
 
 **Battle, Lead again.** The marker returns to Lead. Ava’s Paladin is still ready and attacks. Ben’s Barbarian is exhausted, so his next ready Hero to the right, the Cleric, stands in. Then both players pass.
 
-**Dusk.** Guard wears off, unspent Aura is lost, and each player gains 3 Gold, one for each Hero still standing. Finally, initiative passes from Ava to Ben.
+**Dusk.** The +1 DEF from Extra Protection ends, unspent Aura is lost, and each player gains 3 Gold, one for each Hero still standing. Finally, initiative passes from Ava to Ben.
 
 **Town.** Ben now has initiative, so he visits first. With only 3 Gold, neither player can afford the Shop (4) or the Inn (5) yet, so both save their Gold. A new round begins with Ben as the active player.
 
@@ -700,7 +698,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Version (v1, v2…)**: The number in a card’s bottom corner. It goes up whenever the card changes. Play the newest version.
 - **Inventory slot**: One of 4 shared slots for items, Hidden cards, equipment tokens and unequipped equipment.
 - **Inventory overflow**: When more cards must go into your inventory than you have room for, you choose which to discard.
-- **Deck**: The 30 cards you build before a game (deck construction).
+- **Deck**: The 50 cards you build before a game (deck construction).
 - **Library**: Your draw pile during play.
 - **Hand**: Cards drawn but not yet played. Maximum hand size 5 (checked at Dusk).
 - **Discard pile**: Where used cards go. Reshuffled into a new library when the library runs out.
@@ -740,12 +738,12 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **X**: A number chosen by the player or set by the card.
 - **Trigger window**: Opens after an action is announced and paid for. Triggered abilities and Hidden cards resolve here, before the action.
 - **Stack**: Where simultaneous triggers wait. Active player adds first, then passive players clockwise. Resolve top down.
-- **Damage**: STR or the card’s damage amount minus the target’s DEF, minimum 0. Status damage and “lose X HP” ignore DEF and Guard.
-- **Lose X HP**: HP loss that isn’t damage. Ignores DEF and Guard.
+- **Damage**: STR or the card’s damage amount minus the target’s DEF, minimum 0. Status damage and “lose X HP” ignore DEF.
+- **Lose X HP**: HP loss that isn’t damage. Ignores DEF.
 
 ### Statuses, death and summons
 
-- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF and Guard. +1/+1, Petal, Campfire and Fury counters are not status counters.
+- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF. +1/+1, Petal, Campfire and Fury counters are not status counters.
 - **Burned**: Status. 1 damage each Dawn Phase. Cards say “Burn”.
 - **Poisoned**: Status. 1 damage each Dawn Phase. Cards say “Poison”.
 - **Wounded**: Status. 1 damage each Dawn Phase. Cards say “Wound”.
@@ -772,7 +770,6 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Piercing X (Monk)**: The attack ignores X points of the target's DEF.
 - **Echo (Bard)**: At your next Dawn, play the card again for free. You may choose new targets.
 - **Harmonize X (Bard)**: Exhaust X ready Heroes to gain the effect after the colon.
-- **Guard X (Paladin)**: Absorbs the first X damage that would be dealt to this Hero, before DEF is applied. Wears off in the Dusk Phase.
 - **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt.
 - **Stealth (Rogue)**: This Hero can’t be targeted by enemy cards or abilities. It can still be attacked.
 - **Lifelink (Cleric)**: When this Hero deals damage, heal it that much.

@@ -76,7 +76,8 @@ E.newGame=function(cfg){
 E.validateDeck=function(d){
   const out=[];if(!d||!d.heroes||d.heroes.length!==3)out.push("Needs 3 Heroes.");
   let t=0;for(const[id,q]of Object.entries(d.cards||{})){if(!DB[id])out.push(`Unknown card ${id}`);else if(DB[id].dep)out.push(`${id} is deprecated (removed from play).`);t+=q}
-  if(t!==30)out.push(`Deck has ${t} cards (needs 30).`);return out};
+  for(const[id,q]of Object.entries(d.cards||{})){const c=DB[id];if(c&&q>(c.sup==="Legendary"?1:3))out.push(`${id}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`)}
+  if(t!==50)out.push(`Deck has ${t} cards (needs 50).`);return out};
 
 /* ---------- lookups ---------- */
 function allObjs(s){const out=[];s.p.forEach((pl,pid)=>{pl.heroes.forEach(h=>{out.push(h);eqList(h).forEach(e=>out.push(e));h.ench.forEach(e=>out.push(e))});pl.bf.forEach(o=>out.push(o));pl.inv.forEach(o=>out.push(o))});return out}
@@ -314,7 +315,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(dealt>0){let side=sideOf(s,src);if(side==null)side=opp(ctrl(s,tgt));
     const nm=o.srcName||(o.combat&&src?(o.band?"Band attack":src.name+" (attack)"):(CUR_SRC||(src&&src.name)));if(!o.status)stat(s,"dmg",side,nm,dealt)}
   const tn=tgt.name+(tgt.kind==="summon"?" (summon)":"");
-  log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before Guard/DEF)`:""}.`);
+  log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before DEF)`:""}.`);
   if(dealt>0&&tgt.kind==="hero"){const tp=P(s,tgt.owner);const before=tp.t.took||0;tp.t.took=before+dealt;if(before<10&&tp.t.took>=10&&s.phase==="battle"){s.trig10=(s.trig10||[]).concat([tgt.owner])}if(tgt.fl.loseCtrlRound===s.round){if(hpOf(s,tgt)<1)tgt.dmg=maxHp(s,tgt)-1;tgt.ex=false}}
   if(src&&!o.noTrig){
     if(dealt>0&&lifelink(s,src)){const room=src.kind==="hero"?Math.min(dealt,src.dmg||0):dealt;heal(s,src,src,dealt);

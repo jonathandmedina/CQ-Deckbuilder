@@ -113,10 +113,10 @@ def("Shield Bash",{t:[ANY],run(c){D(c,c.t[0],dfn(c,c.actor))}});
 def("Radiant Strike",{t:[ANY],run(c){const sw=E.eqList(c.actor).some(e=>/Sword/.test(e.name+" "+(E.DB[e.id]||{}).rules));D(c,c.t[0],sw?5:3,{type:"Light"});exMe(c)}});
 def("Divine Judgment",{run(c){const d=dfn(c,c.actor);enemies(c).forEach(e=>D(c,e,d));exMe(c)}});
 def("Blockade",{t:[HERO],run(c){buff(c.t[0],{def:5})}});
-def("Protect",{t:[HERO],run(c){if(c.t[0]){c.t[0].guard+=2;log(c,`${c.t[0].name} gains Guard 2.`)}}});
-def("Extra Protection",{run(c){c.actor.guard+=1;log(c,`${c.actor.name} gains Guard 1.`)}});
-def("Vigil",{run(c){exMe(c);c.actor.guard+=3;log(c,`${c.actor.name} gains Guard 3.`)}});
-def("Pull Together",{run(c){living(c.me).forEach(h=>h.guard+=(c.x||0));log(c,`${c.me.name}'s party gains Guard ${c.x||0}.`);exMe(c)}});
+def("Protect",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 DEF this turn.`)}}});
+def("Extra Protection",{run(c){buff(c.actor,{def:1});log(c,`${c.actor.name} gains +1 DEF this turn.`)}});
+def("Vigil",{run(c){exMe(c);buff(c.actor,{def:3});log(c,`${c.actor.name} gains +3 DEF this turn.`)}});
+def("Pull Together",{run(c){living(c.me).forEach(h=>buff(h,{def:(c.x||0)}));log(c,`${c.me.name}'s party gains +${c.x||0} DEF this turn.`);exMe(c)}});
 def("Conscript",summonCard("Soldier"));
 def("Rally the Troops",{run(c){summon(c,"Soldier");summon(c,"Soldier");exMe(c)}});
 def("Coordinated Attack",{run(c){c.me.pm.soldier=(c.me.pm.soldier||0)+2;log(c,"Soldiers gain +2 STR this turn.");exMe(c)}});
@@ -127,7 +127,7 @@ def("Charged Barrage",{run(c){exMe(c);buff(c.actor,{def:4});c.actor.fl.chargedRo
 def("Noble Promotion",{run(c){c.me.fl.promoRound=c.s.round;log(c,`${c.me.name} will gain initiative at Dusk.`)}});
 def("To the Armory",{run(c){E.pushChoose(c.s,c.pid,{title:"To the Armory: choose an Equipment",cards:c.me.lib.filter(x=>E.DB[x.id].kind==="equip").map(x=>x.uid),min:1,max:1,op:"tutor"})}});
 def("Take a Stand",{run(c){draw(c,dfn(c,c.actor));c.actor.fl.standRound=c.s.round}});
-def("Noble Choice",M(2,[{label:"Summon a 2/3 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains Guard 2",t:[HERO],run:c=>{if(c.t[0]){c.t[0].guard+=2;log(c,`${c.t[0].name} gains Guard 2.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
+def("Noble Choice",M(2,[{label:"Summon a 2/3 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains +2 DEF this turn",t:[HERO],run:c=>{if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 DEF this turn.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
 /* ===== Barbarian ===== */
 def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:2})}});
 def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:4})}});

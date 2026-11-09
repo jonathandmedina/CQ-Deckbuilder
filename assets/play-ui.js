@@ -226,11 +226,11 @@ const STARTERS=[
   {name:"Grand Stage (starter)",heroes:["Songweaver","Storm Caller","Sun Paladin"]},
   {name:"Iron Vanguard (starter)",heroes:["Rage Brute","Radiant Sentinel","Dawn Priest"]}];
 const STARTER_LISTS=[
- {"Flame Jab":2,"Lightning Bolt":2,"Volt Jab":2,"Flame Lance":2,"Ice Jab":2,"Arcane Study":2,"Power Thrust":2,"Conscript":2,"Protect":2,"Knight's Sword":1,"Bronze Chest Plate":1,"Shield Bash":2,"Healing Touch":2,"Light Helix":2,"Inspiration":2,"Potion":2},
- {"Beast":2,"Wolves":2,"Elk":2,"Tooth":2,"Serrated Arrow":2,"Flame Bolt":2,"Poison Dart":1,"Dual Shot":2,"Full Draw":1,"Longbow":1,"Spike Pit":2,"Pump":2,"Great Axe":1,"Bloodthirst":2,"Battered":2,"Potion":2,"Sword of Riverstead":2},
- {"Armed":2,"Toxic Cloud":2,"Surprise Attack":2,"Long Dagger":1,"Thief's Dagger":1,"Envenom":1,"Dark Jab":2,"Dark Lance":2,"Ritual of Pain":2,"Siphon Life":2,"Weaken":2,"Jab":2,"Roundhouse":2,"Lunge":2,"Flurry of Blows":2,"Inspiration":1,"Potion":2},
- {"\"Ballad of Blades\"":2,"Embolden":2,"\"Rousing Chorus\"":2,"\"Song of Healing\"":2,"Strong Stance":2,"War Lute":1,"Flame Jab":2,"Ice Lance":2,"Lightning Bolt":2,"Boost Ritual":2,"Power Thrust":2,"Tower Shield":1,"Conscript":2,"Radiant Strike":2,"Potion":2,"Sword of Riverstead":2},
- {"Pump":2,"Blunt Force":2,"Great Axe":1,"Bloodthirst":2,"Battered":2,"Unstoppable":2,"Blockade":2,"Bronze Chest Plate":1,"Tower Shield":1,"Power Thrust":2,"Rally the Troops":1,"Healing Beam":2,"Mace of Dawn":1,"Light Blast":2,"Healing Touch":2,"Long Sword":1,"Potion":2,"Inspiration":2}];
+ {"Flame Jab":3,"Lightning Bolt":3,"Volt Jab":3,"Flame Lance":3,"Ice Jab":3,"Arcane Study":3,"Power Thrust":3,"Conscript":3,"Protect":3,"Knight's Sword":2,"Bronze Chest Plate":2,"Shield Bash":3,"Healing Touch":3,"Light Helix":3,"Inspiration":3,"Potion":3,"Healing Beam":2,"Ice Lance":2},
+ {"Beast":3,"Wolves":3,"Elk":3,"Tooth":3,"Serrated Arrow":3,"Flame Bolt":3,"Poison Dart":2,"Dual Shot":3,"Full Draw":2,"Longbow":2,"Spike Pit":3,"Pump":3,"Great Axe":2,"Bloodthirst":3,"Battered":3,"Potion":3,"Sword of Riverstead":3,"Heavy Beast":2,"Blunt Force":1},
+ {"Armed":3,"Toxic Cloud":3,"Surprise Attack":3,"Long Dagger":2,"Thief's Dagger":2,"Envenom":2,"Dark Jab":3,"Dark Lance":3,"Ritual of Pain":3,"Siphon Life":3,"Weaken":3,"Jab":3,"Roundhouse":3,"Lunge":3,"Flurry of Blows":3,"Inspiration":2,"Potion":3,"Mark of Doom":2,"Finisher":1},
+ {"\"Ballad of Blades\"":3,"Embolden":3,"\"Rousing Chorus\"":3,"\"Song of Healing\"":3,"Strong Stance":3,"War Lute":2,"Flame Jab":3,"Ice Lance":3,"Lightning Bolt":3,"Boost Ritual":3,"Power Thrust":3,"Tower Shield":2,"Conscript":3,"Radiant Strike":3,"Potion":3,"Sword of Riverstead":3,"Shield Bash":2,"Volt Jab":2},
+ {"Pump":3,"Blunt Force":3,"Great Axe":2,"Bloodthirst":3,"Battered":3,"Unstoppable":3,"Blockade":3,"Bronze Chest Plate":2,"Tower Shield":2,"Power Thrust":3,"Rally the Troops":2,"Healing Beam":3,"Mace of Dawn":2,"Light Blast":3,"Healing Touch":3,"Long Sword":2,"Potion":3,"Inspiration":3,"Pummel":2}];
 function starterDeck(i){const st=STARTERS[i];return{id:"starter:"+i,name:st.name,heroes:st.heroes.map(n=>"h:"+n),cards:Object.assign({},STARTER_LISTS[i])}}
 U.starterDeck=starterDeck;
 function deckChoices(){const out=[];
@@ -265,7 +265,7 @@ function recStats(s,side){try{const g=E.gameStats(s);const sd=g.sides[side],od=g
 function myName(){return(AS()&&S.me&&S.me.name)||store2.get("cq.play.name","")||"Player"}
 
 /* ---------- game control ---------- */
-function startAI(){const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, 30 cards) for yourself.");return}
+function startAI(){const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, 50 cards) for yourself.");return}
   if(!da){toast("Choose a deck for the AI.");return}
   U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
   U.meta={gid:newGid(),mode:"ai",decks:[deckMeta(dm),deckMeta(da)]};
@@ -732,7 +732,7 @@ function pickTarget(u){const t=U.tgt;if(!t)return;const sl=t.slots[t.i];if(!sl.c
 function pickBand(a){const s=view();const all=E.bandMembers(s,U.me);U.bandSel=all.map(o=>o.uid);
   const draw=()=>{const s2=view();const sel=all.filter(o=>U.bandSel.includes(o.uid));const lead=E.find(s2,a.att);
     const mem=sel.filter(o=>o.uid!==a.att);const tot=lead?E.bandTotal(s2,lead.o,mem):0;
-    modal(`<h2>Band attack</h2><p>Choose who joins. Their STR is added together for one attack (the target's DEF and Guard still apply), then every attacker is exhausted.</p>
+    modal(`<h2>Band attack</h2><p>Choose who joins. Their STR is added together for one attack (the target's DEF still applies), then every attacker is exhausted.</p>
     <div class="band-list">${all.map(o=>{const on=U.bandSel.includes(o.uid);const isLead=o.uid===a.att;return`<button class="btn band-pick${on?" primary":""}" data-pa="band-t" data-u="${o.uid}" ${isLead?"disabled":""}><b>${esc(o.name)}</b> · ${E.dmgStr(s2,o)} STR${o.kind==="summon"?" (summon)":""}${isLead?" · leads":""}</button>`}).join("")}</div>
     <div class="actions"><button class="btn sm" data-pa="band-sums">Select all summons</button><button class="btn sm" data-pa="band-all">Select all</button><button class="btn sm" data-pa="band-none">Only the leader</button></div>
     <p class="band-total">Total: <b>${tot}</b> STR${mem.length?` (${sel.length} attackers)`:" (no one else joins — a normal attack)"}</p>

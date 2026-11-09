@@ -9,7 +9,7 @@ If a card ever disagrees with the rules, the card wins.
 
 ## 2. What You Need
 
-- **3 Heroes** and a **30-card deck** (up to 2 copies of a card, 1 of each Legendary).
+- **3 Heroes** and a **50-card deck** (up to 3 copies of a card, 1 of each Legendary).
 - A six-sided die for each Hero to track its level.
 - Counters for damage and status effects, and something to track your **Aura** and **Gold**.
 
@@ -63,7 +63,6 @@ An **exhausted** Hero (turned sideways) can’t act again until the next Dawn. W
 
 Cards explain their keywords in *(italic reminder text)*. A few you’ll see a lot:
 
-- **Guard X**: prevents the next X damage, until Dusk.
 - **Piercing X**: the attack ignores X of the target’s DEF.
 - **Combo**: after the card resolves, reveal your top card. If it’s a Combo card, you may play it.
 - **Stun**: the target can’t play cards or activate abilities.

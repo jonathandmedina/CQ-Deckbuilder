@@ -534,7 +534,7 @@ function deckPanel(d){
     <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 3 copies of a card, and 1 of each Legendary.</p>`}
     ${d.heroes.length?`<div class="dl heroes"><h4><span>Heroes</span><span>${d.heroes.length}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
-    <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
+    <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>${e.c.sup==="Legendary"?'<span class="leg-ico" title="Legendary: 1 copy per deck" aria-label="Legendary">L</span>':""}`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
     ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward the 30. Print &amp; Play includes them.</p></div>`:""})()}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}
     <div class="actions">
@@ -1109,3 +1109,17 @@ window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 if(S.deck.heroes.length===3&&deckTotal(S.deck)>0)S.b.step="cards";
 route();
 initAccount();
+
+/* Hover preview: pointing at a card name in a deck list (.dl) or the Play tab's game log pops the card up zoomed in. Mouse/trackpad only. */
+(function(){const canHover=()=>{try{return matchMedia("(hover: hover)").matches}catch(e){return true}};let pop=null,cur=null;
+  const SEL=".dl .nlink[data-id],.lgc[data-hc]";
+  function hide(){cur=null;if(pop)pop.style.display="none"}
+  function place(el){const r=el.getBoundingClientRect();const w=pop.offsetWidth,h=pop.offsetHeight,vw=innerWidth,vh=innerHeight,g=12;
+    let x=r.right+g;if(x+w>vw-8)x=r.left-g-w;if(x<8)x=Math.max(8,Math.min(vw-w-8,r.left));
+    let y=r.top+r.height/2-h/2;y=Math.max(8,Math.min(vh-h-8,y));pop.style.left=x+"px";pop.style.top=y+"px"}
+  function show(el){const id=el.dataset.hc||el.dataset.id;const c=BYID.get(id)||BYID.get("h:"+id)||BYID.get("t:"+id);if(!c){hide();return}
+    if(!pop){pop=document.createElement("div");pop.id="hovercard";pop.setAttribute("aria-hidden","true");document.body.appendChild(pop)}
+    if(cur!==el){cur=el;pop.innerHTML=cardHTML(c,{nozoom:1});pop.style.display="block"}place(el)}
+  document.addEventListener("mouseover",e=>{if(!canHover())return;const el=e.target.closest&&e.target.closest(SEL);if(el)show(el);else if(cur)hide()});
+  document.addEventListener("mouseleave",hide);addEventListener("scroll",()=>{if(cur&&cur.isConnected&&cur.matches(":hover"))place(cur);else hide()},true);document.addEventListener("click",hide,true);
+  window.CQHoverHide=hide})();

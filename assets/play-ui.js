@@ -36,6 +36,7 @@ const CSS=`
 .pl-side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 90px)}
 .pl-log{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;overflow:auto;font-size:.82rem;line-height:1.35;flex:1;min-height:200px}
 .pl-log p{margin:0 0 3px}
+.pl-log .lgc{text-decoration:underline dotted;text-underline-offset:2px;cursor:help}
 .pl-log p.me{color:var(--ink)} .pl-log p.op{color:var(--muted)} .pl-log p.sys{color:var(--accent);font-weight:700;margin-top:6px}
 .pl-side-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .pl-zone{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
@@ -201,6 +202,9 @@ html .ph .btn.soul-btn:hover,html .ph .btn.soul-btn:focus-visible{color:#efe8ff!
 .ph.surr{filter:grayscale(1);opacity:.45}
 .ph.surr.hasart{filter:grayscale(1) brightness(.8);opacity:.6}
 .ph.surr .ph-back .rib{background:rgba(60,60,64,.9)}
+/* acting Hero's buttons under its card */
+.ph .ph-acts{margin-top:6px;justify-content:center;gap:4px;cursor:default}
+.ph .ph-acts .btn{font-size:.78rem;padding:4px 8px;flex:1 1 auto;justify-content:center}
 /* Rules fix stacked above Concede at the right */
 .pl-acts{align-items:center}
 .pl-endcol{margin-left:auto;display:inline-flex;flex-direction:column;align-items:stretch;gap:4px}
@@ -392,7 +396,15 @@ function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div>
   </aside></div>`}
-function logHTML(s){return s.log.slice(-300).map(l=>{const sys=/^—/.test(l.m)||/🏆/.test(l.m);return`<p class="${sys?"sys":l.p===U.me?"me":l.p<0?"":"op"}">${esc(l.m)}</p>`}).join("")}
+/* card names in log lines become hover targets (app.js shows the zoomed card) */
+let LOGRE=null,LOGMAP=null;const LOGC=new Map();
+function logRe(){if(LOGRE!==null)return LOGRE;LOGMAP=new Map();try{BYID.forEach((c,k)=>{if(c&&c.name&&k===c.id&&c.face!=="up"&&c.name.length>2&&!LOGMAP.has(c.name))LOGMAP.set(c.name,c.id)})}catch(e){}
+  const names=[...LOGMAP.keys()].sort((a,b)=>b.length-a.length).map(n=>n.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+  LOGRE=names.length?new RegExp(`(?<![\\w'’])(?:${names.join("|")})(?![\\w’])`,"g"):false;return LOGRE}
+function logLine(m){if(LOGC.has(m))return LOGC.get(m);const R=logRe();let out;
+  if(!R)out=esc(m);else{out="";let i=0;m.replace(R,(x,off)=>{out+=esc(m.slice(i,off))+`<span class="lgc" data-hc="${esc(LOGMAP.get(x))}">${esc(x)}</span>`;i=off+x.length;return x});out+=esc(m.slice(i))}
+  if(LOGC.size>2000)LOGC.clear();LOGC.set(m,out);return out}
+function logHTML(s){return s.log.slice(-300).map(l=>{const sys=/^—/.test(l.m)||/🏆/.test(l.m);return`<p class="${sys?"sys":l.p===U.me?"me":l.p<0?"":"op"}">${logLine(l.m)}</p>`}).join("")}
 function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const actor=s.phase==="battle"&&s.prio===pid&&!s.pend.length?E.actorFor(s,pid):null;
   const cands=U.tgt?new Set(U.tgt.slots[U.tgt.i].cands):new Set();
@@ -492,16 +504,18 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
   const hpBar=`<span class="hpbar${low?" low":""}" style="--p:${pct}%"><i style="width:${pct}%"></i><span>${h.dead?"0":st.hp} / ${st.max} HP</span></span>`;
   const soul=h.dead&&!h.surr&&(opts||[]).some(o=>o.type==="soul"&&o.hero===h.uid)?`<button type="button" class="btn soul-btn" data-pa="soul" data-h="${h.uid}" title="Sacrifice this dead Hero for one small effect. It can never be revived.">Surrender soul…</button>`:"";
   const cls=`ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${h.surr?" surr":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}`;
+  const hb=isActor&&s.phase==="battle"&&s.prio===U.me&&h.owner===U.me&&!s.pend.length&&!s.over&&!U.tgt&&(opts||[]).length?heroActs(s,opts,h):[];
+  const hacts=hb.length?`<div class="pl-acts ph-acts" aria-label="${esc(h.name)}'s actions">${hb.join("")}</div>`:"";
   const top=`<span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
   const extra=`${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}`;
   if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
-    ${top}${heroCardHTML(s,h,d,st)}${extra}${hpBar}${soul}
+    ${top}${heroCardHTML(s,h,d,st)}${extra}${hpBar}${soul}${hacts}
   </div>`;
   return`<div role="button" tabindex="0" class="${cls}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
     ${top}
     <span class="ph-name">${esc(h.name)}</span><span class="ph-cls"><span class="dot"></span>${esc(h.cls)}</span>
     <span class="ph-stats"><span class="s-str">${statB(st.str,d.str)}STR</span><span class="s-def">${statB(st.def,d.def)}DEF</span><span class="s-aura">${statB(st.aura,d.aura)}AURA</span></span>
-    ${extra}${hpBar}${soul}
+    ${extra}${hpBar}${soul}${hacts}
   </div>`}
 /* ---------- Hero card images (Card Art export) with live stats ---------- */
 function heroArt(d){try{return!!(d&&typeof SKIN!=="undefined"&&SKIN==="art"&&typeof CARD_ART!=="undefined"&&hasArt({kind:"hero",name:d.name,cls:d.cls}))}catch(e){return false}}
@@ -609,6 +623,19 @@ function statsText(s){if(!E.gameStats)return"";const g=E.gameStats(s);let t=`\n=
   t+="Most damage:\n"+g.topDmg.map((x,i)=>`  ${i+1}. ${x.name} (${g.sides[x.side].name}): ${x.v}`).join("\n")+"\nMost damage prevented:\n"+g.topPrev.map((x,i)=>`  ${i+1}. ${x.name} (${g.sides[x.side].name}): ${x.v}`).join("\n")+"\n";return t}
 function lvBtn(o,label,cls){return`<button class="btn ${cls}" data-pa="do" data-a='${esc(JSON.stringify(o))}'><span class="plus" aria-hidden="true">+</span>${esc(label)}</button>`}
 function btn(o,label,cls){return`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(label)}</button>`}
+/* the acting Hero's own buttons (attack, level up, Step Back, abilities, items, equip): also shown under that Hero on the board */
+function heroActs(s,opts,a){const out=[];const me=U.me;if(!a)return out;
+  opts.filter(o=>o.type==="attack"&&o.att===a.uid).forEach(o=>out.push(btn(o,"Attack","atk")));
+  const lv=opts.filter(o=>o.type==="level");const LV={str:"STR",def:"DEF",aura:"AURA"};
+  if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
+  opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
+  opts.filter(o=>o.type==="ability").forEach(o=>{const ab=window.CQ_HERO_SCRIPTS[a.name][o.idx];const c=E.abilityCost(s,me,a,ab);out.push(btn(o,`${ab.label}${c?` (${c} Aura)`:""}`))});
+  opts.filter(o=>o.type==="eqAct").forEach(o=>{const f=E.find(s,o.uid);const x=(window.CQ_EQACT||{})[f.o.name];out.push(`<button class="btn" data-pa="eqact" data-u="${o.uid}">${esc(f.o.name)}: ${esc(x?x.label:"use")}</button>`)});
+  opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
+  opts.filter(o=>o.type==="equipInv").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Equip ${f.o.name} (${E.eqCost(s,a,f.o)})`))});
+  opts.filter(o=>o.type==="take").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Take ${f.o.name} from ${f.hero.name} (${E.eqCost(s,a,f.o)})`))});
+  if(opts.some(o=>o.type==="manualAbility")&&/Exhaust|\{A\}:/.test(E.DB[a.id].rules)&&!window.CQ_HERO_SCRIPTS[a.name])out.push(btn({type:"manualAbility"},`Use ${a.name}'s ability (by hand)`));
+  return out}
 function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   const atk=opts.filter(o=>o.type==="attack");atk.forEach(o=>out.push(btn(o,o.att===(a&&a.uid)?"Attack":`${nameOf(o.att)} attacks`,"atk")));
   const bands=opts.filter(o=>o.type==="band");if(bands.length){const lead=bands.find(o=>a&&o.att===a.uid)||bands[0];out.push(btn(lead,`Band attack (${E.bandMembers(s,me).length} ready)`,"atk band"))}
@@ -634,9 +661,9 @@ function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(
   const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}" data-cls="${esc(card.cls||"Generic")}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
   return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · <span class="hl-note">outline = playable now · point at one of your Heroes to see the cards it can play</span></span></div><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div></section>`}
 function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1,k:"burn",name:"Soldier"});
-  const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","STR up (this turn)"],["nstr","STR down (this turn)"],["def","DEF up (this turn)"],["ndef","DEF down (this turn)"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"],["mill","Mill (top cards → discard)"],["equipfree","Equip for free"],["revealtop","Reveal top cards of a library"],["revmove","Move a revealed card"]].sort((x,y)=>x[1].localeCompare(y[1]));
+  const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","STR up (this turn)"],["nstr","STR down (this turn)"],["def","DEF up (this turn)"],["ndef","DEF down (this turn)"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["discToInv","Return from discard to inventory"],["playfree","Play a card from hand (free)"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"],["mill","Mill (top cards → discard)"],["equipfree","Equip for free"],["revealtop","Reveal top cards of a library"],["revmove","Move a revealed card"]].sort((x,y)=>x[1].localeCompare(y[1]));
   const az=(arr,nm)=>arr.slice().sort((x,y)=>nm(x).localeCompare(nm(y)));const cn=c=>(E.DB[c.id]||{name:c.name||""}).name;
-  const needT=!["draw","aura","naura","gold","summon","pillar","dagger","doll","discard","fromDisc","reveal","mill","revealtop","revmove"].includes(m.op);
+  const needT=!["draw","aura","naura","gold","summon","pillar","dagger","doll","discard","fromDisc","discToInv","playfree","reveal","mill","revealtop","revmove"].includes(m.op);
   const needN=["dmg","lose","heal","str","nstr","def","ndef","guard","draw","aura","naura","gold","revive","move","mill","revealtop"].includes(m.op);
   let extra="";
   if(m.op==="status"||m.op==="unstatus")extra=`<select data-pa="man-k">${E.STATUS.map(k=>`<option value="${k}" ${m.k===k?"selected":""}>${E.STATUS_NAME[k]}</option>`).join("")}</select>`;
@@ -645,6 +672,9 @@ function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1
   if(m.op==="dagger")extra=`<select data-pa="man-name"><option>Dagger</option><option ${m.name==="Viper Fang Dagger"?"selected":""}>Viper Fang Dagger</option></select>`;
   if(m.op==="discard")extra=`<select data-pa="man-card">${az(pl.hand,cn).map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`;
   if(m.op==="fromDisc")extra=`<select data-pa="man-card">${az(pl.disc,cn).map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`;
+  if(m.op==="discToInv"){const dc=az(pl.disc.filter(c=>c.id&&E.DB[c.id]),cn);extra=dc.length?`<select data-pa="man-card">${dc.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select>`:'<span class="pl-note">Your discard pile is empty.</span>'}
+  if(m.op==="playfree"){const hc=az(pl.hand.filter(c=>c.id&&E.DB[c.id]),cn);const fh=E.fixHero(s,U.me,{hero:U.manT});
+    extra=hc.length?`<select data-pa="man-card">${hc.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)}</option>`).join("")}</select><span class="pl-note">Played by: <b>${fh?esc(fh.name):"—"}</b> (click one of your Heroes to change). No Aura is paid and class or ready limits don't apply; you'll pick its targets next.</span>`:'<span class="pl-note">No cards in your hand.</span>'}
   if(m.op==="reveal"){const hc=az([...pl.inv.filter(o=>o.fd&&o.id),...pl.hand.filter(c=>E.DB[c.id]&&E.DB[c.id].sup==="Hidden")],cn);extra=hc.length?`<select data-pa="man-card">${hc.map(c=>`<option value="${c.uid}">${esc(E.DB[c.id].name)} (${pl.inv.includes(c)?"set":"in hand"}, ${E.hiddenCost(s,U.me,c)} Aura)</option>`).join("")}</select>`:'<span class="pl-note">You have no Hidden cards set or in hand.</span>'}
   const whoSel=`<select data-pa="man-name"><option ${m.name!=="Opponent"?"selected":""}>You</option><option ${m.name==="Opponent"?"selected":""}>Opponent</option></select>`;
   if(m.op==="mill"||m.op==="revealtop")extra=whoSel;
@@ -710,8 +740,8 @@ function begin(a){const s=view();
   if(a.type==="band"||a.type==="useFree"||a.type==="eqAct"){const slots=E.need(s,U.me,a);if(!slots.length){send(a);return}
     if(a.type==="band"&&!slots[0].cands.length){toast("There's nothing that can be attacked.");return}
     U.tgt={a,slots,i:0,picks:[],label:a.type==="band"?"the band attack":E.labelAction(s,U.me,a)};skipEmpty();render();return}
-  if(a.type==="soul"||a.type==="attack"||a.type==="ability"||a.type==="use"||a.type==="play"||a.type==="comboPlay"){
-    if((a.type==="play"||a.type==="comboPlay")&&!a._ready){const pl=s.p[U.me];const c=pl.hand.find(x=>x.uid===a.uid)||pl.lib.find(x=>x.uid===a.uid)||pl.exile.find(x=>x.uid===a.uid);const d=E.DB[c.id];const sc=SCR()[d.name];
+  if(a.type==="soul"||a.type==="attack"||a.type==="ability"||a.type==="use"||a.type==="play"||a.type==="comboPlay"||a.type==="fixPlay"){
+    if((a.type==="play"||a.type==="comboPlay"||a.type==="fixPlay")&&!a._ready){const pl=s.p[U.me];const c=pl.hand.find(x=>x.uid===a.uid)||pl.lib.find(x=>x.uid===a.uid)||pl.exile.find(x=>x.uid===a.uid);const d=E.DB[c.id];const sc=SCR()[d.name];
       if(sc&&sc.modes&&!a.modes){return pickModes(a,d,sc)}
       if((d.cost==="X"||(sc&&sc.x))&&a.x==null){return pickX(a,d,sc)}}
     if(a.type==="use"&&!a.modes){const f=E.find(s,a.uid);const isc=f&&SCR()[f.o.name];if(isc&&isc.act&&isc.act.modes)return pickModes(a,E.DB[f.o.id]||{name:f.o.name},isc.act)}
@@ -719,7 +749,7 @@ function begin(a){const s=view();
     if(!slots.length){send(a);return}
     const req=slots.find(sl=>!sl.opt&&!sl.cands.length);if(req&&a.type!=="attack"){/* engine allows required slots with no candidates (fizzle) */}
     if(a.type==="attack"&&!slots[0].cands.length){toast("There's nothing that can be attacked.");return}
-    U.tgt={a,slots,i:0,picks:[],label:a.type==="attack"?"the attack":a.type==="soul"?"the soul":E.labelAction(s,U.me,a).replace(/^Play /,"")};
+    U.tgt={a,slots,i:0,picks:[],label:a.type==="attack"?"the attack":a.type==="soul"?"the soul":a.type==="fixPlay"?(E.DB[(s.p[U.me].hand.find(x=>x.uid===a.uid)||{}).id]||{name:"the card"}).name+" (free)":E.labelAction(s,U.me,a).replace(/^Play /,"")};
     skipEmpty();render();return}
   send(a)}
 function skipEmpty(){const t=U.tgt;while(t&&t.i<t.slots.length&&!t.slots[t.i].cands.filter(u=>!(t.slots[t.i].distinct&&t.picks.includes(u))).length){t.picks.push(null);t.i++}
@@ -743,7 +773,7 @@ function pickModes(a,d,sc){const n=sc.modes.n;U.modeSel=[];
     <div class="actions"><button class="btn primary go" data-pa="mode-ok" ${U.modeSel.length!==Math.min(n,sc.modes.opts.length)?"disabled":""}>Continue</button><button class="btn" data-pa="close">Cancel</button></div>`);
   U.modeCtx={a,d,sc,draw};draw()}
 function pickX(a,d,sc){const s=view();const pl=s.p[U.me];const actor=E.actorFor(s,U.me);
-  const max=d.cost==="X"?Math.max(0,pl.aura-E.cardCost(s,U.me,actor,d,0)):(sc.x.max?Math.max(0,sc.x.max(s,U.me,actor)):6);
+  const max=d.cost==="X"?(a.type==="fixPlay"?10:Math.max(0,pl.aura-E.cardCost(s,U.me,actor,d,0))):(sc.x.max?Math.max(0,sc.x.max(s,U.me,actor)):6);
   modal(`<h2>${esc(d.name)}</h2><label class="field col">${d.cost==="X"?"Choose X (Aura to spend)":esc(sc.x.label)}<input type="number" id="pl-x" min="0" max="${max}" value="${max}"></label><p class="pl-note">Maximum ${max}.</p>
   <div class="actions"><button class="btn primary go" data-pa="x-ok">Continue</button><button class="btn" data-pa="close">Cancel</button></div>`);
   U.xCtx={a,max}}
@@ -821,9 +851,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     const [op,neg]=map[m.op]||[m.op,0];const sel=document.querySelector("[data-pa=man-card]");
     const a={type:"man",op,neg:!!neg,n:m.n,k:m.k,name:m.name,target:U.manT||null,card:sel?sel.value:null};
     if(op==="reveal"&&!a.card){toast("No Hidden card to reveal.");return}
+    if(op==="discToInv"&&!a.card){toast("Your discard pile is empty.");return}
+    if(op==="playfree"){if(!a.card){toast("No card in hand to play.");return}const fh=E.fixHero(s,U.me,{hero:U.manT});begin({type:"fixPlay",uid:a.card,hero:fh?fh.uid:null});return}
     if((op==="equipfree"||op==="revmove")&&!a.card){toast(op==="equipfree"?"No Equipment to equip.":"Nothing revealed to move.");return}
     if(op==="revmove"&&!["top","bottom","hand","discard"].includes(a.k))a.k="top";
-    if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc","reveal","mill","revealtop","revmove"].includes(op)&&!a.target){toast("Click a Hero on the board first.");return}
+    if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc","discToInv","reveal","mill","revealtop","revmove"].includes(op)&&!a.target){toast("Click a Hero on the board first.");return}
     send(a);return}
 });
 function redrawPrompt(){const m=document.getElementById("pl-modal");if(m)delete m.dataset.k;const s=view();if(m)m.remove();modals(s)}

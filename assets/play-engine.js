@@ -391,6 +391,9 @@ function die(s,h){const pl=P(s,h.owner);h.fl.dyingDone=false;pl.t.died=(pl.t.die
 function toDisc(s,o){const owner=o.owner;if(o.tok)return;const pl=P(s,owner);pl.disc.push({uid:o.uid,id:o.id,owner})}
 function toInv(s,pid,o){const pl=P(s,pid);pl.inv.push(o);overflow(s,pid)}
 E.toInv=toInv;
+/* a discard-pile entry is only {uid,id,owner}; rebuild a full inventory object before it goes back to inventory (fixes Refire showing "undefined") */
+function invObj(s,pid,c){const d=DB[c.id];if(!d)return c;if(d.kind==="equip")return eqObjFromCard(s,pid,c);return Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c)}
+E.invObj=invObj;
 function overflow(s,pid){const pl=P(s,pid);const cap=E.slots(s,pid);
   while(pl.inv.length>cap){let worst=0,wv=1e9;pl.inv.forEach((o,i)=>{const v=o.tok?-1:(num(def(o).cost)+(o.kind==="equip"?2:0));if(v<wv){wv=v;worst=i}});
     const o=pl.inv.splice(worst,1)[0];log(s,`Inventory full: ${pl.name} discards ${o.fd?"a face-down card":o.name}.`,pid);toDisc(s,o)}}
@@ -651,6 +654,8 @@ E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
     const sl=mk({k:"enemy",label:a.type==="band"?"band attack target":"attack target"},{attack:true,actor:att.o});const fz=forcedTarget(s,att.o);if(fz){sl.cands=[fz];sl.label="attack target (must attack)"}
     return[sl]}
   if(a.type==="useFree"){const f=find(s,a.uid);if(!f)return[];const isc=SC()[f.o.name];return specsFor(isc.act,a.modes).map(sp=>mk(sp,{actor:null,item:f.o}))}
+  if(a.type==="fixPlay"){const c=pl.hand.find(x=>x.uid===a.uid);if(!c)return[];const d=DB[c.id];const sc=SC()[d.name];const act=fixHero(s,pid,a);
+    if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes).map(sp=>mk(sp,{actor:act,card:d}))}
   if(a.type==="play"||a.type==="comboPlay"){const c=findCardAnywhere(s,pid,a.uid);if(!c)return[];const d=DB[c.id];const sc=SC()[d.name];
     const act=a.type==="comboPlay"?(s.pend[0]?comboActor(s,s.pend[0],a.uid):null):actor;
     if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes).map(sp=>mk(sp,{actor:act,card:d}))}
@@ -672,9 +677,9 @@ E.act=function(s,pid,a){CUR_S=s;
     log(s,`${P(s,pid).name} concedes.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`);return{ok:true}}
   const opts=E.options(s,pid);
   if(a.type==="play"){const ok=opts.some(o=>o.type==="play"&&findCardAnywhere(s,pid,o.uid)&&findCardAnywhere(s,pid,o.uid).id===(findCardAnywhere(s,pid,a.uid)||{}).id);if(!ok)return{ok:false,err:"You can't play that card now."}}
-  else if(!["fix","man","manDone","manCancel","scry","choose","wake","giveAction"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
+  else if(!["fix","man","fixPlay","manDone","manCancel","scry","choose","wake","giveAction"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
   if(a.type==="fix"&&!(s.phase==="battle"&&s.prio===pid&&!s.pend.length))return{ok:false,err:"Rules fixes are made on your priority."};
-  if(["man","manDone"].includes(a.type)&&!(s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===pid))return{ok:false,err:"No manual resolution open."};
+  if(["man","fixPlay","manDone"].includes(a.type)&&!(s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===pid))return{ok:false,err:"No manual resolution open."};
   if(a.type==="scry"&&!(s.pend[0]&&s.pend[0].type==="scry"&&s.pend[0].pid===pid))return{ok:false,err:"No scry open."};
   if(a.type==="choose"&&!(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].pid===pid))return{ok:false,err:"Nothing to choose."};
   if(a.type==="wake"){const wh=heroByUid(s,a.hero);if(!wh||wh.owner!==pid||!wh.med)return{ok:false,err:"That Hero isn't Meditating."}}
@@ -686,6 +691,7 @@ E.act=function(s,pid,a){CUR_S=s;
       if(!slots[i].cands.includes(t))return{ok:false,err:`Invalid target for ${slots[i].label}.`};
       if(slots[i].distinct&&tg.slice(0,i).includes(t))return{ok:false,err:"Choose different targets."}}
     if(a.type==="attack"&&!slots[0].cands.length)return{ok:false,err:"There's nothing to attack."}}
+  if(a.type==="fixPlay"){const c=P(s,pid).hand.find(x=>x.uid===a.uid);if(!c)return{ok:false,err:"That card isn't in your hand."};const fh=fixHero(s,pid,a);if(!fh&&DB[c.id].kind==="equip")return{ok:false,err:"Choose one of your living Heroes to equip it."}}
   if(a.type==="manCancel"){const pr=s.pend[0];if(!(pr&&pr.type==="manual"&&pr.pid===pid&&s.undo&&pr.undoId===s.undo.id))return{ok:false,err:"Nothing to cancel."};
     const what=s.undo.what,keepLog=s.log;const snap=JSON.parse(s.undo.snap);Object.keys(s).forEach(k=>delete s[k]);Object.assign(s,snap);s.log=keepLog;s.seq=(s.seq||0)+2;
     log(s,`✋ ${P(s,pid).name} cancels ${what} (undone).`,pid);settle(s);return{ok:true}}
@@ -729,6 +735,9 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"scry":{const pr=s.pend.shift();finishScry(s,pid,pr,a);return}
   case"choose":{const pr=s.pend.shift();finishChoose(s,pid,pr,a.picks||[]);return}
   case"man":manualOp(s,pid,a);return;
+  /* Rules fix: play a card from hand for free (no Aura, no class or ready limits); the chosen Hero plays it. Doesn't use an action. */
+  case"fixPlay":{const h=fixHero(s,pid,a);const c=pl.hand.find(x=>x.uid===a.uid);if(!c)return;log(s,`✋ ${pl.name} plays ${DB[c.id].name} for free by rules fix${h?` (${h.name})`:""}.`,pid);
+    playCard(s,pid,h,a.uid,a,{free:true});checkDeaths(s);return}
   case"manDone":{const pr=s.pend.shift();log(s,pr&&pr.given?`${pl.name} is done; control returns to ${P(s,opp(pid)).name}.`:`${pl.name} finishes resolving by hand.`,pid);return}
   case"giveAction":{const op=opp(pid);s.pend.unshift({type:"manual",pid:op,title:`${pl.name} gave you an action`,text:"Resolve anything that needs your hands (a card you control, a choice, a by-hand effect). This does not use an action. Press Done to hand control back.",given:true});
     log(s,`✋ ${pl.name} gives ${P(s,op).name} an action to resolve by hand.`,pid);return}
@@ -816,6 +825,9 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   queueResolve(s,pid,{k:"card",actor:actor&&actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},targets,modes:a.modes||[],x,combo:!!o.combo,echo:!!o.echo,hand:fromHand,grant},trig);
 }
 E.playCard=playCard;
+/* the Hero that plays a rules-fix card: the one chosen on the board, else the acting Hero, else the first living one */
+function fixHero(s,pid,a){const pl=P(s,pid);const h=a&&a.hero?heroByUid(s,a.hero):null;if(h&&h.owner===pid&&!h.dead)return h;return actorFor(s,pid)||living(pl)[0]||null}
+E.fixHero=fixHero;
 function hasEcho(d){return/(^|[.)] )Echo\.(\s|$)/.test(d.rules||"")}
 E.hasEcho=hasEcho;
 /* Combo cards played = cards with the Combo subtype (Hidden ones count when revealed, not when set) */
@@ -859,7 +871,7 @@ function resolveCont(s,pid,cont,mods){
   if(cont.k==="item"){const isc=SC()[cont.itemName];const o=find(s,cont.item);const ctx=mkCtx(s,pid,actor,DB[cont.itemName],o?o.o:null,cont.targets,{mods,arrow:cont.arrow,modes:cont.modes||[],itemUid:cont.item,upg:(s.upg&&s.upg[cont.item])||0});
     if(cont.arrow)ctx.arrowBonus=arrowBonus(s,pid,actor);
     withSrc(s,cont.itemName,()=>isc.act.run(ctx));
-    if(cont.refire){const pl=P(s,pid);const i=pl.disc.findIndex(c=>c.uid===cont.item);if(i>=0){const c=pl.disc.splice(i,1)[0];toInv(s,pid,c);log(s,`Refire: ${cont.itemName} returns to ${pl.name}'s inventory.`,pid)}}
+    if(cont.refire){const pl=P(s,pid);const i=pl.disc.findIndex(c=>c.uid===cont.item);if(i>=0){const c=pl.disc.splice(i,1)[0];toInv(s,pid,invObj(s,pid,c));log(s,`Refire: ${cont.itemName} returns to ${pl.name}'s inventory.`,pid)}}
     if(cont.arrow){const pl=P(s,pid);pl.t.arrows=(pl.t.arrows||0)+1;pl.fl.arrowNext=null;pl.fl.multi=0;pl.fl.multiPierce=0;
       /* Wild Archer: after YOUR first Arrow each turn (any Hero firing it), ready it; L3: also after every Arrow it fires itself */
       living(pl).filter(h=>h.name==="Wild Archer"&&h.ex&&(pl.t.arrows===1||(h===actor&&h.lvl>=3))).forEach(h=>{h.ex=false;log(s,`${h.name} readies.`,pid)})}
@@ -1040,6 +1052,7 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
     else{lp.lib.push(c);log(s,`✋ ${pl.name} puts ${nm} on top of ${lp.name}'s library.`,pid)}
     if(a.k!=="top")pr.revTop.uids=pr.revTop.uids.filter(u=>u!==c.uid);break}
   case"fromDisc":{const c=pl.disc.find(c=>c.uid===a.card);if(c){pl.disc.splice(pl.disc.indexOf(c),1);pl.hand.push(c);log(s,`${who} returns ${DB[c.id].name} from discard to hand.`,pid)}break}
+  case"discToInv":{const c=pl.disc.find(c=>c.uid===a.card);if(c){pl.disc.splice(pl.disc.indexOf(c),1);log(s,`${who} returns ${DB[c.id].name} from discard to inventory.`,pid);toInv(s,pid,invObj(s,pid,c))}break}
   case"revive":if(t&&t.kind==="hero"&&t.dead&&!t.surr&&t.owner===pid){t.dead=false;t.dmg=Math.max(0,maxHp(s,t)-Math.max(1,n));t.ex=true;log(s,`${who} revives ${t.name} with ${maxHp(s,t)-t.dmg} HP.`,pid)}break;
   case"unequip":if(t&&t.kind==="equip")unequip(s,t);break;
   case"move":if(t&&t.kind==="hero"){const op=P(s,t.owner);const i=op.heroes.indexOf(t);const j=Math.max(0,Math.min(2,a.n|0));op.heroes.splice(i,1);op.heroes.splice(j,0,t);log(s,`${who}: ${t.name} moves to ${POS[j]}.`,pid)}break;

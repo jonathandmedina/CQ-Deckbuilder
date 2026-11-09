@@ -255,7 +255,7 @@ button.card:hover{border-color:var(--cc)}
 .dl li .dot{width:8px;height:8px;border-radius:50%;background:var(--cc);flex:none}
 .dl li .cst{color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums}
 .dl li .leg-ico{flex:none;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;background:#E0A526;color:#2B1D00;font-weight:900;font-size:.68rem;line-height:1;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
-#hovercard{position:fixed;z-index:2000;width:260px;pointer-events:none;display:none;filter:drop-shadow(0 8px 22px rgba(0,0,0,.45))}
+#hovercard{position:fixed;z-index:2000;width:min(390px,92vw,calc((100vh - 16px)*5/7));pointer-events:none;display:none;filter:drop-shadow(0 8px 22px rgba(0,0,0,.45))}
 #hovercard>*{width:100%;margin:0}
 .mini{border:1px solid var(--line);background:none;border-radius:5px;width:22px;height:22px;padding:0;line-height:1;font-size:.95rem}
 .issues{margin:0;padding:10px 12px;border-radius:10px;font-size:.88rem;list-style:none;display:flex;flex-direction:column;gap:3px}

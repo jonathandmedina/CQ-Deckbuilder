@@ -114,7 +114,7 @@ const enraged=(s,h)=>h.kind==="hero"&&!h.dead&&hpOf(s,h)*2<=maxHp(s,h);E.enraged
 function modSum(o,k){let n=0;(o.mods||[]).forEach(m=>{if(m[k])n+=m[k]});return n}
 const modHas=(o,k)=>(o.mods||[]).some(m=>m[k]);
 function defOf(s,o){
-  if(o.kind==="hero"){const pl=P(s,o.owner);let d=o.base.def+o.bon.def+o.plus+modSum(o,"def")+(pl.pm.def||0);
+  if(o.kind==="hero"){const pl=P(s,o.owner);let d=o.base.def+o.bon.def+modSum(o,"def")+(pl.pm.def||0);
     eqList(o).forEach(e=>d+=e.pdef||0);
     if(o.name==="Sun Paladin"&&o.ex)d+=2;
     const i=pl.heroes.indexOf(o);if(i>0&&pl.heroes[i-1].name==="Holy Guardian"&&!pl.heroes[i-1].dead)d+=1;
@@ -125,7 +125,7 @@ function defOf(s,o){
   return 0}
 function strOf(s,o,vs){
   if(o.kind==="hero"){const pl=P(s,o.owner);let b=o.name==="King of Curses"?curses(s):o.base.str;
-    let v=b+o.bon.str+o.plus+modSum(o,"str")+(pl.pm.str||0);
+    let v=b+o.bon.str+modSum(o,"str")+(pl.pm.str||0);
     eqList(o).forEach(e=>v+=e.pstr||0);
     if(heroIs(o,"Barbarian"))v+=trophies(pl);
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
@@ -354,7 +354,14 @@ function removeStatus(s,o,n){let r=0;for(let i=0;i<n;i++){const k=STATUS.find(k=
 E.removeStatus=removeStatus;
 
 /* ---------- death / destroy ---------- */
-function checkDeaths(s){let again=true;while(again){again=false;
+/* update 24 meditation: when a Meditating Hero readies (any way), remove its meditation counters; its party gains that much Aura and it gets +1 STR per counter until Dusk */
+function medWake(s,h){if(!h||h.kind!=="hero"||!h.med)return;h.med=false;h.keepMed=true;const n=h.plus||0;h.plus=0;
+  if(n>0){P(s,h.owner).aura+=n;addMod(h,{str:n,src:"Meditation"});log(s,`${h.name} stops Meditating: ${P(s,h.owner).name} gains ${n} Aura and ${h.name} gets +${n} STR until Dusk.`,h.owner)}
+  else log(s,`${h.name} stops Meditating.`,h.owner)}
+E.medWake=medWake;
+/* puts a Hero into Meditation (exhausts it) */
+E.meditate=(s,h)=>{if(!h||h.dead)return;h.ex=true;h.med=true;h.keepMed=true;log(s,`${h.name} is Meditating.`,h.owner)};
+function checkDeaths(s){s.p.forEach(pl=>pl.heroes.forEach(h=>{if(h.med&&!h.ex&&!h.dead)medWake(s,h)}));let again=true;while(again){again=false;
   for(let pid=0;pid<s.p.length;pid++){const pl=s.p[pid];
     for(const h of pl.heroes)if(!h.dead&&hpOf(s,h)<=0){if(dyingWindow(s,h))continue;die(s,h);again=true}
     for(const o of pl.bf.slice())if(o.kind==="summon"&&hpOf(s,o)<=0){if(pl.t.shelter){o.dmg=maxHp(s,o)-1;log(s,`${o.name} can't be destroyed this turn (Shelter from the Storm); it stays at 1 HP.`,pid);continue}destroyObj(s,o);again=true}
@@ -550,7 +557,7 @@ E.options=function(s,pid){
   if(s.phase==="mull"){const pl=P(s,pid);if(pl.mullDone)return[];return[{type:"keep"},{type:"mull"}]}
   if(s.phase==="dawn"){if(s.dawnDone[pid])return[];const pl=P(s,pid);const out=[];
     pl.inv.forEach(o=>{if(!o.fd&&def(o).sub==="Gemstone")living(pl).filter(h=>!h.ex).forEach(h=>out.push({type:"gem",uid:o.uid,hero:h.uid}))});
-    pl.heroes.forEach(h=>{if(h.med&&!h.dead)out.push({type:"wake",hero:h.uid,v:!h.keepMed})});
+    pl.heroes.forEach(h=>{if(h.med&&!h.dead)out.push({type:"wake",hero:h.uid,v:h.keepMed})});
     out.push({type:"dawnDone"});return out}
   if(s.phase==="town"){if(!s.town||s.town.order[s.town.i]!==pid)return[];const pl=P(s,pid);const out=[];
     const used=s.town.used||{};
@@ -670,7 +677,7 @@ E.act=function(s,pid,a){CUR_S=s;
   if(["man","manDone"].includes(a.type)&&!(s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===pid))return{ok:false,err:"No manual resolution open."};
   if(a.type==="scry"&&!(s.pend[0]&&s.pend[0].type==="scry"&&s.pend[0].pid===pid))return{ok:false,err:"No scry open."};
   if(a.type==="choose"&&!(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].pid===pid))return{ok:false,err:"Nothing to choose."};
-  if(a.type==="wake"&&!(s.phase==="dawn"&&!s.dawnDone[pid]))return{ok:false,err:"Only at Dawn."};
+  if(a.type==="wake"){const wh=heroByUid(s,a.hero);if(!wh||wh.owner!==pid||!wh.med)return{ok:false,err:"That Hero isn't Meditating."}}
   if(a.type==="giveAction"&&!(s.phase==="battle"&&(pid===0||pid===1)&&(s.pend.length?(s.pend[0].type==="manual"&&s.pend[0].pid===pid):s.prio===pid)))return{ok:false,err:"You can give an action on your priority or from your resolve-by-hand panel."};
   /* targets */
   const slots=E.need(s,pid,a);const tg=a.targets||[];
@@ -1101,7 +1108,7 @@ function doDawn(s){
   s.p.forEach((pl,pid)=>{
     pl.heroes.forEach(h=>{if(h.dead)return;
       if(h.fat){h.fat=0;h.fl.fatRested=true;h.ex=true;log(s,`${h.name} is Fatigued and doesn't ready this Dawn (Fatigue counter removed).`,pid)}
-      else if(h.med&&h.keepMed){h.plus++;h.fl.fatRested=false;log(s,`${h.name} keeps Meditating (+1/+1 counter).`,pid)}else{if(h.med){h.med=false;h.fl.medEnd=true}h.ex=false;h.fl.fatRested=false}
+      else if(h.med&&h.keepMed){h.plus++;h.fl.fatRested=false;log(s,`${h.name} keeps Meditating (meditation counter: ${h.plus}).`,pid)}else{h.ex=false;h.fl.fatRested=false}
       h.eqGuard=guardEq(h,s)});
     pl.bf.forEach(o=>{if(o.kind==="summon")o.ex=false});
     pl.inv.forEach(o=>{if(o.exh)o.exh=false});
@@ -1162,7 +1169,7 @@ function doDusk(s){
   s.p.forEach((pl,pid)=>{if(pl.fl.promoRound===s.round)nextInit=pid});
   s.p.forEach((pl,pid)=>{
     const clean=o=>{o.mods=(o.mods||[]).filter(m=>!(m.until==="dusk"||(typeof m.until==="number"&&m.until<=s.round)))};
-    pl.heroes.forEach(h=>{if(h.fl.frogName){h.name=h.fl.frogName;h.fl.frogName=null}h.fl.dyingDone=false;clean(h);h.guard=0;h.gsrc=[];if(!h.med&&h.plus&&h.fl.medEnd){h.plus=0;h.fl.medEnd=false}});
+    pl.heroes.forEach(h=>{if(h.fl.frogName){h.name=h.fl.frogName;h.fl.frogName=null}h.fl.dyingDone=false;clean(h);h.guard=0;h.gsrc=[];});
     pl.bf.forEach(clean);
     pl.pm={};pl.t={};pl.fl.mageNext=pl.fl.mageAll=pl.fl.trapNext=pl.fl.trapAll=pl.fl.songDisc=false;pl.fl.arrowNext=null;pl.fl.rapidPierce=false;pl.fl.preventNext=false;
     if(pl.aura>0)log(s,`${pl.name} loses ${pl.aura} unspent Aura.`,pid);pl.aura=0;

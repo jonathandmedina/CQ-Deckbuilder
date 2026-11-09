@@ -79,7 +79,7 @@ const REMINDERS=[
   [/\bGuard (\d+|X)\b/,m=>`Prevents the next ${m[1]} damage to it, before DEF, until Dusk.`],
   [/\bHarmonize (\d+|X)\b/,m=>`Exhaust ${m[1]} other ready Heroes you control.`],
   [/\bLifelink\b/,()=>"When it deals damage, it heals that much."],
-  [/\bMeditates?\b/,()=>"Exhaust it. Each Dawn it stays exhausted, it gets a +1/+1 counter."],
+  [/\bMeditates?\b/,()=>"Exhaust it. Each Dawn it stays exhausted, it gets a meditation counter. When it readies, remove them: gain that much Aura and +1 Strength each until Dusk."],
   [/\bMills? (\d+|X)\b/,m=>`Move the top ${m[1]==="1"?"card":m[1]+" cards"} of the library to the discard pile.`],
   [/\bPiercing(?: (\d+|X))?\b/,m=>m[1]?`Its damage ignores ${m[1]} of the target's DEF.`:"Its damage ignores all of the target's DEF."],
   [/\bTip\b/,()=>"Gain 1 Gold. You gain Gold from Tip only once per round."],

@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 9, 2026 (update 23)*
+*Version: November 9, 2026 (update 24)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -475,7 +475,7 @@ There are five status counters. At Dawn, each damaging status deals its damage, 
 
 ### Other Counters
 
-Some cards use other counters, such as +1/+1 counters, Petal counters, Campfire counters, Fury counters and Fatigue counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
+Some cards use other counters, such as meditation counters, Petal counters, Campfire counters, Fury counters and Fatigue counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
 
 - **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Burden puts one on its Hero whenever that Hero plays a card, activates an ability or attacks; Heavy Bow puts one on its Hero whenever that Hero becomes exhausted; Rage Brute’s “Fatigue:” ability puts one on itself.)
 
@@ -562,7 +562,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Enraged** | A Hero is Enraged while it is at or below half its maximum HP. |
 | **Harmonize X** | Exhaust X other ready Heroes you control (not the Hero playing the card) to gain the effect after the colon. |
 | **Lifelink** | When this Hero deals damage, heal it that much. |
-| **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, you may keep it exhausted. If you do, it gets a +1/+1 counter. When it readies, it stops Meditating, and all its +1/+1 counters (including any from Monk Tactics) are removed at the next Dusk. |
+| **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, you may keep it exhausted. If you do, it gets a meditation counter. When it readies, it stops Meditating: remove all its meditation counters (including any from Monk Tactics), your party gains that much Aura, and the Hero gains +1 Strength for each one removed until Dusk. |
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
 | **Piercing X** | Damage from this ignores X points of the target’s DEF (attacks, spells, abilities and any other damage). Piercing with no number ignores all of the target’s DEF. |
@@ -572,7 +572,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Spell Damage Pillar** | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. |
 | **Tip** | Gain 1 Gold. You gain Gold from Tip only once per round (see Tip in Other Rules). |
 | **Stealth** | This Hero can’t be targeted by enemy cards or abilities. It can still be attacked. |
-| **+1/+1 counter** | +1 STR and +1 DEF while on the Hero. |
+| **Meditation counter** | No effect on stats. When the Meditating Hero readies, each one becomes 1 Aura and +1 STR until Dusk. |
 
 **Damage types.** Fire, Ice, Lightning, Light and Dark damage work like normal damage for now. They will matter in a future update.
 
@@ -748,7 +748,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 
 ### Statuses, death and summons
 
-- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF. +1/+1, Petal, Campfire and Fury counters are not status counters.
+- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF. Meditation, Petal, Campfire and Fury counters are not status counters.
 - **Burned**: Status. 1 damage each Dawn Phase. Cards say “Burn”.
 - **Poisoned**: Status. 1 damage each Dawn Phase. Cards say “Poison”.
 - **Wounded**: Status. 1 damage each Dawn Phase. Cards say “Wound”.
@@ -770,8 +770,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Combo (Monk)**: When a card with Combo finishes resolving (after any Scry), reveal the top card of your library. If it’s a Combo card, you may play it or a Combo card from your hand, paying its Aura cost. A Combo card is a card with the Combo subtype.
 - **Mill X**: Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.)
 - **Petal counter (Monk)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
-- **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn you may keep it exhausted and give it a +1/+1 counter. When it readies, its counters come off at the next Dusk.
-- **+1/+1 counter (Monk)**: +1 STR and +1 DEF. Meditating Heroes gain them, and some Monk Tactics add more.
+- **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn you may keep it exhausted and give it a meditation counter. When it readies, remove its counters: your party gains that much Aura, and it gets +1 STR per counter until Dusk.
+- **Meditation counter (Monk)**: Builds up on a Meditating Hero (some Monk Tactics add more). It does nothing until the Hero readies, then each one becomes 1 Aura and +1 STR until Dusk.
 - **Piercing X (Monk)**: Damage from this ignores X points of the target's DEF. Piercing with no number ignores all DEF.
 - **Echo (Bard)**: If you played it from your hand, exile it and play it again for free at your next Dawn (you may choose new targets), then discard it. A card only repeats once.
 - **Tip (Bard)**: Gain 1 Gold, only once per round.

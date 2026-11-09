@@ -11,7 +11,7 @@ AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e
       /* temporary STR only matters while the Hero can still attack this turn */
       const tmp=(h.mods||[]).reduce((n,m)=>n+(m.until==="dusk"&&m.str>0?m.str:0),0)+(pl.pm.str||0);
       const tv=s.phase==="battle"&&!h.ex?W.tmpStr*tmp:0;
-      v+=W.alive+W.hp*st.hp+W.str*Math.min(Math.max(0,st.str-tmp),12)+tv+W.def*Math.min(st.def,8)+W.aura*st.aura+W.lvl*h.lvl+W.guard*(h.guard+h.eqGuard)+h.plus*.5;
+      v+=W.alive+W.hp*st.hp+W.str*Math.min(Math.max(0,st.str-tmp),12)+tv+W.def*Math.min(st.def,8)+W.aura*st.aura+W.lvl*h.lvl+W.guard*(h.guard+h.eqGuard)+h.plus*1.2;
       if(h.fat&&!h.fl.fatRested)v-=2.5;v-=W.status*(h.st.burn+h.st.poison+h.st.wound+h.st.confuse)+W.stun*h.st.stun;
       if(s.phase==="battle"&&E.noAttack(s,h))v+=1.5;
       v+=E.eqList(h).length*.6+h.ench.reduce((n,e)=>n+((E.DB[e.id]||{}).sub==="Curse"?-1.5:(e.owner===p?1:-1.5)),0)});
@@ -71,6 +71,8 @@ AI.choose=function(s,pid){if(s.over)return null;
       return best}
     return quick(s,pid,pr)}
   const pl=s.p[pid];
+  /* update 24: set a Meditating Hero to wake at the next Dawn once it has 2+ meditation counters */
+  if(s.phase!=="mull"){const mh=pl.heroes.find(h=>h.med&&!h.dead&&h.keepMed&&(h.plus||0)>=2);if(mh)return{type:"wake",hero:mh.uid,v:true}}
   if(s.phase==="mull"){if(pl.mullDone)return null;const aura=pl.heroes.reduce((n,h)=>n+h.base.aura,0);const cls=new Set(pl.heroes.map(h=>h.cls));
     const good=pl.hand.filter(c=>{const d=E.DB[c.id];return(d.cls==="Generic"||cls.has(d.cls))&&(parseInt(d.cost,10)||0)<=aura+1}).length;
     return good>=2||pl.mulled?{type:"keep"}:{type:"mull"}}

@@ -168,7 +168,7 @@ def("Larceny",{t:[t("item","enemy item",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner)],r
 def("Petty Theft",{t:[t("item","enemy Consumable",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner&&(E.DB[o.id]||{}).sub==="Consumable")],run(c){steal(c,c.t[0])}});
 function steal(c,o){if(!o)return;const f=E.find(c.s,o.uid);if(!f||f.zone!=="inv")return;const from=c.s.p[f.pid];from.inv.splice(from.inv.indexOf(o),1);o.ctrl=c.pid;E.toInv(c.s,c.pid,o);log(c,`${c.me.name} gains control of ${o.name}.`)}
 /* ===== Monk ===== */
-def("Jab",dmgCard(2,{pierce:1}));def("Lunge",dmgCard(1));def("Roundhouse",dmgCard(3,{pierce:1}));
+def("Jab",dmgCard(2));def("Lunge",dmgCard(1));def("Roundhouse",dmgCard(3,{pierce:1}));
 def("Ascend",{t:[HERO],run(c){buff(c.t[0],{str:2})}});
 def("Breath",{run(c){scry(c,1)}});
 def("Flurry of Blows",{t:[ANY],run(c){D(c,c.t[0],2,{pierce:1});D(c,c.t[0],2,{pierce:1})}});
@@ -178,12 +178,17 @@ def("Rising Dragon",{t:[ANY],run(c){D(c,c.t[0],2+Math.max(0,combosPlayed(c)-1))}
 def("Finisher",{t:[ANY],run(c){D(c,c.t[0],combosPlayed(c))}});
 def("Focus",{run(c){c.me.pm.pierce=1;log(c,"Attacks gain Piercing 1 this turn.")}});
 def("Glimpse the Future",{run(c){scry(c,3)}});
-def("Meditate",{run(c){c.actor.ex=true;c.actor.med=true;c.actor.keepMed=true;log(c,`${c.actor.name} is Meditating.`)}});
-def("Deep Contemplation",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){draw(c,1);if(c.t[0])c.t[0].plus++}});
-def("Defend Prayer",{t:[t("any","damage target"),t("meditating","Meditating Hero for the counter",null,{opt:true})],run(c){D(c,c.t[0],2);if(c.t[1])c.t[1].plus++}});
-def("Look Ahead",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){if(c.t[0])c.t[0].plus++;scry(c,2)}});
-def("Awakened Fist",{t:[t("meditating","Meditating Hero"),t("enemy","attack target")],can:(s,pid)=>s.p[pid].heroes.some(h=>h.med&&!h.dead),run(c){const h=c.t[0];if(!h)return;h.med=false;h.fl.medEnd=true;h.ex=false;attack(c,h,c.t[1],{pierce:1})}});
-def("Balanced Choice",M(2,[{label:"Scry 2",run:c=>scry(c,2)},{label:"Target Hero gains +2 STR",t:[HERO],run:c=>buff(c.t[0],{str:2})},{label:"This Hero Meditates",run:c=>{c.actor.ex=true;c.actor.med=true;c.actor.keepMed=true}}]));
+/* update 24 meditation rework: meditation counters (no stats); waking turns them into Aura and +1 STR each until Dusk (engine medWake) */
+const medCtr=(c,h)=>{if(h&&h.med&&!h.dead){h.plus=(h.plus||0)+1;log(c,`${h.name} gets a meditation counter (${h.plus}).`)}};
+/* "If no Hero you control is Meditating, this Hero may Meditate." */
+const medMay=c=>{const a=c.actor;if(!a||a.dead||c.me.heroes.some(h=>h.med&&!h.dead))return;E.ask(c.s,c.pid,`${a.name} may Meditate`,[{label:`${a.name} Meditates`,v:a.uid},{label:"Don't Meditate",v:null}],"medMay",{name:c.def&&c.def.name})};
+E.ASK.medMay=(s,pid,pr,v)=>{if(v==null)return;const h=E.heroByUid(s,v);if(h&&!h.med)E.meditate(s,h)};
+def("Meditate",{run(c){E.meditate(c.s,c.actor);buff(c.actor,{def:3});log(c,`${c.actor.name} gets +3 DEF until Dusk.`)}});
+def("Deep Contemplation",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){draw(c,1);medCtr(c,c.t[0]);medMay(c)}});
+def("Defend Prayer",{t:[t("any","damage target"),t("meditating","Meditating Hero for the counter",null,{opt:true})],run(c){D(c,c.t[0],2);medCtr(c,c.t[1]);medMay(c)}});
+def("Look Ahead",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){medCtr(c,c.t[0]);scry(c,2);medMay(c)}});
+def("Awakened Fist",{t:[t("meditating","Meditating Hero"),t("enemy","attack target")],can:(s,pid)=>s.p[pid].heroes.some(h=>h.med&&!h.dead),run(c){const h=c.t[0];if(!h)return;h.ex=false;E.medWake(c.s,h);attack(c,h,c.t[1],{pierce:99})}});
+def("Balanced Choice",M(2,[{label:"Scry 2",run:c=>scry(c,2)},{label:"Target Hero gains +2 STR",t:[HERO],run:c=>buff(c.t[0],{str:2})},{label:"This Hero Meditates",run:c=>E.meditate(c.s,c.actor)}]));
 def("Well Trained",{t:[HERO],modes:{n:1,opts:[{label:"If it reaches an even Level, gain +1 STR"},{label:"If it reaches an even Level, gain +1 DEF"},{label:"If it reaches an even Level, gain +1 AURA"}]},run(c){if(combosPlayed(c)>=3&&c.t[0])E.levelUp(c.s,c.t[0],["str","def","aura"][(c.modes||[])[0]||0])}});
 def("Stunner",{run(c){c.me.fl.stunner=true}});
 /* ===== Bard ===== */
@@ -295,6 +300,7 @@ def("Revitalize",item(2,[],c=>{c.me.aura+=4;log(c,`${c.me.name} gains 4 Aura.`)}
 def("Smoke Bomb",item(1,[AHERO],c=>buff(c.t[0],{stealth:1}),{exile:true}));
 def("Vial of Venom",item(1,[ANY],c=>st(c,c.t[0],"poison",2),{exile:true}));
 def("Energizing Ale",item(2,[t("ally","another ally",(s,o,x)=>!x||!x.actor||o!==x.actor)],c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}},{exile:true}));
+def("Meditation Shrine",item(0,[],c=>E.meditate(c.s,c.actor),{ex:true,anyClass:true}));
 def("Fireball Flask",item(2,[AL],c=>{if(c.t[0]){buff(c.t[0],{str:3});log(c,`${c.t[0].name} gets +3 STR this turn.`)}},{exile:true}));
 def("Undeniable Performance",{run(c){c.me.fl.tipFromRound=c.s.round;log(c,"Tips you get this turn come out of an opposing party's Gold.")}});
 song("Toast to the House",{run(c){c.s.p.forEach((pl,i)=>E.draw(c.s,i,1));log(c,"All parties draw a card.");E.tip(c.s,c.pid,"Toast to the House")}});
@@ -366,6 +372,7 @@ hab("Battle Minstrel",[{label:"Return a Song from discard to hand",can:(s,pid)=>
 hab("Dark Channeler",[{label:"Lose 4 HP: gain 3 Aura",can:(s,pid,a)=>a.lvl<3,run:c=>{E.loseHp(c.s,c.actor,4,"Dark Channeler");c.me.aura+=3;log(c,`${c.me.name} gains 3 Aura.`)}},{label:"Lose 2 HP: gain 3 Aura",lvl:3,run:c=>{E.loseHp(c.s,c.actor,2,"Dark Channeler");c.me.aura+=3;log(c,`${c.me.name} gains 3 Aura.`)}}]);
 hab("Divine Knight",[{label:"Ally +2 DEF this turn",t:[AL],run:c=>buff(c.t[0],{def:2})},{label:"Ally +5 DEF this turn",lvl:3,cost:2,t:[AL],run:c=>buff(c.t[0],{def:5})}]);
 hab("Essence Reaper",[{label:"Stun target enemy",lvl:3,t:[EN],run:c=>st(c,c.t[0],"stun")}]);
+hab("Trainee Vincent",[{label:"Meditate",run:c=>E.meditate(c.s,c.actor)}]);
 hab("Inspiration Herald",[{label:"Ready another ally",t:[t("ally","another ally",(s,o,x)=>o.uid!==x.actor.uid&&o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}}]);
 hab("Rage Brute",[{label:"Fatigue: +STR equal to its STR this turn",ex:false,can:(s,pid,a)=>!a.fat,run:c=>{const n=E.str(c.s,c.actor);c.actor.fat=1;buff(c.actor,{str:n});log(c,`${c.actor.name} gets a Fatigue counter and gains +${n} STR this turn (it won't ready at the next Dawn).`)}}]);
 hab("Rootbinder",[{label:"Summons +1 STR this turn",run:c=>{c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}}]);
@@ -501,10 +508,10 @@ hid("Pillage the Dead","dying",(s,pid,tr)=>{const f=E.find(s,tr.hero);return f&&
 def("Shadow Strike",{t:[rogueEx,t("enemy","attack target")],can:(s,pid)=>s.p[pid].heroes.some(h=>!h.dead&&h.ex&&E.heroIs(h,"Rogue")),run(c){const r=c.t[0],tg=c.t[1];if(r&&tg)attack(c,r,tg,{ignoreDef:true,noExhaust:true})}});
 /* Hero abilities */
 hab("Dr. Vonugutt",[{label:"Add another counter of a type on a Hero",t:[HERO],run:c=>{const h=c.t[0];if(!h)return;const o=[];E.STATUS.forEach(k=>{if(h.st[k]>0)o.push({label:E.STATUS_NAME[k],v:k})});
-    if(h.plus>0)o.push({label:"+1/+1",v:"plus"});if(h.fat)o.push({label:"Fatigue",v:"fat"});if(h.lvl>0&&h.lvl<6)o.push({label:"Level",v:"lvl"});
+    if(h.plus>0)o.push({label:"Meditation",v:"plus"});if(h.fat)o.push({label:"Fatigue",v:"fat"});if(h.lvl>0&&h.lvl<6)o.push({label:"Level",v:"lvl"});
     if(!o.length){log(c,`${h.name} has no counters.`);return}E.ask(c.s,c.pid,`Dr. Vonugutt: add another counter to ${h.name}`,o,"vonu",{h:h.uid,name:"Dr. Vonugutt"})}},
   {label:"Double the status counters on a Hero",lvl:3,t:[HERO],run:c=>{const h=c.t[0];if(!h)return;E.STATUS.forEach(k=>{if(h.st[k]>0)E.addStatus(c.s,h,k,h.st[k])})}}]);
-A.vonu=(s,pid,pr,v)=>{const h=E.heroByUid(s,pr.data.h);if(!h||h.dead)return;if(v==="plus"){h.plus++;E.log(s,`${h.name} gets another +1/+1 counter.`,pid)}else if(v==="fat"){h.fat=(h.fat||0)+1;E.log(s,`${h.name} gets another Fatigue counter.`,pid)}else if(v==="lvl")E.levelUp(s,h,"str");else E.addStatus(s,h,v,1)};
+A.vonu=(s,pid,pr,v)=>{const h=E.heroByUid(s,pr.data.h);if(!h||h.dead)return;if(v==="plus"){h.plus++;E.log(s,`${h.name} gets another meditation counter.`,pid)}else if(v==="fat"){h.fat=(h.fat||0)+1;E.log(s,`${h.name} gets another Fatigue counter.`,pid)}else if(v==="lvl")E.levelUp(s,h,"str");else E.addStatus(s,h,v,1)};
 hab("Echo Performer",[{label:"Play a Bard Tactic or Song, then duplicate it",cost:2,can:(s,pid,a)=>s.p[pid].hand.some(x=>{const d=E.DB[x.id];return d&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)&&E.cardCost(s,pid,a,d,0)+2<=s.p[pid].aura}),
   run:c=>{c.s.bonus={pid:c.pid,uid:c.actor.uid,n:2,only:"bard",dup:true,allowEx:true};log(c,`${c.actor.name} may now play a Bard Tactic or Song (paying its Aura cost); it will be duplicated.`)}}]);
 hab("Hexcaster",[{label:"Lose 2 HP: opponents can't use Consumable items this turn",can:(s,pid,a)=>E.hp(s,a)>2,run:c=>{E.costHp(c.s,c.pid,c.actor,2,"Hexcaster");c.op.fl.noConsum=c.s.round;log(c,`${c.op.name} can't use Consumable items this turn.`)}}]);

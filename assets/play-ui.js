@@ -475,7 +475,7 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
   if(h.dead)tags.push(`<span class="tg bad">${h.surr?"Surrendered":"Dead"}</span>`);
   if(h.ex&&!h.dead)tags.push('<span class="tg">Exhausted</span>');
   if(h.med)tags.push(`<span class="tg good">Meditating${h.keepMed?"":" (wakes)"}</span>`);
-  if(h.plus)tags.push(`<span class="tg good">+${h.plus}/+${h.plus}</span>`);
+  if(h.plus)tags.push(`<span class="tg good">${h.plus} meditation</span>`);
   if(h.guard+h.eqGuard)tags.push(`<span class="tg good">Guard ${h.guard+h.eqGuard}</span>`);
   E.STATUS.forEach(k=>{if(h.st[k])tags.push(`<span class="tg bad">${E.STATUS_NAME[k]}${h.st[k]>1?" ×"+h.st[k]:""}</span>`)});
   if(E.stealth(s,h))tags.push('<span class="tg good">Stealth</span>');
@@ -535,8 +535,8 @@ function statPopHTML(s,h,st,f){const pl=s.p[h.owner];const rows=[];const r=(l,v,
   if(f==="hp"){r("Printed",st.max-(h.ench||[]).filter(e=>e.name==="Life Boost").length*2);const lb=(h.ench||[]).filter(e=>e.name==="Life Boost").length*2;if(lb)r("Life Boost",lb,true);r("Damage taken",-(h.dmg||0));
     return`<div class="ph-pop" role="dialog" aria-label="Health Points" data-pa="stat" data-u="${h.uid}" data-f="hp"><h4>Health Points</h4>${rows.join("")}<div class="tot"><span>Now</span><b>${st.hp} / ${st.max}</b></div></div>`}
   const b=h.base?h.base[f]:0,lv=(h.bon&&h.bon[f])||0;r("Printed",b);if(lv)r("Level points",lv,true);
-  if(f!=="aura"){if(h.plus)r("+1/+1 counters",h.plus,true);const e=eq(f);if(e)r("Equipment",e,true);const m=mods(f);if(m)r("This turn",m,true);
-    const rest=st[f]-b-lv-(h.plus||0)-e-m;if(rest)r("Abilities and other cards",rest,true)}
+  if(f!=="aura"){const e=eq(f);if(e)r("Equipment",e,true);const m=mods(f);if(m)r("This turn",m,true);
+    const rest=st[f]-b-lv-e-m;if(rest)r("Abilities and other cards",rest,true)}
   else{const rest=st.aura-b-lv;if(rest)r("Other",rest,true)}
   const note=f==="aura"?`<div style="opacity:.8;font-size:.85em;margin-top:1.5cqw"><span>Party Aura pool: ${pl.aura}</span></div>`:"";
   return`<div class="ph-pop" role="dialog" aria-label="${STAT_NAME[f]}" data-pa="stat" data-u="${h.uid}" data-f="${f}"><h4>${STAT_NAME[f]}</h4>${rows.join("")}<div class="tot"><span>Now</span><b>${st[f]}</b></div>${note}</div>`}
@@ -563,7 +563,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   else if(s.phase==="mull"){if(s.p[me].mullDone){wait=true;prompt="Waiting for your opponent to keep or mulligan…"}else prompt="Keep this hand or mulligan once?";
     if(!s.p[me].mullDone)acts='<button class="btn go" data-pa="do" data-a=\'{"type":"keep"}\'>Keep</button><button class="btn" data-pa="do" data-a=\'{"type":"mull"}\'>Mulligan</button>'}
   else if(s.phase==="dawn"){if(s.dawnDone[me]){wait=true;prompt="Waiting for your opponent to finish Dawn…"}else{prompt="Dawn: you may use Gemstones (exhausting a Hero) before battle.";
-    acts=opts.filter(o=>o.type==="gem").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(nameOf(o.uid))} (exhaust ${esc(nameOf(o.hero))})</button>`).join("")+opts.filter(o=>o.type==="wake").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${o.v?"Keep":"Wake"} ${esc(nameOf(o.hero))} ${o.v?"Meditating":"next Dawn"}</button>`).join("")+'<button class="btn go" data-pa="do" data-a=\'{"type":"dawnDone"}\'>Start battle</button>'}}
+    acts=opts.filter(o=>o.type==="gem").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(nameOf(o.uid))} (exhaust ${esc(nameOf(o.hero))})</button>`).join("")+opts.filter(o=>o.type==="wake").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${o.v?`Wake ${esc(nameOf(o.hero))} at next Dawn`:`Keep ${esc(nameOf(o.hero))} Meditating`}</button>`).join("")+'<button class="btn go" data-pa="do" data-a=\'{"type":"dawnDone"}\'>Start battle</button>'}}
   else if(s.phase==="town"){const t=s.town&&s.town.order[s.town.i];if(t!==me){wait=true;prompt=`${esc(s.p[t].name)} is in Town…`}else{const used=(s.town&&s.town.used)||{};prompt=`Town: you have ${s.p[me].gold} Gold. Inn ${E.INN_COST} Gold (a Hero heals ${E.INN_HEAL})${used.inn?" ✓ used":""} · Shop ${E.SHOP_COST} Gold (draw a card)${used.shop?" ✓ used":""} · Church ${E.CHURCH_COST} Gold (resurrect a dead Hero with ${E.CHURCH_HP} HP)${used.church?" ✓ used":""}. Each once per visit. Blacksmith: upgrade items and equipment that have an Upgrade cost.`;
     acts=opts.filter(o=>o.type==="inn").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Inn: heal ${esc(nameOf(o.hero))}</button>`).join("")+(opts.some(o=>o.type==="shop")?'<button class="btn" data-pa="do" data-a=\'{"type":"shop"}\'>Shop: draw a card</button>':"")
       +opts.filter(o=>o.type==="church").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Church: resurrect ${esc(nameOf(o.hero))}</button>`).join("")
@@ -695,7 +695,7 @@ function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f
   if(mine&&o.kind==="summon")opts.filter(x=>x.type==="attack"&&x.att===u).forEach(x=>acts.push(btn(x,"Attack with it","go")));
   if(mine)opts.filter(x=>x.type==="band"&&x.att===u).forEach(x=>acts.push(btn(x,"Lead a Band attack","go")));
   if(mine&&o.kind==="card")opts.filter(x=>x.type==="useFree"&&x.uid===u).forEach(x=>acts.push(btn(x,"Activate (no action)","go")));
-  if(mine&&o.kind==="hero"&&o.med)acts.push(`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"wake",hero:u,v:o.keepMed}))}' ${s.phase==="dawn"?"":"disabled"}>${o.keepMed?"Wake at next Dawn":"Keep Meditating"}</button>`);
+  if(mine&&o.kind==="hero"&&o.med)acts.push(`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"wake",hero:u,v:o.keepMed}))}'>${o.keepMed?"Wake at next Dawn":"Keep Meditating"}</button>`);
   const hidden=o.fd&&!mine;
   modal(`${hidden?"<p>A face-down Hidden card.</p>":card?cardHTML(card,{flipped:E.isUp(s,o),nozoom:1}):`<h2>${esc(o.name)}</h2>`}
     ${o.kind==="hero"?`<p class="pl-note">Level ${o.lvl}${o.bon.str||o.bon.def||o.bon.aura?` · level bonuses: ${["str","def","aura"].filter(k=>o.bon[k]).map(k=>`+${o.bon[k]} ${k.toUpperCase()}`).join(", ")}`:""}${o.dmg?` · ${o.dmg} damage taken`:""}</p>`:""}

@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 8, 2026 (update 22)*
+*Version: November 8, 2026 (update 23)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -566,7 +566,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
 | **Piercing X** | This attack ignores X points of the target’s DEF. |
-| **Poisonous X** | Whenever this Hero or card deals damage, Poison the target X times. **Poisonous** with no number Poisons it once for each damage dealt. |
+| **Poisonous X** | Whenever this Hero or card deals damage, Poison the target X times. **Poisonous** with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage. |
 | **Scry X** | Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order. |
 | **Spell Damage +X** | Your spells deal X extra damage. |
 | **Spell Damage Pillar** | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. |
@@ -770,7 +770,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Piercing X (Monk)**: The attack ignores X points of the target's DEF.
 - **Echo (Bard)**: At your next Dawn, play the card again for free. You may choose new targets.
 - **Harmonize X (Bard)**: Exhaust X ready Heroes to gain the effect after the colon.
-- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt.
+- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately (they add up).
 - **Stealth (Rogue)**: This Hero can’t be targeted by enemy cards or abilities. It can still be attacked.
 - **Lifelink (Cleric)**: When this Hero deals damage, heal it that much.
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.

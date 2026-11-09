@@ -166,9 +166,10 @@ function noAttack(s,o){return o&&o.kind==="hero"&&modHas(o,"noAttack")}
 E.noAttack=noAttack;
 function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth")||hasEqN(o,"Shadow Cloak"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
 function cardProof(s,o,enemy){return o.kind==="hero"&&(eqList(o).some(e=>(e.name==="Cloak of Protection"||e.name==="Cloak of Shadow")&&(!isUp(s,e)||enemy!==false))||modHas(o,"untarget"))}
-function poisonous(s,h){if(h.kind!=="hero")return 0;let n=0;if(h.name==="Dark Fang")n=Math.max(n,h.lvl>=3?3:1);
-  eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger"||(e.x&&e.x.poison))n=Math.max(n,1);if(e.name==="Poison-Tipped Dagger")n=Math.max(n,isUp(s,e)?3:2)});
-  if(h.cls==="Rogue"&&P(s,h.owner).pm.poisonous)n=Math.max(n,1);return n}
+function poisonous(s,h,dealt){if(!h||h.kind!=="hero")return 0;let n=0; /* update 23: every instance of Poisonous triggers separately (they add up) */
+  if(h.name==="Dark Fang")n+=h.lvl>=3?(dealt||0):1;
+  eqList(h).forEach(e=>{if(e.name==="Viper Fang Dagger")n+=1;if(e.x&&e.x.poison)n+=1;if(e.name==="Poison-Tipped Dagger")n+=isUp(s,e)?3:2});
+  if(h.cls==="Rogue"&&P(s,h.owner).pm.poisonous)n+=1;return n}
 function lifelink(s,h){return h.kind==="hero"&&((h.name==="Radiant Oracle"&&h.lvl>=3)||hasEqN(h,"Ring of Radiance")||modHas(h,"lifelink"))}
 /* Guard from one piece of equipment (upgraded Knight's Sword: Guard 2). before=true: the value before its upgrade */
 function eqGuardOf(s,e,before){const d=def(e);const r=(!before&&d.up&&isUp(s,e)?d.up.rules:d.rules)||"";const m=/(?:^|\. |\n|and )Guard (\d+)/.exec(r);return m?+m[1]:0}
@@ -320,7 +321,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(src&&!o.noTrig){
     if(dealt>0&&lifelink(s,src)){const room=src.kind==="hero"?Math.min(dealt,src.dmg||0):dealt;heal(s,src,src,dealt);
       if(src.kind==="hero"&&hasUpN(s,src,"Ring of Radiance")&&dealt>room){const t=living(P(s,src.owner)).filter(h=>h!==src&&h.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(t)heal(s,src,t,dealt-room)}}
-    const pz=o.poisonous==="dmg"?dealt:poisonous(s,src);if(pz&&tgt.st)addStatus(s,tgt,"poison",pz); /* update 16: Poisonous stacks (Poison the target X times) */
+    const pz=(o.poisonous==="dmg"?dealt:0)+poisonous(s,src,dealt);if(pz&&tgt.st)addStatus(s,tgt,"poison",pz); /* update 16: Poisonous stacks (Poison the target X times) */
     if(src.kind==="hero"){
       if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
       if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,1)}

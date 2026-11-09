@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-08 (update 22: 50-card decks, Ranger DEF, Dark Fang, Guard → DEF).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-08 (update 23: Dark Fang Level 3 Poisonous, Poisonous stacking; update 22: 50-card decks, Ranger DEF, Dark Fang, Guard → DEF).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -332,7 +332,7 @@ const RAW_HEROES=[
 ["Blessed Champion", "Paladin", "0", "2", "1", "16", "Equipment that Blessed Champion plays or equips costs 1 less Aura.\n{L3} Equipment that Blessed Champion plays or equips costs 2 less Aura.", 3],
 ["Bloodhowl", "Barbarian", "1", "0", "1", "14", "Enraged: This Hero has +2 STR.\n{L3} Enraged: This Hero has +4 STR.", 3],
 ["Dark Channeler", "Warlock", "0", "0", "2", "13", "Exhaust, lose 4 HP: Gain 3 Aura.\n{L3} Exhaust, lose 2 HP: Gain 3 Aura.", 2],
-["Dark Fang", "Rogue", "2", "0", "1", "16", "Poisonous 1 (Whenever this Hero deals damage, Poison the target.)\n{L3} Poisonous 3", 3],
+["Dark Fang", "Rogue", "2", "0", "1", "16", "Poisonous 1 (Whenever this Hero deals damage, Poison the target.)\n{L3} Poisonous instead of Poisonous 1. (Poison the target once for each damage dealt.)", 4],
 ["Dawn Priest", "Cleric", "1", "1", "1", "16", "Whenever this Hero attacks, heal any target for 1 HP.", 1],
 ["Demon Pactist", "Warlock", "0", "0", "2", "16", "Whenever this Hero deals damage, exile a card from the defender's hand. You may play this card, otherwise put it in their discard pile.", 2],
 ["Divine Knight", "Paladin", "0", "2", "1", "16", "Exhaust: Target ally gains +2 DEF this turn.\n{L3} 2{A}, Exhaust: Target ally gains +5 DEF this turn.", 2],

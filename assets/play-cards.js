@@ -227,23 +227,24 @@ def("Reload",{run(c){const top=c.me.lib[c.me.lib.length-1];if(!top)return;const 
   else{log(c,d.sub==="Arrow"?"The top card is an Arrow, but the inventory is full.":"The top card isn't an Arrow.");E.pushChoose(c.s,c.pid,{title:"Reload: put this card on the bottom of your library?",cards:[top.uid],min:0,max:1,op:"bottom",pickLabel:"Bottom"})}}});
 def("Quickdraw",{run(c){const top=c.me.lib.splice(-3);top.slice().forEach(x=>{if(E.DB[x.id].sub==="Arrow"&&c.me.inv.length<E.slots(c.s,c.pid)){top.splice(top.indexOf(x),1);c.me.inv.push(Object.assign({kind:"card",fd:false,name:E.DB[x.id].name,ctr:{}},x));log(c,`${E.DB[x.id].name} goes into inventory.`)}});c.me.lib.push(...top);exMe(c)}});
 const arrow=(cost,t2,run,o)=>({act:Object.assign({cost,t:t2,run},o||{})});
-def("Arrow of Hope",arrow(3,[ANY],c=>{D(c,c.t[0],2);draw(c,2)}));
-def("Arrow of Persuasion",arrow(1,[ANY,t("ally","which of your units it must attack")],c=>{const tg=c.t[0],to=c.t[1];D(c,tg,3);
+def("Arrow of Hope",arrow(3,[EN],c=>{D(c,c.t[0],2);draw(c,2)}));
+def("Arrow of Persuasion",arrow(1,[EN,t("ally","which of your units it must attack")],c=>{const tg=c.t[0],to=c.t[1];D(c,tg,3);
   if(tg&&!tg.dead&&(tg.kind==="hero"||tg.kind==="summon")&&E.ctrl(c.s,tg)!==c.pid&&to&&!to.dead){tg.fl=tg.fl||{};tg.fl.forceAtk={uid:to.uid,round:c.s.round,by:c.pid};log(c,`${tg.name} must attack ${to.name} on its next action.`)}}));
 /* Refire: the same Hero immediately activates an Arrow (paying its Aura); if it resolves, the Arrow returns to inventory */
 const refireArrows=(s,pid,a)=>{const pl=s.p[pid];return pl.inv.filter(o=>o.kind==="card"&&!o.fd&&E.DB[o.id].sub==="Arrow"&&(S[o.name]||{}).act)};
 def("Refire",{can:(s,pid,a)=>!!a&&refireArrows(s,pid,a).some(o=>E.itemCost(s,pid,a,o)+1<=s.p[pid].aura),
   run(c){c.s.bonus={pid:c.pid,uid:c.actor.uid,n:2,only:"arrow",refire:true};log(c,`Refire: ${c.actor.name} activates an Arrow now; it returns to inventory if it resolves.`)}});
-def("Blunt-Point Force",arrow(2,[ANY],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){const pl=c.s.p[E.ctrl(c.s,c.t[0])];if(pl.hand.length){const x=pl.hand.splice(E.ri(c.s,pl.hand.length),1)[0];pl.disc.push(x);log(c,`${pl.name} discards ${E.DB[x.id].name}.`)}}}));
-def("Dual Shot",arrow(1,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
+/* update 25: the defending player chooses which card to discard */
+def("Blunt-Point Force",arrow(2,[EN],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){const vp=E.ctrl(c.s,c.t[0]);const pl=c.s.p[vp];if(pl.hand.length){log(c,`${pl.name} chooses a card to discard.`);E.pushChoose(c.s,vp,{title:"Blunt-Point Force: choose a card to discard",cards:pl.hand.map(x=>x.uid),from:"hand",min:1,max:1,op:"discard"})}}}));
+def("Dual Shot",arrow(1,[t("enemy","first target enemy"),t("enemy","second target enemy",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"burn")}));
-def("Level Shot",arrow(1,[ANY],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
+def("Level Shot",arrow(1,[EN],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
 def("Poison Dart",arrow(1,[t("any","target to Poison twice")],c=>{st(c,c.t[0],"poison",2)}));
-def("Serrated Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3,{pierce:3})}));
-def("Arrow of Devastation",arrow(4,[ANY],c=>{D(c,c.t[0],5,{pierce:3})}));
+def("Serrated Arrow",arrow(1,[EN],c=>{D(c,c.t[0],3,{pierce:3})}));
+def("Arrow of Devastation",arrow(4,[EN],c=>{D(c,c.t[0],5,{pierce:3})}));
 /* Arrow of Craftsmanship: can't be targeted (engine); Upgrade X Gold (Town): +X damage for the rest of the game */
-def("Arrow of Craftsmanship",arrow(1,[ANY],c=>{D(c,c.t[0],2+(c.upg||0))}));
-def("Smoke Trail Arrow",arrow(1,[ANY],c=>{D(c,c.t[0],3);c.me.fl.preventNext=true}));
+def("Arrow of Craftsmanship",arrow(1,[EN],c=>{D(c,c.t[0],2+(c.upg||0))}));
+def("Smoke Trail Arrow",arrow(1,[EN],c=>{D(c,c.t[0],3);c.me.fl.preventNext=true}));
 def("Tri-Shot",arrow(4,[t("enemyPlayer","target party")],c=>{const p=c.t[0];if(!p)return;const hs=c.s.p[p.pid].heroes;[5,3,1].forEach((n,i)=>{if(hs[i]&&!hs[i].dead)D(c,hs[i],n,{ignoreDef:true})})}));
 /* ===== Druid ===== */
 def("Beast",summonCard("Beast"));def("Elk",summonCard("Elk"));def("Wolves",{run(c){summon(c,"Wolf");summon(c,"Wolf");exMe(c)}});def("Heavy Beast",summonCard("Heavy Beast"));

@@ -205,6 +205,36 @@ html .ph .btn.soul-btn:hover,html .ph .btn.soul-btn:focus-visible{color:#efe8ff!
 /* acting Hero's buttons under its card */
 .ph .ph-acts{margin-top:6px;justify-content:center;gap:4px;cursor:default}
 .ph .ph-acts .btn{font-size:.78rem;padding:4px 8px;flex:1 1 auto;justify-content:center}
+/* Game Help expandable */
+.pl-help{position:relative}
+.pl-help>summary{cursor:pointer;list-style:none;font-size:.85rem;font-weight:700;color:var(--accent);padding:4px 8px;border-radius:8px;user-select:none;text-align:right}
+.pl-help>summary::-webkit-details-marker{display:none}
+.pl-help>summary::after{content:" ▾"}.pl-help[open]>summary::after{content:" ▴"}
+.pl-help>summary:hover{text-decoration:underline}
+.pl-help-b{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin-top:4px}
+/* hand scroller: visible bar + arrows only when cards are out of view */
+.pl-handwrap{position:relative}
+.pl-hand{scrollbar-width:thin}
+.pl-hand::-webkit-scrollbar{height:10px}.pl-hand::-webkit-scrollbar-track{background:transparent}
+.pl-hand.ovf::-webkit-scrollbar-thumb{background:var(--accent);border-radius:10px;border:2px solid transparent;background-clip:padding-box}
+.pl-hand:not(.ovf)::-webkit-scrollbar{height:0}
+.pl-hscr{position:absolute;top:50%;transform:translateY(-60%);z-index:3;width:38px;height:56px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-size:1.6rem;line-height:1;cursor:pointer;box-shadow:var(--shadow);display:none;opacity:.92}
+.pl-hscr:hover{opacity:1;filter:brightness(1.1)}
+.pl-hscr.l{left:-6px}.pl-hscr.r{right:-6px}
+.pl-handwrap.ovf-l .pl-hscr.l,.pl-handwrap.ovf-r .pl-hscr.r{display:block}
+/* destroyed pop-up */
+#pl-fx{position:fixed;inset:0;pointer-events:none;z-index:1500;display:grid;place-items:center}
+#pl-fx .fxc{grid-area:1/1;width:min(260px,60vw);position:relative;animation:fxIn .28s ease-out both, fxShake .32s .3s ease-in-out 2, fxOut .6s 1.05s ease-in forwards}
+#pl-fx .fxc>.card,#pl-fx .fxc>article,#pl-fx .fxc>*:first-child{width:100%;margin:0}
+#pl-fx .fxc::after{content:"";position:absolute;inset:0;border-radius:12px;background:radial-gradient(circle at 50% 50%,rgba(255,80,40,.0) 0,rgba(255,60,30,.55) 70%);opacity:0;animation:fxFlash .5s .3s ease-out both}
+#pl-fx .fxl{position:absolute;left:0;right:0;bottom:-38px;text-align:center;font-weight:900;letter-spacing:.12em;color:#fff;text-shadow:0 2px 6px #000,0 0 12px #c0392b;font-size:1.05rem}
+#pl-fx .fxbox{background:var(--card-paper);color:var(--card-ink);border:2px solid var(--line);border-radius:12px;padding:22px 14px;text-align:center;font-weight:800;font-size:1.1rem}
+@keyframes fxIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes fxShake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-8px) rotate(-3deg)}75%{transform:translateX(8px) rotate(3deg)}}
+@keyframes fxFlash{0%{opacity:0}40%{opacity:1}100%{opacity:.35}}
+@keyframes fxOut{0%{transform:scale(1) rotate(0);opacity:1;filter:none}100%{transform:scale(.6) translateY(120px) rotate(18deg);opacity:0;filter:grayscale(1) blur(2px)}}
+@media (prefers-reduced-motion:reduce){#pl-fx .fxc{animation:fxIn .2s both, fxOut .4s 1s forwards}#pl-fx .fxc::after{animation:none}}
+.pl-snd{display:inline-flex;align-items:center;gap:5px;margin-left:auto}
 /* Rules fix stacked above Concede at the right */
 .pl-acts{align-items:center}
 .pl-endcol{margin-left:auto;display:inline-flex;flex-direction:column;align-items:stretch;gap:4px}
@@ -338,6 +368,64 @@ function exportLog(){const s=view();if(!s)return;mergeLog(s);
   const blob=new Blob([out],{type:"text/plain"});const url=URL.createObjectURL(blob);const a=document.createElement("a");const d=new Date();
   a.href=url;a.download=`crystal-quest-game-${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}-${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}.txt`;
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);toast("Game log downloaded.")}
+/* hand scroller: arrows and the bar show only when some cards are out of view */
+function handOvf(he){const w=he.closest(".pl-handwrap");if(!w)return;const ovf=he.scrollWidth>he.clientWidth+2;he.classList.toggle("ovf",ovf);
+  w.classList.toggle("ovf-l",ovf&&he.scrollLeft>2);w.classList.toggle("ovf-r",ovf&&he.scrollLeft+he.clientWidth<he.scrollWidth-2)}
+addEventListener("resize",()=>{const he=document.querySelector("#play-root .pl-hand");if(he)handOvf(he)});
+
+/* ---------- sound effects (synthesized with Web Audio; no files) ---------- */
+const SND=(()=>{let ac=null;const on=()=>store2.get("cq.sound",true)!==false;
+  const ctx=()=>{if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){ac=null}}if(ac&&ac.state==="suspended")ac.resume().catch(()=>{});return ac};
+  const env=(a,g,t0,att,dec,peak)=>{g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(peak,t0+att);g.gain.exponentialRampToValueAtTime(0.0001,t0+att+dec)};
+  function tone(f,t,dur,type,peak,f2){const a=ctx();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type||"sine";const t0=a.currentTime+t;o.frequency.setValueAtTime(f,t0);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t0+dur);env(a,g,t0,0.01,dur,peak||0.18);o.connect(g).connect(a.destination);o.start(t0);o.stop(t0+dur+0.05)}
+  function noise(t,dur,peak,lo,hi){const a=ctx();if(!a)return;const n=Math.floor(a.sampleRate*dur);const b=a.createBuffer(1,n,a.sampleRate);const d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+    const src=a.createBufferSource();src.buffer=b;const f=a.createBiquadFilter();f.type="bandpass";const t0=a.currentTime+t;f.frequency.setValueAtTime(lo||800,t0);if(hi)f.frequency.exponentialRampToValueAtTime(hi,t0+dur);f.Q.value=0.8;const g=a.createGain();env(a,g,t0,0.005,dur,peak||0.25);src.connect(f).connect(g).connect(a.destination);src.start(t0);src.stop(t0+dur+0.05)}
+  const FX={
+    chime:t=>{tone(1318.5,t,0.5,"sine",0.12);tone(1975.5,t+0.09,0.6,"sine",0.09)},
+    attack:t=>{noise(t,0.18,0.3,3000,500);tone(160,t+0.12,0.16,"square",0.12,60)},
+    hit:t=>{noise(t,0.09,0.28,1200,300);tone(110,t,0.12,"triangle",0.2,55)},
+    arrow:t=>{tone(900,t,0.12,"triangle",0.12,300);noise(t+0.02,0.22,0.16,5000,1500);tone(140,t+0.22,0.08,"square",0.1,80)},
+    spell:t=>{[523,659,784,1046].forEach((f,i)=>tone(f,t+i*0.05,0.35,"sine",0.08))},
+    card:t=>{noise(t,0.12,0.14,2500,6000)},
+    heal:t=>{[392,523,659,784].forEach((f,i)=>tone(f,t+i*0.07,0.4,"sine",0.08))},
+    level:t=>{[523,659,784,1046,1318].forEach((f,i)=>tone(f,t+i*0.06,0.25,"square",0.05))},
+    gold:t=>{tone(1567,t,0.12,"square",0.06);tone(2093,t+0.07,0.25,"square",0.06)},
+    aura:t=>{tone(440,t,0.45,"sine",0.1,880)},
+    status:t=>{tone(300,t,0.3,"sawtooth",0.06,180);tone(310,t+0.05,0.3,"sawtooth",0.05,170)},
+    destroy:t=>{noise(t,0.35,0.35,1800,200);tone(90,t,0.3,"square",0.14,40)},
+    death:t=>{[392,330,262,196].forEach((f,i)=>tone(f,t+i*0.14,0.32,"triangle",0.12))},
+    summon:t=>{tone(220,t,0.3,"triangle",0.12,440);noise(t+0.1,0.2,0.1,600,2000)},
+    pass:t=>{tone(660,t,0.1,"sine",0.08);tone(494,t+0.1,0.16,"sine",0.08)},
+    draw:t=>{noise(t,0.1,0.12,4000,1500)},
+    win:t=>{[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,t+i*0.11,0.3,"square",0.06))},
+    lose:t=>{[392,370,349,262].forEach((f,i)=>tone(f,t+i*0.2,0.4,"triangle",0.1))}};
+  function play(k,t){if(!on()||!FX[k])return;try{FX[k](t||0)}catch(e){}}
+  /* one sound per log line, picked from what happened */
+  const RULES=[[/🏆/,"win"],[/ dies\b|has died/,"death"],[/is destroyed|destroys /,"destroy"],[/levels? up|gains a level|\(Level \d+\)/,"level"],[/ heals? |healed|resurrected|revives /,"heal"],
+    [/activates (?:[A-Z][\w'-]*\s)*(?:Arrow|Shot|Bolt|Dart|Force)\b|Arrow/,"arrow"],[/ attacks\b|band attack/i,"attack"],[/summons |Summon a|conjures |creates a/,"summon"],
+    [/ deals? \d+ (?:\w+ )?damage| loses \d+ HP/,"hit"],[/ (Burn|Poison|Stun|Wound|Confuse)/,"status"],[/ Gold\b/,"gold"],[/ Aura\b/,"aura"],
+    [/ plays /,"card"],[/ passes\./,"pass"],[/ draws? /,"draw"]];
+  function pick(m){for(const[r,k]of RULES)if(r.test(m))return k;return null}
+  return{on,play,pick,toggle(){store2.set("cq.sound",!on());if(on())play("chime")},unlock(){ctx()}}})();
+document.addEventListener("pointerdown",()=>SND.unlock(),{once:true,capture:true});
+
+/* new game events since the last render: destroyed pop-ups, sounds, and a chime when the action shifts */
+function gameFx(s){if(U.fxFor!==U.gameKey){U.fxFor=U.gameKey;U.fxSeen=(s.fx&&s.fx.length?s.fx[s.fx.length-1].n:0);U.sndSeen=Math.max(0,...s.log.map(l=>l.n||0));U.lastTurn=turnKey(s);return}
+  /* destroyed objects */
+  const fresh=(s.fx||[]).filter(f=>f.n>U.fxSeen);if(fresh.length){U.fxSeen=fresh[fresh.length-1].n;fresh.slice(-4).forEach((f,i)=>setTimeout(()=>destroyPop(f),i*420))}
+  /* sounds from new log lines */
+  const lines=s.log.filter(l=>(l.n||0)>U.sndSeen);if(lines.length){U.sndSeen=Math.max(...lines.map(l=>l.n||0));
+    const ks=[];lines.forEach(l=>{const k=SND.pick(l.m);if(k&&ks[ks.length-1]!==k)ks.push(k)});
+    let ov=s.over&&s.winner!=null&&s.winner!==U.me;ks.slice(0,5).forEach((k,i)=>SND.play(k==="win"&&ov?"lose":k,i*0.16))}
+  /* chime when the action shifts to the other player (or a new phase starts) */
+  const tk=turnKey(s);if(tk!==U.lastTurn){U.lastTurn=tk;SND.play("chime",lines.length?0.5:0)}}
+function turnKey(s){if(s.over)return"over";if(s.pend[0])return"p"+s.pend[0].pid+":"+s.phase;if(s.phase==="battle")return"b"+s.prio;if(s.phase==="town")return"t"+(s.town&&s.town.order[s.town.i]);return s.phase+s.round}
+function destroyPop(f){let L=document.getElementById("pl-fx");if(!L){L=document.createElement("div");L.id="pl-fx";L.setAttribute("aria-hidden","true");document.body.appendChild(L)}
+  const c=(f.id&&cardOf(f.id))||byName(f.name);const el=document.createElement("div");el.className="fxc";
+  el.innerHTML=(c?cardHTML(c,{nozoom:1}):`<div class="fxbox">${esc(f.name||"Object")}</div>`)+`<div class="fxl">${f.k==="exile"?"EXILED":"DESTROYED"}</div>`;
+  L.appendChild(el);setTimeout(()=>el.remove(),1800)}
+function byName(n){if(!n)return null;try{for(const c of BYID.values())if(c.name===n)return c}catch(e){}return null}
+
 function render(){const root=ROOT();if(!root)return;injectCSS();
   if(U.mode==="lobby"){root.innerHTML=lobbyHTML();return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
@@ -347,7 +435,8 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   const handEl=root.querySelector(".pl-hand");const hs=handEl?handEl.scrollLeft:0;
   root.innerHTML=gameHTML(s);
   const lg=root.querySelector(".pl-log");if(lg&&atBottom)lg.scrollTop=lg.scrollHeight;
-  const he=root.querySelector(".pl-hand");if(he)he.scrollLeft=hs;
+  const he=root.querySelector(".pl-hand");if(he){he.scrollLeft=hs;handOvf(he);he.addEventListener("scroll",()=>handOvf(he),{passive:true})}
+  try{gameFx(s)}catch(e){console.warn(e)}
   try{if(typeof fitArt==="function")fitArt(root)}catch(e){}
   modals(s)}
 function lobbyHTML(){const ch=deckChoices();const resL=store2.get("cq.play.local",null),resH=store2.get("cq.play.host",null),resG=store2.get("cq.play.guest",null);
@@ -595,8 +684,8 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const ban=U.banner&&!s.over&&!U.tgt?bannerHTML():"";if(ban)acts="";
   const posm=`<span class="posm" title="Position marker">${[...E.POS,"Last"].map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
-  return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
-    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${s.over?statsHTML(s):""}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
+  return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" title="Turn game sounds on or off" aria-pressed="${SND.on()}">${SND.on()?"🔊 Sound on":"🔇 Sound off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
+    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${s.over?statsHTML(s):""}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn?helpHTML(fixBtn):""}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
 /* opponent's turn: what they have to work with */
 function oppInfoHTML(s){const op=E.opp(U.me);const pl=s.p[op];const a=s.phase==="battle"&&s.prio===op?E.actorFor(s,op):null;
   return`<div class="pl-oppinfo">${a?`<span>Acting: <b>${esc(a.name)}</b></span>`:""}<span>Hand <b>${pl.hand.length}</b></span><span>Aura <b>${pl.aura}</b></span><span>Gold <b>${pl.gold}</b></span><span>Library <b>${pl.lib.length}</b></span></div>`}
@@ -654,12 +743,14 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   if(opts.some(o=>o.type==="manualAbility")&&a&&/Exhaust|\{A\}:/.test(E.DB[a.id].rules)&&!window.CQ_HERO_SCRIPTS[a.name])out.push(btn({type:"manualAbility"},`Use ${a.name}'s ability (by hand)`));
   if(opts.some(o=>o.type==="skipBonus"))out.push(btn({type:"skipBonus"},s.bonus&&s.bonus.only==="bard"?"Skip (don't play a card)":s.bonus&&s.bonus.queue&&s.bonus.queue.length?"Skip this Ranger":"Skip (don't activate an Arrow)"));
   else out.push(`<button class="btn pass" data-pa="do" data-a='${esc(JSON.stringify({type:"pass"}))}'><svg class="pass-ico" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M2 10h11M9 4.5 15 10l-6 5.5" fill="none" stroke="#1f9d48" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Pass for the round</button>`);
-  if(U.net)out.push('<button class="btn sm" data-pa="do" data-a=\'{"type":"giveAction"}\' title="Let your opponent resolve something by hand (a card they control, a choice). Control comes back to you without using your action.">Give opponent an action</button>');
   return out.join("")}
+/* Game Help: an expandable holding Rules fix and (online) Give opponent an action */
+function helpHTML(fixBtn){const give=U.net?'<button class="btn sm" data-pa="do" data-a=\'{"type":"giveAction"}\' title="Let your opponent resolve something by hand (a card they control, a choice). Control comes back to you without using your action.">Give opponent an action</button>':"";
+  return`<details class="pl-help"${U.helpOpen?" open":""}><summary>Game Help</summary><div class="pl-help-b">${fixBtn}${give}</div></details>`}
 const FIX_BTN='<button class="btn sm pl-fix" data-pa="do" data-a=\'{"type":"fix"}\' title="Open the manual panel to correct something the engine missed">Rules fix</button>';
 function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(o=>o.type==="play").map(o=>{const c=pl.hand.find(x=>x.uid===o.uid);return c&&c.id}));
   const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}" data-cls="${esc(card.cls||"Generic")}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
-  return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · <span class="hl-note">outline = playable now · point at one of your Heroes to see the cards it can play</span></span></div><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div></section>`}
+  return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · <span class="hl-note">outline = playable now · point at one of your Heroes to see the cards it can play</span></span></div><div class="pl-handwrap"><button type="button" class="pl-hscr l" data-pa="hscr" data-d="-1" aria-label="Scroll hand left">‹</button><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div><button type="button" class="pl-hscr r" data-pa="hscr" data-d="1" aria-label="Scroll hand right">›</button></div></section>`}
 function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1,k:"burn",name:"Soldier"});
   const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","STR up (this turn)"],["nstr","STR down (this turn)"],["def","DEF up (this turn)"],["ndef","DEF down (this turn)"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["discToInv","Return from discard to inventory"],["playfree","Play a card from hand (free)"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"],["mill","Mill (top cards → discard)"],["equipfree","Equip for free"],["revealtop","Reveal top cards of a library"],["revmove","Move a revealed card"]].sort((x,y)=>x[1].localeCompare(y[1]));
   const az=(arr,nm)=>arr.slice().sort((x,y)=>nm(x).localeCompare(nm(y)));const cn=c=>(E.DB[c.id]||{name:c.name||""}).name;
@@ -786,6 +877,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(U.statPop&&k!=="stat"){U.statPop=null;document.querySelectorAll("#play-root .ph-pop").forEach(x=>x.remove());document.querySelectorAll("#play-root .ph-num.on").forEach(x=>x.classList.remove("on"))}
   if(k==="deck"||k==="ai"||k==="code"||k==="name"||k==="man-op"||k==="man-n"||k==="man-k"||k==="man-name"||k==="man-card")return;
   if(k==="close"){closeModal();return}
+  if(k==="hscr"){const he=b.parentElement&&b.parentElement.querySelector(".pl-hand");if(he)he.scrollBy({left:(+b.dataset.d)*Math.max(200,he.clientWidth*0.8),behavior:"smooth"});return}
+  if(k==="snd"){SND.toggle();render();return}
   if(k==="start-ai"){startAI();return}
   if(k==="rematch"){U.s=null;startAI();return}
   if(k==="host"){hostRoom();return}
@@ -858,6 +951,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc","discToInv","reveal","mill","revealtop","revmove"].includes(op)&&!a.target){toast("Click a Hero on the board first.");return}
     send(a);return}
 });
+document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("pl-help"))U.helpOpen=t.open},true);
 function redrawPrompt(){const m=document.getElementById("pl-modal");if(m)delete m.dataset.k;const s=view();if(m)m.remove();modals(s)}
 document.addEventListener("change",e=>{const t=e.target;const k=t.dataset&&t.dataset.pa;if(!k)return;
   if(k==="deck"){U.lobby.deck=t.value}else if(k==="ai"){U.lobby.ai=t.value;U.lobby.aiPicked=true}

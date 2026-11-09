@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-09 (update 24: Monk meditation rework; update 23: Bard rework, Poisonous stacking, Dark Fang, Generic fixes; update 22: 50-card decks, Ranger DEF, Dark Fang, Guard → DEF).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-09 (update 25: Arrows target enemies; update 24: Monk meditation rework; update 23: Bard rework, Poisonous stacking, Dark Fang, Generic fixes; update 22: 50-card decks, Ranger DEF, Dark Fang, Guard → DEF).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -14,8 +14,8 @@ const RAW_CARDS=[
 [2, "Arcane Study", "2", "", "Spell", "", "Mage", "Draw a card. Scry 2.", 1],
 [2, "Armed", "1", "", "Tactic", "", "Rogue", "Create a Dagger token and equip it to target Rogue.", 1],
 [2, "Arrested Development", "3", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero can't level up.", 2],
-[1, "Arrow of Hope", "0", "Legendary", "Item", "Arrow", "Ranger", "3{A}: Deal 2 damage. Draw 2 cards.", 1],
-[2, "Arrow of Persuasion", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. The defender must attack a target of your choice during its next action.", 1],
+[1, "Arrow of Hope", "0", "Legendary", "Item", "Arrow", "Ranger", "3{A}: Deal 2 damage to target enemy. Draw 2 cards.", 2],
+[2, "Arrow of Persuasion", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage to target enemy. The defender must attack a target of your choice during its next action.", 2],
 [2, "Ascend", "1", "", "Tactic", "Combo", "Monk", "Target Hero gains +2 STR this turn. Combo.", 1],
 [2, "Attack Reversal", "1", "Hidden", "Tactic", "", "Monk", "Prevent the current attack. Combo.", 3],
 [1, "Aura Crystal", "3", "Legendary", "Item", "", "Generic", "At Dawn, gain 1 Aura.", 1],
@@ -40,7 +40,7 @@ const RAW_CARDS=[
 [2, "Blood Offering", "0", "", "Spell", "", "Warlock", "Lose 3 HP. Gain 2 Aura.", 1],
 [2, "Bloodthirst", "3", "", "Tactic", "", "Barbarian", "Attack with this Barbarian. If the defending enemy dies, ready this Hero.", 3],
 [2, "Blunt Force", "3", "", "Tactic", "", "Barbarian", "Target Barbarian gains +4 STR this turn.", 2],
-[2, "Blunt-Point Force", "0", "", "Item", "Arrow", "Ranger", "2{A}: Deal 3 damage. If damage is dealt this way, the defending player discards a card.", 2],
+[2, "Blunt-Point Force", "0", "", "Item", "Arrow", "Ranger", "2{A}: Deal 3 damage to target enemy. If damage is dealt this way, the defending player discards a card of their choice.", 3],
 [2, "Boost Ritual", "2", "", "Spell", "", "Mage", "Conjure a Spell Damage Pillar. Exhaust this Hero.", 1],
 [1, "Brain Rot", "1", "", "Tactic", "", "Warlock", "Target player reveals their hand. Choose and discard any Tactic, Spell or Song.", 2],
 [2, "Breath", "0", "", "Tactic", "Combo", "Monk", "Scry 1. Combo.", 1],
@@ -83,7 +83,7 @@ const RAW_CARDS=[
 [2, "Divine Smite", "2", "", "Tactic", "", "Paladin", "Destroy a non-Legendary summon.", 1],
 [2, "Doubling Ritual", "4", "", "Spell", "", "Warlock", "Sacrifice any amount of Pillars. Create twice that many of those Pillars. Exhaust this Hero.", 1],
 [2, "Drawwing", "5", "", "Summon", "", "Druid", "Summon a 2/4 Drawwing Familiar. When it is destroyed, draw a card. Exhaust this Hero.", 3],
-[2, "Dual Shot", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 2 damage to two targets.", 1],
+[2, "Dual Shot", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 2 damage to two target enemies.", 2],
 [2, "Dynamite", "0", "", "Item", "", "Generic", "3{A}: Deal 2 damage to any two different targets.", 2],
 [2, "Elk", "1", "", "Summon", "", "Druid", "Summon a 2/3 Elk. Exhaust this Hero.", 4],
 [1, "Elk of the Woods", "7", "Legendary", "Summon", "", "Druid", "Summon a 3/5 Woods Beast with \"When this deals damage, draw a card.\" Ready it. Exhaust this Hero.", 3],
@@ -145,7 +145,7 @@ const RAW_CARDS=[
 [1, "Inversion Stone", "4", "Legendary", "Item", "Relic", "Cleric", "Whenever an enemy would be healed from a source you control, it takes that much Light damage instead.", 2],
 [2, "Jab", "1", "", "Tactic", "Combo", "Monk", "Deal 2 damage. Combo.", 2],
 [2, "Larceny", "3", "", "Tactic", "", "Rogue", "Gain control of target item.", 1],
-[2, "Level Shot", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. If this is the third Arrow you have activated this turn, the Hero activating it gains a level.", 1],
+[2, "Level Shot", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage to target enemy. If this is the third Arrow you have activated this turn, the Hero activating it gains a level.", 2],
 [2, "Level Up", "3", "", "Tactic", "", "Generic", "Target Hero gains 1 level.", 1],
 [2, "Levitate", "1", "", "Spell", "", "Mage", "This Hero can't be attacked this turn.", 2],
 [2, "Life Boost", "2", "", "Enchantment", "", "Cleric", "Enchanted ally has +2 HP.", 1],
@@ -232,7 +232,7 @@ const RAW_CARDS=[
 [2, "Second Chances", "0", "Hidden", "Tactic", "", "Cleric", "4{A}: At Dusk, if a friendly non-Cleric Hero died this turn, you may revive it with half its max HP (rounded up).", 2],
 [2, "Second Wind", "3", "", "Tactic", "", "Barbarian", "Target Enraged Barbarian heals 3 HP and readies.", 1],
 [2, "Self Sacrifice", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: If a Hero would die, target Paladin dies instead.", 1],
-[2, "Serrated Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. Piercing 3.", 2],
+[2, "Serrated Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage to target enemy. Piercing 3.", 3],
 [2, "Shadow Strike", "1", "", "Tactic", "", "Rogue", "Attack with an exhausted Rogue you control. It stays exhausted. This attack ignores DEF.", 2],
 [2, "Shatter", "2", "", "Tactic", "", "Generic", "Destroy target Equipment.", 1],
 [2, "Shield Bash", "1", "", "Tactic", "", "Paladin", "Deal damage equal to this Hero's DEF.", 1],
@@ -245,7 +245,7 @@ const RAW_CARDS=[
 [2, "Smash and Grab", "4", "", "Tactic", "", "Barbarian", "Destroy up to two target items that each cost 2 or less. Exhaust this Hero.\n{L3} Instead, destroy up to two target items. Exhaust this Hero.", 3],
 [2, "Smash to Smithereens", "4", "", "Tactic", "", "Generic", "Destroy all Pillars. Exhaust this Hero.", 1],
 [2, "Smoke Bomb", "0", "", "Item", "", "Generic", "1{A}, Exile: Target Hero gains Stealth this turn.", 1],
-[2, "Smoke Trail Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage. Prevent all damage from the next source that would target a Hero in your party.", 2],
+[2, "Smoke Trail Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage to target enemy. Prevent all damage from the next source that would target a Hero in your party.", 3],
 [2, "Snare", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: When an enemy Hero attacks, it gets -3 STR for that attack.", 1],
 [2, "Snuff Out", "1", "", "Tactic", "", "Generic", "Destroy target summon with 3 or less HP.", 1],
 [2, "\"Solo Act\"", "5", "", "Song", "", "Bard", "Exhaust two other ready Heroes you control. Song cards you play cost 2 less Aura this turn.", 1],
@@ -326,8 +326,8 @@ const RAW_CARDS=[
 [2, "Tangle Rod", "2", "", "Item", "", "Druid", "Enemy Heroes' activated abilities cost 2 more Aura to activate.", 1],
 [2, "Caltrops", "2", "", "Item", "", "Ranger", "Whenever an enemy attacks a Hero you control, the attacker loses 2 HP.", 1],
 [2, "Into the Trees", "0", "Hidden", "Item", "Trap", "Ranger", "3{A}: When an enemy attacks or targets a friendly Hero, you may cancel that action.", 1],
-[2, "Arrow of Devastation", "0", "", "Item", "Arrow", "Ranger", "4{A}: Deal 5 damage. Piercing 3.", 1],
-[2, "Arrow of Craftsmanship", "0", "", "Item", "Arrow", "Ranger", "This can't be targeted.\n1{A}: Deal 2 damage.\nUpgrade X Gold: This Arrow deals +X more damage.", 1],
+[2, "Arrow of Devastation", "0", "", "Item", "Arrow", "Ranger", "4{A}: Deal 5 damage to target enemy. Piercing 3.", 2],
+[2, "Arrow of Craftsmanship", "0", "", "Item", "Arrow", "Ranger", "This can't be targeted.\n1{A}: Deal 2 damage to target enemy.\nUpgrade X Gold: This Arrow deals +X more damage.", 2],
 ];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],

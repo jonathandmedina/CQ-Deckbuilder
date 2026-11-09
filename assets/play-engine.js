@@ -404,6 +404,8 @@ function destroyObj(s,o,exile){const f=find(s,o.uid);if(!f)return;const pl=P(s,f
     if(o.name==="Sword of Eliazar"&&!exile){const m=makeSummon(s,f.pid,"Eliazar");if(isUp(s,o)){m.str+=1;m.hp+=1;log(s,`Upgraded Sword of Eliazar: Eliazar is ${m.str}/${m.hp}.`,f.pid)}}}
   else if(f.zone==="ench"){f.hero.ench.splice(f.hero.ench.indexOf(o),1)}
   log(s,`${o.name}${o.kind==="summon"?" (summon)":""} is ${exile?"exiled":"destroyed"}.`);
+  /* UI event: the Play tab shows a "destroyed" pop-up for each of these */
+  if(!exile){s.fxN=(s.fxN||0)+1;s.fx=(s.fx||[]).concat([{n:s.fxN,k:"destroy",id:o.id||null,name:o.name,kind:o.kind,pid:f.pid}]).slice(-12)}
   if(o.kind==="summon"){const c=o.ctrl;
     if(o.name==="Aurawing Familiar"){P(s,c).aura+=1;log(s,`${P(s,c).name} gains 1 Aura.`)}
     if(o.name==="Drawwing Familiar")draw(s,c,1);
@@ -567,7 +569,7 @@ E.options=function(s,pid){
     if(pl.gold>=5&&!used.inn)living(pl).forEach(h=>{if(h.dmg>0)out.push({type:"inn",hero:h.uid})});
     if(pl.gold>=4&&!used.shop)out.push({type:"shop"});
     if(pl.gold>=E.CHURCH_COST&&!used.church)pl.heroes.forEach(h=>{if(h.dead&&!h.surr)out.push({type:"church",hero:h.uid})});
-    upgradables(s,pid).forEach(o=>{const u=upgradeCost(o);if(u.x){for(let x=1;x<=Math.min(pl.gold,8);x++)out.push({type:"upgrade",uid:o.uid,x})}else if(pl.gold>=u.cost)out.push({type:"upgrade",uid:o.uid})});
+    upgradables(s,pid).forEach(o=>{const u=upgradeCost(o);if(u.x){for(let x=1;x<=pl.gold;x++)out.push({type:"upgrade",uid:o.uid,x})}else if(pl.gold>=u.cost)out.push({type:"upgrade",uid:o.uid})});
     out.push({type:"leave"});return out}
   if(s.phase!=="battle"||s.prio!==pid)return[];
   return battleOptions(s,pid)};

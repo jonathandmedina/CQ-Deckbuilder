@@ -435,6 +435,7 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 #adminTab[hidden]{display:none!important}
+.sitebar .sb-links{display:flex;align-items:center;gap:4px}
 </style>
 <link rel="stylesheet" href="assets/retro.css?v=20261110d">
 <link rel="stylesheet" href="assets/art.css?v=20261110d">
@@ -447,14 +448,13 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
     <span class="tab-dd"><a href="#community" data-view="community" aria-haspopup="true">Decklists</a><span class="tab-sub" role="menu"><a href="#best" data-view="best" role="menuitem">Best Decks</a><a href="#community" role="menuitem">Community Decks</a><a href="#decks" data-view="decks" role="menuitem">My Decks</a><a href="#build" data-view="build" role="menuitem">Deck Builder</a></span></span>
     <span class="tab-dd"><a href="#rules" data-view="rules" aria-haspopup="true">Rules</a><span class="tab-sub" role="menu"><a href="#rules" role="menuitem">Full Rules</a><a href="#quickstart" data-view="quickstart" role="menuitem">Quick Start</a></span></span>
     <a href="#play" data-view="play">Play</a>
-    <a href="#admin" data-view="admin" id="adminTab" hidden>Admin</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
   <a class="btn sm discord-btn" href="https://discord.gg/dvGaJRRkYg" target="_blank" rel="noopener">Join the Discord</a>
 </div></header>
 <main><div class="wrap" id="view"></div></main>
 <footer class="sitebar" id="sitebar"><div class="wrap">
-  <a href="#changelog" data-view="changelog" class="sb-link">Changelog</a>
+  <span class="sb-links"><a href="#changelog" data-view="changelog" class="sb-link">Changelog</a><a href="#admin" data-view="admin" id="adminTab" class="sb-link" hidden>Admin</a></span>
   <select class="skin-btn" id="skinSel" aria-label="Theme" title="Theme">
     <option value="art">Card Art theme</option>
     <option value="retro">Retro theme</option>

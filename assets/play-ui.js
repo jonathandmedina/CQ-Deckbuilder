@@ -40,6 +40,8 @@ const CSS=`
 .pl-log p.me{color:var(--ink)} .pl-log p.op{color:var(--muted)} .pl-log p.sys{color:var(--accent);font-weight:700;margin-top:6px}
 .pl-side-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .pl-zone{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.pl-zside,.pl-zsin{display:contents}
+.pl-zone .pl-bar{order:-1}
 .pl-zone.op{background:color-mix(in srgb,var(--surface) 85%,var(--bg))}
 .pl-bar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:.88rem;color:var(--muted)}
 .pl-bar b{color:var(--ink);font-variant-numeric:tabular-nums}
@@ -205,6 +207,111 @@ html .ph .btn.soul-btn:hover,html .ph .btn.soul-btn:focus-visible{color:#efe8ff!
 /* acting Hero's buttons under its card */
 .ph .ph-acts{margin-top:6px;justify-content:center;gap:4px;cursor:default}
 .ph .ph-acts .btn{font-size:.78rem;padding:4px 8px;flex:1 1 auto;justify-content:center}
+
+/* ===== Card Art theme: compact Hero Cards ===== */
+html[data-skin="art"] .ph.hk{padding:3px 4px 4px;gap:2px;background:transparent;border:0;box-shadow:none}
+html[data-skin="art"] .ph.hk:hover,html[data-skin="art"] .ph.hk:focus-within{z-index:30}
+html[data-skin="art"] .ph.hk .ph-top{font-size:.66rem;padding:0 2px;line-height:1.1}
+html[data-skin="art"] .ph.hk.actor{box-shadow:none}
+html[data-skin="art"] .ph.hk.actor .ph-face{box-shadow:0 0 0 2px #000,0 0 0 4px var(--accent),0 0 14px var(--accent)}
+html[data-skin="art"] .ph.hk.actor::before{top:30px;left:-22px}
+html[data-skin="art"] .ph.hk.cand{outline-offset:-1px}
+.ph.hk .ph-card.hk-card{width:100%;max-width:none;margin:0;perspective:1100px;container-type:inline-size}
+.ph.hk .ph-face{overflow:visible;border-radius:7px;background:#120c08;border:2px solid #b8743a;display:flex;flex-direction:column}
+.ph.hk .ph-back{border-radius:7px}
+.ph.hk .ph-back .btn.soul-btn{position:absolute;left:6%;right:6%;bottom:30%;width:auto;margin:0;font-size:max(11px,5.5cqw);padding:3px 6px}
+.hk-nb{display:flex;align-items:center;gap:2.5cqw;height:13.5cqw;padding:0 2.5cqw;background:linear-gradient(#0000,#0006),var(--cc);border-bottom:2px solid #b8743a;border-radius:5px 5px 0 0}
+.hk-ci{height:76%;width:auto;flex:none;filter:drop-shadow(0 1px 0 #000);image-rendering:pixelated}
+.hk-nm{flex:1;min-width:0;font:400 9.4cqw/1 "Pirata One",var(--display);color:#fff;text-shadow:0 .8cqw 0 #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.01em}
+.hk-nm.l{font-size:8.2cqw}.hk-nm.xl{font-size:7.2cqw}
+.hk-au{flex:none;min-width:9.5cqw;height:9.5cqw;padding:0 1cqw;border-radius:50%;border:1px solid #cfe9ff;background:radial-gradient(circle at 35% 30%,#bfe6ff,#2f86e0 55%,#123e8c);color:#fff;font:400 6.6cqw/1 "Pirata One",var(--display);text-shadow:0 1px 0 #000;cursor:help;display:grid;place-items:center}
+.hk-au.up{color:#c9ff9a}.hk-au.dn{color:#ffb0b0}
+.hk-au:hover,.hk-au:focus-visible{outline:2px solid #fff}
+.hk-art{position:relative;line-height:0;overflow:hidden;background:#000}
+.hk-art>img{display:block;width:100%;height:auto;aspect-ratio:207/167;image-rendering:pixelated}
+.hk-art>.zoom{position:absolute;top:4%;left:3%;width:22px;height:22px;border:1px solid rgba(255,255,255,.7);background:rgba(15,18,26,.72);color:#fff;z-index:3;line-height:1}
+.hk-tags{position:absolute;left:2%;right:2%;bottom:3%;display:flex;flex-direction:column;gap:2px;line-height:1.2;z-index:2;pointer-events:none}
+.hk-tags .tags{justify-content:flex-start;pointer-events:auto}
+html[data-skin="art"] .hk-tags .tg{font-size:max(10px,4.8cqw);background:rgba(16,10,6,.84);border-color:rgba(255,255,255,.35);color:#fff;padding:0 4px}
+html[data-skin="art"] .hk-tags .tg.bad{border-color:#ff7a6a;color:#ffc4bb}
+html[data-skin="art"] .hk-tags .tg.good{border-color:#7be04f;color:#c9ffb0}
+.hk-art .ph-acts{position:absolute;left:2%;right:2%;top:3%;margin:0;line-height:1.1;z-index:4;flex-wrap:wrap;justify-content:flex-end}
+.hk-art .ph-acts .btn{font-size:max(10px,5cqw);padding:2px 5px;flex:0 1 auto;box-shadow:0 2px 6px #000a}
+.hk-st{display:grid;grid-template-columns:1fr 1fr 1fr 1.45fr;border-top:2px solid #b8743a;height:19cqw}
+.hk-sq{border:0;border-right:1px solid #0009;padding:0;margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:help;color:#fff;font:inherit;min-width:0}
+.hk-sq:first-child{border-radius:0 0 0 5px}
+.hk-str{background:linear-gradient(#ffffff22,#0000 50%,#0003),#b3121a}
+.hk-hp{background:linear-gradient(#ffffff22,#0000 50%,#0003),#7f7fd8}
+.hk-def{background:linear-gradient(#ffffff22,#0000 50%,#0003),#3f9b3f}
+.hk-sq b{font:400 12.5cqw/.9 "Pirata One",var(--display);color:#ffc100;-webkit-text-stroke:.9cqw #000;paint-order:stroke fill;text-shadow:0 .7cqw 0 #000}
+.hk-sq i{font:700 max(8px,4.3cqw)/1.1 "EB Garamond",Georgia,serif;font-style:normal;letter-spacing:.06em;color:#fff;text-shadow:0 1px 0 #000;white-space:nowrap}
+.hk-sq i small{font-size:.9em;letter-spacing:0;margin-left:1px}
+.hk-sq.up b{color:#7be04f}.hk-sq.dn b{color:#ff5a5a}
+.hk-sq:hover,.hk-sq:focus-visible,.hk-sq.on{outline:2px solid #fff;outline-offset:-2px;filter:brightness(1.12)}
+.hk-sq.bump b{animation:hkbump .7s ease;display:inline-block}
+@keyframes hkbump{0%{transform:scale(1)}35%{transform:scale(1.5)}100%{transform:scale(1)}}
+.hk-ab{position:relative;display:flex;align-items:center;justify-content:center;background:linear-gradient(#3a2a1c,#22180f);font:700 max(8px,6.6cqw) "EB Garamond",Georgia,serif;color:#e2a865;cursor:help;border-radius:0 0 5px 0;letter-spacing:.03em}
+.ph.dead .hk-ab{grid-column:1/-1}
+.hk-ab:hover,.hk-ab:focus{background:linear-gradient(#5a3f22,#33231a);color:#ffd98a;outline:none}
+.hk-tip{display:none;position:absolute;bottom:calc(100% + 6px);right:-2px;width:calc(100cqw + 0px);min-width:220px;padding:8px 10px;background:rgba(36,24,15,.97);border:2px solid #b8743a;border-radius:8px;box-shadow:0 6px 18px #000c;font:500 14px/1.35 "EB Garamond",Georgia,serif;color:#f3e6cf;letter-spacing:0;text-align:left;z-index:40;cursor:default;white-space:normal}
+.hk-ab:hover .hk-tip,.hk-ab:focus .hk-tip{display:block}
+.pl-zone.op .hk-tip{bottom:auto;top:calc(100% + 6px)}
+.hk-tip p{margin:4px 0 0}.hk-tip img{height:1.1em;width:auto;vertical-align:-2px}
+.hk-tt{display:block;font:400 18px/1.1 "Pirata One",var(--display);color:#ffc100}.hk-tt small{font:500 12px "EB Garamond",serif;color:#bfa888;margin-left:4px}
+.ph.hk .ph-pop{bottom:21cqw}
+.ph.ex.hk .hk-art>img{filter:brightness(.62) saturate(.8)}
+.ph.ex.hk .ph-face{filter:none}
+/* ===== Card Art theme: the whole game fits the window (no page scroll) ===== */
+#pl-menutab{display:none}
+@media (min-width:900px) and (min-height:560px){
+html[data-skin="art"]:has(#play-root .pl-game) #pl-menutab{display:flex;align-items:center;gap:6px;position:fixed;top:0;right:max(12px,env(safe-area-inset-right,0px));z-index:60;padding:2px 14px 4px;border:2px solid var(--accent,#c79028);border-top:0;border-radius:0 0 10px 10px;background:linear-gradient(180deg,rgba(80,46,34,.98),rgba(52,28,22,.98));color:#f3e6cf;font:400 15px/1.2 "Pirata One",var(--display);letter-spacing:.04em;cursor:pointer;box-shadow:0 3px 8px #0009;transition:top .25s}
+html[data-skin="art"]:has(#play-root .pl-game) #pl-menutab:hover{color:#ffd98a}
+html[data-skin="art"]:has(#play-root .pl-game) header.top{position:fixed;left:0;right:0;top:0;transform:translateY(-105%);transition:transform .25s;z-index:59}
+html[data-skin="art"].pl-menu:has(#play-root .pl-game) header.top{transform:none}
+html[data-skin="art"]:has(#play-root .pl-game) main .wrap{padding-block:6px 0;max-width:none}
+html[data-skin="art"]:has(#play-root .pl-game) body{overflow:hidden}
+html[data-skin="art"] #play-root .pl-game{grid-template-columns:minmax(0,1fr) 270px;gap:10px;margin-top:0;height:calc(100vh - 12px);height:calc(100dvh - 12px);align-items:stretch}
+html[data-skin="art"] #play-root .pl-game.nolog{grid-template-columns:minmax(0,1fr)}
+html[data-skin="art"] #play-root .pl-game.nolog .pl-logshow{top:4px;right:110px}
+html[data-skin="art"] #play-root .pl-board{gap:6px;min-height:0}
+html[data-skin="art"] #play-root .pl-side{position:static;max-height:none;height:100%;min-height:0;gap:6px}
+html[data-skin="art"] #play-root .pl-side-h h2{font-size:1.1rem;margin:0}
+html[data-skin="art"] #play-root .pl-side-h{flex-wrap:wrap;gap:4px}
+html[data-skin="art"] #play-root .pl-side-h .actions{gap:4px;flex-wrap:wrap}
+html[data-skin="art"] #play-root .pl-side-h .btn{padding:2px 8px;font-size:.85rem}
+html[data-skin="art"] #play-root .pl-log{min-height:0}
+html[data-skin="art"] #play-root .pl-legend{font-size:.72rem}
+html[data-skin="art"] #play-root .pl-zone{display:grid;grid-template-columns:max-content minmax(0,1fr);column-gap:12px;padding:6px 10px}
+html[data-skin="art"] #play-root .pl-zone>.pl-heroes{grid-column:1;grid-row:1;grid-template-columns:repeat(3,var(--hw,207px));gap:6px}
+html[data-skin="art"] #play-root .pl-zone>.pl-zside{display:block;grid-column:2;grid-row:1;position:relative;min-width:0}
+html[data-skin="art"] #play-root .pl-zsin{display:flex;flex-direction:column;gap:6px;position:absolute;inset:0;overflow:auto;scrollbar-width:thin;padding-right:2px}
+html[data-skin="art"] #play-root .pl-zsin>.pl-bar{gap:4px 8px;font-size:.82rem;padding-top:2px}
+html[data-skin="art"] #play-root .pl-zsin>.pl-bar .nm{font-size:1rem}
+html[data-skin="art"] #play-root .pl-zsin>.pl-bar .res{padding:0 8px}
+html[data-skin="art"] #play-root .pl-zsin>.pl-bar .pl-piles{margin-left:0}
+html[data-skin="art"] #play-root .pl-zsin>.pl-row{font-size:.82rem;gap:4px;min-width:0}
+html[data-skin="art"] #play-root .pl-zsin>.pl-row .lbl{width:100%}
+html[data-skin="art"] #play-root .pl-zsin>.pl-row .pi{padding:2px 6px;font-size:.78rem}
+html[data-skin="art"] #play-root .pl-mid{padding:5px 10px;gap:4px 14px;flex-direction:row;flex-wrap:wrap;align-items:center}
+html[data-skin="art"] #play-root .pl-mid>*{flex:1 1 100%;min-width:0}
+html[data-skin="art"] #play-root .pl-mid>.pl-phase{flex:0 1 auto;gap:6px 10px}
+html[data-skin="art"] #play-root .pl-mid>.pl-prompt{flex:1 1 280px;font-size:.95rem;line-height:1.25}
+html[data-skin="art"] #play-root .pl-mid .ph-n{font-size:1.05rem}
+html[data-skin="art"] #play-root .pl-mid .posm span{padding:1px 8px;font-size:.74rem}
+html[data-skin="art"] #play-root .pl-mid .btn{padding:3px 10px;font-size:.9rem}
+html[data-skin="art"] #play-root .pl-mid .pl-endcol{flex-direction:row;align-items:center;gap:6px}
+html[data-skin="art"] #play-root .pl-mid .pl-help>summary{padding:2px 6px}
+html[data-skin="art"] #play-root .pl-mid .pl-help[open]>.pl-help-b{position:absolute;right:0;top:100%;z-index:40;min-width:240px;padding:8px;background:var(--win,#2b1f15);border:2px solid var(--accent,#c79028);border-radius:6px;box-shadow:0 8px 20px #000c}
+html[data-skin="art"] #play-root .pl-mid .pl-banner{padding:4px 10px;font-size:.88rem;line-height:1.25;max-height:5.6em;overflow:auto}
+html[data-skin="art"] #play-root .pl-mid .pl-banner .btn{padding:2px 10px}
+html[data-skin="art"] #play-root .pl-mid .pl-stats{max-height:46vh;overflow:auto}
+html[data-skin="art"] #play-root .pl-mid{align-content:flex-start}
+html[data-skin="art"] #play-root .pl-mid .pl-snd{padding:1px 8px;font-size:.8rem}
+html[data-skin="art"] #play-root .pl-mid .pl-acts{gap:5px}
+html[data-skin="art"] #play-root .pl-hand-h{font-size:.74rem;line-height:1.2}
+html[data-skin="art"] #play-root .pl-hand{padding:2px 2px 4px;gap:8px}
+html[data-skin="art"] #play-root .pl-hand .hc{flex-basis:var(--hcw,150px)}
+}
 /* Game Help expandable */
 .pl-help{position:relative}
 .pl-help>summary{cursor:pointer;list-style:none;font-size:.85rem;font-weight:700;color:var(--accent);padding:4px 8px;border-radius:8px;user-select:none;text-align:right}
@@ -426,6 +533,33 @@ function destroyPop(f){let L=document.getElementById("pl-fx");if(!L){L=document.
   L.appendChild(el);setTimeout(()=>el.remove(),1800)}
 function byName(n){if(!n)return null;try{for(const c of BYID.values())if(c.name===n)return c}catch(e){}return null}
 
+
+/* ---------- Card Art theme: pull-tab menu and fit-to-window sizing ---------- */
+function menuTab(){if(document.getElementById("pl-menutab"))return;const t=document.createElement("button");t.type="button";t.id="pl-menutab";t.setAttribute("aria-expanded","false");t.title="Show the site menu";t.innerHTML='<span aria-hidden="true">☰</span> Menu <span class="ar" aria-hidden="true">▾</span>';
+  const set=open=>{const r=document.documentElement;r.classList.toggle("pl-menu",open);t.setAttribute("aria-expanded",String(open));const hd=document.querySelector("header.top");t.style.top=open&&hd?hd.offsetHeight+"px":"0";t.querySelector(".ar").textContent=open?"▴":"▾"};
+  t.addEventListener("click",e=>{e.stopPropagation();set(!document.documentElement.classList.contains("pl-menu"))});
+  document.addEventListener("click",e=>{if(document.documentElement.classList.contains("pl-menu")&&!e.target.closest("header.top,#pl-menutab"))set(false)});
+  addEventListener("hashchange",()=>set(false));
+  document.body.appendChild(t)}
+const FIT_MQ=matchMedia("(min-width:900px) and (min-height:560px)");
+function fitPlay(root){const g=root&&root.querySelector(".pl-game");if(!g||typeof SKIN==="undefined"||SKIN!=="art")return;
+  if(!FIT_MQ.matches){root.style.removeProperty("--hw");root.style.removeProperty("--hcw");document.documentElement.classList.remove("pl-menu");return}
+  menuTab();const de=document.scrollingElement||document.documentElement;
+  const board=g.querySelector(".pl-board");const hand=g.querySelector(".pl-hand");
+  const set=w=>{root.style.setProperty("--hw",w+"px");root.style.setProperty("--hcw",Math.round(Math.max(84,Math.min(200,w*.66)))+"px")};
+  const fits=()=>{const zs=board.querySelectorAll(".pl-zone");for(const z of zs)if(z.scrollWidth>z.clientWidth+1)return false;
+    return board.scrollHeight<=board.clientHeight+1};
+  /* the action bar keeps the tallest height it has needed this game, so the cards don't resize every time a banner comes and goes */
+  const mid=board.querySelector(".pl-mid");if(mid){if(U.midKey!==U.gameKey){U.midKey=U.gameKey;U.midMax=0}mid.style.minHeight="";const mh=Math.min(Math.max(90,Math.round(innerHeight*.16)),Math.ceil(mid.getBoundingClientRect().height));if(mh>U.midMax){U.midMax=mh;U.fitW=0}mid.style.minHeight=U.midMax+"px"}
+  /* largest Hero Card (width in px) that lets the whole board fit; min 110, max 300 */
+  let lo=110,hi=300,best=lo;const prev=U.fitW||0;
+  if(prev){set(prev);if(fits()){lo=prev;best=prev}else hi=prev-1}
+  while(lo<=hi){const m=(lo+hi)>>1;set(m);if(fits()){best=m;lo=m+1}else hi=m-1}
+  /* small changes (a longer prompt, a new tag) don't make the cards jump around */
+  if(prev&&best>prev&&best-prev<6)best=prev;
+  set(best);U.fitW=best;
+  try{if(typeof fitArt==="function")fitArt(hand||root)}catch(e){}}
+let fitT=null;addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(()=>{U.fitW=0;const r=ROOT();if(r)fitPlay(r)},120)});
 function render(){const root=ROOT();if(!root)return;injectCSS();
   if(U.mode==="lobby"){root.innerHTML=lobbyHTML();return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
@@ -438,6 +572,7 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   const he=root.querySelector(".pl-hand");if(he){he.scrollLeft=hs;handOvf(he);he.addEventListener("scroll",()=>handOvf(he),{passive:true})}
   try{gameFx(s)}catch(e){console.warn(e)}
   try{if(typeof fitArt==="function")fitArt(root)}catch(e){}
+  try{fitPlay(root)}catch(e){console.warn(e)}
   modals(s)}
 function lobbyHTML(){const ch=deckChoices();const resL=store2.get("cq.play.local",null),resH=store2.get("cq.play.host",null),resG=store2.get("cq.play.guest",null);
   if(!U.lobby.deck||!ch.some(d=>d.id===U.lobby.deck&&d.ok))U.lobby.deck=(ch.find(d=>d.ok)||{}).id||"";
@@ -508,15 +643,15 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
   const turnTag=s.phase==="battle"&&s.prio===pid&&!s.pend.length?'<span class="res init">Acting</span>':"";
   const pc=[0,1].map(p=>`P${p}`).filter(u=>cands.has(u)&&u==="P"+pid).length;
   return`<section class="pl-zone${mine?"":" op"}" aria-label="${esc(pl.name)}'s side">
-    <div class="pl-bar"><span class="nm">${esc(pl.name)}${mine?" (you)":""}</span>${isInit?'<span class="res init" title="Has initiative">Initiative</span>':""}${turnTag}
+    <div class="pl-heroes">${heroes}</div>
+    <div class="pl-zside"><div class="pl-zsin"><div class="pl-bar"><span class="nm">${esc(pl.name)}${mine?" (you)":""}</span>${isInit?'<span class="res init" title="Has initiative">Initiative</span>':""}${turnTag}
       ${auraBarHTML(s,pl)}<span class="res gold" title="Gold: earned at Dusk, spent in Town"><i class="coin" aria-hidden="true"></i> <b>${pl.gold}</b> Gold</span>
       ${mine?"":turnCounts(s,pid).join("")}${s.passed[pid]&&s.phase==="battle"?'<span class="res">Passed</span>':""}
       ${pc?`<button class="btn sm" data-pa="pick" data-u="P${pid}" style="outline:3px solid var(--warn)">Target ${esc(pl.name)}'s party</button>`:""}
       <span class="pl-piles">${pl.echo.length?`<span class="res">Echo <b>${pl.echo.length}</b></span>`:""}<span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
       <button class="res" data-pa="disc" data-p="${pid}">Discard <b>${pl.disc.length}</b></button>${pl.exile.length?`<button class="res" data-pa="exile" data-p="${pid}">Exile <b>${pl.exile.length}</b></button>`:""}</span></div>
-    <div class="pl-heroes">${heroes}</div>
     <div class="pl-row"><span class="lbl">Battlefield</span>${bf}</div>
-    <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div>
+    <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div></div></div>
   </section>`}
 /* ---------- running counts (display only) ---------- */
 function deckNames(pl){const n=new Set();const add=c=>{const d=c&&E.DB[c.id];if(d)n.add(d.name)};
@@ -597,8 +732,8 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
   const hacts=hb.length?`<div class="pl-acts ph-acts" aria-label="${esc(h.name)}'s actions">${hb.join("")}</div>`:"";
   const top=`<span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
   const extra=`${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}`;
-  if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
-    ${top}${heroCardHTML(s,h,d,st)}${extra}${hpBar}${soul}${hacts}
+  if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart hk" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
+    ${top}${heroCardHTML(s,h,d,st,extra,soul,hacts)}
   </div>`;
   return`<div role="button" tabindex="0" class="${cls}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
     ${top}
@@ -609,29 +744,40 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
 /* ---------- Hero card images (Card Art export) with live stats ---------- */
 function heroArt(d){try{return!!(d&&typeof SKIN!=="undefined"&&SKIN==="art"&&typeof CARD_ART!=="undefined"&&hasArt({kind:"hero",name:d.name,cls:d.cls}))}catch(e){return false}}
 const STAT_NAME={str:"Strength",def:"Defense",aura:"Aura",hp:"Health Points"};
-function heroCardHTML(s,h,d,st){
-  const c={kind:"hero",name:d.name,cls:d.cls,rules:d.rules||"",aura:"",str:"",hp:"",def:""};
-  let src="";try{src=artSrc(c)}catch(e){src=`assets/art/hero/${artKey(d.name)}-face.webp`}
+/* Compact Hero Card (Card Art theme): pixel art in the action area, name bar with class icon,
+   STR / Life / DEF squares and an Ability tab that shows the rules on hover */
+const HK_COL={str:"#b3121a",hp:"#7f7fd8",def:"#3f9b3f"};
+function heroCardHTML(s,h,d,st,extra,soul,hacts){
+  const src=`${typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/"}art/hero-pix/${artKey(d.name)}-pix.png?v=${typeof ART_VER!=="undefined"?ART_VER:1}`;
+  const ico=`${typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/"}ico-${String(h.cls||d.cls||"generic").toLowerCase()}.png`;
   /* remember what was on screen last render: newly changed numbers pulse, a Hero that just died flips over */
   if(U.heroSeenKey!==U.gameKey){U.heroSeen={};U.heroFx={};U.heroSeenKey=U.gameKey}
   const seen=U.heroSeen,fx=U.heroFx[h.uid]||(U.heroFx[h.uid]={});const prev=seen[h.uid];const now=Date.now();
   const cur={str:st.str,def:st.def,aura:st.aura,hp:h.dead?0:st.hp,dead:!!h.dead};
   if(prev&&prev.dead!==cur.dead)fx.flip=now;
   ["str","def","aura","hp"].forEach(f=>{if(prev&&prev[f]!==cur[f])fx[f]=now});
-  /* an effect that is still playing keeps its place across re-renders (negative animation-delay) */
   const live=(t,ms)=>t&&now-t<ms?`animation-delay:-${now-t}ms;`:"";
   const flipNow=live(fx.flip,800);
   const base={str:h.base?h.base.str:d.str,def:h.base?h.base.def:d.def,aura:h.base?h.base.aura:d.aura,hp:st.max};
-  const nums=(ART_TPL.hero.nums||[]).map(([f,x,y])=>{const v=cur[f];const b=f==="hp"?st.max:base[f];
+  const num=(f,lbl)=>{const v=cur[f];const b=f==="hp"?st.max:base[f];
     const dir=v>b?" up":v<b?" dn":"";const bd=flipNow?"":live(fx[f],700);const bump=bd?" bump":"";const on=U.statPop&&U.statPop.u===h.uid&&U.statPop.f===f?" on":"";
     const tip=f==="hp"?`Health Points ${v} of ${st.max}`:`${STAT_NAME[f]} ${v} (printed ${b})`;
-    return`<button type="button" class="ph-num${dir}${bump}${on}" style="${artPos(x,y)};${bd}" data-pa="stat" data-u="${h.uid}" data-f="${f}" title="${esc(tip)} · click for details" aria-label="${esc(tip)}">${v}</button>`}).join("");
+    return`<button type="button" class="hk-sq hk-${f}${dir}${bump}${on}" style="${bd}" data-pa="stat" data-u="${h.uid}" data-f="${f}" title="${esc(tip)} · click for details" aria-label="${esc(tip)}"><b>${v}</b><i>${lbl}${f==="hp"&&v!==st.max?`<small>/${st.max}</small>`:""}</i></button>`};
+  const au=cur.aura,ab=base.aura;
+  const aura=`<button type="button" class="hk-au${au>ab?" up":au<ab?" dn":""}" data-pa="stat" data-u="${h.uid}" data-f="aura" title="${esc(`Aura ${au} (printed ${ab}) · click for details`)}">${au}</button>`;
   seen[h.uid]=cur;
   const pop=U.statPop&&U.statPop.u===h.uid?statPopHTML(s,h,st,U.statPop.f):"";
-  return`<div class="ph-card${h.dead?" down":""}${flipNow?" anim":""}"><div class="ph-inner"${flipNow?` style="${flipNow}"`:""}>
-    <div class="ph-face"><img class="c-art" src="${src}" alt="${esc(d.name)}" width="500" height="700" decoding="async">${artOverlayHTML(c)}${h.dead?"":nums}${pop}${cardOf(h.id)?zoomHTML(cardOf(h.id)):""}</div>
-    <div class="ph-back" aria-hidden="${h.dead?"false":"true"}"><span class="gemb"></span><span class="cqt">Crystal<br>Quest</span><span class="rib">${h.surr?"Surrendered":"Dead"}<small>${esc(d.name)}</small></span></div>
+  const rules=d.rules?artRulesHTML(d.rules):"<p>No ability.</p>";
+  return`<div class="ph-card hk-card${h.dead?" down":""}${flipNow?" anim":""}"><div class="ph-inner"${flipNow?` style="${flipNow}"`:""}>
+    <div class="ph-face">
+      <div class="hk-nb"><img class="hk-ci" src="${ico}" alt="${esc(h.cls)}"><span class="hk-nm${d.name.length>17?" xl":d.name.length>13?" l":""}">${esc(d.name)}</span>${h.dead?"":aura}</div>
+      <div class="hk-art"><img src="${src}" alt="${esc(d.name)}" width="207" height="167" decoding="async">${cardOf(h.id)?zoomHTML(cardOf(h.id)):""}${extra?`<div class="hk-tags">${extra}</div>`:""}${hacts||""}</div>
+      <div class="hk-st">${h.dead?"":num("str","STR")+num("hp","HP")+num("def","DEF")}<span class="hk-ab" tabindex="0" aria-label="Ability: ${esc(rulesPlainSafe(d.rules))}">Ability<span class="hk-tip" role="tooltip"><span class="hk-tt">${esc(d.name)} <small>${esc(h.cls)} Hero</small></span>${rules}</span></span></div>
+      ${pop}
+    </div>
+    <div class="ph-back" aria-hidden="${h.dead?"false":"true"}"><span class="gemb"></span><span class="cqt">Crystal<br>Quest</span><span class="rib">${h.surr?"Surrendered":"Dead"}<small>${esc(d.name)}</small></span>${soul||""}</div>
   </div></div>`}
+function rulesPlainSafe(t){try{return typeof rulesPlain==="function"?rulesPlain(t||""):String(t||"")}catch(e){return String(t||"")}}
 function statPopHTML(s,h,st,f){const pl=s.p[h.owner];const rows=[];const r=(l,v,sign)=>rows.push(`<div><span>${esc(l)}</span><b>${sign&&v>0?"+":""}${v}</b></div>`);
   const eq=k=>E.eqList(h).reduce((n,e)=>n+((k==="str"?e.pstr:e.pdef)||0),0);
   const mods=k=>(h.mods||[]).reduce((n,m)=>n+(m[k]||0),0);

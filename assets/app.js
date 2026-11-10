@@ -210,7 +210,7 @@ function setSession(session){
   S.me=u?{email:u.email,name:(u.user_metadata&&u.user_metadata.display_name)||u.email.split("@")[0]}:null;
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
-  lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false};showAdminLink();if(u)loadAccess();
+  lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false};showAdminLink();if(u)loadAccess();if(window.CQProf)window.CQProf.onSession();
   if(u)loadDecks();else{S.decks=localDecks();setTimeout(rebuildPrompt,50)}
   renderAcct();render();
 }
@@ -220,9 +220,11 @@ async function loadAccess(){const uid=S.uid;let a={admin:false,set2:false};
   if(uid!==S.uid)return;S.access=a;showAdminLink();if(["catalog","build","admin"].includes(S.view))render()}
 function showAdminLink(){const l=document.getElementById("adminTab");if(l)l.hidden=!(S.access&&S.access.admin)}
 async function loadDecks(){
-  const{data,error}=await SB.from("decks").select("id,name,heroes,cards,updated_at").order("updated_at",{ascending:false});
+  /* own decks only (the profiles update adds a public-read policy, so filter by user); is_private may not exist before the Profiles SQL runs */
+  let{data,error}=await SB.from("decks").select("id,name,heroes,cards,updated_at,is_private").eq("user_id",S.uid).order("updated_at",{ascending:false});
+  if(error&&/is_private/.test(error.message))({data,error}=await SB.from("decks").select("id,name,heroes,cards,updated_at").eq("user_id",S.uid).order("updated_at",{ascending:false}));
   if(error){toast("Couldn't load your decks. Check your connection and reload.");return}
-  S.decks=data.map(r=>({id:r.id,name:r.name,heroes:r.heroes||[],cards:r.cards||{},updated:Date.parse(r.updated_at)||0}));
+  S.decks=data.map(r=>({id:r.id,name:r.name,heroes:r.heroes||[],cards:r.cards||{},updated:Date.parse(r.updated_at)||0,...(typeof r.is_private==="boolean"?{priv:r.is_private}:{})}));
   const fixed=S.decks.filter(fixRenames);
   if(fixed.length)SB.from("decks").upsert(fixed.map(d=>({...toRow(d),updated_at:new Date(d.updated||Date.now()).toISOString()}))).then(({error})=>{if(!error)toast(`Updated ${fixed.length} saved deck${fixed.length===1?"":"s"} for renamed cards.`)});
   if(S.view==="decks")render();
@@ -233,7 +235,7 @@ async function persistDeck(d){
   if(S.mode==="account"){
     const{error}=await SB.from("decks").upsert(toRow(d));
     if(error){toast("Couldn't save to your account: "+error.message);throw error}
-    const i=S.decks.findIndex(x=>x.id===d.id);const rec={...d,cards:{...d.cards},heroes:d.heroes.slice(),updated:Date.now()};
+    const i=S.decks.findIndex(x=>x.id===d.id);const rec={...d,cards:{...d.cards},heroes:d.heroes.slice(),updated:Date.now()};if(i>=0&&typeof S.decks[i].priv==="boolean")rec.priv=S.decks[i].priv;else if(S.decks.some(x=>typeof x.priv==="boolean"))rec.priv=false;
     if(i>=0)S.decks.splice(i,1);S.decks.unshift(rec);return "account";
   }
   const list=localDecks().filter(x=>x.id!==d.id);
@@ -459,6 +461,7 @@ function render(){
   else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
   else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
   else if(S.view==="community"){v.innerHTML=viewCommunity();if(!S.comm||Date.now()-S.comm.at>60000)loadCommunity()}
+  else if(S.view==="leaderboard"||S.view==="player"){if(window.CQProf)window.CQProf.mount(v);else v.innerHTML='<p class="lede">Loading…</p>'}
   else if(S.view==="admin"){if(window.CQAdmin)window.CQAdmin.mount(v);else v.innerHTML='<p class="lede">Loading…</p>'}
   else v.innerHTML=viewDecks();
 }
@@ -660,6 +663,7 @@ function viewDecks(){
       <button type="button" class="btn sm" data-act="tts" data-src="${d.id}">TTS</button>
       <button type="button" class="btn sm" data-act="share" data-src="${d.id}">Share</button>
       ${S.uid&&SB?(S.commMine&&S.commMine.has(String(d.id))?`<button type="button" class="btn sm" data-act="comm-share" data-id="${d.id}" title="Send your latest changes to the community copy">Update community</button><button type="button" class="btn sm" data-act="comm-unshare" data-id="${d.id}">Unshare</button>`:`<button type="button" class="btn sm" data-act="comm-share" data-id="${d.id}" title="List this deck on Decklists → Community Decks">Share to community</button>`):""}
+      ${window.CQProf?window.CQProf.privButton(d):""}
       <button type="button" class="btn sm" data-act="dup" data-id="${d.id}">Duplicate</button>
       <button type="button" class="btn sm danger" data-act="del" data-id="${d.id}">Delete</button></div>
     <div class="actions" data-confirm="${d.id}" hidden><span class="note">Delete this deck for good?</span><button type="button" class="btn sm danger" data-act="del-yes" data-id="${d.id}">Delete</button><button type="button" class="btn sm" data-act="del-no" data-id="${d.id}">Keep</button></div>
@@ -1170,7 +1174,8 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.querySelectorAll(".modal");if(ms.length)ms[ms.length-1].remove();return}
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
-function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","quickstart","play","best","community","changelog","admin"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+function route(){const h=location.hash.replace("#","");const pm=/^player\/(.+)$/.exec(h);if(pm){try{S.playerName=decodeURIComponent(pm[1])}catch(e){S.playerName=pm[1]}}
+  S.view=pm?"player":["catalog","build","decks","account","rules","quickstart","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

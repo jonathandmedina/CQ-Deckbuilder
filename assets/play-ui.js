@@ -414,7 +414,8 @@ async function maybeRecord(){const s=U.s,m=U.meta;if(!s||!s.over||!m||!m.gid||m.
   const c=sb();if(!c)return;m.recorded=true;saveLocal();
   const sides=m.mode==="ai"?[0]:[0,1];const rows=[];
   for(const side of sides){const d=m.decks[side];if(!d||E.validateDeck(d).length)continue;
-    rows.push({game_id:m.gid,side,deck_key:await deckKey(d),deck_name:d.name,heroes:d.heroes,cards:d.cards,player_name:(s.p[side].name||"Guest").slice(0,40),mode:m.mode,result:s.winner<0?"draw":(s.winner===side?"win":"loss"),rounds:s.round,stats:recStats(s,side),
+    /* online: the guest's row is saved without an account; the guest's own browser claims it (claim_result) so it counts on their profile */
+    rows.push({...(m.mode==="online"&&side===1?{user_id:null}:{}),game_id:m.gid,side,deck_key:await deckKey(d),deck_name:d.name,heroes:d.heroes,cards:d.cards,player_name:(s.p[side].name||"Guest").slice(0,40),mode:m.mode,result:s.winner<0?"draw":(s.winner===side?"win":"loss"),rounds:s.round,stats:recStats(s,side),
       started_at:m.t0?new Date(m.t0).toISOString():null,ended_at:new Date().toISOString(),active_secs:m.t0?Math.min(172800,Math.round((m.act||0)/1000)):null})}
   if(!rows.length)return;
   let{error}=await c.from("deck_results").insert(rows);
@@ -455,7 +456,7 @@ function openChannel(code,role,onReady){const c=sb();if(!c){toast("Online play n
   const ch=c.channel("cq-play-"+code,{config:{broadcast:{self:false},presence:{key:cid}}});
   ch.on("broadcast",{event:"act"},({payload})=>{if(U.net&&U.net.role==="host")onGuestAct(payload)});
   ch.on("broadcast",{event:"hello"},({payload})=>{if(U.net&&U.net.role==="host")onHello(payload)});
-  ch.on("broadcast",{event:"state"},({payload})=>{if(U.net&&U.net.role==="guest"&&payload.to===cid){U.s=payload.s;U.me=payload.me;U.busy=false;U.mode="game";if(payload.err)toast(payload.err);render()}});
+  ch.on("broadcast",{event:"state"},({payload})=>{if(U.net&&U.net.role==="guest"&&payload.to===cid){U.s=payload.s;U.me=payload.me;U.busy=false;U.mode="game";if(payload.err)toast(payload.err);if(payload.gid&&U.s&&U.s.over)claimResult(payload.gid);render()}});
   ch.on("broadcast",{event:"full"},({payload})=>{if(U.net&&U.net.role==="guest"&&payload.to===cid){toast("That room already has two players.");leaveGame()}});
   ch.on("presence",{event:"sync"},()=>{if(!U.net)return;const st=ch.presenceState();U.net.peers=Object.keys(st).filter(k=>k!==cid).length;render()});
   ch.subscribe(async status=>{if(status==="SUBSCRIBED"){await ch.track({name:myName(),role});onReady&&onReady()}else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){toast("Couldn't reach the game server. Check your connection.")}});
@@ -474,7 +475,11 @@ function onHello(p){
   if(U.net.guest&&p.cid!==U.net.guest){U.net.ch.send({type:"broadcast",event:"full",payload:{to:p.cid}});return}
   U.net.guest=p.cid;broadcast()}
 function onGuestAct(p){if(!U.s||p.cid!==U.net.guest)return;const r=E.act(U.s,1,p.a);saveLocal();broadcast(r.ok?null:r.err);render();if(U.s.over)maybeRecord()}
-function broadcast(err){if(!U.net||!U.net.ch||!U.s||!U.net.guest)return;U.net.ch.send({type:"broadcast",event:"state",payload:{to:U.net.guest,s:E.redact(U.s,1),me:1,err:err||null}})}
+function broadcast(err){if(!U.net||!U.net.ch||!U.s||!U.net.guest)return;U.net.ch.send({type:"broadcast",event:"state",payload:{to:U.net.guest,s:E.redact(U.s,1),me:1,err:err||null,gid:U.s.over&&U.meta?U.meta.gid:null}})}
+/* guest: once the game is over, claim our side of the result the host saved (retries while the host's save lands) */
+const claimed=new Set();
+async function claimResult(gid){const c=sb(),st=AS();if(!c||!st||!st.uid||!gid||claimed.has(gid))return;claimed.add(gid);
+  for(let i=0;i<6;i++){await new Promise(r=>setTimeout(r,i?4000:2500));try{const{data,error}=await c.rpc("claim_result",{gid});if(error)return;if(data>0){toast("Result saved to your profile.");return}}catch(e){return}}}
 function leaveGame(){U.gameKey=null;clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
   if(U.net&&U.net.role==="guest")store2.del("cq.play.guest");if(U.net&&U.net.role==="host")store2.del("cq.play.host");
   if(U.vsAI)store2.del("cq.play.local");U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";U.tgt=null;U.man=null;render()}

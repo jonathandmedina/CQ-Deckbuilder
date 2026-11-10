@@ -13,6 +13,8 @@ Winning takes careful positioning, smart use of your Aura each round, and good t
 
 **Defeat all of your opponents’ Heroes.** A Hero is defeated when it dies. The last player with a Hero still standing wins.
 
+**Running out of cards.** If you have to draw a card and your library is empty, you lose the game.
+
 ### The Golden Rule
 
 If a card’s text contradicts these rules, the card wins.
@@ -580,7 +582,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 
 ### Drawing From an Empty Library
 
-If you need to draw and your library is empty, shuffle your discard pile to make a new library and keep drawing.
+If you need to draw a card and your library is empty, you lose the game. Your discard pile is **not** shuffled into a new library. (Effects that put cards back into your library, like Amnesia Puzzle Box, still work.)
 
 ### Card Text Terms
 
@@ -706,7 +708,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Deck**: The 50 cards you build before a game (deck construction).
 - **Library**: Your draw pile during play.
 - **Hand**: Cards drawn but not yet played. Maximum hand size 5 (checked at Dusk).
-- **Discard pile**: Where used cards go. Reshuffled into a new library when the library runs out.
+- **Discard pile**: Where used cards go. It is not reshuffled when your library runs out.
+- **Empty library**: If you have to draw from an empty library, you lose the game.
 - **Exile zone**: Cards removed from the game.
 - **Non-Hero object**: Any card in play that isn't a Hero (items, equipment, summons, enchantments, tokens).
 - **Battlefield**: Where summons and Pillar tokens sit.

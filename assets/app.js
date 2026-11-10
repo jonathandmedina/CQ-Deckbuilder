@@ -207,7 +207,7 @@ function setSession(session){
   S.me=u?{email:u.email,name:(u.user_metadata&&u.user_metadata.display_name)||u.email.split("@")[0]}:null;
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
-  lastUid=S.uid;
+  lastUid=S.uid;S.commMine=undefined;
   if(u)loadDecks();else{S.decks=localDecks();setTimeout(rebuildPrompt,50)}
   renderAcct();render();
 }
@@ -438,7 +438,7 @@ const SORTS=[["class","Class"],["name","Name"],["cost","Aura cost"],["type","Car
 
 /* ---------- views ---------- */
 function render(){
-  document.querySelectorAll("#tabs a[data-view]").forEach(a=>{if(a.dataset.view===S.view||(a.dataset.view==="rules"&&S.view==="quickstart"&&!a.closest(".tab-sub")))a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  document.querySelectorAll("#tabs a[data-view]").forEach(a=>{if(a.dataset.view===S.view||(a.dataset.view==="rules"&&S.view==="quickstart"&&!a.closest(".tab-sub"))||(a.dataset.view==="community"&&S.view==="best"&&!a.closest(".tab-sub")))a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   const v=$("#view");
   if(S.view==="catalog")v.innerHTML=viewCatalog();
   else if(S.view==="build")v.innerHTML=viewBuild();
@@ -448,6 +448,7 @@ function render(){
   else if(S.view==="play"){if(window.CQPlay)window.CQPlay.mount(v);else v.innerHTML='<p class="lede">Loading the game…</p>'}
   else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
   else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
+  else if(S.view==="community"){v.innerHTML=viewCommunity();if(!S.comm||Date.now()-S.comm.at>60000)loadCommunity()}
   else v.innerHTML=viewDecks();
 }
 function viewCatalog(){
@@ -567,7 +568,7 @@ function bestCard(r,rank){const d=bestDeck(r);const hs=d.heroes.map(h=>BYID.get(
     <div class="actions"><button type="button" class="btn sm" data-act="best-view" data-id="${esc(r.deck_key)}">View list</button><button type="button" class="btn sm primary" data-act="best-open" data-id="${esc(r.deck_key)}">Open in Deck Builder</button></div>
   </article>`}
 function viewBest(){const b=S.best;
-  const head=`<h1>Best Decks</h1><p class="lede">Decks with the highest win rate in finished Play-tab games (vs AI and online). A deck needs at least ${BEST_MIN_GAMES} games and over ${BEST_MIN_PCT}% wins to be listed. The same Heroes and 50 cards count as one deck, whoever plays it.</p>
+  const head=`<h1>Decklists</h1>${dlTabs("best")}<p class="lede">Decks with the highest win rate in finished Play-tab games (vs AI and online). A deck needs at least ${BEST_MIN_GAMES} games and over ${BEST_MIN_PCT}% wins to be listed. The same Heroes and 50 cards count as one deck, whoever plays it.</p>
     <div class="bar"><button type="button" class="btn sm" data-act="best-refresh">Refresh</button><a class="btn sm" href="#play">Play a game</a></div>`;
   if(!SB)return head+`<div class="empty">Win tracking needs the site's account service, which isn't reachable right now.</div>`;
   if(!b||b.loading&&!b.rows)return head+`<div class="empty">Loading results…</div>`;
@@ -575,16 +576,55 @@ function viewBest(){const b=S.best;
   const top=b.rows.filter(r=>r.games>=BEST_MIN_GAMES),soon=b.rows.filter(r=>r.games<BEST_MIN_GAMES);
   return head+(top.length?`<div class="decks">${top.map((r,i)=>bestCard(r,i+1)).join("")}</div>`:`<div class="empty">No deck has ${BEST_MIN_GAMES}+ games above ${BEST_MIN_PCT}% yet. Finish games in the Play tab to fill this list.</div>`)
     +(soon.length?`<h2 style="margin-top:28px">On the rise</h2><p class="lede">Over ${BEST_MIN_PCT}% wins but fewer than ${BEST_MIN_GAMES} games so far.</p><div class="decks">${soon.slice(0,24).map(r=>bestCard(r,0)).join("")}</div>`:"")}
-function bestListModal(r){const d=bestDeck(r);const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",d.name);
+/* ---------- Decklists: Community Decks (decks players share) + recently played decks ----------
+   Supabase table community_decks (see "Community Decks SQL" in the project). Anyone can read; signed-in players add, update or remove their own. */
+function dlTabs(on){return`<div class="dl-tabs" role="tablist" aria-label="Decklists"><a role="tab" href="#community" class="btn sm${on==="community"?" on":""}" aria-selected="${on==="community"}">Community Decks</a><a role="tab" href="#best" class="btn sm${on==="best"?" on":""}" aria-selected="${on==="best"}">Best Decks</a></div>`}
+async function loadCommunity(){if(!SB){S.comm={at:Date.now(),rows:[],recent:[],err:"off"};render();return}
+  S.comm=Object.assign({},S.comm||{},{loading:true,at:Date.now()});
+  const[c,r]=await Promise.all([SB.from("community_decks").select("id,user_id,deck_id,name,author,heroes,cards,created_at,updated_at").order("updated_at",{ascending:false}).limit(200),
+    SB.from("deck_leaderboard").select("*").order("last_played",{ascending:false}).limit(24)]);
+  S.comm={at:Date.now(),rows:c.error?[]:(c.data||[]),err:c.error?c.error.message:null,recent:r.error?[]:(r.data||[]),loading:false};
+  if(S.uid&&!c.error){S.commMine=new Map(S.comm.rows.filter(x=>x.user_id===S.uid).map(x=>[x.deck_id,x.id]))}
+  if(S.view==="community"||S.view==="decks")render()}
+async function loadMineShared(){if(!SB||!S.uid)return;const{data,error}=await SB.from("community_decks").select("id,deck_id").eq("user_id",S.uid);
+  S.commMine=new Map(error?[]:(data||[]).map(x=>[x.deck_id,x.id]));S.commErr=error?error.message:null;if(S.view==="decks")render()}
+function commDeck(r){const d={id:"comm:"+r.id,name:r.name||"Untitled deck",heroes:(r.heroes||[]).slice(0,3),cards:{...(r.cards||{})}};fixRenames(d);return d}
+function commCard(r){const d=commDeck(r);const hs=d.heroes.map(h=>BYID.get(h)).filter(Boolean);const mine=S.uid&&r.user_id===S.uid;
+  return`<article class="deck best comm">
+    <div class="best-h"><h3>${esc(d.name)}</h3>${mine?'<span class="tag-mine">Yours</span>':""}</div>
+    <div class="pips">${hs.map(h=>`<button type="button" class="pill" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-act="inspect" data-id="${esc(h.id)}"><i class="dot"></i>${esc(h.name)}</button>`).join("")}</div>
+    <div class="note">Shared by ${esc(r.author||"Player")} · ${esc(new Date(r.updated_at||r.created_at).toLocaleDateString())}</div>
+    <div class="actions"><button type="button" class="btn sm" data-act="comm-view" data-id="${esc(r.id)}">View list</button><button type="button" class="btn sm primary" data-act="comm-open" data-id="${esc(r.id)}">Open in Deck Builder</button>${mine?`<button type="button" class="btn sm danger" data-act="comm-del" data-id="${esc(r.id)}">Remove</button>`:""}</div>
+  </article>`}
+function viewCommunity(){const c=S.comm;
+  const head=`<h1>Decklists</h1>${dlTabs("community")}<p class="lede">Decks shared by players. ${S.uid?"Share one of yours from My Decks with <b>Share to community</b>.":SB?'<a href="#account">Sign in</a> to share your own decks from My Decks.':""}</p>
+    <div class="bar"><button type="button" class="btn sm" data-act="comm-refresh">Refresh</button><a class="btn sm" href="#decks">My Decks</a></div>`;
+  if(!SB)return head+`<div class="empty">Community decks need the site's account service, which isn't reachable right now.</div>`;
+  if(!c||c.loading&&!c.rows)return head+`<div class="empty">Loading decks…</div>`;
+  const shared=c.err?`<div class="empty">Community decks aren't available yet${/community_decks/.test(c.err)?" (the site's database needs a quick update)":`: ${esc(c.err)}`}.</div>`
+    :c.rows.length?`<div class="decks">${c.rows.map(commCard).join("")}</div>`:`<div class="empty">No shared decks yet. Be the first: open My Decks and press Share to community.</div>`;
+  const recent=c.recent&&c.recent.length?`<h2 style="margin-top:28px">Recently played</h2><p class="lede">Decks from the latest finished Play-tab games, any win rate.</p><div class="decks">${c.recent.map(r=>bestCard(r,0)).join("")}</div>`:"";
+  return head+shared+recent}
+function commListModal(r){bestListModal(Object.assign({},r,{_comm:true}))}
+async function commShare(d){if(!SB||!S.uid){toast("Sign in to share decks.");return}
+  if(issues(d).length||needsRebuild(d)){toast("Only legal decks can be shared. Fix this deck's issues first.");return}
+  const row={user_id:S.uid,deck_id:String(d.id),name:(d.name||"Untitled deck").slice(0,80),author:((S.me&&S.me.name)||"Player").slice(0,40),heroes:d.heroes.slice(0,3),cards:d.cards,updated_at:new Date().toISOString()};
+  const{data,error}=await SB.from("community_decks").upsert(row,{onConflict:"user_id,deck_id"}).select("id,deck_id").single();
+  if(error){toast(/community_decks/.test(error.message)?"Sharing isn't switched on yet (the site's database needs a quick update).":"Couldn't share the deck: "+error.message);return}
+  S.commMine=S.commMine||new Map();const was=S.commMine.has(data.deck_id);S.commMine.set(data.deck_id,data.id);S.comm=null;toast(was?"Community copy updated.":"Shared to Community Decks.");render()}
+async function commUnshare(rowId){if(!SB||!S.uid)return;const{error}=await SB.from("community_decks").delete().eq("id",rowId);
+  if(error){toast("Couldn't remove it: "+error.message);return}
+  if(S.commMine)for(const[k,v]of S.commMine)if(v===rowId)S.commMine.delete(k);if(S.comm&&S.comm.rows)S.comm.rows=S.comm.rows.filter(x=>x.id!==rowId);toast("Removed from Community Decks.");render()}
+function bestListModal(r){const d=r._comm?commDeck(r):bestDeck(r);const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",d.name);
   const rows=Object.entries(d.cards).map(([id,q])=>({c:BYID.get(id),id,q})).sort((a,b)=>(a.c?costNum(a.c):99)-(b.c?costNum(b.c):99)||a.id.localeCompare(b.id));
-  m.innerHTML=`<div class="box"><h2>${esc(d.name)}</h2><p class="note">${r.wins}–${r.losses}${r.draws?`–${r.draws}`:""} · ${Number(r.win_pct).toFixed(1)}% wins in ${r.games} games</p>
+  m.innerHTML=`<div class="box"><h2>${esc(d.name)}</h2><p class="note">${r._comm?`Shared by ${esc(r.author||"Player")}`:`${r.wins}–${r.losses}${r.draws?`–${r.draws}`:""} · ${Number(r.win_pct).toFixed(1)}% wins in ${r.games} games`}</p>
     <div class="dl"><h4><span>Heroes</span><span>3</span></h4><ul>${d.heroes.map(h=>{const c=BYID.get(h);return c?`<li style="--cc:${cc(c.cls)};--ci:${ci(c.cls)}"><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(c.id)}">${esc(c.name)}</button></li>`:""}).join("")}</ul>
     <h4><span>Cards</span><span>${rows.reduce((a,e)=>a+e.q,0)}</span></h4><ul>${rows.map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink" data-act="inspect" data-id="${esc(e.id)}">${esc(e.c.name)}</button><span class="cst">${esc(e.c.cost)}</span>`:`<span class="n bad">${esc(e.id)}</span>`}</li>`).join("")}</ul></div>
-    <div class="actions"><button type="button" class="btn primary" data-act="best-open" data-id="${esc(r.deck_key)}">Open in Deck Builder</button><button type="button" class="btn" data-act="close">Close</button></div></div>`;
+    <div class="actions"><button type="button" class="btn primary" data-act="${r._comm?"comm-open":"best-open"}" data-id="${esc(r._comm?r.id:r.deck_key)}">Open in Deck Builder</button><button type="button" class="btn" data-act="close">Close</button></div></div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m)}
 function confirmReplace(){return window.confirm("Replace your unsaved draft in the Deck Builder with this deck?")}
 function viewDecks(){
-  const ds=S.decks;
+  const ds=S.decks;if(S.uid&&SB&&S.commMine===undefined){S.commMine=null;loadMineShared()}
   return`<h1>My Decks</h1>
   <p class="lede">${S.mode==="account"?`Signed in${S.me&&S.me.name?" as "+esc(S.me.name):""}. Decks you save are stored in your account and follow you to any device.`:"You're browsing as a guest, so decks are saved in this browser only."+(SB?' <a href="#account">Create a free account</a> to keep decks on any device.':"")}</p>
   <div class="bar"><button type="button" class="btn primary" data-act="new-deck-go">New deck</button>
@@ -599,6 +639,7 @@ function viewDecks(){
       <button type="button" class="btn sm" data-act="pnp" data-src="${d.id}">Print &amp; Play</button>
       <button type="button" class="btn sm" data-act="tts" data-src="${d.id}">TTS</button>
       <button type="button" class="btn sm" data-act="share" data-src="${d.id}">Share</button>
+      ${S.uid&&SB?(S.commMine&&S.commMine.has(String(d.id))?`<button type="button" class="btn sm" data-act="comm-share" data-id="${d.id}" title="Send your latest changes to the community copy">Update community</button><button type="button" class="btn sm" data-act="comm-unshare" data-id="${d.id}">Unshare</button>`:`<button type="button" class="btn sm" data-act="comm-share" data-id="${d.id}" title="List this deck on Decklists → Community Decks">Share to community</button>`):""}
       <button type="button" class="btn sm" data-act="dup" data-id="${d.id}">Duplicate</button>
       <button type="button" class="btn sm danger" data-act="del" data-id="${d.id}">Delete</button></div>
     <div class="actions" data-confirm="${d.id}" hidden><span class="note">Delete this deck for good?</span><button type="button" class="btn sm danger" data-act="del-yes" data-id="${d.id}">Delete</button><button type="button" class="btn sm" data-act="del-no" data-id="${d.id}">Keep</button></div>
@@ -1081,8 +1122,15 @@ document.addEventListener("click",async e=>{
   else if(a==="signout"){await signOut()}
   else if(a==="rules-jump"){rulesJump(id)}
   else if(a==="best-refresh"){S.best=null;loadBest();render()}
-  else if(a==="best-view"){const r=(S.best&&S.best.rows||[]).find(x=>x.deck_key===id);if(r)bestListModal(r)}
-  else if(a==="best-open"){const r=(S.best&&S.best.rows||[]).find(x=>x.deck_key===id);if(!r)return;b.closest(".modal")?.remove();const d=bestDeck(r);
+  else if(a==="best-view"){const r=(S.best&&S.best.rows||[]).find(x=>x.deck_key===id)||(S.comm&&S.comm.recent||[]).find(x=>x.deck_key===id);if(r)bestListModal(r)}
+  else if(a==="comm-refresh"){S.comm=null;loadCommunity();render()}
+  else if(a==="comm-view"){const r=(S.comm&&S.comm.rows||[]).find(x=>x.id===id);if(r)commListModal(r)}
+  else if(a==="comm-del"){if(window.confirm("Remove this deck from Community Decks? Your saved deck stays in My Decks."))commUnshare(id)}
+  else if(a==="comm-share"){const d=S.decks.find(x=>x.id===id);if(d)commShare(d)}
+  else if(a==="comm-unshare"){const rid=S.commMine&&S.commMine.get(id);if(rid&&window.confirm("Remove this deck from Community Decks?"))commUnshare(rid)}
+  else if(a==="comm-open"){const r=(S.comm&&S.comm.rows||[]).find(x=>x.id===id);if(!r)return;b.closest(".modal")?.remove();const d=commDeck(r);
+    if(S.dirty&&!confirmReplace())return;S.deck={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=true;S.b.step="cards";saveDraft();go("build");toast("Deck copied into the Deck Builder. Press Save deck to keep it.")}
+  else if(a==="best-open"){const r=(S.best&&S.best.rows||[]).find(x=>x.deck_key===id)||(S.comm&&S.comm.recent||[]).find(x=>x.deck_key===id);if(!r)return;b.closest(".modal")?.remove();const d=bestDeck(r);
     if(S.dirty&&!confirmReplace())return;S.deck={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=true;S.b.step="cards";saveDraft();go("build");toast("Deck copied into the Deck Builder. Press Save deck to keep it.")}
   else if(a==="share"){const d=deckBySrc(b.dataset.src);if(d)copyText(shareURL(d),"Share link copied. Anyone with it can open this deck.")}
 });
@@ -1102,7 +1150,7 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.querySelectorAll(".modal");if(ms.length)ms[ms.length-1].remove();return}
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
-function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","quickstart","play","best","changelog"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","quickstart","play","best","community","changelog"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

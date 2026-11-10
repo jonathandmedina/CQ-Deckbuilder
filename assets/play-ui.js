@@ -41,6 +41,7 @@ const CSS=`
 .pl-side-h{display:flex;justify-content:space-between;align-items:center;gap:8px}
 .pl-zone{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .pl-zside,.pl-zsin{display:contents}
+.zs-acts{display:flex;flex-wrap:wrap;gap:5px;align-items:center}.zs-acts .zs-who{width:100%;font-weight:700}
 .pl-zone .pl-bar{order:-1}
 .pl-zone.op{background:color-mix(in srgb,var(--surface) 85%,var(--bg))}
 .pl-bar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;font-size:.88rem;color:var(--muted)}
@@ -213,7 +214,14 @@ html[data-skin="art"] .ph.hk{padding:3px 4px 4px;gap:2px;background:transparent;
 html[data-skin="art"] .ph.hk:hover,html[data-skin="art"] .ph.hk:focus-within{z-index:30}
 html[data-skin="art"] .ph.hk .ph-top{font-size:.66rem;padding:0 2px;line-height:1.1}
 html[data-skin="art"] .ph.hk.actor{box-shadow:none}
-html[data-skin="art"] .ph.hk.actor .ph-face{box-shadow:0 0 0 2px #000,0 0 0 4px var(--accent),0 0 14px var(--accent)}
+html[data-skin="art"] .ph.hk.actor .ph-face{animation:hkglow 1.6s ease-in-out infinite alternate;border-color:#ffb347}
+@keyframes hkglow{0%{box-shadow:0 0 0 2px #000,0 0 0 4px #e8481c,0 0 10px 2px rgba(255,90,20,.55),0 0 22px 4px rgba(255,60,0,.25)}
+  50%{box-shadow:0 0 0 2px #000,0 0 0 4px #ff8c1a,0 0 16px 5px rgba(255,140,30,.7),0 0 30px 8px rgba(255,80,0,.35)}
+  100%{box-shadow:0 0 0 2px #000,0 0 0 4px #ffb347,0 0 20px 6px rgba(255,170,60,.75),0 0 38px 12px rgba(230,50,0,.4)}}
+@media (prefers-reduced-motion:reduce){html[data-skin="art"] .ph.hk.actor .ph-face{animation:none;box-shadow:0 0 0 2px #000,0 0 0 4px #ff8c1a,0 0 16px 5px rgba(255,140,30,.7)}}
+html[data-skin="art"] .zs-acts{margin-top:auto;position:sticky;bottom:0;display:flex;flex-wrap:wrap;align-items:center;gap:5px;padding:6px 0 2px;background:linear-gradient(transparent,var(--win,#2b1f15) 30%)}
+html[data-skin="art"] .zs-acts .zs-who{font:400 .95rem "Pirata One",var(--display);color:#ffb347;margin-right:4px;width:100%}
+html[data-skin="art"] .zs-acts .btn{padding:3px 10px;font-size:.88rem}
 html[data-skin="art"] .ph.hk.actor::before{top:30px;left:-22px}
 html[data-skin="art"] .ph.hk.cand{outline-offset:-1px}
 .ph.hk .ph-card.hk-card{width:100%;max-width:none;margin:0;perspective:1100px;container-type:inline-size}
@@ -353,8 +361,10 @@ html[data-skin="art"] #play-root .pl-hand .hc{flex-basis:var(--hcw,150px)}
 function heroHL(ph){const hand=document.querySelector(".pl-hand");if(!hand)return;const note=document.querySelector(".pl-hand-h .hl-note");
   const s=U.s&&view&&view();const pl=s&&s.p&&s.p[U.me];const h=ph&&pl&&(pl.heroes||[]).find(x=>x.uid===ph.dataset.u);
   if(!h||h.dead){hand.classList.remove("for-hero");hand.querySelectorAll(".hc.fits").forEach(e=>e.classList.remove("fits"));if(note)note.textContent="outline = playable now · point at one of your Heroes to see the cards it can play";return}
-  let n=0;hand.classList.add("for-hero");hand.querySelectorAll(".hc").forEach(e=>{const ok=e.dataset.cls==="Generic"||e.dataset.cls===h.cls;e.classList.toggle("fits",ok);if(ok)n++});
-  if(note)note.textContent=`${h.name} (${h.cls}) can play ${n} of these`}
+  /* only the acting Hero can play cards, and only ones you have the Aura for (the legal "ok" cards) */
+  const act=s&&s.phase==="battle"&&s.prio===U.me&&!s.pend.length?E.actorFor(s,U.me):null;
+  let n=0;hand.classList.add("for-hero");hand.querySelectorAll(".hc").forEach(e=>{const ok=!!act&&act.uid===h.uid&&e.classList.contains("ok");e.classList.toggle("fits",ok);if(ok)n++});
+  if(note)note.textContent=act&&act.uid===h.uid?`${h.name} can play ${n} of these now`:act?`${h.name} isn't acting now · only ${act.name} can play cards`:`${h.name} can't play cards right now`}
 ["mouseover","focusin"].forEach(ev=>document.addEventListener(ev,e=>{const ph=e.target.closest&&e.target.closest(".ph[data-u]");if(ph)heroHL(ph)}));
 ["mouseout","focusout"].forEach(ev=>document.addEventListener(ev,e=>{const ph=e.target.closest&&e.target.closest(".ph[data-u]");if(ph&&!(e.relatedTarget&&ph.contains(e.relatedTarget)))heroHL(null)}));
 function injectCSS(){if(document.getElementById("pl-css"))return;const st=document.createElement("style");st.id="pl-css";st.textContent=CSS;document.head.appendChild(st)}
@@ -495,7 +505,10 @@ const SND=(()=>{let ac=null;const on=()=>store2.get("cq.sound",true)!==false;
     spell:t=>{[523,659,784,1046].forEach((f,i)=>tone(f,t+i*0.05,0.35,"sine",0.08))},
     card:t=>{noise(t,0.12,0.14,2500,6000)},
     heal:t=>{[392,523,659,784].forEach((f,i)=>tone(f,t+i*0.07,0.4,"sine",0.08))},
-    level:t=>{[523,659,784,1046,1318].forEach((f,i)=>tone(f,t+i*0.06,0.25,"square",0.05))},
+    level:t=>{tone(150,t,0.34,"sawtooth",0.07,880);tone(300,t+0.02,0.34,"square",0.035,1760);noise(t,0.34,0.12,500,6000);
+      tone(1046,t+0.32,0.3,"sine",0.1);tone(1568,t+0.36,0.32,"sine",0.07);tone(2093,t+0.40,0.3,"triangle",0.05)},
+    equip:t=>{[0,0.075].forEach((d,k)=>{noise(t+d,0.07,0.32-k*0.08,3200,1800);[1250,1873,2671,3390].forEach((f,i)=>tone(f*(k?1.06:1),t+d,0.16+i*0.03,i%2?"triangle":"square",0.035));tone(130,t+d,0.1,"triangle",0.16,70)})},
+    shatter:t=>{noise(t,0.07,0.36,4500,2500);noise(t+0.02,0.42,0.2,7000,2000);for(let i=0;i<9;i++)tone(2200+Math.random()*4200,t+0.02+i*0.032,0.09,"sine",0.05)},
     gold:t=>{tone(1567,t,0.12,"square",0.06);tone(2093,t+0.07,0.25,"square",0.06)},
     aura:t=>{tone(440,t,0.45,"sine",0.1,880)},
     status:t=>{tone(300,t,0.3,"sawtooth",0.06,180);tone(310,t+0.05,0.3,"sawtooth",0.05,170)},
@@ -508,7 +521,7 @@ const SND=(()=>{let ac=null;const on=()=>store2.get("cq.sound",true)!==false;
     lose:t=>{[392,370,349,262].forEach((f,i)=>tone(f,t+i*0.2,0.4,"triangle",0.1))}};
   function play(k,t){if(!on()||!FX[k])return;try{FX[k](t||0)}catch(e){}}
   /* one sound per log line, picked from what happened */
-  const RULES=[[/🏆/,"win"],[/ dies\b|has died/,"death"],[/is destroyed|destroys /,"destroy"],[/levels? up|gains a level|\(Level \d+\)/,"level"],[/ heals? |healed|resurrected|revives /,"heal"],
+  const RULES=[[/🏆/,"win"],[/ dies\b|has died/,"death"],[/\(summon\) is destroyed|destroys /,"destroy"],[/ is destroyed/,"shatter"],[/ equips /,"equip"],[/levels? up|gains a level|\(Level \d+\)/,"level"],[/ heals? |healed|resurrected|revives /,"heal"],
     [/activates (?:[A-Z][\w'-]*\s)*(?:Arrow|Shot|Bolt|Dart|Force)\b|Arrow/,"arrow"],[/ attacks\b|band attack/i,"attack"],[/summons |Summon a|conjures |creates a/,"summon"],
     [/ deals? \d+ (?:\w+ )?damage| loses \d+ HP/,"hit"],[/ (Burn|Poison|Stun|Wound|Confuse)/,"status"],[/ Gold\b/,"gold"],[/ Aura\b/,"aura"],
     [/ plays /,"card"],[/ passes\./,"pass"],[/ draws? /,"draw"]];
@@ -639,6 +652,9 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
     const c=o.kind==="equip"?(o.cls||"Generic"):o.kind==="doll"?"Generic":((E.DB[o.id]||{}).cls||"Generic");
     if(o.fd)inv.push(`<button class="pi full fd${U.man&&U.manT===o.uid?" mansel":""}" data-pa="obj" data-u="${o.uid}">${mine&&o.id?esc(E.DB[o.id].name)+" (set)":"Face-down card"}</button>`);
     else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)};--ci:${ci(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${o.under&&o.under.length?` <span>${o.under.length} under it</span>`:""}${o.x&&o.x.name&&o.name==="Null Stone"?` <span>Names ${esc(o.x.name)}</span>`:""}${o.ctr&&o.ctr.trophy?` <span>${o.ctr.trophy} Trophy</span>`:""}${s.upg&&s.upg[o.uid]!=null?` <span title="Upgraded at the Blacksmith">Upgraded${E.upgradeCost(o)&&E.upgradeCost(o).x?` +${s.upg[o.uid]}`:""}</span>`:""}${invCounts(s,o,pid)}</button>`)}
+  /* Card Art: the acting Hero's buttons sit at the bottom of the right-hand column */
+  let zacts="";if(mine&&actor&&heroArt(E.DB[actor.id])&&s.phase==="battle"&&s.prio===U.me&&!s.pend.length&&!s.over&&!U.tgt&&(opts||[]).length){const hb=heroActs(s,opts,actor);
+    if(hb.length)zacts=`<div class="pl-acts zs-acts" aria-label="${esc(actor.name)}'s actions"><span class="zs-who">${esc(actor.name)}</span>${hb.join("")}</div>`}
   const isInit=s.init===pid;
   const turnTag=s.phase==="battle"&&s.prio===pid&&!s.pend.length?'<span class="res init">Acting</span>':"";
   const pc=[0,1].map(p=>`P${p}`).filter(u=>cands.has(u)&&u==="P"+pid).length;
@@ -651,7 +667,7 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
       <span class="pl-piles">${pl.echo.length?`<span class="res">Echo <b>${pl.echo.length}</b></span>`:""}<span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
       <button class="res" data-pa="disc" data-p="${pid}">Discard <b>${pl.disc.length}</b></button>${pl.exile.length?`<button class="res" data-pa="exile" data-p="${pid}">Exile <b>${pl.exile.length}</b></button>`:""}</span></div>
     <div class="pl-row"><span class="lbl">Battlefield</span>${bf}</div>
-    <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div></div></div>
+    <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div>${zacts}</div></div>
   </section>`}
 /* ---------- running counts (display only) ---------- */
 function deckNames(pl){const n=new Set();const add=c=>{const d=c&&E.DB[c.id];if(d)n.add(d.name)};
@@ -733,7 +749,7 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
   const top=`<span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
   const extra=`${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}`;
   if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart hk" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
-    ${top}${heroCardHTML(s,h,d,st,extra,soul,hacts)}
+    ${top}${heroCardHTML(s,h,d,st,extra,soul,"")}
   </div>`;
   return`<div role="button" tabindex="0" class="${cls}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
     ${top}
@@ -796,7 +812,7 @@ function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tag
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
 function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false,fixBtn="";
   const mineTurn=opts.length>0;
-  if(s.over){prompt=(s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`)+(s.conceded!=null?(s.conceded===me?" You conceded.":` ${esc(s.p[s.conceded].name)} conceded.`):"");acts=`<button class="btn primary" data-pa="leave">Back to lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}`}
+  if(s.over){prompt=(s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`)+(s.conceded!=null?(s.conceded===me?" You conceded.":` ${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");acts=`<button class="btn primary" data-pa="leave">Back to lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}`}
   else if(U.tgt){const sl=U.tgt.slots[U.tgt.i];prompt=`Choose ${esc(sl.label)} for ${esc(U.tgt.label)}${U.tgt.slots.length>1?` (${U.tgt.i+1}/${U.tgt.slots.length})`:""}. Click a highlighted ${sl.k==="player"||sl.k==="enemyPlayer"?"party button":"target"}.`;
     acts=`${sl.opt?'<button class="btn" data-pa="skip">Skip</button>':""}<button class="btn" data-pa="cancel">Cancel</button>`}
   else if(pr&&pr.pid===me){
@@ -898,9 +914,9 @@ function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(
   const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}" data-cls="${esc(card.cls||"Generic")}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
   return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · <span class="hl-note">outline = playable now · point at one of your Heroes to see the cards it can play</span></span></div><div class="pl-handwrap"><button type="button" class="pl-hscr l" data-pa="hscr" data-d="-1" aria-label="Scroll hand left">‹</button><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div><button type="button" class="pl-hscr r" data-pa="hscr" data-d="1" aria-label="Scroll hand right">›</button></div></section>`}
 function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1,k:"burn",name:"Soldier"});
-  const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","STR up (this turn)"],["nstr","STR down (this turn)"],["def","DEF up (this turn)"],["ndef","DEF down (this turn)"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["discToInv","Return from discard to inventory"],["playfree","Play a card from hand (free)"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"],["mill","Mill (top cards → discard)"],["equipfree","Equip for free"],["revealtop","Reveal top cards of a library"],["revmove","Move a revealed card"]].sort((x,y)=>x[1].localeCompare(y[1]));
+  const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","STR up (this turn)"],["nstr","STR down (this turn)"],["def","DEF up (this turn)"],["ndef","DEF down (this turn)"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["discToInv","Return from discard to inventory"],["playfree","Play a card from hand (free)"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"],["mill","Mill (top cards → discard)"],["equipfree","Equip for free"],["revealtop","Reveal top cards of a library"],["revmove","Move a revealed card"],["endAction","End the action"]].sort((x,y)=>x[1].localeCompare(y[1]));
   const az=(arr,nm)=>arr.slice().sort((x,y)=>nm(x).localeCompare(nm(y)));const cn=c=>(E.DB[c.id]||{name:c.name||""}).name;
-  const needT=!["draw","aura","naura","gold","summon","pillar","dagger","doll","discard","fromDisc","discToInv","playfree","reveal","mill","revealtop","revmove"].includes(m.op);
+  const needT=!["draw","aura","naura","gold","summon","pillar","dagger","doll","discard","fromDisc","discToInv","playfree","reveal","mill","revealtop","revmove","endAction"].includes(m.op);
   const needN=["dmg","lose","heal","str","nstr","def","ndef","guard","draw","aura","naura","gold","revive","move","mill","revealtop"].includes(m.op);
   let extra="";
   if(m.op==="status"||m.op==="unstatus")extra=`<select data-pa="man-k">${E.STATUS.map(k=>`<option value="${k}" ${m.k===k?"selected":""}>${E.STATUS_NAME[k]}</option>`).join("")}</select>`;
@@ -1094,7 +1110,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     if(op==="playfree"){if(!a.card){toast("No card in hand to play.");return}const fh=E.fixHero(s,U.me,{hero:U.manT});begin({type:"fixPlay",uid:a.card,hero:fh?fh.uid:null});return}
     if((op==="equipfree"||op==="revmove")&&!a.card){toast(op==="equipfree"?"No Equipment to equip.":"Nothing revealed to move.");return}
     if(op==="revmove"&&!["top","bottom","hand","discard"].includes(a.k))a.k="top";
-    if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc","discToInv","reveal","mill","revealtop","revmove"].includes(op)&&!a.target){toast("Click a Hero on the board first.");return}
+    if(!["draw","aura","gold","summon","pillar","dagger","doll","discard","fromDisc","discToInv","reveal","mill","revealtop","revmove","endAction"].includes(op)&&!a.target){toast("Click a Hero on the board first.");return}
     send(a);return}
 });
 document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("pl-help"))U.helpOpen=t.open},true);

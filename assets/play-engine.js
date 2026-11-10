@@ -181,8 +181,11 @@ E.guardEq=guardEq;E.hasEq=hasEqN;E.living=living;E.invHas=invHas;E.invCount=invC
 function mill(s,pid,n){const pl=P(s,pid);const out=[];for(let i=0;i<n&&pl.lib.length;i++){const c=pl.lib.pop();pl.disc.push(c);out.push(DB[c.id]?DB[c.id].name:"a card")}
   log(s,out.length?`${pl.name} mills ${out.length}: ${out.join(", ")}.`:`${pl.name} has no cards to mill.`,pid);return out.length}
 E.mill=mill;
+/* Drawing from an empty library loses the game (rule change, Nov 2026) */
+function deckOut(s,pid){if(s.over)return;const pl=P(s,pid);s.over=true;s.winner=opp(pid);s.deckedOut=pid;s.pend=[];s.cur=null;s.qatk=null;
+  log(s,`${pl.name} must draw from an empty library and loses the game.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`)}
 function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
-  for(let i=0;i<n;i++){if(!pl.lib.length){if(!pl.disc.length)break;pl.lib=shuffle(s,pl.disc.splice(0));log(s,`${pl.name} shuffles the discard pile into a new library.`,pid)}
+  for(let i=0;i<n;i++){if(!pl.lib.length){deckOut(s,pid);break}
     pl.hand.push(pl.lib.pop());got++;
     if(s.phase==="battle"&&invHas(pl,"Healing Relic")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,{name:"Healing Relic",ctrl:pid},t,1,pid)}}
   if(!quiet&&got)log(s,`${pl.name} draws ${got} card${got===1?"":"s"}.`,pid);return got}
@@ -275,7 +278,9 @@ function pay(s,pid,actor,amt){const pl=P(s,pid);pl.aura-=amt;if(amt<=0||!actor||
   if(actor.ench.some(e=>e.name==="Blood Aura"))loseHp(s,actor,2,"Blood Aura");
   const op=P(s,opp(pid));if(invHas(op,"The Monolith"))loseHp(s,actor,amt,"The Monolith")}
 E.pay=pay;
-function loseHp(s,o,n,why){if(!o||o.dead||n<=0)return;o.dmg=(o.dmg||0)+n;log(s,`${o.name} loses ${n} HP${why?` (${why})`:""}.`);checkDeaths(s)}
+/* " (13/16 HP)" after a life total changes */
+function hpTag(s,o){if(!o||(o.kind!=="hero"&&o.kind!=="summon"))return"";const m=maxHp(s,o);return` (${Math.max(0,m-(o.dmg||0))}/${m} HP)`}
+function loseHp(s,o,n,why){if(!o||o.dead||n<=0)return;o.dmg=(o.dmg||0)+n;log(s,`${o.name} loses ${n} HP${why?` (${why})`:""}.${hpTag(s,o)}`);checkDeaths(s)}
 E.loseHp=loseHp;
 /* heal: pid = player whose source makes the heal (null for the Inn). An inverted heal is not a heal. */
 function heal(s,healer,o,n,pid){
@@ -285,7 +290,7 @@ function heal(s,healer,o,n,pid){
   const oc=ctrl(s,o);
   if(src!=null&&oc!==src&&invHas(P(s,src),"Inversion Stone")){log(s,`Inversion Stone turns the heal on ${o.name} into ${n} Light damage.`);damage(s,{name:"Inversion Stone"},o,n,{card:true,type:"Light",noTrig:true});return 0}
   if(o.fl&&o.fl.falseCure===s.round){o.fl.falseCure=null;log(s,`False Cure: the heal on ${o.name} becomes HP loss.`);loseHp(s,o,n,"False Cure");return 0}
-  const h=Math.min(n,o.dmg||0);o.dmg-=h;if(h>0)log(s,`${o.name} heals ${h} HP.`);
+  const h=Math.min(n,o.dmg||0);o.dmg-=h;if(h>0)log(s,`${o.name} heals ${h} HP.${hpTag(s,o)}`);
   if(h>0&&src!=null){const sp=P(s,src);sp.t.healed=(sp.t.healed||0)+h;stat(s,"heal",src,CUR_SRC||(healer&&healer.name)||"Heal",h)}
   if(h>0&&healer&&healer.kind==="hero"&&!healer.dead&&healer.name==="Radiant Oracle"&&h>=3)draw(s,healer.owner,1);
   /* Lightbringer L6: whenever you heal (any heal your side makes, not the Inn), deal that much Light damage */
@@ -319,7 +324,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(dealt>0){let side=sideOf(s,src);if(side==null)side=opp(ctrl(s,tgt));
     const nm=o.srcName||(o.combat&&src?(o.band?"Band attack":src.name+" (attack)"):(CUR_SRC||(src&&src.name)));if(!o.status)stat(s,"dmg",side,nm,dealt)}
   const tn=tgt.name+(tgt.kind==="summon"?" (summon)":"");
-  log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before DEF)`:""}.`);
+  log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before DEF)`:""}.${dealt>0?hpTag(s,tgt):""}`);
   if(dealt>0&&tgt.kind==="hero"){const tp=P(s,tgt.owner);const before=tp.t.took||0;tp.t.took=before+dealt;if(before<10&&tp.t.took>=10&&s.phase==="battle"){s.trig10=(s.trig10||[]).concat([tgt.owner])}if(tgt.fl.loseCtrlRound===s.round){if(hpOf(s,tgt)<1)tgt.dmg=maxHp(s,tgt)-1;tgt.ex=false}}
   if(src&&!o.noTrig){
     if(dealt>0&&lifelink(s,src)){const room=src.kind==="hero"?Math.min(dealt,src.dmg||0):dealt;heal(s,src,src,dealt);
@@ -1023,6 +1028,8 @@ function finishChoose(s,pid,pr,picks){picks=picks.filter(u=>pr.cards.includes(u)
 /* ---------- manual panel ---------- */
 function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.target):null;const n=Math.max(0,Math.min(99,a.n|0));const who=`✋ ${pl.name}`;
   switch(a.op){
+  case"endAction":{const i=s.pend.findIndex(p=>p.type==="manual"&&p.pid===pid);if(i>=0)s.pend.splice(i,1);log(s,`${who} ends the action by rules fix.`,pid);
+    if(s.phase==="battle"&&!s.cur&&!s.pend.length&&s.prio===pid){if(s.bonus&&s.bonus.pid===pid)endBonus(s);advance(s,pid)}break}
   case"dmg":if(t){log(s,`${who} (by hand):`,pid);damage(s,{name:"Manual effect"},t,n,{card:true,noTrig:true})}break;
   case"lose":if(t)loseHp(s,t,n,"by hand");break;
   case"heal":if(t){log(s,`${who} heals ${t.name} by hand.`,pid);heal(s,null,t,n,pid)}break;
@@ -1132,7 +1139,7 @@ function doDawn(s){
     pl.aura=Math.max(0,aura);
   });
   s.p.forEach((pl,pid)=>{const all=[...living(pl),...pl.bf.filter(o=>o.kind==="summon")];
-    all.forEach(o=>{const n=o.st.burn+o.st.poison+o.st.wound;if(n>0){o.dmg+=n;log(s,`${o.name} takes ${n} status damage.`,pid)}
+    all.forEach(o=>{const n=o.st.burn+o.st.poison+o.st.wound;if(n>0){o.dmg+=n;log(s,`${o.name} takes ${n} status damage.${hpTag(s,o)}`,pid)}
       STATUS.forEach(k=>{if(o.st[k]>0)o.st[k]--})})});
   checkDeaths(s);if(s.over)return;
   /* At Dawn effects (active player first) */

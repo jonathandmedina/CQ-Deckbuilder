@@ -3,7 +3,7 @@
 
 ## 1. The Goal
 
-You lead a party of three Heroes. **Defeat all of your opponents’ Heroes to win.** A Hero is defeated when its HP drops to 0. The last player with a Hero still standing wins.
+You lead a party of three Heroes. **Defeat all of your opponents’ Heroes to win.** A Hero is defeated when its HP drops to 0. The last player with a Hero still standing wins. You also lose if you have to draw a card when your library is empty.
 
 If a card ever disagrees with the rules, the card wins.
 

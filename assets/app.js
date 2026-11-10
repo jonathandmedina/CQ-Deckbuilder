@@ -588,7 +588,7 @@ function viewBest(){const b=S.best;
     +(soon.length?`<h2 style="margin-top:28px">On the rise</h2><p class="lede">Over ${BEST_MIN_PCT}% wins but fewer than ${BEST_MIN_GAMES} games so far.</p><div class="decks">${soon.slice(0,24).map(r=>bestCard(r,0)).join("")}</div>`:"")}
 /* ---------- Decklists: Community Decks (decks players share) + recently played decks ----------
    Supabase table community_decks (see "Community Decks SQL" in the project). Anyone can read; signed-in players add, update or remove their own. */
-function dlTabs(on){return`<div class="dl-tabs" role="tablist" aria-label="Decklists"><a role="tab" href="#community" class="btn sm${on==="community"?" on":""}" aria-selected="${on==="community"}">Community Decks</a><a role="tab" href="#best" class="btn sm${on==="best"?" on":""}" aria-selected="${on==="best"}">Best Decks</a></div>`}
+function dlTabs(on){return`<div class="dl-tabs" role="tablist" aria-label="Decklists"><a role="tab" href="#best" class="btn sm${on==="best"?" on":""}" aria-selected="${on==="best"}">Best Decks</a><a role="tab" href="#community" class="btn sm${on==="community"?" on":""}" aria-selected="${on==="community"}">Community Decks</a></div>`}
 async function loadCommunity(){if(!SB){S.comm={at:Date.now(),rows:[],recent:[],err:"off"};render();return}
   S.comm=Object.assign({},S.comm||{},{loading:true,at:Date.now()});
   const[c,r]=await Promise.all([SB.from("community_decks").select("id,user_id,deck_id,name,author,heroes,cards,created_at,updated_at").order("updated_at",{ascending:false}).limit(200),
@@ -641,7 +641,7 @@ function viewDecks(){
   ${S.mode==="account"&&localDecks().length?`<button type="button" class="btn" data-act="migrate">Move ${localDecks().length} browser deck(s) into my account</button>`:""}</div>
   <div class="decks">${ds.length?ds.map(d=>{const iss=issues(d);const t=deckTotal(d);
     return`<div class="deck"><h3>${esc(d.name)}</h3>
-    <div class="pips">${d.heroes.map(h=>BYID.get(h)).filter(Boolean).map(h=>`<span class="pill" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><i class="dot"></i>${esc(h.name)}</span>`).join("")||'<span class="note">No Heroes yet</span>'}</div>
+    ${(hs=>hs.length?deckFacesHTML(hs):'<div class="pips"><span class="note">No Heroes yet</span></div>')(d.heroes.map(h=>BYID.get(h)).filter(Boolean))}
     <div class="note">${t}/${DECK_SIZE} cards${d.updated?" · saved "+new Date(d.updated).toLocaleDateString():""}</div>
     <span class="status ${iss.length?"no":"ok"}">${needsRebuild(d)?"Needs a rebuild (decks are now 50 cards)":iss.length?iss.length+" issue"+(iss.length>1?"s":""):"Legal deck"}</span>
     <div class="actions">${needsRebuild(d)?`<button type="button" class="btn sm primary" data-act="rb-one" data-id="${d.id}">Auto Rebuild</button>`:""}<button type="button" class="btn sm${needsRebuild(d)?"":" primary"}" data-act="open" data-id="${d.id}">Edit</button>

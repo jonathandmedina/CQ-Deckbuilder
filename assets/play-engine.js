@@ -77,7 +77,7 @@ E.validateDeck=function(d){
   const out=[];if(!d||!d.heroes||d.heroes.length!==3)out.push("Needs 3 Heroes.");
   let t=0;for(const[id,q]of Object.entries(d.cards||{})){if(!DB[id])out.push(`Unknown card ${id}`);else if(DB[id].dep)out.push(`${id} is deprecated (removed from play).`);t+=q}
   for(const[id,q]of Object.entries(d.cards||{})){const c=DB[id];if(c&&q>(c.sup==="Legendary"?1:3))out.push(`${id}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`)}
-  if(t!==50)out.push(`Deck has ${t} cards (needs 50).`);return out};
+  if(t<50)out.push(`Deck has ${t} cards (needs at least 50).`);return out};
 
 /* ---------- lookups ---------- */
 function allObjs(s){const out=[];s.p.forEach((pl,pid)=>{pl.heroes.forEach(h=>{out.push(h);eqList(h).forEach(e=>out.push(e));h.ench.forEach(e=>out.push(e))});pl.bf.forEach(o=>out.push(o));pl.inv.forEach(o=>out.push(o))});return out}

@@ -9,7 +9,7 @@ If a card ever disagrees with the rules, the card wins.
 
 ## 2. What You Need
 
-- **3 Heroes** and a **50-card deck** (up to 3 copies of a card, 1 of each Legendary).
+- **3 Heroes** and a deck of **at least 50 cards** (up to 3 copies of a card, 1 of each Legendary).
 - A six-sided die for each Hero to track its level.
 - Counters for damage and status effects, and something to track your **Aura** and **Gold**.
 

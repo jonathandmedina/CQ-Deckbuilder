@@ -24,7 +24,7 @@ If a card’s text contradicts these rules, the card wins.
 Each player needs:
 
 - 3 Hero cards
-- A deck of exactly 50 cards
+- A deck of at least 50 cards
 - A six-sided die for each Hero, to track its level
 - Counters for damage, status effects and other effects
 - A way to track Aura (a die or tokens)
@@ -43,7 +43,7 @@ Your party’s classes decide which cards you can play. A Hero can only play car
 
 ### Your Deck
 
-- Your deck is exactly 50 cards. Your three Heroes and any tokens don’t count toward the 50.
+- Your deck must have at least 50 cards. There is no maximum. Your three Heroes and any tokens don’t count toward the 50.
 - You may include up to 3 copies of any card with the same name.
 - You may include only 1 copy of each Legendary card.
 
@@ -153,7 +153,7 @@ Every card shows a version number (v1, v2, v3…) in its bottom corner. When a c
 | **Party** | Your three Heroes, left to right in party order. |
 | **Battlefield** | Your summons and Pillar tokens. |
 | **Inventory** | 4 slots shared by your party, for items, Hidden cards, equipment tokens and unequipped equipment. |
-| **Library** | Your face-down draw pile. Your 50-card deck becomes your library at the start of the game. |
+| **Library** | Your face-down draw pile. Your deck becomes your library at the start of the game. |
 | **Hand** | Cards you have drawn but not yet played. The maximum hand size is 5: at Dusk, discard down to 5. You may hold more than 5 until then. |
 | **Discard pile** | Face up. Used, destroyed and discarded cards go here. |
 | **Exile zone** | Face up. Cards removed from the game. Exiled cards don’t come back unless a card says so. |
@@ -186,7 +186,7 @@ Gold is the treasure your party earns by surviving each round.
 ## 7. Setting Up
 
 1. Each player places their three Heroes in the party order they choose. Every Hero starts at Level 0, so keep its level die beside it until it first levels up.
-2. Shuffle your 50-card deck. It is now your library. Place it on the right side of your play area.
+2. Shuffle your deck. It is now your library. Place it on the right side of your play area.
 3. Leave room under your library for your discard pile and exile zone.
 4. Set your Gold to 0.
 5. Each player draws 4 cards.
@@ -705,7 +705,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Version (v1, v2…)**: The number in a card’s bottom corner. It goes up whenever the card changes. Play the newest version.
 - **Inventory slot**: One of 4 shared slots for items, Hidden cards, equipment tokens and unequipped equipment.
 - **Inventory overflow**: When more cards must go into your inventory than you have room for, you choose which to discard.
-- **Deck**: The 50 cards you build before a game (deck construction).
+- **Deck**: The cards you build before a game (at least 50; deck construction).
 - **Library**: Your draw pile during play.
 - **Hand**: Cards drawn but not yet played. Maximum hand size 5 (checked at Dusk).
 - **Discard pile**: Where used cards go. It is not reshuffled when your library runs out.

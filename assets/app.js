@@ -142,8 +142,7 @@ function issues(d){
   const out=[];
   if(d.heroes.length!==3)out.push(`Pick ${3-d.heroes.length} more Hero${3-d.heroes.length===1?"":"es"}.`);
   const t=deckTotal(d);
-  if(t<DECK_SIZE)out.push(`Add ${DECK_SIZE-t} more card${DECK_SIZE-t===1?"":"s"} (decks are exactly 50).`);
-  if(t>DECK_SIZE)out.push(`Remove ${t-DECK_SIZE} card${t-DECK_SIZE===1?"":"s"} (decks are exactly 50).`);
+  if(t<DECK_SIZE)out.push(`Add ${DECK_SIZE-t} more card${DECK_SIZE-t===1?"":"s"} (decks need at least 50).`);
   for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(!c){out.push(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===id)?`${id} is deprecated (removed from play). Take it out of this deck.`:`"${id}" isn't in the card list anymore.`);continue}
     if(q>maxCopies(c))out.push(`${c.name}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`);
     if(d.heroes.length&&!allowed(c,d))out.push(`${c.name} is ${c.cls}; no Hero in your party can play it.`);}
@@ -438,7 +437,9 @@ const SORTS=[["class","Class"],["name","Name"],["cost","Aura cost"],["type","Car
 
 /* ---------- views ---------- */
 function render(){
-  document.querySelectorAll("#tabs a[data-view]").forEach(a=>{if(a.dataset.view===S.view||(a.dataset.view==="rules"&&S.view==="quickstart"&&!a.closest(".tab-sub"))||(a.dataset.view==="community"&&S.view==="best"&&!a.closest(".tab-sub")))a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  /* menu highlight: the page's own link, plus the dropdown parent (Decklists, Rules) of any page inside it; bottom bar Changelog too */
+  document.querySelectorAll("#tabs a[data-view],#sitebar a[data-view]").forEach(a=>{const sub=a.closest(".tab-dd")&&!a.closest(".tab-sub")?[...a.closest(".tab-dd").querySelectorAll(".tab-sub a")]:null;
+    const on=sub?sub.some(x=>x.getAttribute("href")==="#"+S.view):a.dataset.view===S.view;if(on)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   const v=$("#view");
   if(S.view==="catalog")v.innerHTML=viewCatalog();
   else if(S.view==="build")v.innerHTML=viewBuild();
@@ -455,7 +456,7 @@ function viewCatalog(){
   const f=S.cat;
   const all=[...HEROES,...CARDS,...TOKENS];
   const list=filterSort(all,f);
-  return`<h1>Cards</h1>
+  return`<div class="bhead"><h1>Cards</h1><a href="#build" class="btn primary go newdeck build-go">Build a Deck</a></div>
   <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.length} Heroes, ${CARDS.length} deck cards, ${TOKENS.length} tokens.</p>
   <div class="bar">${classChips(f.cls,"cat-cls",[...CLASSES,"Generic"])}</div>
   <div class="bar">
@@ -468,15 +469,24 @@ function viewCatalog(){
 }
 const HSTATS=[["STR","str"],["DEF","def"],["AURA","aura"],["HP","hp"]];
 function heroStatsHTML(h,cls="hstats"){return`<span class="${cls}">${HSTATS.map(([k,f])=>`<span><b>${esc(h[f])}</b><i>${k}</i></span>`).join("")}</span>`}
+/* Digital Hero Card (same look as the Play tab's compact Hero Cards): name bar + Aura gem, pixel art, STR/HP/DEF squares, Ability on hover */
+function heroDigitalHTML(h,slot){
+  const src=`${ICON_BASE}art/hero-pix/${artKey(h.name)}-pix.png?v=${ART_VER}`,ico=`${ICON_BASE}ico-${String(h.cls||"generic").toLowerCase()}.png`;
+  const sq=(f,l,t)=>`<span class="dh-sq dh-${f}" title="${t} ${esc(h[f])}"><b>${esc(h[f])}</b><i>${l}</i></span>`;
+  return`<div class="dh-card">${slot?`<span class="dh-slot">${esc(slot)}</span>`:""}
+    <div class="dh-nb"><img class="dh-ci" src="${ico}" alt="${esc(h.cls)}"><span class="dh-nm${h.name.length>17?" xl":h.name.length>13?" l":""}">${esc(h.name)}</span><span class="dh-au" title="Aura ${esc(h.aura)}">${esc(h.aura)}</span></div>
+    <div class="dh-art"><img src="${src}" alt="${esc(h.name)}" width="207" height="167" loading="lazy" decoding="async">${zoomHTML(h)}</div>
+    <div class="dh-st">${sq("str","STR","Strength")}${sq("hp","HP","Health Points")}${sq("def","DEF","Defense")}<span class="dh-ab" tabindex="0">Ability<span class="dh-tip" role="tooltip"><span class="dh-tt">${esc(h.name)} <small>${esc(h.cls)} Hero</small></span>${h.rules?artRulesHTML(h.rules):"<p>No ability.</p>"}</span></span></div>
+  </div>`}
 function partySlots(d){
   const names=["Lead","Center","Closer"];
   return`<div class="party">${names.map((n,i)=>{const h=BYID.get(d.heroes[i]);
-    return h?`<div class="slot full hero-full" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${cardHTML(h,{slot:(i+1)+" · "+n.toUpperCase(),ctrl:`<div class="c-ctrl"><button type="button" class="btn sm" data-act="inspect" data-id="${esc(h.id)}">View</button><span class="sp"></span><button type="button" class="btn sm" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div>`})}</div>`
+    return h?`<div class="slot full hero-full hero-dig" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${heroDigitalHTML(h,(i+1)+" · "+n.toUpperCase())}<div class="c-ctrl"><button type="button" class="btn sm" data-act="inspect" data-id="${esc(h.id)}">View</button><span class="sp"></span><button type="button" class="btn sm" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div></div>`
       :`<div class="slot"><small>${i+1} · ${n}</small><span class="cl">Empty</span></div>`}).join("")}</div>`;
 }
 function stepsHTML(){
   const st=S.b.step,h=S.deck.heroes.length===3;
-  return`<div class="steps"><div class="step ${st==="heroes"?"on":"done"}"><b>1</b>Choose 3 Heroes</div><i class="sep"></i><div class="step ${st==="cards"?"on":""}"><b>2</b>Build a 50-card deck</div></div>`;
+  return`<div class="steps"><div class="step ${st==="heroes"?"on":"done"}"><b>1</b>Choose 3 Heroes</div><i class="sep"></i><div class="step ${st==="cards"?"on":""}"><b>2</b>Build a deck (50+ cards)</div></div>`;
 }
 function viewBuild(){
   const d=S.deck;
@@ -511,7 +521,7 @@ function viewBuild(){
       </div>
       <p class="note pool-tip">Click a card to add a copy, right-click to remove one. Use the magnifier to zoom in.</p>
       <div class="grid">${gridWithGroups(pool,f,c=>{const q=d.cards[c.id]||0,m=maxCopies(c);
-        return cardHTML(c,{pool:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m||total>=DECK_SIZE?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
+        return cardHTML(c,{pool:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><span class="sp"></span></div>`})})}</div>
     </section>
     ${deckPanel(d)}
   </div>`;
@@ -528,20 +538,16 @@ function deckPanel(d){
   return`<aside class="deckpanel" aria-label="Your deck">
     <label class="note" for="deck-name">Deck name</label>
     <input type="text" id="deck-name" data-act="deck-name" value="${esc(d.name)}" maxlength="60">
-    <div class="meter"><span class="big">${total}</span><span class="of">/ ${DECK_SIZE} cards</span></div>
-    <div class="prog${total>DECK_SIZE?" over":""}"><i style="width:${Math.min(100,total/DECK_SIZE*100)}%"></i></div>
+    <div class="dp-top"><div class="meter"><span class="big">${total}</span><span class="of">/ ${DECK_SIZE}+ cards</span></div><button type="button" class="btn primary dp-save" data-act="save">Save deck</button></div>
+    <div class="prog${total>=DECK_SIZE?" full":""}"><i style="width:${Math.min(100,total/DECK_SIZE*100)}%"></i></div>
     <div><div class="curve-l">Aura curve</div><div class="curve">${curve.map((n,i)=>`<div><span>${n||""}</span><span class="b" style="height:${n/cmax*48}px"></span><span>${i===7?"7+":i}</span></div>`).join("")}</div></div>
     <ul class="issues ${iss.length?"bad":"good"}">${iss.length?iss.map(x=>`<li>${esc(x)}</li>`).join(""):"<li>Deck is legal and ready to play.</li>"}</ul>
     <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 3 copies of a card, and 1 of each Legendary.</p>`}
     ${d.heroes.length?`<div class="dl heroes"><h4><span>Heroes</span><span>${d.heroes.length}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
-    <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>${e.c.sup==="Legendary"?'<span class="leg-ico" title="Legendary: 1 copy per deck" aria-label="Legendary">L</span>':""}`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)||total>=DECK_SIZE?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
-    ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward the 30. Print &amp; Play includes them.</p></div>`:""})()}
+    <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>${e.c.sup==="Legendary"?'<span class="leg-ico" title="Legendary: 1 copy per deck" aria-label="Legendary">L</span>':""}`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>+</button></li>`).join("")}</ul>`).join("")}</div>
+    ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward your deck. Print &amp; Play includes them.</p></div>`:""})()}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}
-    <div class="actions">
-      <button type="button" class="btn primary" data-act="save">Save deck</button>
-      <button type="button" class="btn" data-act="new-deck">New deck</button>
-    </div>
     <div class="actions">
       <button type="button" class="btn" data-act="pnp" data-src="current">Print &amp; Play PDF</button>
       <button type="button" class="btn" data-act="tts" data-src="current">Tabletop Simulator</button>
@@ -568,7 +574,7 @@ function bestCard(r,rank){const d=bestDeck(r);const hs=d.heroes.map(h=>BYID.get(
     <div class="actions"><button type="button" class="btn sm" data-act="best-view" data-id="${esc(r.deck_key)}">View list</button><button type="button" class="btn sm primary" data-act="best-open" data-id="${esc(r.deck_key)}">Open in Deck Builder</button></div>
   </article>`}
 function viewBest(){const b=S.best;
-  const head=`<h1>Decklists</h1>${dlTabs("best")}<p class="lede">Decks with the highest win rate in finished Play-tab games (vs AI and online). A deck needs at least ${BEST_MIN_GAMES} games and over ${BEST_MIN_PCT}% wins to be listed. The same Heroes and 50 cards count as one deck, whoever plays it.</p>
+  const head=`<h1>Decklists</h1>${dlTabs("best")}<p class="lede">Decks with the highest win rate in finished Play-tab games (vs AI and online). A deck needs at least ${BEST_MIN_GAMES} games and over ${BEST_MIN_PCT}% wins to be listed. The same Heroes and cards count as one deck, whoever plays it.</p>
     <div class="bar"><button type="button" class="btn sm" data-act="best-refresh">Refresh</button><a class="btn sm" href="#play">Play a game</a></div>`;
   if(!SB)return head+`<div class="empty">Win tracking needs the site's account service, which isn't reachable right now.</div>`;
   if(!b||b.loading&&!b.rows)return head+`<div class="empty">Loading results…</div>`;
@@ -709,7 +715,7 @@ function inspect(c){
   const d=S.deck,can=c.kind!=="hero"&&c.kind!=="token"&&d.heroes.length===3&&allowed(c,d);
   const q=d.cards[c.id]||0;
   const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);
-  m.innerHTML=`<div class="box">${cardHTML(c,{nozoom:1})}${artRateHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)||deckTotal(d)>=DECK_SIZE?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
+  m.innerHTML=`<div class="box">${cardHTML(c,{nozoom:1})}${artRateHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});
   l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m);
 }
@@ -729,7 +735,7 @@ function handBody(){
   return`<div class="hand-h"><div class="hand-t"><h2>${H.extra?"Hand":"Starting hand"}</h2><p class="note">${esc(d.name)}${heroes.length?" · "+heroes.map(h=>esc(h.name)).join(", "):""}</p></div>
     <div class="hand-r">${heroes.length?`<div class="aura-box" title="${esc(heroes.map(h=>h.name+" "+(+h.aura||0)).join(", "))}"><span class="aura-gem" aria-hidden="true"></span><div><b>${handAura(d)}</b><small>Starting Aura</small><span class="aura-src">${heroes.map(h=>esc(String(+h.aura||0))).join(" + ")}</span></div></div>`:""}
     <button type="button" class="btn sm" data-act="close">Close</button></div></div>
-  ${total!==DECK_SIZE?`<p class="note warn">This deck has ${total} cards, not ${DECK_SIZE}, so the odds won't match a legal deck.</p>`:""}
+  ${total<DECK_SIZE?`<p class="note warn">This deck has ${total} cards, under the ${DECK_SIZE}-card minimum, so the odds won't match a legal deck.</p>`:""}
   <div class="hand-stats"><span class="pill">In hand <b>${H.hand.length}</b></span><span class="pill">Library <b>${H.lib.length}</b></span>${H.extra?`<span class="pill">Drawn <b>${H.extra}</b></span>`:""}${H.mull?`<span class="pill">Mulliganed</span>`:""}
     <span class="pill">Aura costs <b>${H.hand.map(id=>BYID.get(id).cost).sort((a,b)=>costNum({cost:a})-costNum({cost:b})).map(esc).join(", ")||"—"}</b></span></div>
   <div class="actions">
@@ -1082,7 +1088,7 @@ document.addEventListener("click",async e=>{
   else if(a==="unhero"){setDeck(d=>{d.heroes=d.heroes.filter(h=>h!==id)});if(S.deck.heroes.length<3){S.b.step="heroes";render()}}
   else if(a==="to-cards"){if(S.deck.heroes.length===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
   else if(a==="to-heroes"){S.b.step="heroes";render()}
-  else if(a==="inc"||a==="inc-close"){const c=BYID.get(id);if(!c)return;if(deckTotal(S.deck)>=DECK_SIZE){toast("Your deck already has 50 cards.");return}
+  else if(a==="inc"||a==="inc-close"){const c=BYID.get(id);if(!c)return;
     if((S.deck.cards[id]||0)>=maxCopies(c)){toast(c.sup==="Legendary"?"Legendary cards are limited to 1 copy.":"You can include up to 3 copies.");return}
     setDeck(d=>{d.cards[id]=(d.cards[id]||0)+1});if(a==="inc-close"){b.closest(".modal")?.remove();toast(`Added ${c.name}.`)}}
   else if(a==="dec"){setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})}

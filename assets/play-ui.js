@@ -15,6 +15,17 @@ const isMine=pid=>pid===U.me;
 
 /* ---------- styles ---------- */
 const CSS=`
+.pl-over{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:16px;background:rgba(6,8,14,.62);backdrop-filter:blur(2px);animation:plOverIn .25s ease}
+@keyframes plOverIn{from{opacity:0}to{opacity:1}}
+.pl-over-box{width:min(720px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--surface,#fff);color:var(--ink,inherit);border:1px solid var(--line,#ccc);border-radius:14px;padding:20px 22px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.pl-over-box h2{margin:0 0 4px;font-size:1.6rem}
+.pl-over-why{margin:0 0 8px;color:var(--muted,#666)}
+.pl-over-box .pl-stats{margin-top:10px}
+.pl-over-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;justify-content:flex-end}
+html[data-skin="art"] .pl-over-box{background:linear-gradient(#2b1f15,#1b130c);color:#f3e6cf;border:2px solid #b8743a}
+html[data-skin="art"] .pl-over-box h2{font-family:"Pirata One",var(--display);color:#ffc100;font-weight:400}
+html[data-skin="art"] .pl-over-why{color:#d8c3a0}
+@media (prefers-reduced-motion:reduce){.pl-over{animation:none}}
 #play-root{--hero-w:minmax(0,1fr)}
 .pl-lobby{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:18px}
 .pl-lobby .panel{margin-top:0}
@@ -416,7 +427,7 @@ function recStats(s,side){try{const g=E.gameStats(s);const sd=g.sides[side],od=g
 function myName(){return(AS()&&S.me&&S.me.name)||store2.get("cq.play.name","")||"Player"}
 
 /* ---------- game control ---------- */
-function startAI(){const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, 50 cards) for yourself.");return}
+function startAI(){const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, at least 50 cards) for yourself.");return}
   if(!da){toast("Choose a deck for the AI.");return}
   U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
   U.meta={gid:newGid(),mode:"ai",decks:[deckMeta(dm),deckMeta(da)]};
@@ -580,7 +591,8 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   if(!U.gameKey)U.gameKey="g"+Date.now();mergeLog(s);try{trackBanner(s)}catch(e){console.warn(e)}
   const keepScroll=root.querySelector(".pl-log");const atBottom=!keepScroll||keepScroll.scrollTop+keepScroll.clientHeight>=keepScroll.scrollHeight-20;
   const handEl=root.querySelector(".pl-hand");const hs=handEl?handEl.scrollLeft:0;
-  root.innerHTML=gameHTML(s);
+  if(U.overFor!==U.gameKey){U.overFor=U.gameKey;U.overHide=false}
+  root.innerHTML=gameHTML(s)+overHTML(s);
   const lg=root.querySelector(".pl-log");if(lg&&atBottom)lg.scrollTop=lg.scrollHeight;
   const he=root.querySelector(".pl-hand");if(he){he.scrollLeft=hs;handOvf(he);he.addEventListener("scroll",()=>handOvf(he),{passive:true})}
   try{gameFx(s)}catch(e){console.warn(e)}
@@ -812,7 +824,7 @@ function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tag
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
 function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false,fixBtn="";
   const mineTurn=opts.length>0;
-  if(s.over){prompt=(s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`)+(s.conceded!=null?(s.conceded===me?" You conceded.":` ${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");acts=`<button class="btn primary" data-pa="leave">Back to lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}`}
+  if(s.over){prompt=(s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`)+(s.conceded!=null?(s.conceded===me?" You conceded.":` ${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");acts=`<button class="btn primary" data-pa="leave">Return to Lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="over-show">Game summary</button>`}
   else if(U.tgt){const sl=U.tgt.slots[U.tgt.i];prompt=`Choose ${esc(sl.label)} for ${esc(U.tgt.label)}${U.tgt.slots.length>1?` (${U.tgt.i+1}/${U.tgt.slots.length})`:""}. Click a highlighted ${sl.k==="player"||sl.k==="enemyPlayer"?"party button":"target"}.`;
     acts=`${sl.opt?'<button class="btn" data-pa="skip">Skip</button>':""}<button class="btn" data-pa="cancel">Cancel</button>`}
   else if(pr&&pr.pid===me){
@@ -847,7 +859,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const posm=`<span class="posm" title="Position marker">${[...E.POS,"Last"].map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" title="Turn game sounds on or off" aria-pressed="${SND.on()}">${SND.on()?"🔊 Sound on":"🔇 Sound off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
-    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${s.over?statsHTML(s):""}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn?helpHTML(fixBtn):""}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
+    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn?helpHTML(fixBtn):""}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
 /* opponent's turn: what they have to work with */
 function oppInfoHTML(s){const op=E.opp(U.me);const pl=s.p[op];const a=s.phase==="battle"&&s.prio===op?E.actorFor(s,op):null;
   return`<div class="pl-oppinfo">${a?`<span>Acting: <b>${esc(a.name)}</b></span>`:""}<span>Hand <b>${pl.hand.length}</b></span><span>Aura <b>${pl.aura}</b></span><span>Gold <b>${pl.gold}</b></span><span>Library <b>${pl.lib.length}</b></span></div>`}
@@ -864,6 +876,12 @@ function showBanner(s,lines){const mine=new Set([...s.p[U.me].heroes.map(h=>h.na
   if(!show.length)return;clearTimeout(U.banT);U.banner={opp:s.p[E.opp(U.me)].name,lines:show.map(l=>({m:l.m,hit:l.p!==E.opp(U.me)&&hit(l)}))};
   U.banT=setTimeout(()=>{U.banner=null;render()},Math.min(6000,3000+Math.max(0,show.length-2)*500))}
 function bannerHTML(){const b=U.banner;return`<div class="pl-banner" role="status"><div class="bl"><b>${esc(b.opp)} just:</b>${b.lines.map(l=>`<span class="${l.hit?"hit":""}">${esc(l.m)}</span>`).join("")}</div><button class="btn sm" data-pa="banner-x">Dismiss</button></div>`}
+/* end-of-game pop-up: sits over the game layer so Return to Lobby is always on screen (no-scroll layout hides the action bar's overflow) */
+function overHTML(s){if(!s.over||U.overHide)return"";const me=U.me;
+  const head=s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`;
+  const why=(s.conceded!=null?(s.conceded===me?"You conceded.":`${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");
+  return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${head}</h2>${why?`<p class="pl-over-why">${why.trim()}</p>`:""}${statsHTML(s)}
+  <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
 /* end-of-game summary */
 function statsHTML(s){if(!E.gameStats)return"";const g=E.gameStats(s);const me=U.me;
   const li=a=>a.length?`<ol>${a.map(x=>`<li>${esc(x.name)} — <b>${x.v}</b>${x.side!=null?` <span class="pl-note">(${esc(s.p[x.side].name)})</span>`:""}</li>`).join("")}</ol>`:'<p class="pl-note">None.</p>';
@@ -1043,6 +1061,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="snd"){SND.toggle();render();return}
   if(k==="start-ai"){startAI();return}
   if(k==="rematch"){U.s=null;startAI();return}
+  if(k==="over-hide"){U.overHide=true;render();return}
+  if(k==="over-show"){U.overHide=false;render();return}
   if(k==="host"){hostRoom();return}
   if(k==="join"){joinRoom(U.lobby.code);return}
   if(k==="leave"){leaveGame();return}

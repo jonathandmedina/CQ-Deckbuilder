@@ -1,0 +1,234 @@
+/* Crystal Quest Deck Forge: "Card Art" theme. Storybook RPG menus: warm brown windows with copper frames and corner curls,
+   a serif face (EB Garamond), a gold pointer, blue banner headings with gold trim, and the card-image template for cards with art.
+   Built from retro.css (same selectors, rescoped to html[data-skin="art"]) plus the overrides at the end. All ornaments are original SVG. */
+html[data-skin="art"]{
+  --bg:#120a07; --surface:#4a2a20; --sunk:#2a1711; --ink:#F7EEDD; --muted:#D3BC9F; --line:#8A5E40;
+  --accent:#F2C14E; --accent-ink:#2A1606; --legend:#F2C14E; --warn:#FF8A70; --ok:#8BE39A;
+  --card-paper:#4a2a20; --card-ink:#F7EEDD; --card-line:#8A5E40;
+  --display:"EB Garamond",Garamond,Georgia,serif; --body:"EB Garamond",Garamond,Georgia,serif;
+  --win:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 18 18%22%3E%3Cg transform=%22%22%3E%3Cpath d=%22M2 15V7Q2 2 7 2h8%22 fill=%22none%22 stroke=%22%23c99566%22 stroke-width=%221.6%22/%3E%3Cpath d=%22M5 12q0-5 4-6.5Q12 5 11 8q-1 2-3 1%22 fill=%22none%22 stroke=%22%23c99566%22 stroke-width=%221.2%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%222%22 cy=%2216%22 r=%221.1%22 fill=%22%23c99566%22/%3E%3Ccircle cx=%2216%22 cy=%222%22 r=%221.1%22 fill=%22%23c99566%22/%3E%3C/g%3E%3C/svg%3E") left 5px top 5px/15px no-repeat,url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 18 18%22%3E%3Cg transform=%22translate%2818 0%29 scale%28-1 1%29%22%3E%3Cpath d=%22M2 15V7Q2 2 7 2h8%22 fill=%22none%22 stroke=%22%23c99566%22 stroke-width=%221.6%22/%3E%3Cpath d=%22M5 12q0-5 4-6.5Q12 5 11 8q-1 2-3 1%22 fill=%22none%22 stroke=%22%23c99566%22 stroke-width=%221.2%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%222%22 cy=%2216%22 r=%221.1%22 fill=%22%23c99566%22/%3E%3Ccircle cx=%2216%22 cy=%222%22 r=%221.1%22 fill=%22%23c99566%22/%3E%3C/g%3E%3C/svg%3E") right 5px top 5px/15px no-repeat,url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 18 18%22%3E%3Cg transform=%22translate%280 18%29 scale%281 -1%29%22%3E%3Cpath d=%22M2 15V7Q2 2 7 2h8%22 fill=%22none%22 stroke=%22%23c99566%22 stroke-width=%221.6%22/%3E%3Cpath d=%22M5 12q0-5 4-6.5Q12 5 11 8q-1 2-3 1%22 fill=%22none%22 stroke=%22%23c99566%22 stroke-width=%221.2%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%222%22 cy=%2216%22 r=%221.1%22 fill=%22%23c99566%22/%3E%3Ccircle cx=%2216%22 cy=%222%22 r=%221.1%22 fill=%22%23c99566%22/%3E%3C/g%3E%3C/svg%3E") left 5px bottom 5px/15px no-repeat,url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 18 18%22%3E%3Cg transform=%22translate%2818 18%29 scale%28-1 -1%29%22%3E%3Cpath d=%22M2 15V7Q2 2 7 2h8%22 fill=%22none%22 stroke=%22%23c99566%22 stroke-width=%221.6%22/%3E%3Cpath d=%22M5 12q0-5 4-6.5Q12 5 11 8q-1 2-3 1%22 fill=%22none%22 stroke=%22%23c99566%22 stroke-width=%221.2%22 stroke-linecap=%22round%22/%3E%3Ccircle cx=%222%22 cy=%2216%22 r=%221.1%22 fill=%22%23c99566%22/%3E%3Ccircle cx=%2216%22 cy=%222%22 r=%221.1%22 fill=%22%23c99566%22/%3E%3C/g%3E%3C/svg%3E") right 5px bottom 5px/15px no-repeat,linear-gradient(180deg,rgba(96,56,42,.97) 0,rgba(74,41,32,.97) 46px,rgba(56,30,24,.97) 100%);
+  --frame:#A8754F; --frame-dark:#140804;
+  --winshadow:inset 0 0 0 1px #2a140c,inset 0 0 0 2px rgba(255,214,170,.14),0 0 0 1px #000,0 6px 14px rgba(0,0,0,.45);
+  --shadow:0 0 0 1px #000,0 6px 14px rgba(0,0,0,.45);
+  --hand:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 26 14%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23fff2b0%22/%3E%3Cstop offset=%22.5%22 stop-color=%22%23f2c14e%22/%3E%3Cstop offset=%221%22 stop-color=%22%23a8701c%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg stroke=%22%233a1e08%22 stroke-width=%221%22 fill=%22url%28%23g%29%22%3E%3Ccircle cx=%224%22 cy=%227%22 r=%223.2%22/%3E%3Crect x=%227%22 y=%225.6%22 width=%224%22 height=%222.8%22 rx=%221%22/%3E%3Crect x=%2210.5%22 y=%222%22 width=%222.6%22 height=%2210%22 rx=%221.2%22/%3E%3Cpath d=%22M13 4.6h8.5L25 7l-3.5 2.4H13z%22/%3E%3C/g%3E%3C/svg%3E");
+  --banner:linear-gradient(180deg,#6aa0ee 0%,#2f62c4 48%,#1d4396 100%);
+  color-scheme:dark;
+}
+html[data-skin="art"] body{background:radial-gradient(120% 80% at 50% 0%,#162068 0%,#0b1038 45%,#05071c 100%) fixed var(--bg);
+  font-size:15px;letter-spacing:.01em;text-shadow:1px 1px 0 rgba(0,0,0,.55)}
+html[data-skin="art"] body::before{background:#0b1038}
+html[data-skin="art"] h1,html[data-skin="art"] h2,html[data-skin="art"] h3{font-weight:600;letter-spacing:.02em}
+html[data-skin="art"] h1{font-size:2.1rem;font-weight:700;color:#fff;text-shadow:2px 2px 0 #000}
+/* title, headings, menu and buttons: Jersey 10 (a tall pixel face, so it is set larger); rules, card text and lists: Arial */
+html[data-skin="art"] :is(.brand,.tabs a,.btn,.chip,.step,.group-h,.ph-n,.pl-phase .ph-n,.c-name,.ph-name,.slotbadge){font-family:var(--display);font-weight:400;letter-spacing:.03em}
+html[data-skin="art"] :is(h1,h2,h3,h4){font-family:var(--display);font-weight:400;letter-spacing:.03em}
+html[data-skin="art"] .lede,html[data-skin="art"] .note,html[data-skin="art"] .count{color:var(--muted)}
+html[data-skin="art"] a{color:var(--accent)}
+html[data-skin="art"] :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- windows ---------- */
+html[data-skin="art"] :where(.top,.card,.deck,.panel,.deckpanel,.modal .box,.pl-zone,.pl-mid,.slot:not(.hero-full),.empty,.ph,.ps,.pi,.issues,.pl-man,.rules){
+  background:var(--win);color:var(--ink);border:3px solid var(--frame);border-radius:8px;box-shadow:var(--winshadow)}
+html[data-skin="art"] .top{border-width:0 0 3px;border-radius:0;box-shadow:0 2px 0 var(--frame-dark),0 6px 0 rgba(0,0,0,.25)}
+html[data-skin="art"] .brand{font-size:1.45rem;color:#fff;text-shadow:2px 2px 0 #000}
+html[data-skin="art"] .brand small{font-family:var(--display);color:var(--accent);letter-spacing:.12em}
+html[data-skin="art"] .tabs a{position:relative;color:var(--muted);border-radius:4px;padding:5px 9px 5px 21px;font-size:1.04rem}
+html[data-skin="art"] .top .wrap{gap:10px}
+html[data-skin="art"] .tabs{gap:2px}
+html[data-skin="art"] .tabs a:hover{color:#fff;background:rgba(255,255,255,.08)}
+html[data-skin="art"] .tabs a[aria-current="page"]{color:#fff;background:rgba(0,0,0,.25);box-shadow:none}
+html[data-skin="art"] .tabs a[aria-current="page"]::before,html[data-skin="art"] .tabs a:hover::before{content:"";position:absolute;left:2px;top:50%;width:18px;height:13px;transform:translateY(-50%);background:var(--hand) center/contain no-repeat}
+html[data-skin="art"] .tabs a:hover:not([aria-current="page"])::before{opacity:.55}
+html[data-skin="art"] .acct{color:var(--muted)} html[data-skin="art"] .acct b{color:#fff}
+html[data-skin="art"] .modal{background:rgba(2,3,16,.66)}
+
+/* ---------- controls ---------- */
+html[data-skin="art"] :is(.btn,.chip,.mini,.pill,.tg,.pp,.posm,.posm span,.res){border-radius:4px}
+html[data-skin="art"] .btn{background:linear-gradient(180deg,#2c42b6,#17227a);border:2px solid var(--frame);color:#fff;box-shadow:0 0 0 1px var(--frame-dark);font-size:1rem;text-shadow:1px 1px 0 #000}
+html[data-skin="art"] .btn.sm{font-size:.92rem}
+html[data-skin="art"] .btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+html[data-skin="art"] .btn.primary{background:linear-gradient(180deg,#ffe27a,#e2a91e);border-color:#fff3c4;color:#1d1300;text-shadow:none}
+html[data-skin="art"] .btn.primary:hover:not(:disabled){color:#1d1300;filter:brightness(1.08)}
+html[data-skin="art"] .btn.danger{color:#ffb3a8}
+html[data-skin="art"] .btn.primary.go,html[data-skin="art"] .pl-acts .btn.go{background:linear-gradient(180deg,#59d873,#22914a);border-color:#d6ffd9;color:#06210d;text-shadow:none}
+html[data-skin="art"] :is(select,input[type=search],input[type=text],input[type=email],input[type=password],input[type=number],textarea){background:#0d1452;border:2px solid var(--line);border-radius:4px;color:#fff}
+html[data-skin="art"] :is(select,input,textarea):focus{border-color:var(--accent);outline:none}
+html[data-skin="art"] .chip{background:#14206e;border:2px solid var(--line);color:var(--ink)}
+html[data-skin="art"] .chip[aria-pressed="true"]{background:#fff;border-color:#fff;color:#141a52;text-shadow:none}
+html[data-skin="art"] .pill,html[data-skin="art"] .tg,html[data-skin="art"] .pp,html[data-skin="art"] .res{background:rgba(0,0,0,.28);border-color:var(--line);color:var(--ink)}
+html[data-skin="art"] .step b{border-color:var(--line)}
+html[data-skin="art"] .prog{background:#0b1145;border-color:var(--line)}
+html[data-skin="art"] .prog i,html[data-skin="art"] .curve span.b{background:linear-gradient(180deg,#ffe27a,#d99a15)}
+html[data-skin="art"] .dl li{border-bottom:1px dotted rgba(255,255,255,.18)}
+html[data-skin="art"] .lv{background:#fff;color:#141a52;text-shadow:none;border-radius:3px}
+html[data-skin="art"] .toast{background:var(--win);border:3px solid var(--frame);box-shadow:var(--winshadow);color:#fff}
+html[data-skin="art"] .issues.bad{background:linear-gradient(180deg,#5a1430,#3a0c22)}
+html[data-skin="art"] .issues.good{background:linear-gradient(180deg,#145a2c,#0c3a1c)}
+
+/* ---------- class icons (--ci is set next to --cc wherever a class color is used) ---------- */
+html[data-skin="art"] .dot{width:18px!important;height:18px!important;border-radius:0!important;transform:none!important;background:var(--ci) center/contain no-repeat!important;image-rendering:pixelated;flex:none}
+html[data-skin="art"] [style*="--ci:none"] .dot,html[data-skin="art"] .dot[style*="--ci:none"]{width:10px!important;height:10px!important;background:var(--cc)!important;transform:rotate(45deg)!important;margin:0 4px}
+html[data-skin="art"] .group-h .dot{width:26px!important;height:26px!important}
+html[data-skin="art"] .group-h{color:#fff;text-shadow:2px 2px 0 #000;border-bottom:2px solid color-mix(in srgb,var(--cc) 70%,#fff);padding-bottom:4px}
+
+/* ---------- cards ---------- */
+html[data-skin="art"] .card{border-color:color-mix(in srgb,var(--cc) 35%,var(--frame));border-radius:8px}
+html[data-skin="art"] button.card:hover{border-color:#fff;box-shadow:inset 0 0 0 1px #8C96D8,0 0 0 2px var(--accent),0 4px 0 2px rgba(0,0,0,.35)}
+html[data-skin="art"] .c-head{background:linear-gradient(180deg,color-mix(in srgb,var(--cc) 82%,#fff) 0%,var(--cc) 45%,color-mix(in srgb,var(--cc) 72%,#000) 100%);color:var(--ct);text-shadow:none;border-bottom:2px solid var(--frame-dark);gap:6px;padding-left:8px}
+html[data-skin="art"] .c-head::before{content:"";flex:none;width:32px;height:32px;background:var(--ci) center/24px 24px no-repeat,radial-gradient(circle,#2a3486 0%,#0c1040 100%);border:2px solid #E4E6F6;border-radius:5px;box-shadow:0 0 0 1px #0A0C24;image-rendering:pixelated}
+html[data-skin="art"] .card[style*="--ci:none"] .c-head::before{display:none}
+html[data-skin="art"] .c-name{font-weight:600;font-size:1rem}
+html[data-skin="art"] .c-type{color:var(--muted)}
+html[data-skin="art"] .c-rules{color:#fff}
+html[data-skin="art"] .c-foot,html[data-skin="art"] .c-ctrl{border-top:2px solid rgba(255,255,255,.18);color:var(--muted)}
+html[data-skin="art"] .c-ctrl{background:rgba(0,0,0,.22)}
+html[data-skin="art"] .cver{border-color:var(--line);color:var(--muted);border-radius:3px}
+html[data-skin="art"] .card.picked,html[data-skin="art"] .pl-hand .hc.ok .card,html[data-skin="art"] .pick-list .pk.on .card{outline:3px solid var(--accent);outline-offset:1px}
+html[data-skin="art"] .card .slotbadge{background:var(--accent);color:var(--accent-ink);border-radius:3px;text-shadow:none}
+
+/* Aura cost: the Aura gem icon with the number on it */
+html[data-skin="art"] .gem{clip-path:none;background:url(ico-fire.png) center/contain no-repeat;image-rendering:pixelated;width:38px;height:44px;margin:-4px -2px -4px 0;padding-top:8px;color:#fff;font-family:var(--display);font-size:1.3rem;font-weight:700;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.65));
+  text-shadow:-2px 0 #000,2px 0 #000,0 -2px #000,0 2px #000,-2px -2px #000,2px -2px #000,-2px 2px #000,2px 2px #000,3px 3px 0 #000}
+html[data-skin="art"] .aura{clip-path:none;background:url(ico-fire.png) center/contain no-repeat;image-rendering:pixelated;width:.9em;height:1.08em;vertical-align:-2px}
+/* the Aura pool and Hero Aura stats use the diamond */
+html[data-skin="art"] .res.au .aura{background-image:url(ico-aura.png)}
+
+/* Legendary */
+html[data-skin="art"] .c-type .leg{color:var(--legend)}
+
+/* Hero stats with the STR / DEF / Aura / HP icons */
+html[data-skin="art"] .stat{border:2px solid rgba(255,255,255,.22);background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0}
+html[data-skin="art"] .stat b{color:#fff;display:inline}
+html[data-skin="art"] .stat i{display:none}
+html[data-skin="art"] :is(.stat,.ph-stats span)::before{content:"";width:18px;height:18px;flex:none;background:center/contain no-repeat;image-rendering:pixelated}
+html[data-skin="art"] :is(.stat.s-str,.ph-stats .s-str)::before{background-image:url(ico-str.png)}
+html[data-skin="art"] :is(.stat.s-def,.ph-stats .s-def)::before{background-image:url(ico-def.png)}
+html[data-skin="art"] :is(.stat.s-aura,.ph-stats .s-aura)::before{background-image:url(ico-aura.png)}
+html[data-skin="art"] .stat.s-hp::before{background-image:url(ico-hp.png)}
+html[data-skin="art"] .ph-stats span{display:flex;align-items:center;justify-content:center;gap:3px;border:2px solid rgba(255,255,255,.2);background:rgba(0,0,0,.25);font-size:0;padding:2px 0;border-radius:4px}
+html[data-skin="art"] .ph-stats b{display:inline;font-size:.95rem;color:#fff}
+html[data-skin="art"] .ph-stats b.up{color:var(--ok)} html[data-skin="art"] .ph-stats b.dn{color:var(--warn)}
+
+/* ---------- play table ---------- */
+html[data-skin="art"] .ph{border-left-width:3px;border-color:var(--frame);background:var(--win)}
+html[data-skin="art"] .ph-name{color:#fff}
+html[data-skin="art"] .ph-cls{color:var(--muted)}
+html[data-skin="art"] .ph-cls .dot{width:22px!important;height:22px!important}
+html[data-skin="art"] .ph-top{color:var(--muted)}
+html[data-skin="art"] .ph.actor{box-shadow:inset 0 0 0 1px #8C96D8,0 0 0 2px var(--frame-dark),0 0 0 5px var(--accent)}
+html[data-skin="art"] .ph.actor::before{content:"";position:absolute;left:-26px;top:14px;width:22px;height:16px;background:var(--hand) center/contain no-repeat;z-index:2}
+html[data-skin="art"] .hpbar{height:18px;border:2px solid #fff;border-radius:3px;background:#0a0e30;overflow:visible;margin-left:16px}
+html[data-skin="art"] .hpbar::before{content:"";position:absolute;left:-20px;top:50%;transform:translateY(-50%);width:20px;height:18px;background:url(ico-hp.png) center/contain no-repeat;image-rendering:pixelated}
+html[data-skin="art"] .hpbar i{background:linear-gradient(180deg,#9df7a8,#2fb34f);opacity:1}
+html[data-skin="art"] .hpbar.low i{background:linear-gradient(180deg,#ffb0a0,#d6402c)}
+html[data-skin="art"] .hpbar span{line-height:14px;font-weight:700;text-shadow:none;color:#06210d;background:linear-gradient(90deg,#06210d var(--p,100%),#fff var(--p,100%));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+html[data-skin="art"] .hpbar.low span{background:linear-gradient(90deg,#2a0500 var(--p,100%),#fff var(--p,100%));-webkit-background-clip:text;background-clip:text}
+html[data-skin="art"] .pl-mid{background:var(--win);border-color:var(--accent)}
+html[data-skin="art"] .pl-mid.wait{border-color:var(--frame)}
+html[data-skin="art"] .posm{border:2px solid var(--frame)}
+html[data-skin="art"] .posm span{background:#0d1452;color:var(--muted)}
+html[data-skin="art"] .posm span.on{background:var(--accent);color:var(--accent-ink);text-shadow:none}
+html[data-skin="art"] .pl-acts .btn.atk{background:linear-gradient(180deg,#ff6a55,#b3221a);border-color:#ffd6cf;color:#fff}
+html[data-skin="art"] .pl-acts .btn.lv{background:linear-gradient(180deg,#8890a8,#4d5266);border-color:#e6e8f2}
+html[data-skin="art"] .pl-acts .btn.lv-str{background:linear-gradient(180deg,#ff6a55,#b3221a)}
+html[data-skin="art"] .pl-acts .btn.lv-def{background:linear-gradient(180deg,#59d873,#22914a)}
+html[data-skin="art"] .pl-acts .btn.lv-aura{background:linear-gradient(180deg,#4fb6ff,#1f5fc8)}
+html[data-skin="art"] .pl-acts .sep{background:rgba(255,255,255,.25)}
+html[data-skin="art"] .pi{border:2px dashed var(--line);background:rgba(0,0,0,.25);color:var(--muted)}
+html[data-skin="art"] .pi.full{border:3px solid var(--frame);background:var(--win);color:#fff}
+html[data-skin="art"] .pi.fd{background:repeating-linear-gradient(45deg,#0d1452,#0d1452 6px,#1b2a8c 6px,#1b2a8c 12px)}
+html[data-skin="art"] .ps{border-color:var(--frame);color:#fff}
+html[data-skin="art"] .pl-man{border-color:var(--legend)}
+html[data-skin="art"] .pl-hand .hc .auto{background:#0d1452;border-color:var(--line);color:var(--muted)}
+html[data-skin="art"] .pl-hand .hc .cb span{background:#0d1452;border-radius:3px}
+html[data-skin="art"] .pl-zone.op{background:linear-gradient(180deg,#46307e 0%,#2e1f63 40%,#1c1346 100%)}
+
+/* ---------- misc ---------- */
+html[data-skin="art"] .skin-btn{font-size:.85rem}
+html[data-skin="art"] .btn[data-pa=concede-yes],html[data-skin="art"] .pl-acts .btn.pl-concede{background:linear-gradient(180deg,#e8483a,#a4160e);border-color:#ffd6cf;color:#fff}
+html[data-skin="art"] :is(.btn[data-pa=concede-yes],.pl-acts .btn.pl-concede):hover:not(:disabled){color:#fff;border-color:#fff;filter:brightness(1.1)}
+html[data-skin="art"] img,html[data-skin="art"] .pixel{image-rendering:pixelated}
+@media (max-width:720px){html[data-skin="art"] .ph.actor::before{display:none}}
+@media (max-width:480px){html[data-skin="art"] .brand{font-size:1.1rem}html[data-skin="art"] .brand small{font-size:.7rem}html[data-skin="art"] .skin-btn{padding:3px 7px;font-size:.7rem}}
+
+/* Play link stands out: green menu button with a gold frame */
+html[data-skin="art"] .bhead h1{margin-bottom:0}
+@media (min-width:721px) and (max-width:1499px){html[data-skin="art"] .top .brand{order:-2}html[data-skin="art"] .discord-btn{order:-1;margin-left:auto}}
+
+/* Tokens: lighter sky-blue window so they don't look like playable cards */
+html[data-skin="art"] .card.token{background:linear-gradient(180deg,#8fb8f2 0,#6f9de4 36px,#5b88d4 150px,#4a74c0 100%);border-color:#d8e8ff}
+html[data-skin="art"] .card.token .c-rules,html[data-skin="art"] .card.token .c-type{color:#0d1a3a;text-shadow:none}
+html[data-skin="art"] .card.token .c-type span{color:#0d1a3a}
+/* maxed cards in the Deck Builder pool */
+html[data-skin="art"] .card.maxed{border-style:dashed}
+html[data-skin="art"] .maxtag{color:#ffe27a}
+html[data-skin="art"] .pl-mid.opp{background:linear-gradient(180deg,#5a1f2a,#3a1420);border-color:#ff8a8a}
+html[data-skin="art"] .pl-oppinfo span{background:#1a0d14;border-color:#ff8a8a;color:#ffe9e9}
+html[data-skin="art"] .pl-banner{background:#13234a;border-color:#ffe27a;color:#fff}
+html[data-skin="art"] .pl-banner .bl .hit{color:#ff9a9a}
+html[data-skin="art"] .pl-stats{background:var(--win);border-color:var(--accent)}
+html[data-skin="art"] .tg.must,html[data-skin="art"] .ps .must{color:#ff9a9a!important;border-color:#ff9a9a}
+html[data-skin="art"] .pl-stats h3{font-size:1.15rem;line-height:1.2}
+html[data-skin="art"] .c-foot .flip{background:radial-gradient(circle,#2a3486 0%,#0c1040 100%);border:2px solid #E4E6F6;color:#fff;border-radius:4px}
+html[data-skin="art"] .card.upside{outline:2px solid #FFD45C;outline-offset:-1px}
+html[data-skin="art"] .upcost{color:#FFD45C}
+
+/* ---------- Card Art overrides ---------- */
+html[data-skin="art"] body{background:radial-gradient(120% 90% at 50% 0%,#3a2418 0%,#1c100b 50%,#0b0604 100%) fixed var(--bg);font-size:17px;letter-spacing:0;text-shadow:1px 1px 0 rgba(0,0,0,.6)}
+html[data-skin="art"] body::before{background:#1c100b}
+html[data-skin="art"] :where(.top,.card,.deck,.panel,.deckpanel,.modal .box,.pl-zone,.pl-mid,.slot:not(.hero-full),.empty,.ph,.ps,.pi,.issues,.pl-man,.rules){border-width:2px;border-radius:6px}
+html[data-skin="art"] .top{border-width:0 0 2px;background:linear-gradient(180deg,rgba(80,46,34,.98),rgba(52,28,22,.98))}
+html[data-skin="art"] :is(h1,h2,h3,h4,.brand,.tabs a,.btn,.chip,.step,.group-h,.ph-n,.c-name,.ph-name){font-weight:600;letter-spacing:.01em}
+html[data-skin="art"] h1{font-size:2.4rem;color:#FFF6E4}
+html[data-skin="art"] .brand{font-size:1.6rem;color:#FFF6E4}
+html[data-skin="art"] .brand small{color:var(--accent);font-size:.8rem;letter-spacing:.18em}
+html[data-skin="art"] .tabs a{font-size:1.12rem;padding:4px 8px 4px 30px;color:var(--muted)}
+html[data-skin="art"] .tabs a[aria-current="page"]::before,html[data-skin="art"] .tabs a:hover::before{left:2px;width:26px;height:14px}
+html[data-skin="art"] .tabs a[aria-current="page"]{background:rgba(0,0,0,.28);color:#FFF6E4}
+/* blue banner headings with gold trim */
+html[data-skin="art"] .group-h{background:var(--banner);border:2px solid #E9C25A;border-radius:4px;box-shadow:0 0 0 1px #3a2208,0 3px 8px rgba(0,0,0,.4);padding:4px 12px;color:#fff;font-size:1.2rem;text-shadow:1px 1px 0 #0a1a40}
+html[data-skin="art"] .group-h span{color:#ffe7a8}
+html[data-skin="art"] .modal .box>h2:first-child{background:var(--banner);border:2px solid #E9C25A;border-radius:4px;box-shadow:0 0 0 1px #3a2208;margin:-4px -4px 4px;padding:6px 12px;text-align:center;font-size:1.25rem;color:#fff;text-shadow:1px 1px 0 #0a1a40}
+html[data-skin="art"] .modal{background:rgba(10,5,3,.62)}
+/* controls */
+html[data-skin="art"] .btn{background:linear-gradient(180deg,#6a3e2e,#45261c);border:1px solid var(--frame);border-radius:5px;box-shadow:inset 0 1px 0 rgba(255,220,180,.18),0 0 0 1px #000;color:var(--ink);font-size:1rem;padding:5px 14px}
+html[data-skin="art"] .btn.sm{font-size:.95rem;padding:3px 10px}
+html[data-skin="art"] .btn:hover:not(:disabled){border-color:var(--accent);color:#FFE3A0}
+html[data-skin="art"] .btn.primary{background:linear-gradient(180deg,#ffe38a,#e0a72a 60%,#b77c14);border-color:#fff1c4;color:#2A1606;text-shadow:none}
+html[data-skin="art"] .btn.primary:hover:not(:disabled){color:#2A1606}
+html[data-skin="art"] :is(select,input[type=search],input[type=text],input[type=email],input[type=password],input[type=number],textarea){background:#24130d;border:1px solid var(--frame);border-radius:5px;color:var(--ink)}
+html[data-skin="art"] .chip{background:#3a2018;border:1px solid var(--line);border-radius:5px;font-size:1rem}
+html[data-skin="art"] .chip[aria-pressed="true"]{background:linear-gradient(180deg,#ffe38a,#e0a72a);border-color:#fff1c4;color:#2A1606}
+html[data-skin="art"] :is(.pill,.tg,.pp,.res){background:rgba(0,0,0,.3)}
+html[data-skin="art"] .skin-btn{font-family:var(--display);font-size:.95rem}
+/* text cards (no art yet) */
+html[data-skin="art"] .card{border-color:color-mix(in srgb,var(--cc) 30%,var(--frame))}
+html[data-skin="art"] .c-head{border-bottom:2px solid var(--frame)}
+html[data-skin="art"] .c-head::before{background:var(--ci) center/24px 24px no-repeat,radial-gradient(circle,#5a3426 0%,#24130d 100%);border:1px solid var(--frame)}
+html[data-skin="art"] .c-name{font-size:1.12rem;line-height:1.1}
+html[data-skin="art"] .c-rules{font-size:1rem}
+html[data-skin="art"] .gem{font-family:"Pirata One",var(--display);font-size:1.45rem;color:#ffc100;padding-top:10px}
+html[data-skin="art"] .card.token{background:linear-gradient(180deg,#e9d8b4,#cdb48a);border-color:#f6ead0}
+html[data-skin="art"] .card.token .c-rules,html[data-skin="art"] .card.token .c-type,html[data-skin="art"] .card.token .c-type span{color:#2a1606;text-shadow:none}
+html[data-skin="art"] .c-foot .flip{background:radial-gradient(circle,#5a3426 0%,#24130d 100%);border:1px solid var(--frame)}
+html[data-skin="art"] .card.upside{outline:2px solid var(--accent)}
+/* card images: no frame or window of their own, smooth scaling */
+html[data-skin="art"] .card.art{background:radial-gradient(120% 70% at 50% 32%,color-mix(in srgb,var(--cc) 45%,#3a2418),#120a07 78%);border:0;border-radius:5%/3.6%;box-shadow:0 0 0 1px #000,0 6px 14px rgba(0,0,0,.5);outline-offset:2px}
+html[data-skin="art"] button.card.art:hover{box-shadow:0 0 0 2px var(--accent),0 6px 14px rgba(0,0,0,.5)}
+html[data-skin="art"] .card.art.upside{box-shadow:0 0 0 3px var(--accent),0 6px 14px rgba(0,0,0,.5);outline:0}
+html[data-skin="art"] .card.art .c-ctrl{background:rgba(20,10,6,.9);border-top:1px solid var(--frame)}
+html[data-skin="art"] .c-art{image-rendering:auto}
+html[data-skin="art"] .ov-rules,html[data-skin="art"] .ov-num{text-shadow:0 .4cqw .25cqw rgba(0,0,0,.85)}
+/* play table */
+html[data-skin="art"] .pl-zone.op{background:linear-gradient(180deg,rgba(64,36,52,.97),rgba(40,22,34,.97))}
+html[data-skin="art"] .hpbar{border:1px solid #f0dcc0}
+html[data-skin="art"] .pi.fd{background:repeating-linear-gradient(45deg,#2a1711,#2a1711 6px,#4a2a20 6px,#4a2a20 12px)}
+html[data-skin="art"] .posm span{background:#24130d}
+html[data-skin="art"] .pl-banner{background:var(--banner);border-color:#E9C25A}
+html[data-skin="art"] .pl-mid.opp{background:linear-gradient(180deg,#5a1f2a,#3a1420)}
+/* changelog colours on the dark background */
+html[data-skin="art"] .t-changed,html[data-skin="art"] .a-rules{color:#ffcf6b}html[data-skin="art"] .t-added,html[data-skin="art"] .a-playclient{color:#8be39a}
+html[data-skin="art"] .t-removed{color:#ff8a80}html[data-skin="art"] .t-renamed,html[data-skin="art"] .a-site{color:#a9c8ff}
+@media (max-width:480px){html[data-skin="art"] .brand{font-size:1.3rem}html[data-skin="art"] .tabs a{font-size:1rem}}
+/* header order: brand, menu, account, theme, Discord (the retro rule moves Discord to the left) */
+@media (min-width:721px) and (max-width:1499px){html[data-skin="art"] .top .brand{order:0}html[data-skin="art"] .discord-btn{order:0;margin-left:0}}

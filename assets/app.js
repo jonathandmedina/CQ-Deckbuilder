@@ -38,6 +38,10 @@ function upFace(c){return Object.assign({},c,{id:c.id+"#up",face:"up",rules:c.up
 const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?" · "+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],ver:r[11]||1,sup:""}));
 const TOKEN_BY_NAME=new Map(TOKENS.map(t=>[t.name,t]));
 const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
+/* Set 2 (hidden playtest set): cards named in SET2_CARDS (cards-data.js) only show for admins and players an admin gave Set 2 access (Admin page). */
+const SET2=new Set(typeof SET2_CARDS!=="undefined"?SET2_CARDS:[]);
+[...HEROES,...CARDS,...TOKENS].forEach(c=>{if(SET2.has(c.name))c.set=2});
+const canSee=c=>!c||c.set!==2||!!(S.access&&S.access.set2);
 const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
 /* Renamed cards (cards-data.js CARD_RENAMES): old saved decks, share links, imports and Best Decks lists still find the card. */
 const RENAMES=(typeof CARD_RENAMES!=="undefined")?CARD_RENAMES:{};
@@ -164,12 +168,12 @@ function autoRebuild(d){
   if(t>DECK_SIZE){for(const id of keys.filter(id=>old[id]===1&&n[id]>1).sort((a,b)=>cost(b)-cost(a))){if(t<=DECK_SIZE)break;n[id]--;t--}}
   if(t>DECK_SIZE){for(const id of keys.slice().sort((a,b)=>cost(b)-cost(a))){while(t>DECK_SIZE&&n[id]>1){n[id]--;t--}}}
   if(t<DECK_SIZE){for(const id of keys.slice().sort((a,b)=>(old[b]-old[a])||(cost(a)-cost(b))||a.localeCompare(b))){while(t<DECK_SIZE&&n[id]<maxCopies(BYID.get(id))){n[id]++;t++}}}
-  if(t<DECK_SIZE){const cls=partyClasses(d);const pool=CARDS.filter(c=>ok(c)&&!n[c.id]&&c.cls!=="Generic"&&!(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===c.id)))
+  if(t<DECK_SIZE){const cls=partyClasses(d);const pool=CARDS.filter(c=>canSee(c)&&ok(c)&&!n[c.id]&&c.cls!=="Generic"&&!(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===c.id)))
       .sort((a,b)=>costNum(a)-costNum(b)||a.name.localeCompare(b.name));
     const inCls=k=>Object.entries(n).reduce((a,[id,q])=>a+(BYID.get(id)?.cls===k?q:0),0);
     while(t<DECK_SIZE){const order=cls.slice().sort((a,b)=>inCls(a)-inCls(b));let added=false;
       for(const k of order){const c=pool.find(x=>x.cls===k&&!n[x.id]);if(!c)continue;const q=Math.min(maxCopies(c),DECK_SIZE-t);n[c.id]=q;t+=q;added=true;break}
-      if(!added){const c=CARDS.find(x=>ok(x)&&x.cls==="Generic"&&!n[x.id]);if(!c)break;const q=Math.min(maxCopies(c),DECK_SIZE-t);n[c.id]=q;t+=q}}}
+      if(!added){const c=CARDS.find(x=>canSee(x)&&ok(x)&&x.cls==="Generic"&&!n[x.id]);if(!c)break;const q=Math.min(maxCopies(c),DECK_SIZE-t);n[c.id]=q;t+=q}}}
   return n}
 function rebuildList(){const out=S.decks.filter(needsRebuild);if(needsRebuild(S.deck)&&!out.some(d=>d.id===S.deck.id))out.push(S.deck);return out}
 async function rebuildDecks(list){let k=0;
@@ -206,10 +210,15 @@ function setSession(session){
   S.me=u?{email:u.email,name:(u.user_metadata&&u.user_metadata.display_name)||u.email.split("@")[0]}:null;
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
-  lastUid=S.uid;S.commMine=undefined;
+  lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false};showAdminLink();if(u)loadAccess();
   if(u)loadDecks();else{S.decks=localDecks();setTimeout(rebuildPrompt,50)}
   renderAcct();render();
 }
+/* Admin and Set 2 access (Supabase RPC my_access; see "Admin Panel SQL" in the project). Signed out or no SQL yet = no access. */
+async function loadAccess(){const uid=S.uid;let a={admin:false,set2:false};
+  try{const{data,error}=await SB.rpc("my_access");if(!error&&data)a={admin:!!data.admin,set2:!!(data.set2||data.admin)}}catch(e){}
+  if(uid!==S.uid)return;S.access=a;showAdminLink();if(["catalog","build","admin"].includes(S.view))render()}
+function showAdminLink(){const l=document.getElementById("adminTab");if(l)l.hidden=!(S.access&&S.access.admin)}
 async function loadDecks(){
   const{data,error}=await SB.from("decks").select("id,name,heroes,cards,updated_at").order("updated_at",{ascending:false});
   if(error){toast("Couldn't load your decks. Check your connection and reload.");return}
@@ -412,7 +421,7 @@ function artCardHTML(c,o,tag,attrs){
 const kindRank=c=>c.kind==="hero"?0:c.kind==="token"?2:1;
 function filterSort(list,f){
   const q=f.q.trim().toLowerCase();
-  let l=list.filter(c=>(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
+  let l=list.filter(c=>canSee(c)&&(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
   const byName=(a,b)=>sortName(a.name).localeCompare(sortName(b.name));
   const s={class:(a,b)=>kindRank(a)-kindRank(b)||clsOrder(a.cls)-clsOrder(b.cls)||byName(a,b),
     name:byName,cost:(a,b)=>costNum(a)-costNum(b)||byName(a,b),type:(a,b)=>a.type.localeCompare(b.type)||byName(a,b)}[f.sort]||byName;
@@ -450,6 +459,7 @@ function render(){
   else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
   else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
   else if(S.view==="community"){v.innerHTML=viewCommunity();if(!S.comm||Date.now()-S.comm.at>60000)loadCommunity()}
+  else if(S.view==="admin"){if(window.CQAdmin)window.CQAdmin.mount(v);else v.innerHTML='<p class="lede">Loading…</p>'}
   else v.innerHTML=viewDecks();
 }
 function viewCatalog(){
@@ -457,7 +467,7 @@ function viewCatalog(){
   const all=[...HEROES,...CARDS,...TOKENS];
   const list=filterSort(all,f);
   return`<div class="bhead"><h1>Cards</h1><a href="#build" class="btn primary go newdeck build-go">Build a Deck</a></div>
-  <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.length} Heroes, ${CARDS.length} deck cards, ${TOKENS.length} tokens.</p>
+  <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.filter(canSee).length} Heroes, ${CARDS.filter(canSee).length} deck cards, ${TOKENS.filter(canSee).length} tokens.${SET2.size&&S.access&&S.access.set2?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===2).length} Set 2 cards (hidden playtest set).`:""}</p>
   <div class="bar">${classChips(f.cls,"cat-cls",[...CLASSES,"Generic"])}</div>
   <div class="bar">
     <label class="field" for="cat-q">Search <input type="search" id="cat-q" data-act="cat-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
@@ -1160,7 +1170,7 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.querySelectorAll(".modal");if(ms.length)ms[ms.length-1].remove();return}
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
-function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","quickstart","play","best","community","changelog"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+function route(){const h=location.hash.replace("#","");S.view=["catalog","build","decks","account","rules","quickstart","play","best","community","changelog","admin"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

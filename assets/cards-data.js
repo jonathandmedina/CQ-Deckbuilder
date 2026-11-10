@@ -467,6 +467,9 @@ const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf
 
 /* Deprecated cards: removed from play, kept for the record and so old saved games still load. Same row format as RAW_CARDS.
    Decks that contain one are flagged as not legal; they don't appear in the card list, deck builder or prints. */
+/* Set 2: hidden playtest set. Card, Hero or token names listed here only show on the site for admins and players given Set 2 access on the Admin page.
+   Note: this file is public, so anyone reading the code can still see these cards. */
+const SET2_CARDS=[];
 const DEPRECATED_CARDS=[
 [2, "Fortify", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: The next attack deals no damage.", 1],
 [2, "Pull Together", "X", "", "Tactic", "", "Paladin", "Your party gains +X DEF this turn. Exhaust this Hero.", 2],

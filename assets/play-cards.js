@@ -72,7 +72,8 @@ def("Levitate",{run(c){if(!c.actor)return;E.addMod(c.actor,{noAttack:1});log(c,`
 const lifeCard=(pay,n)=>({t:[t("enemy","target enemy")],run(c){if(c.actor)E.loseHp(c.s,c.actor,pay,c.def.name+" cost");const o=c.t[0];if(o&&!o.dead){E.loseHp(c.s,o,n,c.def.name);st(c,o,"confuse")}}});
 def("Dark Jab",lifeCard(2,4));def("Dark Lance",lifeCard(3,5)); /* update 21: 4 and 5 */
 def("Night Terror",{run(c){if(c.actor)E.loseHp(c.s,c.actor,4,"Night Terror cost");enemies(c).forEach(e=>{if(!e.dead){E.loseHp(c.s,e,3,"Night Terror");st(c,e,"confuse")}});exMe(c)}});
-def("Siphon Life",{t:[t("any","damage target")],run(c){const d=D(c,c.t[0],2,{type:"Dark"});heal(c,c.actor,d)}});
+/* update 27: Target Hero loses 2 Health Points. Heal this Hero for 2 Health Points. */
+def("Siphon Life",{t:[t("hero","Hero to lose 2 HP")],run(c){const o=c.t[0];if(o&&!o.dead)E.loseHp(c.s,o,2,"Siphon Life");heal(c,c.actor,2)}});
 def("Dark Arts",{t:[EN],x:{label:"HP to lose (X)",max:(s,pid,a)=>a?Math.max(0,E.hp(s,a)-1):6,free:true},run(c){const n=Math.max(0,c.x||0); /* update 21: no cap */if(n<=0)return;E.loseHp(c.s,c.actor,n,"Dark Arts");if(c.t[0])E.loseHp(c.s,c.t[0],n,"Dark Arts")}});
 def("Blood Offering",{run(c){E.loseHp(c.s,c.actor,3,"Blood Offering");c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)}});
 def("Disorient",{t:[ANY],run(c){st(c,c.t[0],"confuse")}});
@@ -229,7 +230,7 @@ def("Quickdraw",{run(c){const top=c.me.lib.splice(-3);top.slice().forEach(x=>{if
 const arrow=(cost,t2,run,o)=>({act:Object.assign({cost,t:t2,run},o||{})});
 def("Arrow of Hope",arrow(3,[EN],c=>{D(c,c.t[0],2);draw(c,2)}));
 def("Arrow of Persuasion",arrow(1,[EN,t("ally","which of your units it must attack")],c=>{const tg=c.t[0],to=c.t[1];D(c,tg,3);
-  if(tg&&!tg.dead&&(tg.kind==="hero"||tg.kind==="summon")&&E.ctrl(c.s,tg)!==c.pid&&to&&!to.dead){tg.fl=tg.fl||{};tg.fl.forceAtk={uid:to.uid,round:c.s.round,by:c.pid};log(c,`${tg.name} must attack ${to.name} on its next action.`)}}));
+  if(tg&&!tg.dead&&(tg.kind==="hero"||tg.kind==="summon")&&E.ctrl(c.s,tg)!==c.pid&&to&&!to.dead){tg.fl=tg.fl||{};tg.fl.forceAtk={uid:to.uid,round:c.s.round,by:c.pid};log(c,`Until Dusk, ${tg.name}'s next action must be an attack on ${to.name}.`)}}));
 /* Refire: the same Hero immediately activates an Arrow (paying its Aura); if it resolves, the Arrow returns to inventory */
 const refireArrows=(s,pid,a)=>{const pl=s.p[pid];return pl.inv.filter(o=>o.kind==="card"&&!o.fd&&E.DB[o.id].sub==="Arrow"&&(S[o.name]||{}).act)};
 def("Refire",{can:(s,pid,a)=>!!a&&refireArrows(s,pid,a).some(o=>E.itemCost(s,pid,a,o)+1<=s.p[pid].aura),
@@ -239,7 +240,8 @@ def("Blunt-Point Force",arrow(2,[EN],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){c
 def("Dual Shot",arrow(1,[t("enemy","first target enemy"),t("enemy","second target enemy",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"burn")}));
 def("Level Shot",arrow(1,[EN],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
-def("Poison Dart",arrow(1,[t("any","target to Poison twice")],c=>{st(c,c.t[0],"poison",2)}));
+/* update 27: Arrow damage boosts (Full Draw, Spotters, Multi Bow, Longbow, Hawkeye, Mystic Quiver) make Poison Dart deal that much damage; Heavy Bow doubles it (0 stays 0) */
+def("Poison Dart",arrow(1,[t("any","target to Poison twice")],c=>{if(c.arrowBonus&&c.arrowBonus.dmg>0)D(c,c.t[0],0);st(c,c.t[0],"poison",2)}));
 def("Serrated Arrow",arrow(1,[EN],c=>{D(c,c.t[0],3,{pierce:3})}));
 def("Arrow of Devastation",arrow(4,[EN],c=>{D(c,c.t[0],5,{pierce:3})}));
 /* Arrow of Craftsmanship: can't be targeted (engine); Upgrade X Gold (Town): +X damage for the rest of the game */
@@ -275,7 +277,12 @@ def("Inspiration",{run(c){draw(c,2)}});
 def("Precognition",{run(c){scry(c,2,{draw:1})}});
 def("Search for Knowledge",{run(c){draw(c,2);E.pushChoose(c.s,c.pid,{title:"Discard 2 cards",cards:c.me.hand.map(x=>x.uid),min:2,max:2,op:"discard"})}});
 def("Level Up",{t:[HERO],modes:{n:1,opts:[{label:"If it reaches an even Level, gain +1 STR"},{label:"If it reaches an even Level, gain +1 DEF"},{label:"If it reaches an even Level, gain +1 AURA"}]},run(c){if(c.t[0])E.levelUp(c.s,c.t[0],["str","def","aura"][(c.modes||[])[0]||0])}});
-def("Delevel",{t:[HERO],run(c){const h=c.t[0];if(h&&h.lvl>0){if(h.lvl%2===0){const k=["str","def","aura"].find(k=>h.bon[k]>0);if(k)h.bon[k]--}h.lvl--;log(c,`${h.name} drops to Level ${h.lvl}.`)}}});
+/* update 27: dropping to an odd level also costs a stat point; the Hero's owner chooses which */
+def("Delevel",{t:[HERO],run(c){const h=c.t[0];if(!h||h.lvl<=0)return;const odd=h.lvl%2===0;h.lvl--;log(c,`${h.name} drops to Level ${h.lvl}.`);
+  if(!odd)return;const ks=["str","def","aura"].filter(k=>h.bon[k]>0);if(!ks.length)return;
+  if(ks.length===1){h.bon[ks[0]]--;log(c,`${h.name} loses its +1 ${ks[0].toUpperCase()}.`);return}
+  E.ask(c.s,h.owner,`Delevel: ${h.name} loses a stat point. Choose which.`,ks.map(k=>({label:`Lose +1 ${({str:"Strength",def:"Defense",aura:"Aura"})[k]}`,v:k})),"delevelStat",{h:h.uid})}});
+E.ASK.delevelStat=(s,pid,pr,v)=>{const h=E.heroByUid(s,pr.data.h);if(!h||!v||!(h.bon[v]>0))return;h.bon[v]--;E.log(s,`${h.name} loses its +1 ${v.toUpperCase()}.`,pid)};
 def("Block Progress",{t:[HERO],run(c){if(c.t[0])c.t[0].fl.noLevel=c.s.round}});
 def("Humble",{t:[t("any","Hero or summon")],run(c){buff(c.t[0],{zeroStr:1})}});
 def("Enfeeble",{t:[t("any","Hero or summon")],run(c){buff(c.t[0],{zeroDef:1})}});
@@ -333,7 +340,7 @@ song("Marching Cadence",{run(c){living(c.me).forEach(h=>h.fl.bandRound=c.s.round
 song("Duet",{t:[t("allyHero","another ally to band with",(s,o,x)=>!x||o!==x.actor)],run(c){const a=c.actor,b=c.t[0];[a,b].forEach(h=>{if(h){h.fl.bandRound=c.s.round;buff(h,{str:1})}});
   log(c,`${a?a.name:"This Hero"}${b?" and "+b.name:""} gain +1 STR and Banding this turn.`)}});
 /* passive items: handled in the engine by name (no script needed beyond entering play) */
-["Tip Jar","Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Battle Horn","Trophy Rack","Lightning Rod","Tooth Crystal","Petal Shrine","Sphere of Resistance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
+["Tip Jar","Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Battle Horn","Trophy Rack","Lightning Rod","Tooth Crystal","Petal Shrine","Sphere of Hindrance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
 S["Almandine"].gem=c=>{c.actor=null;enemies(c).forEach(e=>E.damage(c.s,{name:"Almandine"},e,2,{card:true}))};
 S["Rose Quartz"].gem=c=>{living(c.me).forEach(h=>E.heal(c.s,null,h,3))};
 S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};

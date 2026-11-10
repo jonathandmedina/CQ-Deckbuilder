@@ -220,7 +220,7 @@ Initiative passes at the end of every Dusk Phase, so the player who receives it 
 
 All players do these steps together:
 
-1. **Ready.** Ready all your exhausted cards. You may choose to keep a Meditating Hero exhausted (see Meditate). A Hero with a Fatigue counter doesn’t ready; remove the counter instead.
+1. **Ready.** Ready all your exhausted cards. A Meditating Hero first gets a meditation counter; then you may choose to keep it exhausted (see Meditate). A Hero with a Fatigue counter doesn’t ready; remove the counter instead.
 2. **Refresh Aura.** Your Aura pool becomes the total Aura of your Heroes that aren’t dead.
 3. **Status damage.** Each Burned, Poisoned or Wounded counter deals 1 damage. Then remove one of each status counter from each Hero and summon.
 4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when exiled Echo cards are played again and Gemstones can be used.
@@ -564,7 +564,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Enraged** | A Hero is Enraged while it is at or below half its maximum HP. |
 | **Harmonize X** | Exhaust X other ready Heroes you control (not the Hero playing the card) to gain the effect after the colon. |
 | **Lifelink** | When this Hero deals damage, heal it that much. |
-| **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, you may keep it exhausted. If you do, it gets a meditation counter. When it readies, it stops Meditating: remove all its meditation counters (including any from Monk Tactics), your party gains that much Aura, and the Hero gains +1 Strength for each one removed until Dusk. |
+| **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, it gets a meditation counter, then you may keep it exhausted. When it readies (at Dawn or any other way), it stops Meditating: remove all its meditation counters (including any from Monk Tactics), your party gains that much Aura, and the Hero gains +1 Strength for each one removed until Dusk. |
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
 | **Piercing X** | Damage from this ignores X points of the target’s DEF (attacks, spells, abilities and any other damage). Piercing with no number ignores all of the target’s DEF. |
@@ -773,7 +773,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Combo (Monk)**: When a card with Combo finishes resolving (after any Scry), reveal the top card of your library. If it’s a Combo card, you may play it or a Combo card from your hand, paying its Aura cost. A Combo card is a card with the Combo subtype.
 - **Mill X**: Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.)
 - **Petal counter (Monk)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
-- **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn you may keep it exhausted and give it a meditation counter. When it readies, remove its counters: your party gains that much Aura, and it gets +1 STR per counter until Dusk.
+- **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn it gets a meditation counter, then you may keep it exhausted. When it readies, remove its counters: your party gains that much Aura, and it gets +1 STR per counter until Dusk.
 - **Meditation counter (Monk)**: Builds up on a Meditating Hero (some Monk Tactics add more). It does nothing until the Hero readies, then each one becomes 1 Aura and +1 STR until Dusk.
 - **Piercing X (Monk)**: Damage from this ignores X points of the target's DEF. Piercing with no number ignores all DEF.
 - **Echo (Bard)**: If you played it from your hand, exile it and play it again for free at your next Dawn (you may choose new targets), then discard it. A card only repeats once.

@@ -481,7 +481,7 @@ function cardCost(s,pid,actor,d,x){let c=d.cost==="X"?(x||0):num(d.cost);const p
   if(d.type==="Summon"&&actor&&hasEqN(actor,"Antler Crown")&&actor.fl.antler!==s.round)c-=1;
   if(d.sub==="Combo"&&pl.fl.petalDisc)c-=1;
   if(actor&&actor.kind==="hero")c+=burden(actor);
-  if(d.cls!=="Warlock"){s.p.forEach(p2=>{c+=invCount(p2,"Sphere of Resistance")})}
+  if(d.cls!=="Warlock"){s.p.forEach(p2=>{c+=invCount(p2,"Sphere of Hindrance")})}
   return Math.max(0,c)}
 E.cardCost=cardCost;
 function consumeCostFlags(s,pid,actor,d){const pl=P(s,pid);
@@ -579,11 +579,13 @@ E.options=function(s,pid){
     out.push({type:"leave"});return out}
   if(s.phase!=="battle"||s.prio!==pid)return[];
   return battleOptions(s,pid)};
-/* Arrow of Persuasion: the unit must attack the chosen target on its next action (ends after that attack, at round end, or if the target is gone / untargetable) */
-function forcedTarget(s,o){const f=o&&o.fl&&o.fl.forceAtk;if(!f||f.round!==s.round||o.dead)return null;const t=find(s,f.uid);if(!t||t.o.dead)return null;
+/* Arrow of Persuasion (update 27): until Dusk, the unit's next action must be an attack on the chosen target (ends after that attack, at Dusk, or if the target is gone / untargetable) */
+function forcedTarget(s,o){const f=o&&o.fl&&o.fl.forceAtk;if(!f||f.round!==s.round||o.dead||s.phase!=="battle")return null;const t=find(s,f.uid);if(!t||t.o.dead)return null;
   const pid=o.kind==="hero"?o.owner:o.ctrl;const cs=candidates(s,pid,{k:"enemy"},{attack:true,actor:o});return cs.includes(f.uid)?f.uid:null}
 E.forcedTarget=forcedTarget;
 function battleOptions(s,pid){const out0=battleOptions0(s,pid);
+  /* update 27 Arrow of Persuasion: the forced Hero must attack; no other action, no passing (abilities that use no action, like Energy Stone, are still allowed) */
+  {const a=actorFor(s,pid);if(a&&!(s.bonus&&s.bonus.pid===pid)&&!a.fl.noAttack&&!a.st.stun&&!(chained(a)&&P(s,pid).aura<1)&&forcedTarget(s,a)){const r=out0.filter(o=>o.type==="attack"&&o.att===a.uid||o.type==="useFree");if(r.some(o=>o.type==="attack"))return r}}
   /* Refire: the bonus action may only activate an Arrow (or be skipped) */
   if(s.bonus&&s.bonus.pid===pid&&s.bonus.only==="arrow"){const r=out0.filter(o=>o.type==="use"&&def(find(s,o.uid).o).sub==="Arrow");r.push({type:"skipBonus"});return r}
   /* Echo Performer: the extra action may only play a Bard Tactic or Song */
@@ -623,12 +625,12 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
   pl.heroes.forEach(h=>{if(h.dead&&!h.surr)SOULS.forEach((_,i)=>out.push({type:"soul",hero:h.uid,ch:i}))});
   out.push({type:"pass"});
   return out}
-function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,opp(pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Resistance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Resistance"),0):0)}
+function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,opp(pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0):0)}
 function itemCost(s,pid,a,o){if(s.bonus&&s.bonus.free&&s.bonus.pid===pid&&a&&s.bonus.uid===a.uid&&def(o).sub==="Arrow")return 0;const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);return c+(a?burden(a):0)}
 E.abilityCost=abilityCost;E.itemCost=itemCost;
 function promptOptions(s,pid,pr){
   if(pr.type==="window"){const out=[{type:"decline"}];
-    P(s,pid).inv.forEach(o=>{if(o.fd&&canReveal(s,pid,o,pr))out.push({type:"reveal",uid:o.uid})});return out}
+    P(s,pid).inv.forEach(o=>{if(o.fd&&canReveal(s,pid,o,pr))revealHeroes(s,pid,o,pr).forEach(h=>out.push({type:"reveal",uid:o.uid,hero:h.uid}))});return out}
   if(pr.type==="combo"){const out=[{type:"decline"}];pr.cands.forEach(u=>{const c=findCardAnywhere(s,pid,u);if(c){const a=comboActor(s,pr,u);if(a&&!a.dead&&canPlayCards(a)&&(pr.free||cardCost(s,pid,a,DB[c.id])<=P(s,pid).aura))out.push({type:"comboPlay",uid:u})}});return out}
   if(pr.type==="ask")return pr.opts.map((_,i)=>({type:"ask",i}));
   if(pr.type==="scry")return[{type:"scry"}];
@@ -646,9 +648,12 @@ E.comboActor=comboActor;
 function hiddenScript(o){const sc=SC()[def(o).name];return sc&&sc.hidden}
 function hiddenCost(s,pid,o){const m=/^(\d+)\{A\}/.exec(def(o).rules||"");let c=m?+m[1]:0;if(def(o).sub==="Trap"&&living(P(s,pid)).some(h=>h.name==="Beast Tracker"&&h.lvl>=3))c-=1;if(def(o).sub==="Trap"&&living(P(s,pid)).some(h=>h.name==="Shadow Ranger"&&h.ex))c-=1;return Math.max(0,c)}
 E.hiddenCost=hiddenCost;
-function revealHero(s,pid,o,pr){const d=def(o);const hs=hiddenScript(o);const tr=pr&&pr.trig;
+/* Heroes that can be exhausted to reveal this Hidden card (the player chooses one; update 27) */
+function revealHeroes(s,pid,o,pr){const d=def(o);const hs=hiddenScript(o);const tr=pr&&pr.trig;
   const ex=hs&&hs.excl&&tr?[tr.hero,tr.target].concat(tr.targets||[]).filter(Boolean):[];
-  return living(P(s,pid)).find(h=>!h.ex&&!ex.includes(h.uid)&&(d.cls==="Generic"||heroIs(h,d.cls)))}
+  return living(P(s,pid)).filter(h=>!h.ex&&!ex.includes(h.uid)&&(d.cls==="Generic"||heroIs(h,d.cls)))}
+function revealHero(s,pid,o,pr,uid){const l=revealHeroes(s,pid,o,pr);return(uid&&l.find(h=>h.uid===uid))||l[0]}
+E.revealHeroes=revealHeroes;
 function canReveal(s,pid,o,pr){if(pr.noHidden)return false;const d=def(o);if(d.sup!=="Hidden")return false;
   if(!revealHero(s,pid,o,pr))return false;if(hiddenCost(s,pid,o)>P(s,pid).aura)return false;
   const h=hiddenScript(o);if(!h)return!["dying","afterDmg","dusk"].includes(pr.trig.kind);return[].concat(h.when).includes(pr.trig.kind)&&(!h.ok||h.ok(s,pid,pr.trig))}
@@ -733,7 +738,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"leave":log(s,`${pl.name} leaves Town.`,pid);s.town.i++;s.town.used={};if(s.town.i>=s.town.order.length){s.town=null;startRound(s)}return;
   case"pass":log(s,`${pl.name} passes.`,pid);s.passed[pid]=true;endBonus(s);advance(s,pid);return;
   case"decline":{const pr=s.pend.shift();if(pr.type==="window")closeWindow(s,pr);else if(pr.type==="combo")log(s,"Combo: no card played.",pid);return}
-  case"reveal":{const pr=s.pend[0];const o=find(s,a.uid).o;doReveal(s,pid,o,pr);return}
+  case"reveal":{const pr=s.pend[0];const o=find(s,a.uid).o;doReveal(s,pid,o,pr,a.hero);return}
   case"comboPlay":{const pr=s.pend.shift();const actor=comboActor(s,pr,a.uid);const c0=findCardAnywhere(s,pid,a.uid);const d0=c0&&DB[c0.id];
     playCard(s,pid,actor,a.uid,a,{combo:!pr.free&&!pr.pay,free:!!pr.free,fromLib:!pr.fromDisc,fromDisc:!!pr.fromDisc});
     /* Rapacious Encore: deal damage equal to the replayed Song's Aura cost, Piercing (ignores all DEF) */
@@ -816,13 +821,13 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   let targets=a.targets||[];
   /* Confused: targets are random among all legal */
   if(actor&&confused(actor)&&sc){const specs=specsFor(sc,a.modes);targets=specs.map((sp,i)=>{if(targets[i]==null)return null;const cs=candidates(s,pid,Object.assign({},sp,{k:sp.k.replace(/^(enemy|ally)/,"").replace(/^$/,"any").replace(/^Hero$/,"hero").replace(/^Summon$/,"summon")}),{actor,card:d});return cs.length?cs[ri(s,cs.length)]:targets[i]});log(s,`${actor.name} is Confused: targets are chosen at random.`)}
-  log(s,`${actor?actor.name:pl.name} plays ${d.name}${o.combo?" (Combo)":o.free?" (free)":""}${cost?` for ${cost} Aura`:""}${targets.filter(Boolean).length?" → "+targets.filter(Boolean).map(t=>{const r=resolveTarget(s,t);return r?r.name:"?"}).join(", "):""}.`,pid);
+  if(d.sup!=="Hidden")log(s,`${actor?actor.name:pl.name} plays ${d.name}${o.combo?" (Combo)":o.free?" (free)":""}${cost?` for ${cost} Aura`:""}${targets.filter(Boolean).length?" → "+targets.filter(Boolean).map(t=>{const r=resolveTarget(s,t);return r?r.name:"?"}).join(", "):""}.`,pid);
   if(d.sup!=="Hidden"){s.prevCard=s.lastCard;s.lastCard={id:c.id,pid,targets,modes:a.modes,x,round:s.round,type:d.type}}
   if(d.type==="Song")pl.t.songs=(pl.t.songs||0)+1;
   if(d.sup!=="Hidden")countCombo(s,pid,actor,d);
   /* permanents */
   if(d.kind==="equip"){equipTo(s,actor,eqObjFromCard(s,pid,c));return}
-  if(d.sup==="Hidden"){pl.inv.push(Object.assign({kind:"card",fd:true,name:d.name},c));log(s,`${pl.name} sets a Hidden card face down.`,pid);overflow(s,pid);
+  if(d.sup==="Hidden"){pl.inv.push(Object.assign({kind:"card",fd:true,name:d.name},c));log(s,`${actor?actor.name:pl.name} sets a Hidden card face down.`,pid);overflow(s,pid);
     if(sc&&sc.onSet)sc.onSet(mkCtx(s,pid,actor,d,c,[]));return}
   if(d.type==="Item"){const it=Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c);pl.inv.push(it);overflow(s,pid);
     if(sc&&sc.enter)sc.enter(mkCtx(s,pid,actor,d,it,targets));return}
@@ -850,7 +855,7 @@ function queueResolve(s,pid,cont,trig){const op=opp(pid);trig.pid=pid;
   resolveCont(s,pid,cont,{})}
 function closeWindow(s,pr){const m=pr.mods||{};if(m.retarget&&pr.cont&&pr.cont.targets){pr.cont.targets[m.retarget.i]=m.retarget.uid}resolveCont(s,pr.trig.pid,pr.cont,m)}
 ASK.redirect=(s,pid,pr,v)=>{const w=s.pend.find(p=>p.type==="window");if(!w||v==null)return;w.mods.retarget={i:pr.data.i,uid:v};const t=resolveTarget(s,v);log(s,`Redirect: the new target is ${t?t.name:"?"}.`,pid)};
-function doReveal(s,pid,o,pr){const pl=P(s,pid);const d=def(o);const h=revealHero(s,pid,o,pr);const cost=hiddenCost(s,pid,o);
+function doReveal(s,pid,o,pr,heroUid){const pl=P(s,pid);const d=def(o);const h=revealHero(s,pid,o,pr,heroUid);const cost=hiddenCost(s,pid,o);
   h.ex=true;pay(s,pid,h,cost);o.fd=false;pl.inv.splice(pl.inv.indexOf(o),1);
   log(s,`${pl.name} reveals ${d.name}${cost?` (${cost} Aura)`:""}, exhausting ${h.name}.`,pid);
   trapGold(s,pid,d);
@@ -1067,7 +1072,7 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
   case"unequip":if(t&&t.kind==="equip")unequip(s,t);break;
   case"move":if(t&&t.kind==="hero"){const op=P(s,t.owner);const i=op.heroes.indexOf(t);const j=Math.max(0,Math.min(2,a.n|0));op.heroes.splice(i,1);op.heroes.splice(j,0,t);log(s,`${who}: ${t.name} moves to ${POS[j]}.`,pid)}break;
   case"reveal":{let o=pl.inv.find(x=>x.uid===a.card&&x.fd),from="inv";if(!o){o=pl.hand.find(x=>x.uid===a.card&&DB[x.id]&&DB[x.id].sup==="Hidden");from="hand"}
-    if(!o)break;const d=DB[o.id];const cost=hiddenCost(s,pid,o);const hh=revealHero(s,pid,o);
+    if(!o)break;const d=DB[o.id];const cost=hiddenCost(s,pid,o);const hh=revealHero(s,pid,o,null,t&&t.kind==="hero"&&t.owner===pid?t.uid:null);
     if(cost>pl.aura){log(s,`${who}: not enough Aura to reveal ${d.name} (costs ${cost}).`,pid);break}
     pay(s,pid,hh,cost);if(hh)hh.ex=true;(from==="inv"?pl.inv:pl.hand).splice((from==="inv"?pl.inv:pl.hand).indexOf(o),1);pl.disc.push({uid:o.uid,id:o.id,owner:o.owner});
     log(s,`${who} reveals ${d.name} from ${from==="inv"?"inventory":"hand"}${cost?` (${cost} Aura)`:""}${hh?`, exhausting ${hh.name}`:""}: ${d.rules.replace(/\{A\}/g," Aura").replace(/\{L(\d)\}/g,"[Level $1]")}`,pid);
@@ -1131,7 +1136,9 @@ function doDawn(s){
   s.p.forEach((pl,pid)=>{
     pl.heroes.forEach(h=>{if(h.dead)return;
       if(h.fat){h.fat=0;h.fl.fatRested=true;h.ex=true;log(s,`${h.name} is Fatigued and doesn't ready this Dawn (Fatigue counter removed).`,pid)}
-      else if(h.med&&h.keepMed){h.plus++;h.fl.fatRested=false;log(s,`${h.name} keeps Meditating (meditation counter: ${h.plus}).`,pid)}else{h.ex=false;h.fl.fatRested=false}
+      else if(h.med&&h.keepMed){h.plus++;h.fl.fatRested=false;log(s,`${h.name} keeps Meditating (meditation counter: ${h.plus}).`,pid)}
+      else if(h.med){h.plus=(h.plus||0)+1;log(s,`${h.name} gets a meditation counter (${h.plus}) and wakes.`,pid);h.ex=false;h.fl.fatRested=false}/* update 27: counter first, then wake */
+      else{h.ex=false;h.fl.fatRested=false}
       h.eqGuard=guardEq(h,s)});
     pl.bf.forEach(o=>{if(o.kind==="summon")o.ex=false});
     pl.inv.forEach(o=>{if(o.exh)o.exh=false});

@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-09 (update 26: Paladin retune; update 25: Arrows target enemies; update 24: Monk meditation rework; update 23: Bard rework, Poisonous stacking, Dark Fang, Generic fixes; update 22: 50-card decks, Ranger DEF, Dark Fang, Guard → DEF).
+/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-10 (update 27: card fixes, Hidden privacy, Arrow of Persuasion, Siphon Life, Sphere of Hindrance; update 26: Paladin retune; update 25: Arrows target enemies; update 24: Monk meditation rework; update 23: Bard rework, Poisonous stacking, Dark Fang, Generic fixes; update 22: 50-card decks, Ranger DEF, Dark Fang, Guard → DEF).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -15,7 +15,7 @@ const RAW_CARDS=[
 [2, "Armed", "1", "", "Tactic", "", "Rogue", "Create a Dagger token and equip it to target Rogue.", 1],
 [2, "Arrested Development", "3", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero can't level up.", 2],
 [1, "Arrow of Hope", "0", "Legendary", "Item", "Arrow", "Ranger", "3{A}: Deal 2 damage to target enemy. Draw 2 cards.", 2],
-[2, "Arrow of Persuasion", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage to target enemy. The defender must attack a target of your choice during its next action.", 2],
+[2, "Arrow of Persuasion", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage to target enemy. Until Dusk, its next action must be an attack on a target of your choice.", 3],
 [2, "Ascend", "1", "", "Tactic", "Combo", "Monk", "Target Hero gains +2 STR this turn. Combo.", 1],
 [2, "Attack Reversal", "1", "Hidden", "Tactic", "", "Monk", "Prevent the current attack. Combo.", 3],
 [1, "Aura Crystal", "3", "Legendary", "Item", "", "Generic", "At Dawn, gain 1 Aura.", 1],
@@ -164,7 +164,7 @@ const RAW_CARDS=[
 [2, "Mass Populate", "6", "", "Tactic", "", "Druid", "Duplicate all friendly summons. Exhaust this Hero.", 1],
 [2, "Mead Offering", "0", "", "Tactic", "", "Bard", "All parties gain 2 Aura.", 2],
 [2, "Medical Visit", "1", "", "Tactic", "", "Cleric", "Remove 2 status counters.", 1],
-[2, "Meditate", "1", "", "Tactic", "", "Monk", "This Hero Meditates. It gets +3 Defense until Dusk. (Exhaust it. At each Dawn, you may keep it exhausted to give it a meditation counter. When it readies, remove them all; gain that much Aura, and it gets +1 Strength for each until Dusk.)", 2],
+[2, "Meditate", "1", "", "Tactic", "", "Monk", "This Hero Meditates. It gets +3 Defense until Dusk. (Exhaust it. At each Dawn, it gets a meditation counter, then you may keep it exhausted. When it readies, remove them all; gain that much Aura, and it gets +1 Strength for each until Dusk.)", 3],
 [2, "Meditation Shrine", "3", "", "Item", "", "Monk", "Heroes you control have \"Exhaust: This Hero Meditates.\"", 1],
 [2, "Memory Loss", "2", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero discards a card whenever it levels up.", 1],
 [2, "Mind Rend", "2", "", "Spell", "", "Warlock", "Target Hero gains \"When this Hero deals damage this turn, the damaged party discards a card.\"", 1],
@@ -236,7 +236,7 @@ const RAW_CARDS=[
 [2, "Shield Bash", "1", "", "Tactic", "", "Paladin", "Deal damage equal to this Hero's DEF.", 1],
 [2, "Silver Bar", "0", "", "Item", "Precious Metal", "Generic", "3{A}: Your party gains +1 STR for the rest of the turn.", 1],
 [2, "\"Sing Along\"", "2", "", "Song", "", "Bard", "Target ally's next Tactic or Song this turn gains Echo.", 1],
-[2, "Siphon Life", "3", "", "Spell", "", "Warlock", "Deal 2 Dark damage. Heal this Hero for the damage dealt.", 1],
+[2, "Siphon Life", "3", "", "Spell", "", "Warlock", "Target Hero loses 2 Health Points. Heal this Hero for 2 Health Points.", 2],
 [2, "Sleep", "2", "", "Spell", "", "Mage", "Exhaust target Hero.", 1],
 [2, "Sleeping Potion", "0", "", "Item", "", "Generic", "2{A}, Exhaust a Hero you control, Exile: Exhaust target Hero.", 1],
 [2, "Slow Down", "4", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. Cards that Hero plays and abilities it activates cost 1 more Aura.", 1],
@@ -251,7 +251,7 @@ const RAW_CARDS=[
 [2, "\"Song of Healing\"", "3", "", "Song", "", "Bard", "Heal all Heroes 2 Health Points.", 3],
 [2, "Sonic Recall", "4", "", "Tactic", "", "Bard", "Shuffle X Songs from your discard pile into your library. Deal X damage to target Hero. Exhaust this Hero.", 1],
 [2, "Spark", "0", "", "Spell", "", "Mage", "Deal 1 Lightning damage.", 1],
-[2, "Sphere of Resistance", "3", "", "Item", "", "Warlock", "Non-Warlock cards cost 1 more Aura to play or activate.", 1],
+[2, "Sphere of Hindrance", "3", "", "Item", "", "Warlock", "Non-Warlock cards cost 1 more Aura to play or activate.", 2],
 [2, "Spike Pit", "0", "Hidden", "Item", "Trap", "Ranger", "4{A}: When an enemy Hero attacks, it loses 2 HP. Wound it three times.", 3],
 [2, "Split Kick", "1", "", "Tactic", "", "Monk", "Your next Combo card may target two Heroes.", 1],
 [2, "Splitting Ritual", "2", "", "Spell", "", "Warlock", "Sacrifice a Pillar. Create two of that Pillar. Exhaust this Hero.", 1],
@@ -372,7 +372,7 @@ const RAW_HEROES=[
 ["Storm Caller", "Mage", "0", "0", "2", "14", "2{A}, Exhaust: Deal 2 damage to each enemy Hero.\n{L3} 2{A}, Exhaust: Deal 3 damage to each enemy Hero.", 2],
 ["Sun Paladin", "Paladin", "1", "0", "1", "16", "While this Hero is exhausted, it gains +2 DEF.", 2],
 ["Thorncaller", "Druid", "0", "0", "2", "16", "{L6} When this Hero reaches Level 6, duplicate each friendly summon.", 2],
-["Trainee Vincent", "Monk", "1", "1", "1", "15", "Exhaust: This Hero Meditates. (Exhaust it. At each Dawn, you may keep it exhausted to give it a meditation counter. When it readies, remove them all; gain that much Aura, and it gets +1 Strength for each until Dusk.)\n{L6} This Hero may attack twice each turn.", 2],
+["Trainee Vincent", "Monk", "1", "1", "1", "15", "Exhaust: This Hero Meditates. (Exhaust it. At each Dawn, it gets a meditation counter, then you may keep it exhausted. When it readies, remove them all; gain that much Aura, and it gets +1 Strength for each until Dusk.)\n{L6} This Hero may attack twice each turn.", 3],
 ["Venom Dancer", "Rogue", "1", "1", "1", "16", "This Hero gains +3 STR while the defender is Poisoned.", 1],
 ["Verdant Sage", "Druid", "0", "0", "2", "10", "When this Hero dies, summon a 4/5 Spectral Elk.", 3],
 ["Veteran Bowman", "Ranger", "0", "1", "2", "16", "Your party has 1 additional inventory slot.", 3],
@@ -398,7 +398,7 @@ const RAW_EQUIP=[
 ["Dagger of Riverstead", "", "Weapon", "Generic", "Equipped Hero gains +1 STR.", "1", "One-Handed", "1", "0", 2],
 ["Drums of War", "", "Instrument", "Bard", "Other Heroes in your party gain +1 STR while this Hero is ready.", "1", "Two-Handed", "0", "0", 2],
 ["Feather Blade", "Legendary", "Weapon", "Rogue", "Equipped Hero gains +1 STR.", "0", "One-Handed", "1", "0", 2],
-["Gauntlets of Growth", "Legendary", "Armor", "Generic", "Can only be equipped to a Hero with 1 or more STR.\nWhenever the equipped Hero deals combat damage, it gains a level.", "3", "Arms", "1", "0", 3],
+["Gauntlets of Growth", "Legendary", "Armor", "Generic", "Can only be equipped to a Hero with 1 or more STR.\nWhenever this Hero deals combat damage, level it.", "3", "Arms", "1", "0", 4],
 ["Great Axe", "", "Weapon", "Barbarian", "Equipped Hero gains +3 STR. While it is Enraged, it also has +1 DEF.", "3", "Two-Handed", "3", "0", 3],
 ["Greaves of Light", "", "Armor", "Paladin", "Equipped Hero gains +1 DEF.", "1", "Legs", "0", "1", 4],
 ["Hammer of Ruin", "Legendary", "Weapon", "Barbarian", "Equipped Hero gains +2 STR. Whenever it deals combat damage, destroy target item the defending player controls.", "3", "Two-Handed", "2", "0", 3],
@@ -463,7 +463,7 @@ const RAW_TOKENS=[
 const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
-const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness"};
+const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness","Sphere of Resistance":"Sphere of Hindrance"};
 
 /* Deprecated cards: removed from play, kept for the record and so old saved games still load. Same row format as RAW_CARDS.
    Decks that contain one are flagged as not legal; they don't appear in the card list, deck builder or prints. */
@@ -504,7 +504,7 @@ const EQUIP_UPGRADES={
 "Chest Plate of Riverstead": [5, "Equipped Hero gains +2 DEF.", 0, 2],
 "Cloak of Protection": [5, "This Hero can't be the target of enemy cards or abilities.", 0, 0],
 "Drums of War": [3, "Heroes in your party, including this one, gain +1 STR while this Hero is ready.", 0, 0],
-"Gauntlets of Growth": [7, "Can only be equipped to a Hero with 1 or more STR.\nEquipped Hero gains +2 STR. Whenever the equipped Hero deals combat damage, it gains a level.", 2, 0],
+"Gauntlets of Growth": [7, "Can only be equipped to a Hero with 1 or more STR.\nEquipped Hero gains +2 STR. Whenever this Hero deals combat damage, level it.", 2, 0],
 "Greaves of Light": [4, "Equipped Hero gains +2 Defense.", 0, 2],
 "Helm of Aura": [3, "Equipped Hero gains +1 DEF. Sacrifice this: Gain 2 Aura.", 0, 1],
 "Helm of Protection": [4, "Equipped Hero gains +1 Defense. It can't be the target of enemy Spells.", 0, 1],

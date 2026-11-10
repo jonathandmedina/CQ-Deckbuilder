@@ -90,7 +90,10 @@ AI.choose=function(s,pid){if(s.over)return null;
   const actor0=E.actorFor(s,pid);
   const base=AI.evaluate(s,pid);let best=opts.some(o=>o.type==="skipBonus")?{type:"skipBonus"}:{type:"pass"},bv=base+0.4;let alt=null,av=-1e9;
   pl.t.aiActs=(pl.t.aiActs||0);
-  if(pl.t.aiActs>30)return{type:"pass"};
+  /* update 27: Arrow of Persuasion can take away passing; then the AI must take the forced attack */
+  const canPass=opts.some(o=>o.type==="pass");
+  const forcedPick=()=>{for(const o of opts){if(o.type==="pass")continue;const acts=AI.expand(s,pid,o);for(const a of acts){const c=lightClone(s);const r=E.act(c,pid,a);if(r.ok)return a}}return opts[0]||{type:"pass"}};
+  if(pl.t.aiActs>30)return canPass?{type:"pass"}:forcedPick();
   for(const o of opts){if(o.type==="pass"||o.type==="skipBonus")continue;
     if(o.type==="play"){const c=pl.hand.find(x=>x.uid===o.uid);if(c&&!E.isScripted(E.DB[c.id].name)&&E.DB[c.id].kind!=="equip"&&E.DB[c.id].type!=="Item"&&E.DB[c.id].sup!=="Hidden")continue}
     if(o.type==="soul"&&o.ch===4&&s.round<2)continue;
@@ -107,6 +110,7 @@ AI.choose=function(s,pid){if(s.over)return null;
       if(a.type!=="soul"&&a.type!=="step"&&v>av){av=v;alt=a}}}
   /* passing ends your round: if another ready Hero could still use Aura later, take the least-bad action instead */
   if(best.type==="pass"&&alt&&av>=base-1.5&&laterUse(s,pid))best=alt;
+  if(best.type==="pass"&&!canPass)best=alt||forcedPick();
   if(best.type!=="pass")pl.t.aiActs++;
   return best};
 })(typeof window!=="undefined"?window:globalThis);

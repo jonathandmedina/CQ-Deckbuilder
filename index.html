@@ -231,6 +231,8 @@ button.card:hover{border-color:var(--cc)}
 .deck.best .pct{font-family:var(--display);font-weight:800;font-size:1.6rem;color:var(--ok);font-variant-numeric:tabular-nums}
 .deck.best .best-rec{font-size:.9rem;font-variant-numeric:tabular-nums}
 .deck.best .pill{cursor:pointer}
+.dl-tabs{display:flex;gap:6px;margin:4px 0 12px}.dl-tabs a{text-decoration:none}.dl-tabs .btn.on{background:var(--accent);color:var(--accent-ink,#fff);border-color:var(--accent)}
+.deck.comm .tag-mine{font-size:.75rem;font-weight:700;padding:1px 8px;border-radius:999px;border:1px solid var(--ok);color:var(--ok)}
 .bar a.btn{text-decoration:none;color:var(--ink)}
 .slot .x{align-self:flex-start;border:0;background:none;color:var(--muted);padding:0;font-size:.8rem;text-decoration:underline}
 .split{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:22px;align-items:start;margin-top:8px}
@@ -378,8 +380,8 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261109e">
-<link rel="stylesheet" href="assets/art.css?v=20261109e">
+<link rel="stylesheet" href="assets/retro.css?v=20261109f">
+<link rel="stylesheet" href="assets/art.css?v=20261109f">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -388,7 +390,7 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
     <a href="#catalog" data-view="catalog">Cards</a>
     <a href="#build" data-view="build">Deck Builder</a>
     <a href="#decks" data-view="decks">My Decks</a>
-    <a href="#best" data-view="best">Best Decks</a>
+    <span class="tab-dd"><a href="#community" data-view="community" aria-haspopup="true">Decklists</a><span class="tab-sub" role="menu"><a href="#community" role="menuitem">Community Decks</a><a href="#best" data-view="best" role="menuitem">Best Decks</a></span></span>
     <span class="tab-dd"><a href="#rules" data-view="rules" aria-haspopup="true">Rules</a><span class="tab-sub" role="menu"><a href="#rules" role="menuitem">Full Rules</a><a href="#quickstart" data-view="quickstart" role="menuitem">Quick Start</a></span></span>
     <a href="#play" data-view="play">Play</a>
     <a href="#changelog" data-view="changelog">Changelog</a>
@@ -408,14 +410,14 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261109e"></script>
-<script src="assets/app.js?v=20261109e"></script>
-<script src="assets/play-engine.js?v=20261109e"></script>
-<script src="assets/play-cards.js?v=20261109e"></script>
-<script src="assets/play-ai.js?v=20261109e"></script>
-<script src="assets/play-ui.js?v=20261109e"></script>
-<script src="assets/changelog-data.js?v=20261109e"></script>
-<script src="assets/changelog.js?v=20261109e"></script>
+<script src="assets/cards-data.js?v=20261109f"></script>
+<script src="assets/app.js?v=20261109f"></script>
+<script src="assets/play-engine.js?v=20261109f"></script>
+<script src="assets/play-cards.js?v=20261109f"></script>
+<script src="assets/play-ai.js?v=20261109f"></script>
+<script src="assets/play-ui.js?v=20261109f"></script>
+<script src="assets/changelog-data.js?v=20261109f"></script>
+<script src="assets/changelog.js?v=20261109f"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"art";

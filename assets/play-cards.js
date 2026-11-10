@@ -112,10 +112,10 @@ def("Power Thrust",{t:[DMG],run(c){D(c,c.t[0],(c.actor?dstr(c,c.actor):0)+2);exM
 def("Shield Bash",{t:[ANY],run(c){D(c,c.t[0],dfn(c,c.actor))}});
 def("Radiant Strike",{t:[ANY],run(c){const sw=E.eqList(c.actor).some(e=>/Sword/.test(e.name+" "+(E.DB[e.id]||{}).rules));D(c,c.t[0],sw?5:3,{type:"Light"});exMe(c)}});
 def("Divine Judgment",{run(c){const d=dfn(c,c.actor);enemies(c).forEach(e=>D(c,e,d));exMe(c)}});
-def("Blockade",{t:[HERO],run(c){buff(c.t[0],{def:5})}});
+def("Blockade",{t:[HERO],run(c){buff(c.t[0],{def:4})}});
 def("Protect",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 DEF this turn.`)}}});
 def("Extra Protection",{run(c){buff(c.actor,{def:1});log(c,`${c.actor.name} gains +1 DEF this turn.`)}});
-def("Vigil",{run(c){exMe(c);buff(c.actor,{def:3});log(c,`${c.actor.name} gains +3 DEF this turn.`)}});
+def("Vigil",{run(c){exMe(c);buff(c.actor,{def:2});log(c,`${c.actor.name} gains +2 DEF this turn.`)}});
 def("Pull Together",{run(c){living(c.me).forEach(h=>buff(h,{def:(c.x||0)}));log(c,`${c.me.name}'s party gains +${c.x||0} DEF this turn.`);exMe(c)}});
 def("Conscript",summonCard("Soldier"));
 def("Rally the Troops",{run(c){summon(c,"Soldier");summon(c,"Soldier");exMe(c)}});
@@ -123,11 +123,11 @@ def("Coordinated Attack",{run(c){c.me.pm.soldier=(c.me.pm.soldier||0)+2;log(c,"S
 def("Shield Wall",{run(c){summons(c.me).filter(o=>/Soldier/.test(o.sub||o.name)).forEach(o=>buff(o,{def:1}));log(c,"Soldiers gain +1 DEF this turn.")}});
 def("Divine Smite",{t:[t("summon","non-Legendary summon")],run(c){destroy(c,c.t[0])}});
 def("Unburden",{run(c){const d=dfn(c,c.actor);buff(c.actor,{str:d,zeroDef:1});log(c,`${c.actor.name} trades ${d} DEF for STR.`)}});
-def("Charged Barrage",{run(c){exMe(c);buff(c.actor,{def:4});c.actor.fl.chargedRound=c.s.round;c.actor.fl.chargedHit=null}});
+def("Charged Barrage",{t:[t("enemy","target enemy")],run(c){exMe(c);buff(c.actor,{def:3});const n=E.defn(c.s,c.actor);if(c.t[0]){log(c,`Charged Barrage: ${c.actor.name} strikes for ${n}.`);E.damage(c.s,c.actor,c.t[0],n,{card:true,srcName:"Charged Barrage"})}}});
 def("Noble Promotion",{run(c){c.me.fl.promoRound=c.s.round;log(c,`${c.me.name} will gain initiative at Dusk.`)}});
 def("To the Armory",{run(c){E.pushChoose(c.s,c.pid,{title:"To the Armory: choose an Equipment",cards:c.me.lib.filter(x=>E.DB[x.id].kind==="equip").map(x=>x.uid),min:1,max:1,op:"tutor"})}});
 def("Take a Stand",{run(c){draw(c,dfn(c,c.actor));c.actor.fl.standRound=c.s.round}});
-def("Noble Choice",M(2,[{label:"Summon a 2/3 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains +2 DEF this turn",t:[HERO],run:c=>{if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 DEF this turn.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
+def("Noble Choice",M(2,[{label:"Summon a 2/3 Soldier",run:c=>{summon(c,"Soldier");exMe(c)}},{label:"Target Hero gains +1 DEF this turn",t:[HERO],run:c=>{if(c.t[0]){buff(c.t[0],{def:1});log(c,`${c.t[0].name} gains +1 DEF this turn.`)}}},{label:"Draw a card",run:c=>draw(c,1)}]));
 /* ===== Barbarian ===== */
 def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:2})}});
 def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:4})}});
@@ -371,7 +371,7 @@ hab("Arcane Scholar",[{label:"Next Mage card costs 2 less",run:c=>{c.me.fl.mageN
 hab("Arnett Lifebinder",[{label:"Heal another target 2",cost:1,t:[t("anyOther","another target")],run:c=>heal(c,c.t[0],2)},{label:"Heal another target 5",lvl:3,cost:2,t:[t("anyOther","another target")],run:c=>heal(c,c.t[0],5)}]);
 hab("Battle Minstrel",[{label:"Return a Song from discard to hand",can:(s,pid)=>s.p[pid].disc.some(x=>E.DB[x.id].type==="Song"),run:c=>E.pushChoose(c.s,c.pid,{title:"Return a Song to hand",cards:c.me.disc.filter(x=>E.DB[x.id].type==="Song").map(x=>x.uid),min:1,max:1,op:"fromDisc"})}]);
 hab("Dark Channeler",[{label:"Lose 4 HP: gain 3 Aura",can:(s,pid,a)=>a.lvl<3,run:c=>{E.loseHp(c.s,c.actor,4,"Dark Channeler");c.me.aura+=3;log(c,`${c.me.name} gains 3 Aura.`)}},{label:"Lose 2 HP: gain 3 Aura",lvl:3,run:c=>{E.loseHp(c.s,c.actor,2,"Dark Channeler");c.me.aura+=3;log(c,`${c.me.name} gains 3 Aura.`)}}]);
-hab("Divine Knight",[{label:"Ally +2 DEF this turn",t:[AL],run:c=>buff(c.t[0],{def:2})},{label:"Ally +5 DEF this turn",lvl:3,cost:2,t:[AL],run:c=>buff(c.t[0],{def:5})}]);
+hab("Divine Knight",[{label:"Ally +2 DEF this turn",cost:1,t:[AL],run:c=>buff(c.t[0],{def:2})},{label:"Ally +5 DEF this turn",lvl:3,cost:3,t:[AL],run:c=>buff(c.t[0],{def:5})}]);
 hab("Essence Reaper",[{label:"Stun target enemy",lvl:3,t:[EN],run:c=>st(c,c.t[0],"stun")}]);
 hab("Trainee Vincent",[{label:"Meditate",run:c=>E.meditate(c.s,c.actor)}]);
 hab("Inspiration Herald",[{label:"Ready another ally",t:[t("ally","another ally",(s,o,x)=>o.uid!==x.actor.uid&&o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}}]);
@@ -484,7 +484,7 @@ def("Hand to Hand Combat",{t:[t("allyHero","friendly Hero"),t("enemyHero","enemy
   const sa=E.dmgStr(c.s,a,b),sb=E.dmgStr(c.s,b,a);log(c,`${a.name} and ${b.name} fight hand to hand.`);E.damage(c.s,a,b,sa,{card:true,srcName:"Hand to Hand Combat"});E.damage(c.s,b,a,sb,{card:true,srcName:"Hand to Hand Combat"})}});
 def("Split Kick",{run(c){c.me.fl.splitKick=true;log(c,"Your next Combo card may target two Heroes.")}});
 /* Paladin */
-hid("Retribution",["attack","card"],(s,pid,tr)=>{if(tr.kind==="attack"){const f=E.find(s,tr.target);return f&&f.pid===pid&&f.o.kind==="hero"}return(tr.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"})&&tr.src&&tr.src.kind==="hero"},c=>{c.mods.retaliate=true;log(c,"Retribution: damage to your Hero will also hit its source.")});
+hid("Retribution","attack",(s,pid,tr)=>{const f=E.find(s,tr.target);return f&&f.pid===pid&&f.o.kind==="hero"},c=>{const a=atkr(c.s,c.trig),f=E.find(c.s,c.trig.target);if(!a||!f)return;const n=E.defn(c.s,f.o);log(c,`Retribution: ${a.o.name} takes ${n}.`);E.damage(c.s,{name:"Retribution"},a.o,n,{card:true,noTrig:true,srcName:"Retribution"})}); /* update 26 */
 hid("Step In",["attack","card"],(s,pid,tr)=>{const fs=tr.kind==="attack"?[tr.target]:(tr.targets||[]);return fs.some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"})},c=>{const tr=c.trig;
   const fs=tr.kind==="attack"?[tr.target]:(tr.targets||[]);const from=fs.find(u=>{const f=E.find(c.s,u);return f&&f.pid===c.pid&&f.o.kind==="hero"&&f.o.uid!==c.actor.uid});if(!from)return;
   c.mods.stepIn={from,to:c.actor.uid};log(c,`${c.actor.name} will take that damage instead.`)});

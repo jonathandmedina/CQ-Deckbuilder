@@ -503,7 +503,7 @@ As an action, a Hero pays the equipment’s Aura cost and takes a piece of equip
 
 - Equipment with a class can only go on a Hero of that class. Generic equipment can go on any Hero.
 - Because the receiving Hero takes the action, equipment normally goes only on a ready Hero. A card can put equipment on an exhausted Hero. Equipment never goes on a dead Hero.
-- Requirements printed on the equipment (such as “Must be Level 1 to equip”) are checked every time it’s equipped, including when it’s moved or equipped from inventory. Once it’s on the Hero, it stays there even if the Hero stops meeting the requirement.
+- Requirements printed on the equipment (such as “Must be Level 2 to play or equip”) are checked every time it’s equipped, including when it’s moved or equipped from inventory. Once it’s on the Hero, it stays there even if the Hero stops meeting the requirement.
 
 ### Costs That Change
 
@@ -789,5 +789,5 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Your next spell has +2 Spell Damage; sacrifice the Pillar after that spell resolves.
-- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026).
+- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026), Fortify and Pull Together (Nov 9, 2026, update 26).
 - **Pain Pillar (Warlock)**: At Dusk, target loses X HP, where X is the number of Pain Pillars you control.

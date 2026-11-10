@@ -117,7 +117,7 @@ function defOf(s,o){
   if(o.kind==="hero"){const pl=P(s,o.owner);let d=o.base.def+o.bon.def+modSum(o,"def")+(pl.pm.def||0);
     eqList(o).forEach(e=>d+=e.pdef||0);
     if(o.name==="Sun Paladin"&&o.ex)d+=2;
-    const i=pl.heroes.indexOf(o);if(i>0&&pl.heroes[i-1].name==="Holy Guardian"&&!pl.heroes[i-1].dead)d+=1;
+    /* update 26: Holy Guardian, while exhausted, gives each adjacent Hero +1 DEF */const i=pl.heroes.indexOf(o);[pl.heroes[i-1],pl.heroes[i+1]].forEach(g=>{if(g&&g.name==="Holy Guardian"&&!g.dead&&g.ex)d+=1});
     if(hasEqN(o,"Great Axe")&&enraged(s,o))d+=1;
     o.ench.forEach(e=>{if(e.name==="Distract")d-=1});
     if(modHas(o,"zeroDef"))d=0;return Math.max(0,d)}
@@ -130,7 +130,7 @@ function strOf(s,o,vs){
     if(heroIs(o,"Barbarian"))v+=trophies(pl);
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
-    if(o.name==="Radiant Sentinel"&&defOf(s,o)>=5)v+=2;
+    /* update 26: Level 3 Radiant Sentinel gets +5 instead when 5+ of its DEF comes from equipment */if(o.name==="Radiant Sentinel"){const eqd=eqList(o).reduce((n,e)=>n+(e.pdef||0),0);if(o.lvl>=3&&eqd>=5)v+=5;else if(defOf(s,o)>=5)v+=2}
     if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2;
     if(heroIs(o,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre")v+=(x.ctr&&x.ctr.fury)||0});
     o.ench.forEach(e=>{if(e.name==="Weaken")v-=1});
@@ -264,7 +264,7 @@ function creditGuard(s,h,n){const side=h.owner;h.gsrc=h.gsrc||[];while(n>0&&h.gs
 function defLayers(s,o){const L=[];
   (o.mods||[]).forEach(m=>{if(m.def>0)L.push([m.src||null,m.def])});
   if(o.kind==="hero"){eqList(o).forEach(e=>{if(e.pdef>0)L.push([e.name,e.pdef])});const pl=P(s,o.owner);
-    if(o.name==="Sun Paladin"&&o.ex)L.push(["Sun Paladin",2]);const i=pl.heroes.indexOf(o);if(i>0&&pl.heroes[i-1].name==="Holy Guardian"&&!pl.heroes[i-1].dead)L.push(["Holy Guardian",1]);
+    if(o.name==="Sun Paladin"&&o.ex)L.push(["Sun Paladin",2]);const i=pl.heroes.indexOf(o);[pl.heroes[i-1],pl.heroes[i+1]].forEach(g=>{if(g&&g.name==="Holy Guardian"&&!g.dead&&g.ex)L.push(["Holy Guardian",1])});
     if(hasEqN(o,"Great Axe")&&enraged(s,o))L.push(["Great Axe",1])}
   if(o.kind==="summon"){const pl=P(s,o.ctrl);const hc=invCount(pl,"Horn Crystal"),bt=invCount(pl,"Barkskin Totem");if(hc)L.push(["Horn Crystal",hc]);if(bt)L.push(["Barkskin Totem",bt])}
   return L}
@@ -442,7 +442,7 @@ function eqObjFromCard(s,pid,card){const d=DB[card.id];const up=d.up&&s.upg&&s.u
 E.eqObjFromCard=eqObjFromCard;
 function canUseEq(s,h,e){if(!h||h.kind!=="hero"||h.dead)return false;
   const cls=e.cls;if(cls!=="Generic"&&!heroIs(h,cls))return false;
-  const r=def(e).rules||"";if(/Must be Level 1/.test(r)&&h.lvl<1)return false;if(/1 or more STR/.test(r)&&strOf(s,h)<1)return false;return true}
+  const r=def(e).rules||"";{const lm=/Must be Level (\d)/.exec(r);if(lm&&h.lvl<+lm[1])return false}if(/1 or more STR/.test(r)&&strOf(s,h)<1)return false;return true}
 E.canUseEq=canUseEq;
 function heroIs(h,cls){if(h.cls===cls)return true;return eqList(h).some(e=>e.name==="Ring of Vocation"&&e.x&&e.x.cls===cls)}
 E.heroIs=heroIs;
@@ -521,13 +521,14 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
     if(o.kind==="hero"&&isEnemy(o)&&stealth(s,o)&&!o.dead&&viaCard)return false;
     if(!viaCard&&o.kind==="hero"&&isEnemy(o)&&modHas(o,"noAttack"))return false; /* Levitate: can't be attacked this turn */ /* Stealth: can't be targeted by enemy cards or abilities, but can be attacked */
     if(viaCard&&cardProof(s,o,isEnemy(o)))return false;
+    if(viaCard&&o.kind==="hero"&&isEnemy(o)&&ctx.card&&ctx.card.type==="Spell"&&hasUpN(s,o,"Helm of Protection"))return false; /* update 26: upgraded Helm of Protection */
     if(viaCard&&o.kind==="card"&&/can't be targeted/i.test(def(o).rules||"")&&def(o).type==="Item")return false; /* Arrow of Craftsmanship */
     if(spec.f&&!spec.f(s,o,ctx))return false;return true});
   /* Dazzling Melody: enemies must target the taunting Hero with attacks, cards and abilities (when it is a legal choice) */
   const op=P(s,opp(pid));const taunt=op.heroes.find(h=>!h.dead&&h.fl.tauntRound===s.round);
   if(taunt&&list.some(o=>o.uid===taunt.uid)&&list.some(o=>isEnemy(o)))list=list.filter(o=>!isEnemy(o)||o.uid===taunt.uid);
-  /* upgraded Breastplate of Bravery: opposing attacks must target the equipped Hero (attacks only) */
-  if(!viaCard){const bb=op.heroes.find(h=>!h.dead&&hasUpN(s,h,"Breastplate of Bravery"));if(bb&&list.some(o=>o.uid===bb.uid))list=list.filter(o=>!isEnemy(o)||o.uid===bb.uid)}
+  /* Breastplate of Bravery (update 26: base and upgrade): opposing attacks must target the equipped Hero (attacks only) */
+  if(!viaCard){const bb=op.heroes.find(h=>!h.dead&&hasEqN(h,"Breastplate of Bravery"));if(bb&&list.some(o=>o.uid===bb.uid))list=list.filter(o=>!isEnemy(o)||o.uid===bb.uid)}
   return list.map(o=>o.uid)}
 E.candidates=candidates;
 function resolveTarget(s,t){if(typeof t==="string"&&t[0]==="P")return{kind:"player",pid:+t.slice(1),name:s.p[+t.slice(1)].name};const f=find(s,t);return f?f.o:null}

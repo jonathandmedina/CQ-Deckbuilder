@@ -108,8 +108,8 @@ function withReminders(text){
     Object.keys(byEnd).map(Number).sort((a,b)=>b-a).forEach(e=>{line=line.slice(0,e)+` {R:${byEnd[e].join(" ")}}`+line.slice(e)});
     return line}).join("\n")}
 const remHTML=h=>h.replace(/\{R:(.*?)\}/g,'<i class="rem">($1)</i>');
-/* stat words on cards: STR, DEF and HP are spelled out (Strength, Defense, Health Points) and they and Aura take the colour of their icons; a number right before the word is coloured with it */
-const STAT_WORDS=[[/((?:[+\u2212-]?\d+|X) )?\bSTR\b/g,"str","Strength"],[/((?:[+\u2212-]?\d+|X) )?\bDEF\b/g,"def","Defense"],[/((?:[+\u2212-]?\d+|X) )?\bHP\b/g,"hp","Health Points"],[/((?:[+\u2212-]?\d+|X) )?\bAura\b/g,"aura","Aura"]];
+/* stat words on cards: STR, DEF and HP (or the spelled-out words, as newer cards are written) are spelled out (Strength, Defense, Health Points) and they and Aura take the colour of their icons; a number right before the word is coloured with it */
+const STAT_WORDS=[[/((?:[+\u2212-]?\d+|X) )?\b(?:STR|Strength)\b/g,"str","Strength"],[/((?:[+\u2212-]?\d+|X) )?\b(?:DEF|Defense)\b/g,"def","Defense"],[/((?:[+\u2212-]?\d+|X) )?\b(?:HP|Health Points)\b/g,"hp","Health Points"],[/((?:[+\u2212-]?\d+|X) )?\bAura\b/g,"aura","Aura"]];
 const statWords=h=>STAT_WORDS.reduce((t,[re,k,w])=>t.replace(re,(m,n)=>`<b class="kw kw-${k}">${n||""}${w}</b>`),h);
 function rulesHTML(t){
   return withReminders(t).split("\n").filter(p=>p.trim()).map(p=>"<p>"+remHTML(statWords(esc(p))).replace(/\{A\}/g,'<i class="aura" aria-label="Aura"></i>').replace(/\{L(\d)\}/g,'<span class="lv">LV $1</span>')+"</p>").join("");

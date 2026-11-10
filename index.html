@@ -281,7 +281,7 @@ button.card:hover{border-color:var(--cc)}
 .dl-faces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .dl-face{all:unset;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-width:0;border-radius:8px;padding:2px}
 .dl-face:focus-visible{outline:2px solid var(--cc);outline-offset:2px}
-.dl-av{display:block;width:100%;max-width:84px;aspect-ratio:1;border-radius:50%;overflow:hidden;border:3px solid var(--cc);background:var(--sunk);box-shadow:0 2px 6px rgba(0,0,0,.35)}
+.dl-av{display:block;width:100%;max-width:84px;aspect-ratio:1;border-radius:14px;overflow:hidden;border:3px solid var(--cc);background:var(--sunk);box-shadow:0 2px 6px rgba(0,0,0,.35)}
 .dl-av img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 18%;transform:scale(1.55);transform-origin:50% 22%;image-rendering:pixelated}
 .dl-face:hover .dl-av{filter:brightness(1.12)}
 .dl-fn{display:block;font-size:.78rem;line-height:1.2;text-align:center;max-width:100%;overflow-wrap:break-word}
@@ -435,15 +435,15 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 }
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261110b">
-<link rel="stylesheet" href="assets/art.css?v=20261110b">
+<link rel="stylesheet" href="assets/retro.css?v=20261110c">
+<link rel="stylesheet" href="assets/art.css?v=20261110c">
 </head>
 <body>
 <header class="top"><div class="wrap">
   <div class="brand">Crystal Quest <small>Deck Forge</small></div>
   <nav class="tabs" id="tabs">
     <a href="#catalog" data-view="catalog">Cards</a>
-    <span class="tab-dd"><a href="#community" data-view="community" aria-haspopup="true">Decklists</a><span class="tab-sub" role="menu"><a href="#build" data-view="build" role="menuitem">Deck Builder</a><a href="#decks" data-view="decks" role="menuitem">My Decks</a><a href="#community" role="menuitem">Community Decks</a><a href="#best" data-view="best" role="menuitem">Best Decks</a></span></span>
+    <span class="tab-dd"><a href="#community" data-view="community" aria-haspopup="true">Decklists</a><span class="tab-sub" role="menu"><a href="#best" data-view="best" role="menuitem">Best Decks</a><a href="#community" role="menuitem">Community Decks</a><a href="#decks" data-view="decks" role="menuitem">My Decks</a><a href="#build" data-view="build" role="menuitem">Deck Builder</a></span></span>
     <span class="tab-dd"><a href="#rules" data-view="rules" aria-haspopup="true">Rules</a><span class="tab-sub" role="menu"><a href="#rules" role="menuitem">Full Rules</a><a href="#quickstart" data-view="quickstart" role="menuitem">Quick Start</a></span></span>
     <a href="#play" data-view="play">Play</a>
   </nav>
@@ -465,14 +465,14 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261110b"></script>
-<script src="assets/app.js?v=20261110b"></script>
-<script src="assets/play-engine.js?v=20261110b"></script>
-<script src="assets/play-cards.js?v=20261110b"></script>
-<script src="assets/play-ai.js?v=20261110b"></script>
-<script src="assets/play-ui.js?v=20261110b"></script>
-<script src="assets/changelog-data.js?v=20261110b"></script>
-<script src="assets/changelog.js?v=20261110b"></script>
+<script src="assets/cards-data.js?v=20261110c"></script>
+<script src="assets/app.js?v=20261110c"></script>
+<script src="assets/play-engine.js?v=20261110c"></script>
+<script src="assets/play-cards.js?v=20261110c"></script>
+<script src="assets/play-ai.js?v=20261110c"></script>
+<script src="assets/play-ui.js?v=20261110c"></script>
+<script src="assets/changelog-data.js?v=20261110c"></script>
+<script src="assets/changelog.js?v=20261110c"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
 <script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"art";

@@ -12,7 +12,9 @@
 .ap-pop.old{grid-template-columns:34px minmax(0,1fr);padding:6px 10px;opacity:.88}
 .ap-pop.old .ap-sub,.ap-pop.old .ap-bar{display:none}
 .ap-pop img{width:100%;border-radius:5px;display:block;box-shadow:0 2px 8px rgba(0,0,0,.5)}
-.ap-card{width:112px;position:relative}.ap-card .card{width:112px;margin:0;box-shadow:0 2px 8px rgba(0,0,0,.5)}.ap-card .zoom,.ap-card .flip,.ap-card .c-ctrl{display:none!important}
+.ap-card{width:112px;position:relative;z-index:2;transform-origin:top right;transition:transform .15s ease;cursor:zoom-in}
+.ap-pop.new:hover{z-index:3;position:relative}
+.ap-card:hover{transform:scale(1.5);filter:drop-shadow(0 12px 26px rgba(0,0,0,.7))}.ap-card .card{width:112px;margin:0;box-shadow:0 2px 8px rgba(0,0,0,.5)}.ap-card .zoom,.ap-card .flip,.ap-card .c-ctrl{display:none!important}
 .ap-who{font:600 .68rem/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:#c99566}
 .ap-what{font:600 .98rem/1.25 var(--body);color:var(--ink,#F7EEDD)}
 .ap-what em{font-style:normal;color:var(--accent,#F2C14E)}

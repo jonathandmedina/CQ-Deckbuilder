@@ -89,7 +89,8 @@ async function load(force){if(D.loading||(!force&&D.rows&&Date.now()-D.at<60000)
       if(error&&/claimed/.test(error.message)&&/claimed/.test(cols)){cols=cols.replace(",claimed","");out=[];from=0;continue}
       if(error)throw error;out=out.concat(data||[]);if(!data||data.length<1000)break;from+=1000;if(from>500000)break}
     D.rows=out;
-    const{data:pr,error:pe}=await SB.from("profiles").select("user_id,screen_name,avatar");
+    let{data:pr,error:pe}=await SB.from("profiles").select("user_id,screen_name,avatar,discord_name,discord_public");
+    if(pe&&/discord/.test(pe.message||"")){({data:pr,error:pe}=await SB.from("profiles").select("user_id,screen_name,avatar"))}
     D.profiles=new Map((pe?[]:pr||[]).map(p=>[p.user_id,p]));D.noProfiles=!!pe;D.at=Date.now()}
   catch(e){D.err=e.message||String(e)}
   D.loading=false;rerender()}
@@ -103,7 +104,7 @@ function players(){const P=new Map();if(!D.rows)return[];
     const seen=new Set();(r.heroes||[]).forEach(id=>{const h=BYID.get(id)||BYID.get("h:"+id);if(!h||!CLASSES.includes(h.cls))return;p.classes.add(h.cls);seen.add(h.cls)});
     seen.forEach(c=>p.byCls[c]=(p.byCls[c]||0)+1);
     Object.entries(r.cards||{}).forEach(([k,q])=>{if(q>0&&BYID.has(k)&&BYID.get(k).kind!=="hero")p.cards.add(k)})}
-  const out=[...P.values()];out.forEach(p=>{const pr=D.profiles&&D.profiles.get(p.uid);if(pr){p.name=pr.screen_name;p.avatar=pr.avatar;p.hasProfile=true}p.score=score(p)});
+  const out=[...P.values()];out.forEach(p=>{const pr=D.profiles&&D.profiles.get(p.uid);if(pr){p.name=pr.screen_name;p.avatar=pr.avatar;p.hasProfile=true;p.discord=pr.discord_public!==false?pr.discord_name||null:null}p.score=score(p)});
   out.sort((a,b)=>b.score-a.score||(b.last||"").localeCompare(a.last||""));out.forEach((p,i)=>p.rank=i+1);return out}
 
 /* ---------- views ---------- */
@@ -124,7 +125,7 @@ function viewBoard(){
   if(!ps.length)return head+`<div class="empty">No complete games from signed-in players yet. Play one to take the top spot.</div>`;
   return head+`<div class="pf-scroll"><table class="pf-t"><thead><tr><th class="n">#</th><th>Player</th><th>Level</th><th class="n">Score</th><th class="n">Games</th><th class="n">Classes</th><th class="n">Cards</th><th>Badges</th></tr></thead><tbody>
   ${ps.map(p=>{const m=metalFor(p.games);return`<tr${p.uid===S.uid?' class="me"':""}><td class="n">${p.rank}</td>
-    <td><a class="pf-who" href="${profileUrl(p.name)}">${avatarHTML(p.avatar)}<span>${E(p.name)}</span></a></td>
+    <td><a class="pf-who" href="${profileUrl(p.name)}">${avatarHTML(p.avatar)}<span>${E(p.name)}${p.discord?`<small class="pf-dc">@${E(p.discord)}</small>`:""}</span></a></td>
     <td>${m?`<span class="pf-metal">${crestHTML(m[0],36)}<span>${m[0]}</span></span>`:"–"}</td>
     <td class="n"><b>${fmt(Math.round(p.score*100)/100)}</b></td><td class="n">${fmt(p.games)}</td><td class="n">${p.classes.size}/${CLASSES.length}</td><td class="n">${fmt(p.cards.size)}</td>
     <td><span class="pf-bdg">${topBadges(p,4)||'<span class="pf-note">–</span>'}</span></td></tr>`}).join("")}
@@ -139,7 +140,7 @@ function viewPlayer(){
   if(!D.rows)return`<h1>Player</h1><p class="lede">Loading…</p>`;
   const ps=players();const lk=key.toLowerCase();
   let p=ps.find(x=>x.name.toLowerCase()===lk);let pr=D.profiles&&[...D.profiles.values()].find(x=>x.screen_name.toLowerCase()===lk);
-  if(!p&&pr)p={uid:pr.user_id,name:pr.screen_name,avatar:pr.avatar,games:0,classes:new Set(),cards:new Set(),byCls:{},wins:0,score:0,rank:null,hasProfile:true};
+  if(!p&&pr)p={uid:pr.user_id,name:pr.screen_name,avatar:pr.avatar,discord:pr.discord_public!==false?pr.discord_name||null:null,games:0,classes:new Set(),cards:new Set(),byCls:{},wins:0,score:0,rank:null,hasProfile:true};
   if(!p)return`<h1>Player not found</h1><p class="lede">No player called ${E(key)}. <a href="#leaderboard">Back to the leaderboard</a></p>`;
   if(!pr&&D.profiles)pr=D.profiles.get(p.uid);
   const m=metalFor(p.games),nx=nextMetal(p.games),prev=m?m[1]:0;
@@ -147,7 +148,7 @@ function viewPlayer(){
   const mine=p.uid===S.uid;
   if(!D.pub[p.uid])loadPublicDecks(p.uid);
   const decks=D.pub[p.uid];
-  return`<div class="pf-head">${avatarHTML(p.avatar,"lg")}<div><h1>${E(p.name)}</h1>
+  return`<div class="pf-head">${avatarHTML(p.avatar,"lg")}<div><h1>${E(p.name)}</h1>${p.discord?`<div class="pf-dc-chip">Discord @${E(p.discord)}</div>`:""}
     <div class="pf-metal" style="margin-top:6px">${m?crestHTML(m[0],56):""}<span><b>${m?m[0]+" playtester":"No complete games yet"}</b>${p.rank?` · Rank #${p.rank}`:""}</span></div>
     ${nx?`<div class="pf-note" style="margin-top:6px">${fmt(nx[1]-p.games)} more complete game${nx[1]-p.games>1?"s":""} to ${nx[0]}</div><div class="pf-bar" style="max-width:280px"><i style="width:${prog}%"></i></div>`:""}
     ${mine?`<div class="bar" style="margin-top:10px"><button type="button" class="btn sm" data-pf="edit">Edit profile</button><a class="btn sm" href="#decks">Manage decks</a></div>`:""}</div></div>
@@ -165,10 +166,13 @@ async function loadPublicDecks(uid){D.pub[uid]="loading";
 
 /* ---------- my profile + first-visit setup ---------- */
 async function loadMe(){if(!SB||!S.uid)return;const uid=S.uid;
-  const{data,error}=await SB.from("profiles").select("user_id,screen_name,avatar,decks_reviewed").eq("user_id",uid).maybeSingle();
+  const{data,error}=await SB.from("profiles").select("user_id,screen_name,avatar,decks_reviewed,discord_name,discord_public").eq("user_id",uid).maybeSingle();
   if(uid!==S.uid)return;if(error){D.me=undefined;return}/* table missing (SQL not run yet): stay quiet */
   D.me=data||null;
+  /* Update 30: copy the Discord name onto the profile so the Leaderboard and profile page can show it */
+  const dn=S.me&&S.me.discord||null;if(D.me&&(D.me.discord_name||null)!==dn)SB.from("profiles").update({discord_name:dn}).eq("user_id",uid).then(({error})=>{if(!error)D.at=0});
   if(!D.me||!D.me.decks_reviewed)setTimeout(()=>{if(S.uid===uid&&!document.getElementById("pf-setup")&&S.view!=="play")openSetup(true)},400)}
+window.CQProfDiscordPublic=async v=>{if(!SB||!S.uid)return false;const{error}=await SB.from("profiles").update({discord_public:!!v}).eq("user_id",S.uid);if(!error&&D.me){D.me.discord_public=!!v;D.at=0}return!error};
 function onSession(){D.me=undefined;D.pub={};if(S.uid)loadMe()}
 let F=null;
 function openSetup(first){if(!S.uid||document.getElementById("pf-setup"))return;injectCSS();
@@ -194,7 +198,7 @@ async function setupNext(){F.err="";
     if(data&&data.length&&data[0].user_id!==S.uid){F.err="That name is taken. Try another.";return drawSetup()}F.name=n;F.step=1;return drawSetup()}
   if(F.step===1){if(!F.avatar){F.err="Pick an avatar.";return drawSetup()}F.step=2;return drawSetup()}
   const btn=document.querySelector('#pf-setup [data-pf="next"]');if(btn)btn.disabled=true;
-  const row={user_id:S.uid,screen_name:F.name,avatar:F.avatar,decks_reviewed:true,updated_at:new Date().toISOString()};
+  const row={user_id:S.uid,screen_name:F.name,avatar:F.avatar,decks_reviewed:true,updated_at:new Date().toISOString(),...(S.me&&S.me.discord?{discord_name:S.me.discord}:{})};
   const{error}=await SB.from("profiles").upsert(row);
   if(error){F.err=/duplicate|unique/i.test(error.message)?"That name is taken. Try another.":"Couldn't save: "+error.message;if(/duplicate|unique/i.test(error.message))F.step=0;return drawSetup()}
   const ds=S.decks||[];const want=d=>F.priv.has(String(d.id));const ch=ds.filter(d=>!!d.priv!==want(d));

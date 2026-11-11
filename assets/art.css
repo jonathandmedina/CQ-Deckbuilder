@@ -249,9 +249,13 @@ html[data-skin="art"] .discord-btn:hover{background:#4752c4;border-color:#4752c4
 @media (max-width:700px){.online-pill .on-w,.online-pill .on-g{display:none}}
 @media (prefers-reduced-motion:reduce){.on-dot{animation:none}}
 /* Update 30: your hand lifts on hover (room above so the lift isn't clipped) */
-html[data-skin="art"] .pl-hand{padding-top:22px;margin-top:-22px}
+html[data-skin="art"] .pl-hand{padding-top:8px;margin-top:-8px}
 html[data-skin="art"] .pl-hand .hc{transition:transform .16s ease,filter .16s ease;z-index:1}
-@media (hover:hover){html[data-skin="art"] .pl-hand .hc:hover,html[data-skin="art"] .pl-hand .hc:focus-visible{transform:translateY(-18px) scale(1.06);z-index:5;filter:drop-shadow(0 0 12px rgba(242,193,78,.55))}}
+@media (hover:hover){html[data-skin="art"] .pl-hand .hc:hover,html[data-skin="art"] .pl-hand .hc:focus-visible{transform:translateY(-6px);z-index:5;filter:drop-shadow(0 0 12px rgba(242,193,78,.55))}}
+.hc-pop{position:fixed;z-index:70;pointer-events:none;transform-origin:top left;filter:drop-shadow(0 14px 28px rgba(0,0,0,.7)) drop-shadow(0 0 10px rgba(242,193,78,.45));animation:hcUp .14s ease-out both}
+.hc-pop .zoom,.hc-pop .flip{display:none!important}
+@keyframes hcUp{from{opacity:0;margin-top:14px}}
+@media (prefers-reduced-motion:reduce){.hc-pop{animation:none}}
 @media (prefers-reduced-motion:reduce){html[data-skin="art"] .pl-hand .hc{transition:none}}
 /* Update 30: off-screen sheet for the deck image (PNG) */
 .png-sheet{position:fixed;left:-99999px;top:0;width:1800px;padding:48px;background:#120a07 radial-gradient(1400px 700px at 50% -200px,#2a150d,transparent);color:var(--ink);font-family:var(--body);display:grid;gap:26px}
@@ -274,3 +278,8 @@ html[data-skin="art"] .pl-hand .hc{transition:transform .16s ease,filter .16s ea
 .dc-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid #5865F2;border-radius:999px;padding:4px 11px;background:var(--sunk);color:var(--ink)}
 .dc-chip .dc-logo{color:#8f99ff}
 a.dc-btn{text-decoration:none}
+html[data-skin="art"] #play-root .pl-hand-h{display:none}
+/* Update 30: Discord name on profiles and the Leaderboard */
+.pf-dc{display:block;font-size:.75rem;color:#8f99ff;font-weight:400}
+.pf-dc-chip{display:inline-block;margin-top:4px;font-size:.85rem;color:var(--ink);border:1px solid #5865F2;border-radius:999px;padding:2px 10px;background:var(--sunk)}
+.dc-pub{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}

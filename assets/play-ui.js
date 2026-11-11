@@ -547,11 +547,12 @@ const SND=(()=>{let ac=null;const on=()=>store2.get("cq.sound",true)!==false;
     death:t=>{[392,330,262,196].forEach((f,i)=>tone(f,t+i*0.14,0.32,"triangle",0.12))},
     summon:t=>{tone(220,t,0.3,"triangle",0.12,440);noise(t+0.1,0.2,0.1,600,2000)},
     pass:t=>{tone(660,t,0.1,"sine",0.08);tone(494,t+0.1,0.16,"sine",0.08)},
+    tick:t=>{noise(t,0.025,0.22,6000,2500);tone(2400,t,0.03,"square",0.035,1600)},
     draw:t=>{noise(t,0.1,0.12,4000,1500)},
     win:t=>{[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,t+i*0.11,0.3,"square",0.06))},
     lose:t=>{[392,370,349,262].forEach((f,i)=>tone(f,t+i*0.2,0.4,"triangle",0.1))}};
   /* Update 30: recorded sound effects (assets/sfx, .ogg with .mp3 for Safari). Anything without a file stays synthesized. */
-  const FILES={store:"sfx_item_2_bag_and_chime",level:"sfx_legendary_2_choir_ascension",shatter:"sfx_shatter_1_glass",crumble:"sfx_shatter_3_stone_crumble",
+  const FILES={store:"sfx_item_2_bag_and_chime",level:"sfx_level_up_chime_5_mini_ta_da",shatter:"sfx_shatter_1_glass",crumble:"sfx_shatter_3_stone_crumble",
     heal:"sfx_spell_2_ice_cure_sparkle",birdsong:"sfx_animal_1_songbird",arrow:"sfx_hit_1_sword_slash",
     smith:"sfx_smith_2_strikes_and_quench",death:"sfx_spell_calm_3_reverse_gong",status:"sfx_status_2_poison_bubbles",curse:"sfx_status_3_curse_tritone",revive:"sfx_legendary_3_crystal_motif"};
   const ext=(()=>{try{return new Audio().canPlayType('audio/ogg; codecs="vorbis"')?"ogg":"mp3"}catch(e){return"mp3"}})();
@@ -574,6 +575,15 @@ const MUS=(()=>{let el=null;const on=()=>store2.get("cq.music",true)!==false;
   function sync(want){if(want&&on()&&location.hash==="#play"){const a=get();if(a.paused)a.play().catch(()=>{})}else if(el&&!el.paused)el.pause()}
   addEventListener("hashchange",()=>sync(false));document.addEventListener("visibilitychange",()=>{if(document.hidden)sync(false);else if(U.s&&U.mode!=="lobby")sync(true)});
   return{on,sync,toggle(){store2.set("cq.music",!on());sync(on())}}})();
+/* Update 30: pointing at a card in your hand clicks and pops a 1.4x copy up over the Heroes (the copy ignores the mouse, so clicks still reach the card) */
+let hcPop=null,hcOn=null;
+function hcPopHide(){if(hcPop){hcPop.remove();hcPop=null}hcOn=null}
+document.addEventListener("mouseover",e=>{const hc=e.target.closest&&e.target.closest(".pl-hand .hc");if(hc===hcOn)return;hcPopHide();if(!hc||!matchMedia("(hover:hover)").matches)return;hcOn=hc;
+  SND.play("tick");const card=hc.querySelector(".card");if(!card)return;const r=card.getBoundingClientRect(),S=1.4,w=r.width*S,h=r.height*S;
+  const d=document.createElement("div");d.className="hc-pop";d.innerHTML=card.outerHTML;d.style.width=r.width+"px";d.style.transform=`scale(${S})`;
+  const left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)),top=Math.max(8,r.bottom-h-18);d.style.left=left+"px";d.style.top=top+"px";
+  document.body.appendChild(d);hcPop=d;try{if(typeof fitArt==="function")fitArt(d)}catch(err){}},true);
+document.addEventListener("scroll",hcPopHide,true);addEventListener("blur",hcPopHide);
 document.addEventListener("pointerdown",()=>{SND.unlock();if(U.s&&U.mode!=="lobby"&&location.hash==="#play")MUS.sync(true)},{capture:true});
 
 /* new game events since the last render: destroyed pop-ups, sounds, and a chime when the action shifts */
@@ -661,6 +671,7 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   try{gameFx(s)}catch(e){console.warn(e)}
   try{MUS.sync(true)}catch(e){}
   try{if(window.CQPop)CQPop.redraw()}catch(e){}
+  hcPopHide();
   try{if(typeof fitArt==="function")fitArt(root)}catch(e){}
   try{fitPlay(root)}catch(e){console.warn(e)}
   modals(s)}
@@ -1004,7 +1015,7 @@ function helpHTML(fixBtn){const give=U.net?'<button class="btn sm" data-pa="do" 
   return`<details class="pl-help"${U.helpOpen?" open":""}><summary>Game Help</summary><div class="pl-help-b">${fixBtn}${give}</div></details>`}
 const FIX_BTN='<button class="btn sm pl-fix" data-pa="do" data-a=\'{"type":"fix"}\' title="Open the manual panel to correct something the engine missed">Rules fix</button>';
 function handHTML(s,opts){const pl=s.p[U.me];const playable=new Set(opts.filter(o=>o.type==="play").map(o=>{const c=pl.hand.find(x=>x.uid===o.uid);return c&&c.id}));
-  const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}" data-cls="${esc(card.cls||"Generic")}">${cardHTML(card)}${autoTag(c.id)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
+  const cards=pl.hand.map(c=>{const card=cardOf(c.id);if(!card)return"";return`<button class="hc${playable.has(c.id)?" ok":""}" data-pa="hand" data-u="${c.uid}" data-cls="${esc(card.cls||"Generic")}">${cardHTML(card)}${(()=>{const b=cardCounts(s,c);return b.length?`<span class="cb">${b.join("")}</span>`:""})()}</button>`}).join("");
   return`<section><div class="pl-hand-h"><span>Your hand (${pl.hand.length}) · <span class="hl-note">outline = playable now · point at one of your Heroes to see the cards it can play</span></span></div><div class="pl-handwrap"><button type="button" class="pl-hscr l" data-pa="hscr" data-d="-1" aria-label="Scroll hand left">‹</button><div class="pl-hand">${cards||'<span class="pl-note">No cards in hand.</span>'}</div><button type="button" class="pl-hscr r" data-pa="hscr" data-d="1" aria-label="Scroll hand right">›</button></div></section>`}
 function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1,k:"burn",name:"Soldier"});
   const ops=[["dmg","Deal damage (DEF applies)"],["lose","Lose HP"],["heal","Heal"],["status","Add status"],["unstatus","Remove status"],["str","STR up (this turn)"],["nstr","STR down (this turn)"],["def","DEF up (this turn)"],["ndef","DEF down (this turn)"],["guard","Give Guard"],["draw","Draw cards"],["aura","Gain Aura"],["naura","Lose Aura"],["gold","Gain Gold"],["exhaust","Exhaust"],["ready","Ready"],["level","Level up"],["delevel","Lose a level"],["summon","Create summon token"],["pillar","Conjure Pillar"],["dagger","Create Dagger token"],["doll","Create Doll"],["destroy","Destroy object"],["exileobj","Exile object"],["unequip","Unequip"],["discard","Discard from hand"],["fromDisc","Return from discard to hand"],["discToInv","Return from discard to inventory"],["playfree","Play a card from hand (free)"],["revive","Revive Hero (HP)"],["move","Move Hero to position (0-2)"],["reveal","Reveal / play a Hidden card"],["mill","Mill (top cards → discard)"],["equipfree","Equip for free"],["revealtop","Reveal top cards of a library"],["revmove","Move a revealed card"],["endAction","End the action"]].sort((x,y)=>x[1].localeCompare(y[1]));

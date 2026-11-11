@@ -7,8 +7,8 @@
 <meta name="description" content="Browse every Crystal Quest card, build decks, save them to your account, export print-and-play PDFs or Tabletop Simulator decks, and play games against the AI or friends online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<script>/* theme: "art" (Card Art, default: card images), "retro" or "clean"; set before CSS paints */(function(){var k="art";try{k=localStorage.getItem("cq.skin")||"art"}catch(e){}document.documentElement.dataset.skin=(k==="clean"||k==="retro")?k:"art"})()</script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Jersey+10&family=Pirata+One&family=EB+Garamond:wght@400;500;600;700&family=Pixelify+Sans:wght@400;700&display=swap">
+<script>/* theme: Card Art is the only theme (Update 30). Retro and Clean are deprecated: retro.css stays in the repo but is not loaded. */document.documentElement.dataset.skin="art";try{localStorage.removeItem("cq.skin")}catch(e){}</script>
+<link rel="stylesheet" crossorigin="anonymous" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700;800&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Jersey+10&family=Pirata+One&family=EB+Garamond:wght@400;500;600;700&family=Pixelify+Sans:wght@400;700&display=swap">
 <style>
 /* Layout: sticky top bar with views (Cards, Deck Builder, My Decks, Best Decks, Rules, Play); builder is a two-pane pool + deck list that stacks on phones. */
 :root{
@@ -460,8 +460,7 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 #adminTab[hidden]{display:none!important}
 .sitebar .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261110i">
-<link rel="stylesheet" href="assets/art.css?v=20261110i">
+<link rel="stylesheet" href="assets/art.css?v=20261111a">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -474,16 +473,12 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
     <a href="#leaderboard" data-view="leaderboard">Leaderboard</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
-  <a class="btn sm discord-btn" href="https://discord.gg/dvGaJRRkYg" target="_blank" rel="noopener">Join the Discord</a>
+  <span class="online-pill" id="onlinePill" title="People with Deck Forge open right now, and games being played" hidden><span class="on-dot"></span><b id="onN">0</b><span class="on-w"> online</span><span class="on-g"> · </span><b class="on-g" id="onG">0</b><span class="on-g"> games</span></span>
+  <a class="btn sm discord-btn" href="https://discord.gg/wErfNbug5e" target="_blank" rel="noopener">Join the Discord</a>
 </div></header>
 <main><div class="wrap" id="view"></div></main>
 <footer class="sitebar" id="sitebar"><div class="wrap">
   <span class="sb-links"><a href="#changelog" data-view="changelog" class="sb-link">Changelog</a><a href="#admin" data-view="admin" id="adminTab" class="sb-link" hidden>Admin</a></span>
-  <select class="skin-btn" id="skinSel" aria-label="Theme" title="Theme">
-    <option value="art">Card Art theme</option>
-    <option value="retro">Retro theme</option>
-    <option value="clean">Clean theme</option>
-  </select>
 </div></footer>
 <div id="layer"></div>
 <noscript><p class="wrap">Deck Forge needs JavaScript turned on.</p></noscript>
@@ -491,20 +486,20 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261110i"></script>
-<script src="assets/app.js?v=20261110i"></script>
-<script src="assets/play-engine.js?v=20261110i"></script>
-<script src="assets/play-cards.js?v=20261110i"></script>
-<script src="assets/play-ai.js?v=20261110i"></script>
-<script src="assets/play-ui.js?v=20261110i"></script>
-<script src="assets/changelog-data.js?v=20261110i"></script>
-<script src="assets/changelog.js?v=20261110i"></script>
-<script src="assets/admin.js?v=20261110i"></script>
-<script src="assets/profile.js?v=20261110i"></script>
+<script src="assets/cards-data.js?v=20261111a"></script>
+<script src="assets/app.js?v=20261111a"></script>
+<script src="assets/play-engine.js?v=20261111a"></script>
+<script src="assets/play-cards.js?v=20261111a"></script>
+<script src="assets/play-ai.js?v=20261111a"></script>
+<script src="assets/play-ui.js?v=20261111a"></script>
+<script src="assets/changelog-data.js?v=20261111a"></script>
+<script src="assets/changelog.js?v=20261111a"></script>
+<script src="assets/admin.js?v=20261111a"></script>
+<script src="assets/profile.js?v=20261111a"></script>
+<script src="assets/action-pop.js?v=20261111a"></script>
+<script src="assets/online.js?v=20261111a"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>
-<script>(function(){var b=document.getElementById("skinSel");if(!b)return;b.value=document.documentElement.dataset.skin||"art";
-b.addEventListener("change",function(){try{localStorage.setItem("cq.skin",b.value)}catch(e){}location.reload()})})()</script>
 </body>
 </html>

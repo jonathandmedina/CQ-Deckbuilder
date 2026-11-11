@@ -285,7 +285,7 @@ The Hero must be ready, the card must be Generic or match the Hero’s class, an
 
 **Additional costs.** Some cards have a line that starts “As an additional cost to play this card, …” (for example, Dark Jab: “this Hero loses 2 HP”). It always sits on its own line. Pay it when you pay the card’s Aura cost.
 
-Playing a card doesn’t exhaust the Hero unless the card says “Exhaust this Hero” or creates a summon (see Summons).
+Playing a card doesn’t exhaust the Hero unless the card says “Exhaust this Hero.” This includes Summon cards (see Summons).
 
 ### Basic Attack
 
@@ -346,7 +346,7 @@ A Hero is always in one of these states:
 | **Dead** | Face down | Out of the fight (see Death). Can be revived. |
 | **Surrendered** | Face down, turned sideways | Dead, and its soul is gone. Can’t be revived (see Surrender Your Soul). |
 
-A Hero becomes exhausted when it makes a basic attack, levels up, activates an Arrow, pays an exhaust cost, plays a card that creates a summon, or plays a card that says to exhaust it.
+A Hero becomes exhausted when it makes a basic attack, levels up, activates an Arrow, pays an exhaust cost, or plays a card that says to exhaust it.
 
 An exhausted Hero can’t take any action: it can’t play cards, activate abilities, attack, Level, Step Back or equip, and it can’t be exhausted to trigger a Hidden card. Its equipment, enchantments and passive abilities (such as “While exhausted…”) still work, and it can still be targeted and healed. Another Hero can take equipment from it.
 
@@ -451,8 +451,8 @@ A revive effect (or the Church in Town) brings a dead Hero back to life. The car
 
 ## 14. Summons
 
-- **Summoning exhausts.** Playing a card that creates a summon, including cards that copy or duplicate summons, exhausts the Hero that played it, whether or not the card says “Exhaust this Hero.” A summon created by a triggered effect (such as when a card is destroyed or a Hero dies) doesn’t exhaust anyone.
-- Summons enter the battlefield exhausted. They ready at Dawn like your other cards.
+- **The card decides.** Playing a card that creates a summon exhausts the Hero that played it only if the card says “Exhaust this Hero.” Summon cards without that sentence (such as Spore Calling and Heartwood Seed) leave the Hero ready.
+- Summons enter the battlefield exhausted unless the card says to ready them. They ready at Dawn like your other cards.
 - A summon that attacks becomes exhausted.
 - When you have priority, a ready summon may attack instead of your Hero’s action. Summons aren’t tied to a position.
 - Summons can’t be equipped and don’t earn Gold.
@@ -698,7 +698,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **One-Handed / Two-Handed**: How many hands a weapon or instrument uses. A Hero has two hands.
 - **Enchantment**: Card attached to a Hero that changes it. Card text says “Enchanted ally”.
 - **Curse**: Enchantment subtype (Warlock) that weakens the Hero it's attached to.
-- **Summon**: Card type that creates a creature, and the creature itself. Playing a summon card exhausts the Hero that played it. A summon has STR/HP, enters exhausted, can attack whenever you have priority, can't be equipped. At 0 HP it dies and is destroyed. It can't be revived.
+- **Summon**: Card type that creates a creature, and the creature itself. Playing a summon card exhausts the Hero only if the card says “Exhaust this Hero.” A summon has STR/HP, enters exhausted, can attack whenever you have priority, can't be equipped. At 0 HP it dies and is destroyed. It can't be revived.
 - **Token**: A card created by an effect. Pillars and summons go on the battlefield. Equipment and item tokens (Dagger, Viper Fang Dagger, Doll) take an inventory slot. A token’s Aura cost is 0 unless it says otherwise (Viper Fang Dagger costs 1 to equip). Tokens that leave play are removed from the game. See the token list in The Cards.
 - **Hidden**: Supertype. Set face down in an inventory slot as an action. To trigger it, exhaust a ready Hero of its class (any Hero for Generic) and pay its cost. Resolves before the action that triggered it.
 - **Legendary**: Supertype. Only 1 copy per deck.

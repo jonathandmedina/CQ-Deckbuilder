@@ -119,6 +119,7 @@ function defOf(s,o){
     if(o.name==="Sun Paladin"&&o.ex)d+=2;
     /* update 26: Holy Guardian, while exhausted, gives each adjacent Hero +1 DEF */const i=pl.heroes.indexOf(o);[pl.heroes[i-1],pl.heroes[i+1]].forEach(g=>{if(g&&g.name==="Holy Guardian"&&!g.dead&&g.ex)d+=1});
     if(hasEqN(o,"Great Axe")&&enraged(s,o))d+=1;
+    /* update 29: Bark of the Protector, +1 DEF for each summon you control */if(hasEqN(o,"Bark of the Protector"))d+=pl.bf.filter(x=>x.kind==="summon").length;
     o.ench.forEach(e=>{if(e.name==="Distract")d-=1});
     if(modHas(o,"zeroDef"))d=0;return Math.max(0,d)}
   if(o.kind==="summon"){const pl=P(s,o.ctrl);let d=modSum(o,"def")+invCount(pl,"Horn Crystal")+invCount(pl,"Barkskin Totem")+(pl.pm.sdef||0);return Math.max(0,d)}
@@ -164,7 +165,7 @@ function spellDmg(s,pid,actor){const pl=P(s,pid);let n=2*pl.bf.filter(o=>o.name=
 E.spellDmg=spellDmg;
 function noAttack(s,o){return o&&o.kind==="hero"&&modHas(o,"noAttack")}
 E.noAttack=noAttack;
-function stealth(s,o){if(o.kind!=="hero")return false;if(modHas(o,"stealth")||hasEqN(o,"Shadow Cloak"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
+function stealth(s,o){if(o.kind==="summon")return!!o.stealth||modHas(o,"stealth");if(o.kind!=="hero")return false;if(modHas(o,"stealth")||hasEqN(o,"Shadow Cloak"))return true;if(o.name==="Night Stalker"&&o.ex)return true;return false}
 function cardProof(s,o,enemy){return o.kind==="hero"&&(eqList(o).some(e=>(e.name==="Cloak of Protection"||e.name==="Cloak of Shadow")&&(!isUp(s,e)||enemy!==false))||modHas(o,"untarget"))}
 function poisonous(s,h,dealt){if(!h||h.kind!=="hero")return 0;let n=0; /* update 23: every instance of Poisonous triggers separately (they add up) */
   if(h.name==="Dark Fang")n+=h.lvl>=3?(dealt||0):1;
@@ -343,6 +344,8 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
         if(hasUpN(s,src,"Hammer of Ruin")){const c=[...dp.inv.filter(x=>!x.fd&&x.kind!=="doll"),...living(dp).flatMap(h=>eqList(h))];c.sort((a,b)=>num(def(b).cost||b.cost)-num(def(a).cost||a.cost));it=c[0]||null}
         if(it){if(it.kind==="equip")log(s,`Hammer of Ruin destroys ${it.name}.`);destroyObj(s,it);trophy(s,src.uid)}}
     }
+      /* update 29: The Reaper Cleaver, if this Hero deals 7 or more damage to a Hero, ready it */
+    if(src.kind==="hero"&&dealt>=7&&tgt.kind==="hero"&&src.ex&&!src.dead&&hasEqN(src,"The Reaper Cleaver")){src.ex=false;log(s,`The Reaper Cleaver: ${src.name} dealt ${dealt} damage to ${tgt.name} and readies.`)}
     if(src.kind==="summon"&&src.name==="Woods Beast"&&dealt>0)draw(s,src.ctrl,1);
   }
   checkDeaths(s);return dealt}
@@ -426,6 +429,7 @@ function checkWin(s){if(s.over)return;const dead=s.p.map(pl=>pl.heroes.every(h=>
 
 /* ---------- tokens / summons ---------- */
 function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};const o={uid:nid(s),kind:"summon",name,str:t.str,hp:t.hp,sub:t.sub||"",dmg:0,ex:!ready,ctrl:pid,owner:pid,tok:true,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},mods:[],fl:{}};
+  if(/\bStealth\b/.test(t.rules||""))o.stealth=true; /* update 29: summons that enter with Stealth (Woods Beast, Great Rootfolk) */
   P(s,pid).bf.push(o);log(s,`${P(s,pid).name} summons ${/^[AEIOU]/.test(name)?"an":"a"} ${name} (${t.str}/${t.hp}).`,pid);
   /* Barkborn: gains DEF equal to its HP until Dusk; stacks */
   {const pl=P(s,pid);const n=(/Barkborn/.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
@@ -518,7 +522,7 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
     else if(k==="nonHero")list=objs.filter(o=>o.kind!=="hero"&&(!o.fd||isEnemy(o)));
   }
   list=list.filter(o=>{
-    if(o.kind==="hero"&&isEnemy(o)&&stealth(s,o)&&!o.dead&&viaCard)return false;
+    if((o.kind==="hero"||o.kind==="summon")&&isEnemy(o)&&stealth(s,o)&&!o.dead&&viaCard)return false; /* update 29: Stealth summons too */
     if(!viaCard&&o.kind==="hero"&&isEnemy(o)&&modHas(o,"noAttack"))return false; /* Levitate: can't be attacked this turn */ /* Stealth: can't be targeted by enemy cards or abilities, but can be attacked */
     if(viaCard&&cardProof(s,o,isEnemy(o)))return false;
     if(viaCard&&o.kind==="hero"&&isEnemy(o)&&ctx.card&&ctx.card.type==="Spell"&&hasUpN(s,o,"Helm of Protection"))return false; /* update 26: upgraded Helm of Protection */
@@ -651,7 +655,9 @@ E.hiddenCost=hiddenCost;
 /* Heroes that can be exhausted to reveal this Hidden card (the player chooses one; update 27) */
 function revealHeroes(s,pid,o,pr){const d=def(o);const hs=hiddenScript(o);const tr=pr&&pr.trig;
   const ex=hs&&hs.excl&&tr?[tr.hero,tr.target].concat(tr.targets||[]).filter(Boolean):[];
-  return living(P(s,pid)).filter(h=>!h.ex&&!ex.includes(h.uid)&&(d.cls==="Generic"||heroIs(h,d.cls)))}
+  const hs2=living(P(s,pid)).filter(h=>!h.ex&&!ex.includes(h.uid)&&(d.cls==="Generic"||heroIs(h,d.cls)));
+  /* update 29: Hand of the Protector can be revealed by exhausting a ready summon instead of a Hero */
+  return hs&&hs.summonPay?hs2.concat(P(s,pid).bf.filter(o=>o.kind==="summon"&&!o.ex&&!ex.includes(o.uid))):hs2}
 function revealHero(s,pid,o,pr,uid){const l=revealHeroes(s,pid,o,pr);return(uid&&l.find(h=>h.uid===uid))||l[0]}
 E.revealHeroes=revealHeroes;
 function canReveal(s,pid,o,pr){if(pr.noHidden)return false;const d=def(o);if(d.sup!=="Hidden")return false;
@@ -831,7 +837,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
     if(sc&&sc.onSet)sc.onSet(mkCtx(s,pid,actor,d,c,[]));return}
   if(d.type==="Item"){const it=Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c);pl.inv.push(it);overflow(s,pid);
     if(sc&&sc.enter)sc.enter(mkCtx(s,pid,actor,d,it,targets));return}
-  if(d.type==="Summon"&&actor)actor.ex=true;
+  /* update 29: playing a Summon card no longer exhausts the Hero by rule; the card text says so when it does ("Exhaust this Hero") */
   const trig={kind:"card",src:actor,pid,card:d,cardUid:c.uid,targets,cost,cls:d.cls,type:d.type,name:d.name};
   /* update 23 Echo: only a card played from your hand can Echo; Songweaver gives its Songs Echo; Sing Along gives the ally's next Tactic or Song Echo */
   let grant=false;if(actor&&actor.kind==="hero"&&/Tactic|Song/.test(d.type)){if(d.type==="Song"&&actor.name==="Songweaver"&&!actor.dead)grant=true;if(actor.fl.singRound===s.round){actor.fl.singRound=null;grant=true;log(s,`Sing Along: ${d.name} gains Echo.`,pid)}}
@@ -1084,7 +1090,7 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
 
 /* ---------- auto targets for passive triggers ---------- */
 function autoTarget(s,pid,kind){const me=P(s,pid),op=P(s,opp(pid));
-  if(kind==="enemy"){const c=living(op).filter(h=>!stealth(s,h));if(!c.length)return op.bf.find(o=>o.kind==="summon")||null;return c.sort((a,b)=>hpOf(s,a)-hpOf(s,b))[0]}
+  if(kind==="enemy"){const c=living(op).filter(h=>!stealth(s,h));if(!c.length)return op.bf.find(o=>o.kind==="summon"&&!stealth(s,o))||null;return c.sort((a,b)=>hpOf(s,a)-hpOf(s,b))[0]}
   if(kind==="healAlly"){const c=living(me).filter(h=>h.dmg>0);return c.sort((a,b)=>b.dmg-a.dmg)[0]||null}
   if(kind==="statusAlly"){return living(me).find(h=>STATUS.some(k=>h.st[k]>0))||null}
   if(kind==="strAlly"){return living(me).filter(h=>!h.ex).sort((a,b)=>strOf(s,b)-strOf(s,a))[0]||living(me)[0]||null}

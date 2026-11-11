@@ -227,7 +227,7 @@ def("Spotters",{run(c){const r=living(c.me).filter(h=>h.cls==="Ranger").length;c
 def("Reload",{run(c){const top=c.me.lib.slice(-2);if(!top.length){log(c,"Reload: the library is empty.");return}
   const room=c.me.inv.length<E.slots(c.s,c.pid);const arrows=top.filter(x=>E.DB[x.id].sub==="Arrow");
   log(c,`Reload: ${c.me.name} looks at the top ${top.length} card${top.length===1?"":"s"} of their library.`,c.pid);
-  if(arrows.length&&room)E.pushChoose(c.s,c.pid,{title:"Reload: put an Arrow from among them into your inventory? The rest go on the bottom of your library.",cards:arrows.map(x=>x.uid),min:0,max:1,op:"reload",pickLabel:"Inventory",look:top.map(x=>x.uid)});
+  if(arrows.length&&room)E.pushChoose(c.s,c.pid,{title:"Reload: put an Arrow from among them into your inventory? The rest go on the bottom of your library.",cards:arrows.map(x=>x.uid),min:0,max:1,op:"reload",look:top.map(x=>x.uid)});
   else{if(arrows.length)log(c,"Reload: there's an Arrow, but the inventory is full.");else log(c,"Reload: no Arrow among them.");OPS.reload(c.s,c.pid,{look:top.map(x=>x.uid)},[])}}});
 /* Reload v3: the picked Arrow goes into inventory; the rest of the looked-at cards go on the bottom of the library */
 OPS.reload=(s,pid,pr,picks)=>{const pl=s.p[pid];const look=pr.look||[];
@@ -260,16 +260,19 @@ def("Tri-Shot",arrow(4,[t("enemyPlayer","target party")],c=>{const p=c.t[0];if(!
 def("Beast",summonCard("Beast"));def("Elk",summonCard("Elk"));def("Wolves",{run(c){summon(c,"Wolf");summon(c,"Wolf");exMe(c)}});def("Heavy Beast",summonCard("Heavy Beast"));
 def("Aurawing",summonCard("Aurawing Familiar"));def("Drawwing",summonCard("Drawwing Familiar"));
 def("Elk of the Woods",{run(c){summon(c,"Woods Beast",true);exMe(c)}});
-def("Spore Calling",{run(c){summon(c,"Spore");draw(c,1);exMe(c)}});
+def("Spore Calling",{run(c){summon(c,"Spore");draw(c,1)}}); /* update 29: doesn't say "Exhaust this Hero", so it doesn't */
 def("Heartwood Seed",{run(c){summon(c,"Sapling")}});
-def("Bloom",{run(c){const r=summons(c.me).filter(o=>!o.ex);r.forEach(o=>o.ex=true);c.me.aura+=r.length;log(c,`Bloom: ${r.length} summon${r.length===1?"":"s"} exhausted, ${c.me.name} gains ${r.length} Aura.`);exMe(c)}});
+/* Bloom v2 (update 29): you pick which ready summons to exhaust (one yes/no per summon); the Hero isn't exhausted */
+def("Bloom",{run(c){const r=summons(c.me).filter(o=>!o.ex);if(!r.length){log(c,"Bloom: no ready summons.");return}
+  r.slice().reverse().forEach(o=>E.ask(c.s,c.pid,`Bloom: exhaust ${o.name} (${o.str}/${Math.max(0,o.hp-(o.dmg||0))}) to gain 1 Aura?`,[{label:"Exhaust it (+1 Aura)",v:o.uid},{label:"Leave it ready",v:null}],"bloom",{name:"Bloom"}))}});
+E.ASK.bloom=(s,pid,pr,v)=>{if(!v)return;const f=E.find(s,v);if(!f||f.o.kind!=="summon"||f.o.ex||f.pid!==pid)return;f.o.ex=true;s.p[pid].aura+=1;E.log(s,`Bloom: ${f.o.name} is exhausted; ${s.p[pid].name} gains 1 Aura.`,pid)};
 def("Tooth",{run(c){c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}});
 def("Horn",{run(c){c.me.pm.sdef=(c.me.pm.sdef||0)+1;log(c,"Summons gain +1 DEF this turn.")}});
 def("Tooth or Horn",M(1,[{label:"+3 STR",t:[t("allySummon","your summon")],run:c=>buff(c.t[0],{str:3})},{label:"+3 DEF",t:[t("allySummon","your summon")],run:c=>buff(c.t[0],{def:3})}]));
 const adjHero=(s,o)=>{if(!o||o.kind!=="hero")return false;const hs=s.p[o.owner].heroes;const i=hs.indexOf(o);return[hs[i-1],hs[i+1]].some(h=>h&&!h.dead)};
 def("Entangling Roots",{t:[t("enemyHero","enemy Hero to Stun (must be next to another enemy Hero)",(s,o)=>adjHero(s,o))],run(c){const o=c.t[0];if(o)st(c,o,"stun")}});
 def("Bark Blessing",{run(c){c.me.t.nextBark=(c.me.t.nextBark||0)+1;log(c,"The next summon that enters this turn has Barkborn.")}});
-def("Rootfolk",summonCard("Rootfolk"));def("Great Rootfolk",summonCard("Great Rootfolk"));
+def("Rootfolk",summonCard("Rootfolk"));def("Great Rootfolk",summonCard("Great Rootfolk",true)); /* update 29: enters with Stealth, ready */
 def("Call to Companions",{run(c){const n=living(c.me).filter(h=>E.heroIs(h,"Druid")).length;for(let i=0;i<n;i++)summon(c,"Wolf");exMe(c)}});
 def("Lesser Elemental",{t:[t("enemy","attack target")],run(c){const o=summon(c,"Elemental",true);exMe(c);attack(c,o,c.t[0])}});
 def("Greater Elemental",{t:[t("enemy","attack target")],run(c){const o=summon(c,"Greater Elemental",true);exMe(c);attack(c,o,c.t[0])}});
@@ -371,6 +374,12 @@ hid("Out of the Woods","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);re
 hid("Fade the Fury","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);const a=atkr(s,trig);return t2&&t2.o.kind==="hero"&&E.heroIs(t2.o,"Rogue")&&a&&a.o.kind==="hero"&&E.str(s,a.o)>=3},c=>{c.mods.cancel=true});
 hid("Shelter from the Storm",["attack","card"],(s,pid,trig)=>s.p[pid].bf.some(o=>o.kind==="summon"),c=>{c.me.t.shelter=true;summons(c.me).forEach(o=>{o.ex=true});log(c,"Summons can't be destroyed this turn and are exhausted.")});
 hid("Cancel","card",null,c=>{c.mods.cancel=true});
+/* Hand of the Protector (update 29): revealed in any response window, by a ready Druid or a ready summon; target ally gains DEF equal to its HP until Dusk */
+hid("Hand of the Protector",["attack","card","afterDmg","party10","dusk"],null,c=>{const al=living(c.me).concat(summons(c.me)).filter(o=>!o.dead);if(!al.length)return;
+  const tu=c.trig&&(c.trig.target||(c.trig.targets||[])[0]);const first=al.find(o=>o.uid===tu);const l=first?[first].concat(al.filter(o=>o!==first)):al.slice().sort((a,b)=>E.hp(c.s,b)-E.hp(c.s,a));
+  E.ask(c.s,c.pid,"Hand of the Protector: target ally gains Defense equal to its Health Points until Dusk",l.map(o=>({label:`${o.name}${o.kind==="summon"?" (summon)":""}: +${E.hp(c.s,o)} DEF`,v:o.uid})),"handProtector",{name:"Hand of the Protector"})});
+S["Hand of the Protector"].hidden.summonPay=true;
+E.ASK.handProtector=(s,pid,pr,v)=>{const f=E.find(s,v);if(!f||f.o.dead)return;const n=E.hp(s,f.o);E.addMod(f.o,{def:n});E.log(s,`Hand of the Protector: ${f.o.name} gains +${n} DEF until Dusk.`,pid)};
 /* Burgle (update 18): only while every opposing Hero that isn't dead is exhausted */
 hid("Burgle",["attack","card","afterDmg","party10","dusk"],(s,pid)=>{const op=E.living(s.p[1-pid]);return op.length>0&&op.every(h=>h.ex)&&(s.p[1-pid].gold||0)>0},c=>{E.stealGold(c.s,c.pid,1-c.pid,5,"Burgle")});
 hid("Narrow Escape","card",(s,pid,trig)=>trig.card&&trig.cost>=3&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"&&E.heroIs(f.o,"Rogue")}),c=>{c.mods.cancel=true});

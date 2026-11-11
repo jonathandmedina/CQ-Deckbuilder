@@ -315,6 +315,29 @@ button.card:hover{border-color:var(--cc)}
 #hovercard{position:fixed;z-index:2000;width:min(390px,92vw,calc((100vh - 16px)*5/7));pointer-events:none;display:none;filter:drop-shadow(0 8px 22px rgba(0,0,0,.45))}
 #hovercard>*{width:100%;margin:0}
 .mini{border:1px solid var(--line);background:none;border-radius:5px;width:22px;height:22px;padding:0;line-height:1;font-size:.95rem}
+/* update 30: remove-all ×, Visual View, Deck log */
+.mini.rmall{color:#d23b3b;border-color:transparent;font-weight:800;font-size:1.05rem;margin-left:2px}
+.mini.rmall:hover{background:rgba(210,59,59,.14);border-color:#d23b3b}
+.vis-box{max-width:1240px}
+.vis-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.vis-top h2{margin:0}
+.vs-heroes{display:flex;gap:14px;flex-wrap:wrap}
+.vs-hero{width:170px;display:flex;flex-direction:column;gap:4px}
+.vs-pos{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.vs-g h3{margin:6px 0 8px;font-size:1.05rem}.vs-g h3 span{color:var(--muted);font-weight:600}
+.vs-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.vs-stack{--w:150px;--step:30px;position:relative;width:var(--w);height:calc(var(--w)*1.4 + (var(--n) - 1)*var(--step))}
+.vs-card{position:absolute;left:0;top:calc(var(--i)*var(--step));width:var(--w)}
+.vs-card .card{width:100%;min-height:calc(var(--w)*1.4);font-size:.62rem;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+html:not([data-skin="art"]) .vs-stack{--w:170px;--step:54px}
+html:not([data-skin="art"]) .vs-card .card{height:calc(var(--w)*1.4);overflow:hidden}
+.vs-q{position:absolute;right:6px;bottom:6px;background:rgba(10,14,20,.85);color:#fff;font-weight:800;font-size:.8rem;padding:2px 7px;border-radius:7px;z-index:5}
+.vs-hero .card{font-size:.62rem}
+.deck-log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.deck-log li{border-bottom:1px solid var(--line);padding-bottom:8px;display:flex;flex-direction:column;gap:2px;font-size:.92rem}
+.deck-log time{font-size:.78rem;color:var(--muted);font-weight:600}
+.lg-add{color:#3f9a4f}.lg-rem{color:#d23b3b}
+@media (max-width:560px){.vs-stack{--w:120px;--step:24px}.vs-hero{width:130px}}
 .issues{margin:0;padding:10px 12px;border-radius:10px;font-size:.88rem;list-style:none;display:flex;flex-direction:column;gap:3px}
 .issues.bad{background:color-mix(in srgb,var(--warn) 12%,transparent);color:var(--ink)}
 .issues.bad li::before{content:"✕ ";color:var(--warn);font-weight:700}
@@ -437,8 +460,8 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 #adminTab[hidden]{display:none!important}
 .sitebar .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/retro.css?v=20261110h">
-<link rel="stylesheet" href="assets/art.css?v=20261110h">
+<link rel="stylesheet" href="assets/retro.css?v=20261110i">
+<link rel="stylesheet" href="assets/art.css?v=20261110i">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -468,16 +491,16 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261110h"></script>
-<script src="assets/app.js?v=20261110h"></script>
-<script src="assets/play-engine.js?v=20261110h"></script>
-<script src="assets/play-cards.js?v=20261110h"></script>
-<script src="assets/play-ai.js?v=20261110h"></script>
-<script src="assets/play-ui.js?v=20261110h"></script>
-<script src="assets/changelog-data.js?v=20261110h"></script>
-<script src="assets/changelog.js?v=20261110h"></script>
-<script src="assets/admin.js?v=20261110h"></script>
-<script src="assets/profile.js?v=20261110h"></script>
+<script src="assets/cards-data.js?v=20261110i"></script>
+<script src="assets/app.js?v=20261110i"></script>
+<script src="assets/play-engine.js?v=20261110i"></script>
+<script src="assets/play-cards.js?v=20261110i"></script>
+<script src="assets/play-ai.js?v=20261110i"></script>
+<script src="assets/play-ui.js?v=20261110i"></script>
+<script src="assets/changelog-data.js?v=20261110i"></script>
+<script src="assets/changelog.js?v=20261110i"></script>
+<script src="assets/admin.js?v=20261110i"></script>
+<script src="assets/profile.js?v=20261110i"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>

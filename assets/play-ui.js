@@ -606,9 +606,10 @@ function gameFx(s){if(U.fxFor!==U.gameKey){U.fxFor=U.gameKey;U.fxSeen=(s.fx&&s.f
 const POP_START=/^(?:⚔ )?(.+?) (plays|activates|attacks|uses its ability|summons|conjures|creates|equips|visits the Shop|stays at the Inn|pays the Church|upgrades) ?(.*?)(?: \(|\.| for |: |$)/;
 function opPops(s,lines){if(!window.CQPop||U.me==null)return;const objs=[];s.p.forEach(pl=>{pl.heroes.forEach(h=>objs.push(h));(pl.bf||[]).forEach(o=>objs.push(o))});
   const uidOf=n=>{const o=objs.find(x=>x.name===n);return o?o.uid:null};
-  const groups=[];lines.forEach(l=>{const m=POP_START.exec(String(l.m).replace(/^✋ /,""));const sub=m&&/^(summons|conjures|creates)$/.test(m[2])&&groups.length&&groups[groups.length-1].l.p===l.p;
+  const groups=[];lines.forEach(l=>{const echo=/^Echo: /.test(l.m);const m=POP_START.exec(String(l.m).replace(/^✋ /,"").replace(/^Echo: /,"").replace(/ again\.$/,"."));if(m)m.echo=echo;const sub=m&&/^(summons|conjures|creates)$/.test(m[2])&&groups.length&&groups[groups.length-1].l.p===l.p;
     if(m&&!sub&&l.p!=null&&l.p>=0){groups.push({l,m,after:[]})}else if(groups.length)groups[groups.length-1].after.push(l)});
-  groups.filter(g=>g.l.p!==U.me).slice(-5).forEach(g=>{const[,actor,verb,rest]=g.m;const card=byName(rest)||null;
+  /* Echo replays happen on their own at Dawn, so they pop up for both players */
+  groups.filter(g=>g.l.p!==U.me||g.m.echo).slice(-5).forEach(g=>{const[,actor,verb,rest]=g.m;const card=byName(rest)||null;
     const tgts=[];const add=n=>{const u=uidOf(n);if(u&&!tgts.includes(u))tgts.push(u)};
     if(verb==="attacks")add(rest);
     const names=objs.map(o=>o.name).filter((n,i,a)=>n&&n!==actor&&a.indexOf(n)===i).sort((x,y)=>y.length-x.length);
@@ -619,14 +620,14 @@ function opPops(s,lines){if(!window.CQPop||U.me==null)return;const objs=[];s.p.f
     const dest=tn.length?tn.join(", "):self&&uidOf(actor)&&verb!=="attacks"?actor:verb==="summons"||verb==="conjures"||summoned?"Battlefield":verb==="equips"?rest.split(" to ")[1]||"":card&&/Item/.test(card.type||"")?"Inventory":card&&/Equipment/.test(card.type||"")?actor:card?"Discard":"";
     const label={"uses its ability":"uses its ability",plays:"plays",activates:"activates",attacks:"attacks",summons:"summons",conjures:"conjures",creates:"creates",equips:"equips",upgrades:"upgrades"}[verb];
     const att=verb==="attacks"?byName(actor):null;
-    CQPop.push({who:(s.p[g.l.p]?s.p[g.l.p].name:"Opponent")+(uidOf(actor)&&!att?" · "+actor:""),cardId:att?att.id:card?card.id:null,verb:att?"":label||"",name:att?actor+" attacks":label?rest:g.l.m.replace(/\.$/,""),
+    CQPop.push({who:(g.m.echo?"Echo · ":"")+(s.p[g.l.p]?(g.l.p===U.me?"You":s.p[g.l.p].name):"Opponent")+(uidOf(actor)&&!att?" · "+actor:""),cardId:att?att.id:card?card.id:null,verb:att?"":g.m.echo?"replays":label||"",name:att?actor+" attacks":label?rest:g.l.m.replace(/\.$/,""),
       dest:verb==="attacks"?rest:dest,sub:g.after.length?g.after[0].m.replace(/\s*\(\d+\/\d+ HP\)/,""):"",actorU:uidOf(actor),targetU:verb==="attacks"&&uidOf(rest)?[uidOf(rest)]:tgts})})}
 function classOf(name){const n=String(name||"").trim();if(!n)return null;const c=(typeof CARDS!=="undefined"&&CARDS.find(x=>x.name===n))||(typeof HEROES!=="undefined"&&HEROES.find(x=>x.name===n));return c?c.cls:null}
 /* one sound key per log line; damage right after an attack is the attack's damage (stone crumble); a summon from a Druid card or Druid Hero is birdsong */
 function soundKeys(lines){const ks=[];let atk=false,cls=null;lines.forEach(l=>{let k=SND.pick(l.m);const m=/^(?:⚔ )?(.+?) (plays|activates) (.+?)(?: \(| for |\.|$)/.exec(l.m);
     if(m){atk=false;cls=classOf(m[3])||classOf(m[1]);const cd=typeof CARDS!=="undefined"&&CARDS.find(x=>x.name===m[3].trim());if(cd&&cd.sub==="Curse")k="curse"}if(/ attacks /.test(l.m)&&!m)atk=true;
     if(k==="hit"&&atk)k="crumble";if(k==="summon"&&cls==="Druid")k="birdsong";if(k&&ks[ks.length-1]!==k)ks.push(k)});return ks}
-U.snd={SND,MUS,classOf,soundKeys,starterDeck}; /* for tests */
+U.snd={SND,MUS,classOf,soundKeys,starterDeck,opPops}; /* for tests */
 function turnKey(s){if(s.over)return"over";if(s.pend[0])return"p"+s.pend[0].pid+":"+s.phase;if(s.phase==="battle")return"b"+s.prio;if(s.phase==="town")return"t"+(s.town&&s.town.order[s.town.i]);return s.phase+s.round}
 function destroyPop(f){let L=document.getElementById("pl-fx");if(!L){L=document.createElement("div");L.id="pl-fx";L.setAttribute("aria-hidden","true");document.body.appendChild(L)}
   const c=(f.id&&cardOf(f.id))||byName(f.name);const el=document.createElement("div");el.className="fxc";

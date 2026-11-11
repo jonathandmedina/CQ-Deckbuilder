@@ -198,7 +198,7 @@ def("Ballad of Blades",{t:[t("ally","another ally to boost",(s,o,x)=>!x||!x.acto
 const song=(n,o)=>{S['"'+n+'"']=o};
 song("Ballad of Blades",S["Ballad of Blades"]);
 song("Crescendo",Object.assign({t:[ANY]},{modes:{n:1,opts:[{label:"Deal 3 damage"},{label:"Harmonize 2: 3 damage to each enemy"}]},can:()=>true,run(c){
-  const harm=(c.modes||[])[0]===1&&living(c.me).filter(h=>!h.ex&&h!==c.actor).length>=2;
+  const harm=(c.modes||[])[0]===1&&(c.echo||living(c.me).filter(h=>!h.ex&&h!==c.actor).length>=2);
   if(harm)harmonize(c,2,"crescendo");else D(c,c.t[0],3)}}));
 /* update 23: the opponent tips you 1 Gold out of their Gold (counts as your Tip for the round) */
 song("Dazzling Melody",{t:[t("enemyPlayer","target opponent")],run(c){const pl=c.me;if(pl.fl.tipRound===c.s.round){log(c,"Dazzling Melody: you already got a Tip this round.");return}pl.fl.tipRound=c.s.round;
@@ -207,11 +207,11 @@ song("Lullaby",{t:[t("any","target with 0 or less STR",(s,o)=>E.str(s,o)<=0)],ru
 song("Peace",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{zeroStr:1});log(c,`${c.t[0].name}'s Strength becomes 0 until Dusk.`)}if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
 /* update 23: Harmonize X (other ready Heroes): draw X+1 cards and gain X+1 Aura */
 song("Rousing Chorus",{x:{label:"Harmonize X: how many other ready Heroes to exhaust",max:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length,free:true},run(c){
-  const n=Math.min(c.x||0,living(c.me).filter(h=>!h.ex&&h!==c.actor).length);if(!n){HARM.rousing(c,0);return}harmonize(c,n,"rousing")}});
+  const n=c.echo?(c.x||0):Math.min(c.x||0,living(c.me).filter(h=>!h.ex&&h!==c.actor).length);if(!n){HARM.rousing(c,0);return}harmonize(c,n,"rousing")}});
 song("Song of Healing",{run(c){c.s.p.forEach(pl=>living(pl).forEach(o=>heal(c,o,2)))}});
-song("Call and Response",{modes:{n:1,opts:[{label:"Draw a card"},{label:"Draw a card, Harmonize 1: draw an additional card"}]},run(c){draw(c,1);if((c.modes||[])[0]===1&&living(c.me).some(h=>!h.ex&&h!==c.actor))harmonize(c,1,"draw1")}});
+song("Call and Response",{modes:{n:1,opts:[{label:"Draw a card"},{label:"Draw a card, Harmonize 1: draw an additional card"}]},run(c){draw(c,1);if((c.modes||[])[0]===1&&(c.echo||living(c.me).some(h=>!h.ex&&h!==c.actor)))harmonize(c,1,"draw1")}});
 song("Solo Act",{can:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length>=2,run(c){harmonize(c,2,"soloAct",{notActor:true,verb:"Solo Act"})}});
-song("Understanding",{modes:{n:1,opts:[{label:"Scry 3"},{label:"Scry 3, Harmonize 1: draw a card"}]},run(c){if((c.modes||[])[0]===1&&living(c.me).some(h=>!h.ex&&h!==c.actor))harmonize(c,1,"understanding");else scry(c,3)}});
+song("Understanding",{modes:{n:1,opts:[{label:"Scry 3"},{label:"Scry 3, Harmonize 1: draw a card"}]},run(c){if((c.modes||[])[0]===1&&(c.echo||living(c.me).some(h=>!h.ex&&h!==c.actor)))harmonize(c,1,"understanding");else scry(c,3)}});
 song("Opening Act",{run(c){const first=(c.me.t.acts||0)<=1;const top=c.me.lib.splice(-3);log(c,`Revealed: ${top.map(x=>E.DB[x.id].name).join(", ")}.`);const si=top.findIndex(x=>E.DB[x.id].type==="Song");if(si>=0){c.me.hand.push(top.splice(si,1)[0]);log(c,"A Song goes to hand.")}c.me.disc.push(...top);if(first){c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)}}});
 def("Embolden",{run(c){c.me.fl.emb={round:c.s.round,n:1};log(c,"The next time an ally would gain Strength this turn, it gains double that instead.")}});
 def("Strong Stance",{t:[HERO],run(c){buff(c.t[0],{def:2})}});
@@ -415,6 +415,8 @@ const A=E.ASK;
    The card's effect runs from HARM[k] after the last pick, so it always follows the exhausting. */
 function harmonize(c,n,k,o){o=o||{};
   const d={k,left:n,total:n,picked:[],actor:c.actor&&c.actor.uid,notActor:!!o.notActor,card:c.def&&c.def.id,name:c.def&&c.def.name,verb:o.verb||"Harmonize",tu:c.tu||[],modes:c.modes||null,x:c.x==null?null:c.x};
+  /* Update 31c: an Echo replay copies the card as it was played; its Harmonize was paid the first time, so nobody is exhausted again */
+  if(c.echo){d.free=true;d.left=0;if(n)E.log(c.s,`Echo: ${d.verb} ${n} was already paid; no Heroes are exhausted.`,c.pid);harmDone(c.s,c.pid,d);return}
   harmAsk(c.s,c.pid,d)}
 function harmCands(s,pid,d){return s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h.uid!==d.actor)} /* update 23: Harmonize exhausts OTHER ready Heroes */
 function harmAsk(s,pid,d){const cs=harmCands(s,pid,d);
@@ -424,7 +426,7 @@ function harmAsk(s,pid,d){const cs=harmCands(s,pid,d);
 A.harmPick=(s,pid,pr,v)=>{const d=pr.data;const h=E.heroByUid(s,v);if(h&&!h.dead&&!h.ex){h.ex=true;d.picked.push(h.uid);d.left--}if(d.left>0)harmAsk(s,pid,d);else harmDone(s,pid,d)};
 function harmDone(s,pid,d){const nm=d.picked.map(u=>(E.heroByUid(s,u)||{}).name).filter(Boolean);
   if(nm.length)E.log(s,`${d.verb} ${nm.length}: ${nm.join(", ")} ${nm.length>1?"are":"is"} exhausted.`,pid);
-  const f=HARM[d.k];if(!f)return;const c=E.mkCtx(s,pid,E.heroByUid(s,d.actor),E.DB[d.card],null,d.tu,{modes:d.modes,x:d.x});f(c,nm.length)}
+  const f=HARM[d.k];if(!f)return;const c=E.mkCtx(s,pid,E.heroByUid(s,d.actor),E.DB[d.card],null,d.tu,{modes:d.modes,x:d.x,echo:!!d.free});f(c,d.free?d.total:nm.length)}
 HARM.crescendo=c=>{enemies(c).forEach(e=>D(c,e,3))};
 HARM.draw2=c=>{draw(c,2)};
 HARM.draw1=c=>{draw(c,1)};
@@ -445,7 +447,7 @@ hid("Die Swinging","dying",(s,pid,tr)=>{const f=E.find(s,tr.hero);return f&&f.pi
 A.dieSwing=(s,pid,pr,v)=>{const a=E.find(s,pr.data.att);const t2=E.resolveTarget(s,v);if(!a||!t2)return;E.log(s,`⚔ ${a.o.name} attacks ${t2.name} as it falls.`,pid);E.damage(s,a.o,t2,E.dmgStr(s,a.o,t2),{combat:true,ignoreDef:true,srcName:"Die Swinging"})};
 /* Bard */
 song("Come Together",{x:{label:"Harmonize X: how many other ready Heroes to exhaust",max:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length,free:true},run(c){
-  const n=Math.min(c.x||0,living(c.me).filter(h=>!h.ex&&h!==c.actor).length);if(!n){HARM.comeTogether(c,0);return}
+  const n=c.echo?(c.x||0):Math.min(c.x||0,living(c.me).filter(h=>!h.ex&&h!==c.actor).length);if(!n){HARM.comeTogether(c,0);return}
   harmonize(c,n,"comeTogether")}});
 HARM.comeTogether=(c,n)=>{
   const k=Math.min(n+2,c.me.lib.length);if(!k){log(c,"Your library is empty.");return}

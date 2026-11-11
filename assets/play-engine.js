@@ -896,7 +896,7 @@ function resolveCont(s,pid,cont,mods){
       living(pl).filter(h=>h.name==="Wild Archer"&&h.ex&&(pl.t.arrows===1||(h===actor&&h.lvl>=3))).forEach(h=>{h.ex=false;log(s,`${h.name} readies.`,pid)})}
     checkDeaths(s);return}
   const d=DB[cont.card.id];const sc=SC()[d.name];const pl=P(s,pid);
-  const ctx=mkCtx(s,pid,actor,d,cont.card,cont.targets,{mods,modes:cont.modes,x:cont.x,comboed:cont.combo});
+  const ctx=mkCtx(s,pid,actor,d,cont.card,cont.targets,{mods,modes:cont.modes,x:cont.x,comboed:cont.combo,echo:!!cont.echo});
   let stays=false;const pend0=s.pend.length;
   /* Spell Damage Pillar (update 16): each gives +2 Spell Damage to your next spell, then is sacrificed after that spell resolves (Pillars the spell conjures itself stay) */
   const pilBefore=d.type==="Spell"?pl.bf.filter(o=>o.name==="Spell Damage Pillar").map(o=>o.uid):[];

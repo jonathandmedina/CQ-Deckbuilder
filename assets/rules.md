@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 9, 2026 (update 24)*
+*Version: November 11, 2026 (update 31)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -789,5 +789,5 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Your next spell has +2 Spell Damage; sacrifice the Pillar after that spell resolves.
-- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026), Fortify and Pull Together (Nov 9, 2026, update 26).
+- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026), Fortify and Pull Together (Nov 9, 2026, update 26), Campfire (Nov 10, 2026, update 28).
 - **Pain Pillar (Warlock)**: At Dusk, target loses X HP, where X is the number of Pain Pillars you control.

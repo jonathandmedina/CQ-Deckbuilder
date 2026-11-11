@@ -132,7 +132,8 @@ def("Noble Choice",M(2,[{label:"Summon a 2/3 Soldier",run:c=>{summon(c,"Soldier"
 /* ===== Barbarian ===== */
 def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:2})}});
 def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:4})}});
-def("Blood Frenzy",{t:[cls("Barbarian")],run(c){if(!c.t[0])return;E.loseHp(c.s,c.t[0],4,"Blood Frenzy");buff(c.t[0],{str:2})}});
+/* Blood Frenzy v2: losing 3 HP is an additional cost (Ritual Athame sees it); +3 STR until Dusk */
+def("Blood Frenzy",{t:[cls("Barbarian")],run(c){const b=c.t[0];if(!b)return;E.costHp(c.s,c.pid,b,3,"Blood Frenzy cost");if(!b.dead){buff(b,{str:3});log(c,`${b.name} gains +3 STR until Dusk.`)}}});
 def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buff(c.actor,{str:1});const h=c.t[0];if(c.actor.lvl>=3&&h&&dfn(c,h)<str(c,c.actor)){h.ex=true;log(c,`${h.name} is exhausted.`)}}});
 def("Battered",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
 def("Pummel",{t:[HERO],run(c){const n=living(c.me).filter(h=>h.cls==="Barbarian").length;D(c,c.t[0],dstr(c,c.actor,c.t[0])*n);exMe(c)}});
@@ -223,9 +224,16 @@ const arrowNext=(c,o)=>{c.me.fl.arrowNext=Object.assign(c.me.fl.arrowNext||{},o)
 def("Bullseye",{run(c){arrowNext(c,{ign:true});log(c,"The next Arrow ignores DEF.")}});
 def("Full Draw",{run(c){const n=c.me.fl.arrowNext;arrowNext(c,{dmg:((n&&n.dmg)||0)+4});log(c,"The next Arrow gains +4 damage.")}});
 def("Spotters",{run(c){const r=living(c.me).filter(h=>h.cls==="Ranger").length;const n=c.me.fl.arrowNext;arrowNext(c,{dmg:((n&&n.dmg)||0)+r});log(c,`The next Arrow gains +${r} damage.`)}});
-def("Reload",{run(c){const top=c.me.lib[c.me.lib.length-1];if(!top)return;const d=E.DB[top.id];
-  if(d.sub==="Arrow"&&c.me.inv.length<E.slots(c.s,c.pid)){c.me.lib.pop();c.me.inv.push(Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},top));log(c,`${d.name} goes into inventory.`)}
-  else{log(c,d.sub==="Arrow"?"The top card is an Arrow, but the inventory is full.":"The top card isn't an Arrow.");E.pushChoose(c.s,c.pid,{title:"Reload: put this card on the bottom of your library?",cards:[top.uid],min:0,max:1,op:"bottom",pickLabel:"Bottom"})}}});
+def("Reload",{run(c){const top=c.me.lib.slice(-2);if(!top.length){log(c,"Reload: the library is empty.");return}
+  const room=c.me.inv.length<E.slots(c.s,c.pid);const arrows=top.filter(x=>E.DB[x.id].sub==="Arrow");
+  log(c,`Reload: ${c.me.name} looks at the top ${top.length} card${top.length===1?"":"s"} of their library.`,c.pid);
+  if(arrows.length&&room)E.pushChoose(c.s,c.pid,{title:"Reload: put an Arrow from among them into your inventory? The rest go on the bottom of your library.",cards:arrows.map(x=>x.uid),min:0,max:1,op:"reload",pickLabel:"Inventory",look:top.map(x=>x.uid)});
+  else{if(arrows.length)log(c,"Reload: there's an Arrow, but the inventory is full.");else log(c,"Reload: no Arrow among them.");OPS.reload(c.s,c.pid,{look:top.map(x=>x.uid)},[])}}});
+/* Reload v3: the picked Arrow goes into inventory; the rest of the looked-at cards go on the bottom of the library */
+OPS.reload=(s,pid,pr,picks)=>{const pl=s.p[pid];const look=pr.look||[];
+  picks.slice(0,1).forEach(u=>{const i=pl.lib.findIndex(x=>x.uid===u);if(i>=0&&pl.inv.length<E.slots(s,pid)){const x=pl.lib.splice(i,1)[0];const d=E.DB[x.id];pl.inv.push(Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},x));E.log(s,`${d.name} goes into inventory.`,pid)}});
+  let n=0;look.forEach(u=>{const i=pl.lib.findIndex(x=>x.uid===u);if(i>=0){pl.lib.unshift(pl.lib.splice(i,1)[0]);n++}});
+  if(n)E.log(s,`${pl.name} puts ${n} card${n===1?"":"s"} on the bottom of their library.`,pid)};
 def("Quickdraw",{run(c){const top=c.me.lib.splice(-3);top.slice().forEach(x=>{if(E.DB[x.id].sub==="Arrow"&&c.me.inv.length<E.slots(c.s,c.pid)){top.splice(top.indexOf(x),1);c.me.inv.push(Object.assign({kind:"card",fd:false,name:E.DB[x.id].name,ctr:{}},x));log(c,`${E.DB[x.id].name} goes into inventory.`)}});c.me.lib.push(...top);exMe(c)}});
 const arrow=(cost,t2,run,o)=>({act:Object.assign({cost,t:t2,run},o||{})});
 def("Arrow of Hope",arrow(3,[EN],c=>{D(c,c.t[0],2);draw(c,2)}));
@@ -340,7 +348,7 @@ song("Marching Cadence",{run(c){living(c.me).forEach(h=>h.fl.bandRound=c.s.round
 song("Duet",{t:[t("allyHero","another ally to band with",(s,o,x)=>!x||o!==x.actor)],run(c){const a=c.actor,b=c.t[0];[a,b].forEach(h=>{if(h){h.fl.bandRound=c.s.round;buff(h,{str:1})}});
   log(c,`${a?a.name:"This Hero"}${b?" and "+b.name:""} gain +1 STR and Banding this turn.`)}});
 /* passive items: handled in the engine by name (no script needed beyond entering play) */
-["Tip Jar","Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Battle Horn","Trophy Rack","Lightning Rod","Tooth Crystal","Petal Shrine","Sphere of Hindrance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
+["Tip Jar","Aura Crystal","Gathering Tree","Ley Grove","Warrior's Pyre","Brute's Banner","Captain's Banner","Healing Relic","Inversion Stone","Horn Crystal","Barkskin Totem","Tangle Rod","Caltrops","Xakro's War Horn","Trophy Rack","Lightning Rod","Tooth Crystal","Petal Shrine","Sphere of Hindrance","The Monolith","The Forbidden Tuner","Almandine","Rose Quartz","Topaz"].forEach(n=>{if(!S[n])S[n]={}});
 S["Almandine"].gem=c=>{c.actor=null;enemies(c).forEach(e=>E.damage(c.s,{name:"Almandine"},e,2,{card:true}))};
 S["Rose Quartz"].gem=c=>{living(c.me).forEach(h=>E.heal(c.s,null,h,3))};
 S["Topaz"].gem=c=>{c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)};

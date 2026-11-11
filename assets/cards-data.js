@@ -25,8 +25,8 @@ const RAW_CARDS=[
 [2, "Awestruck", "0", "", "Tactic", "", "Barbarian", "Stun target Hero or summon with less STR than this Hero.", 2],
 [2, "Balanced Choice", "3", "", "Tactic", "", "Monk", "Choose two: Scry 2; target Hero gains +2 STR this turn; or this Hero Meditates.", 1],
 [2, "\"Ballad of Blades\"", "2", "", "Song", "", "Bard", "Another target ally gains +2 Strength this turn. If you played another Song this turn, it gains +3 Strength instead.", 3],
-[2, "Battered", "2", "", "Tactic", "", "Barbarian", "Deal damage equal to this Hero's STR to target Hero. If \"Bruised\" is in your discard pile, you may Wound it.", 2],
-[2, "Battle Horn", "2", "", "Item", "", "Barbarian", "Whenever a Barbarian attacks, you may discard a card at random. If you do, Barbarians gain +1 STR this turn.", 1],
+[2, "Battered", "3", "", "Tactic", "", "Barbarian", "Deal damage equal to this Hero's STR to target Hero. If \"Bruised\" is in your discard pile, you may Wound it.", 3],
+[2, "Xakro's War Horn", "2", "", "Item", "", "Barbarian", "Whenever a Barbarian attacks, you may discard a card at random. If you do, Barbarians gain +X Strength this turn, where X is the discarded card's Aura cost.", 2],
 [2, "Bear Trap", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: When an enemy Hero or summon attacks, deal 3 damage to it.", 2],
 [2, "Beast", "4", "", "Summon", "", "Druid", "Summon a 3/4 Beast. Exhaust this Hero.", 3],
 [2, "Beat Down", "2", "", "Tactic", "", "Barbarian", "This Hero gains +2 STR this turn, then attacks a random enemy. Exhaust that enemy.", 1],
@@ -36,7 +36,7 @@ const RAW_CARDS=[
 [2, "Block Progress", "1", "", "Tactic", "", "Generic", "Target Hero can't level up this turn.", 1],
 [2, "Blockade", "3", "", "Tactic", "", "Paladin", "Target Hero gains +4 Defense this turn.", 2],
 [2, "Blood Aura", "3", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. Whenever that Hero spends Aura, it loses 2 HP.", 1],
-[2, "Blood Frenzy", "1", "", "Tactic", "", "Barbarian", "Target Barbarian loses 4 HP and gains +2 STR this turn.", 1],
+[2, "Blood Frenzy", "1", "", "Tactic", "", "Barbarian", "As an additional cost to play this card, target Barbarian loses 3 Health Points. It gains +3 Strength until Dusk.", 2],
 [2, "Blood Offering", "0", "", "Spell", "", "Warlock", "Lose 3 HP. Gain 2 Aura.", 1],
 [2, "Bloodthirst", "3", "", "Tactic", "", "Barbarian", "Attack with this Barbarian. If the defending enemy dies, ready this Hero.", 3],
 [2, "Blunt Force", "3", "", "Tactic", "", "Barbarian", "Target Barbarian gains +4 STR this turn.", 2],
@@ -51,7 +51,6 @@ const RAW_CARDS=[
 [2, "Burden", "4", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. Whenever that Hero plays a card, activates an ability or attacks, Fatigue it.", 2],
 [2, "Call of Nature", "0", "", "Tactic", "", "Druid", "Exile a Summon card from your discard pile. You may play it this turn.", 1],
 [2, "Camouflage", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: Prevent all damage from a Spell or Tactic that would target a friendly Hero. That Hero can't be targeted for the rest of this turn.", 1],
-[2, "Campfire", "2", "", "Item", "", "Barbarian", "This enters with 3 Campfire counters. At Dawn, remove a Campfire counter and heal each Hero in your party for 1 HP. When the last counter is removed, exile this.", 2],
 [2, "Cancel", "0", "Hidden", "Spell", "", "Warlock", "3{A}: Cancel target card or ability.", 1],
 [2, "Captain's Banner", "3", "", "Item", "Relic", "Paladin", "Soldiers you control have +1 STR and +1 HP.", 1],
 [2, "Carry Radiance", "0", "", "Tactic", "", "Cleric", "Target Cleric gains Lifelink this turn.", 1],
@@ -206,10 +205,10 @@ const RAW_CARDS=[
 [2, "Radiant Strike", "3", "", "Tactic", "", "Paladin", "Deal 3 Light damage, or 5 if this Hero has a Sword equipped. Exhaust this Hero.", 2],
 [2, "Rally the Troops", "5", "", "Tactic", "", "Paladin", "Summon two 2/3 Soldiers. Exhaust this Hero.", 3],
 [2, "Rapacious Encore", "1", "", "Tactic", "", "Bard", "Play a Song from your discard pile, paying its Aura cost. Deal damage equal to that Song's Aura cost to any target. Piercing. (Its damage ignores all Defense.)", 2],
-[2, "Rapid Shot", "0", "", "Tactic", "", "Ranger", "You may activate two Arrows from your inventory this action. They gain Piercing 1. Exhaust this Hero.", 1],
+[2, "Rapid Shot", "2", "", "Tactic", "", "Ranger", "You may activate two Arrows from your inventory this action. They gain Piercing 1. Exhaust this Hero.", 2],
 [2, "Redirect", "0", "Hidden", "Spell", "", "Mage", "2{A}: Change the target of target card or ability.", 1],
 [2, "Refire", "1", "", "Tactic", "", "Ranger", "Activate an Arrow. If it resolves, put it back into your inventory.", 1],
-[2, "Reload", "0", "", "Tactic", "", "Ranger", "Look at the top card of your library. If it's an Arrow, put it into your inventory. If it isn't, you may put it on the bottom of your library.", 2],
+[2, "Reload", "0", "", "Tactic", "", "Ranger", "Look at the top 2 cards of your library. You may put an Arrow from among them into your inventory. Put the rest on the bottom of your library.", 3],
 [2, "Resourceful Maneuver", "1", "", "Tactic", "", "Rogue", "Equip a Dagger from your discard pile to target Rogue.", 1],
 [2, "Resurrection", "5", "", "Tactic", "", "Cleric", "Revive target dead friendly Hero with 8 HP. It is exhausted. Exhaust this Hero.", 1],
 [2, "Retribution", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: When an enemy attacks a friendly Hero, deal damage equal to that Hero's Defense to the attacker.", 2],
@@ -281,7 +280,7 @@ const RAW_CARDS=[
 [2, "Tooth or Horn", "2", "", "Tactic", "", "Druid", "Choose one: A friendly summon gains +3 STR or +3 DEF this turn.", 1],
 [2, "Topaz", "1", "", "Item", "Gemstone", "Generic", "At Dawn, you may exile this and exhaust a Hero to gain 2 Aura.", 1],
 [2, "Toxic Cloud", "3", "", "Tactic", "", "Rogue", "Poison each enemy.", 3],
-[1, "Tri-Shot", "0", "Legendary", "Item", "Arrow", "Ranger", "4{A}: Deal 5 damage to the first Hero, 3 damage to the second Hero and 1 damage to the third Hero in target opposing party. This damage ignores DEF.", 1],
+[1, "Tri-Shot", "2", "Legendary", "Item", "Arrow", "Ranger", "4{A}: Deal 5 damage to the first Hero, 3 damage to the second Hero and 1 damage to the third Hero in target opposing party. This damage ignores DEF.", 2],
 [2, "Trophy Rack", "4", "", "Item", "Relic", "Barbarian", "Whenever a Barbarian you control destroys an item or Equipment, put a Trophy counter on Trophy Rack (max 3). Barbarians you control have +1 STR for each Trophy counter.", 2],
 [2, "Unburden", "2", "", "Tactic", "", "Paladin", "This Hero loses all its DEF this turn and gains that much STR this turn.", 1],
 [2, "Undeniable Performance", "2", "", "Tactic", "", "Bard", "Tips you get this turn come out of an opposing party's Gold. Echo.", 1],
@@ -293,7 +292,7 @@ const RAW_CARDS=[
 [2, "Vial of Venom", "0", "", "Item", "", "Rogue", "1{A}, Exile: Poison any target twice.", 2],
 [2, "Vigil", "0", "", "Tactic", "", "Paladin", "Exhaust this Hero. It gains +2 Defense this turn.", 3],
 [2, "Volt Jab", "3", "", "Spell", "", "Mage", "Deal 2 Lightning damage. Conjure a Spell Damage Pillar. Exhaust this Hero.", 2],
-[1, "War Chant", "0", "Legendary", "Tactic", "", "Barbarian", "Gain 1 Aura for each Barbarian you control that is Level 1 or higher. Those Heroes don't add Aura at your next Dawn.", 1],
+[2, "War Chant", "0", "", "Tactic", "", "Barbarian", "Gain 1 Aura for each Barbarian you control that is Level 1 or higher. Those Heroes don't add Aura at your next Dawn.", 2],
 [2, "Wave of Life", "2", "", "Tactic", "", "Cleric", "Heal target for 3 HP.\n{L3} You may pay 3{A} to first revive that target. It is exhausted.", 2],
 [2, "Weaken", "1", "", "Enchantment", "Curse", "Warlock", "Attach to target Hero. That Hero has -1 STR.", 1],
 [2, "Weakening Dirge", "3", "", "Tactic", "", "Bard", "All enemies get -1 STR for the rest of the turn. Echo.", 1],
@@ -302,7 +301,7 @@ const RAW_CARDS=[
 [2, "Withdrawal Ailments", "3", "", "Tactic", "", "Cleric", "Remove all status counters from all friendly Heroes. Deal Light damage to target equal to the number removed.", 1],
 [2, "Wolves", "3", "", "Summon", "", "Druid", "Summon two 2/2 Wolves. Exhaust this Hero.", 4],
 [2, "Die Swinging", "0", "Hidden", "Tactic", "", "Barbarian", "0{A}: When a Barbarian you control would die, it first attacks a random enemy. That attack ignores DEF.", 2],
-[2, "Blood Price", "3", "", "Tactic", "", "Barbarian", "As an additional cost, target Barbarian loses X HP. It gains +X STR this turn. If this makes it Enraged, ready it.", 2],
+[1, "Blood Price", "3", "Legendary", "Tactic", "", "Barbarian", "As an additional cost to play this card, target Barbarian loses X Health Points. It gains +X Strength this turn. If this makes it Enraged, ready it.", 3],
 [2, "Warrior's Pyre", "2", "", "Item", "Relic", "Barbarian", "Whenever a Barbarian you control dies, put a Fury counter on Warrior's Pyre. Barbarians you control have +1 STR for each Fury counter.", 2],
 [2, "\"Marching Cadence\"", "3", "", "Song", "", "Bard", "Heroes in your party gain Banding this turn.", 2],
 [2, "\"Duet\"", "2", "", "Song", "", "Bard", "This Hero and another target ally gain +1 Strength and Banding this turn.", 2],
@@ -401,7 +400,7 @@ const RAW_EQUIP=[
 ["Gauntlets of Growth", "Legendary", "Armor", "Generic", "Can only be equipped to a Hero with 1 or more STR.\nWhenever this Hero deals combat damage, level it.", "3", "Arms", "1", "0", 4],
 ["Great Axe", "", "Weapon", "Barbarian", "Equipped Hero gains +3 STR. While it is Enraged, it also has +1 DEF.", "3", "Two-Handed", "3", "0", 3],
 ["Greaves of Light", "", "Armor", "Paladin", "Equipped Hero gains +1 DEF.", "1", "Legs", "0", "1", 4],
-["Hammer of Ruin", "Legendary", "Weapon", "Barbarian", "Equipped Hero gains +2 STR. Whenever it deals combat damage, destroy target item the defending player controls.", "3", "Two-Handed", "2", "0", 3],
+["Hammer of Ruin", "Legendary", "Weapon", "Barbarian", "Equipped Hero gains +2 STR. Whenever it deals combat damage, destroy target item the defending player controls.", "3", "Two-Handed", "2", "0", 4],
 ["Helm of Aura", "Legendary", "Armor", "Paladin", "Equipped Hero gains +1 DEF. Sacrifice this: Gain 1 Aura.", "1", "Head", "0", "1", 3],
 ["Helm of Protection", "", "Armor", "Paladin", "Equipped Hero gains +1 DEF.", "1", "Head", "0", "1", 4],
 ["Iron Hand Wraps", "", "Armor", "Monk", "Equipped Hero gains +1 STR. Combo cards it plays deal +1 damage.", "2", "Arms", "1", "0", 2],
@@ -463,7 +462,7 @@ const RAW_TOKENS=[
 const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
-const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness","Sphere of Resistance":"Sphere of Hindrance"};
+const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness","Sphere of Resistance":"Sphere of Hindrance","Battle Horn":"Xakro's War Horn"};
 
 /* Deprecated cards: removed from play, kept for the record and so old saved games still load. Same row format as RAW_CARDS.
    Decks that contain one are flagged as not legal; they don't appear in the card list, deck builder or prints. */
@@ -475,7 +474,8 @@ const DEPRECATED_CARDS=[
 [2, "Pull Together", "X", "", "Tactic", "", "Paladin", "Your party gains +X DEF this turn. Exhaust this Hero.", 2],
 [2, "Pop Rocks", "6", "", "Spell", "", "Mage", "Deal 1 damage to all enemies three times. Exhaust this Hero.", 1],
 [2, "Quick Inventory", "1", "", "Tactic", "", "Rogue", "Create a Dagger token.", 1],
-[2, "Refrain", "0", "Hidden", "Item", "Trap", "Bard", "Exhaust a Bard: Prevent all damage from target attack or Tactic.", 1]];
+[2, "Refrain", "0", "Hidden", "Item", "Trap", "Bard", "Exhaust a Bard: Prevent all damage from target attack or Tactic.", 1],
+[2, "Campfire", "2", "", "Item", "", "Barbarian", "This enters with 3 Campfire counters. At Dawn, remove a Campfire counter and heal each Hero in your party for 1 HP. When the last counter is removed, exile this.", 2]];
 
 /* Equipment upgrades (update 19 weapons, update 20 all other equipment, 2026-11-04): one fixed upgrade per piece of equipment, bought at the Blacksmith in Town. name -> [Gold cost, upgraded rules, upgraded +STR, upgraded +DEF] (from Equipment_New columns M-P) */
 const EQUIP_UPGRADES={
@@ -496,7 +496,7 @@ const EQUIP_UPGRADES={
 "Multi Bow": [5, "Destroy any number of Arrows in your inventory: The next Arrow you activate deals +4 damage for each Arrow destroyed this way and has Piercing 2.", 0, 0],
 "Chalice of Life": [5, "At Dawn, heal all Heroes in your party for 1 HP, then heal one of them for 2 more HP.", 0, 0],
 "Heavy Bow": [7, "Arrows the equipped Hero activates deal double damage and have Piercing 1. Whenever this Hero becomes exhausted, put a Fatigue counter on it at Dusk unless you pay 1 Aura then.", 0, 0],
-"Hammer of Ruin": [7, "Equipped Hero gains +3 STR. Whenever it deals combat damage, destroy target item or equipment the defending player controls.", 3, 0],
+"Hammer of Ruin": [7, "Equipped Hero gains +4 STR. Whenever it deals combat damage, destroy target item or equipment the defending player controls.", 4, 0],
 "Sword of Eliazar": [7, "Equipped Hero gains +6 STR. When this is destroyed while equipped, summon a 4/6 Eliazar.", 6, 0],
 "Antler Crown": [5, "The first Summon card the equipped Hero plays each turn costs 1 less Aura, and that summon enters with Barkborn.", 0, 0],
 "Arm Guard of Riverstead": [5, "Equipped Hero gains +2 DEF.", 0, 2],

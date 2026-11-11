@@ -976,13 +976,14 @@ function startAttack(s,pid,attUid,tgtUid,o){const f=find(s,attUid);if(!f)return;
   if(tgt.kind==="hero"&&tp!==pid){const n=invCount(P(s,tp),"Caltrops");if(n){loseHp(s,att,2*n,"Caltrops");stat(s,"dmg",tp,"Caltrops",2*n)}}
   const trig={kind:"attack",attacker:attUid,target:tgtUid,pid,noHidden:!!o.noHidden,str:o.band?bandTotal(s,att,o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o),tgt):dmgStr(s,att,tgt),band:o.band||null};
   const cont={k:"attack",att:attUid,tgt:tgtUid,o};const pre=[];
-  if(att.kind==="hero"&&heroIs(att,"Barbarian")){const pl=P(s,pid);pl.inv.filter(x=>!x.fd&&x.name==="Battle Horn").forEach(()=>{if(pl.hand.length)pre.push({title:"Battle Horn: discard a card at random so your Barbarians get +1 STR this turn?",opts:pl.hand.length>=3?[{label:"Yes, discard at random",v:1},{label:"No",v:0}]:[{label:"No",v:0},{label:"Yes, discard at random",v:1}],op:"battleHorn",data:{name:"Battle Horn"}})})}
+  if(att.kind==="hero"&&heroIs(att,"Barbarian")){const pl=P(s,pid);pl.inv.filter(x=>!x.fd&&(x.name==="Xakro's War Horn"||x.name==="Battle Horn")).forEach(()=>{if(pl.hand.length)pre.push({title:"Xakro's War Horn: discard a card at random? Your Barbarians get +X STR this turn, where X is its Aura cost.",opts:pl.hand.length>=3?[{label:"Yes, discard at random",v:1},{label:"No",v:0}]:[{label:"No",v:0},{label:"Yes, discard at random",v:1}],op:"battleHorn",data:{name:"Xakro's War Horn"}})})}
   if(att.kind==="hero"&&att.fl.hackRound===s.round){att.fl.hackRound=null;const cs=candidates(s,pid,{k:"enemy"},{attack:true,actor:att}).filter(u=>u!==tgtUid).map(u=>resolveTarget(s,u)).filter(Boolean);
     if(cs.length)pre.push({title:"Hack and Slash: choose a second target for this attack",opts:targetOpts(s,pid,cs,strOf(s,att)).concat([{label:"No second target",v:null}]),op:"hack",data:{name:"Hack and Slash"}})}
   if(pre.length){s.pend.unshift({type:"attackGo",pid,cont,trig});pre.reverse().forEach(q=>ask(s,pid,q.title,q.opts,q.op,q.data));return}
   queueResolve(s,pid,cont,trig)}
 E.startAttack=startAttack;
-ASK.battleHorn=(s,pid,pr,v)=>{if(!v)return;const pl=P(s,pid);if(!pl.hand.length)return;const x=pl.hand.splice(ri(s,pl.hand.length),1)[0];pl.disc.push(x);log(s,`Battle Horn: ${pl.name} discards ${DB[x.id].name} at random; Barbarians get +1 STR this turn.`,pid);living(pl).filter(h=>heroIs(h,"Barbarian")).forEach(h=>addMod(h,{str:1}))};
+/* Xakro's War Horn (was Battle Horn): +X STR to Barbarians, X = the discarded card's Aura cost (X costs count as 0) */
+ASK.battleHorn=(s,pid,pr,v)=>{if(!v)return;const pl=P(s,pid);if(!pl.hand.length)return;const x=pl.hand.splice(ri(s,pl.hand.length),1)[0];pl.disc.push(x);const n=Math.max(0,parseInt(DB[x.id].cost,10)||0);log(s,`Xakro's War Horn: ${pl.name} discards ${DB[x.id].name} at random; Barbarians get +${n} STR this turn.`,pid);if(n)living(pl).filter(h=>heroIs(h,"Barbarian")).forEach(h=>addMod(h,{str:n}))};
 ASK.hack=(s,pid,pr,v)=>{if(v==null)return;const g=s.pend.find(p=>p.type==="attackGo");if(g){g.cont.o=Object.assign({},g.cont.o,{second:v})}};
 function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);let tgt=resolveTarget(s,cont.tgt);const o=cont.o||{};
   if(f&&f.o.dead&&!mods.cancel){log(s,`${f.o.name} died before its attack landed.`);postAttack(s,pid,cont,0);return}

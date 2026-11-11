@@ -477,7 +477,7 @@ There are five status counters. At Dawn, each damaging status deals its damage, 
 
 ### Other Counters
 
-Some cards use other counters, such as meditation counters, Petal counters, Campfire counters, Fury counters and Fatigue counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
+Some cards use other counters, such as meditation counters, Petal counters, Fury counters and Fatigue counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
 
 - **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Burden puts one on its Hero whenever that Hero plays a card, activates an ability or attacks; Heavy Bow puts one on its Hero whenever that Hero becomes exhausted; Rage Brute’s “Fatigue:” ability puts one on itself.)
 
@@ -751,7 +751,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 
 ### Statuses, death and summons
 
-- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF. Meditation, Petal, Campfire and Fury counters are not status counters.
+- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF. Meditation, Petal and Fury counters are not status counters.
 - **Burned**: Status. 1 damage each Dawn Phase. Cards say “Burn”.
 - **Poisoned**: Status. 1 damage each Dawn Phase. Cards say “Poison”.
 - **Wounded**: Status. 1 damage each Dawn Phase. Cards say “Wound”.

@@ -99,6 +99,14 @@ html[data-skin="art"] .pl-over-why{color:#d8c3a0}
 .pl-row .lbl{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);align-self:center;width:92px;flex:none}
 .ps{border:1.5px solid var(--cc,var(--line));border-radius:10px;padding:5px 8px;background:var(--card-paper);font-size:.8rem;min-width:96px;text-align:left;display:flex;flex-direction:column;gap:2px}
 .ps b{font-family:var(--display);font-size:.9rem}
+.ps-hp{display:block;margin-top:3px;height:5px;border-radius:3px;background:rgba(0,0,0,.45);box-shadow:inset 0 0 0 1px rgba(0,0,0,.35);overflow:hidden}
+.ps-hp i{display:block;height:100%;border-radius:3px;transition:width .35s ease,background-color .35s}
+/* arrival pop-in for new summons, Pillars and inventory items */
+.arrive{animation:plArrive .7s cubic-bezier(.2,1.4,.4,1) both;position:relative}
+.arrive::after{content:"";position:absolute;inset:-2px;border-radius:inherit;pointer-events:none;box-shadow:0 0 0 2px #ffe27a,0 0 16px 4px rgba(255,214,90,.75);animation:plArriveGlow .7s ease-out both;animation-delay:inherit}
+@keyframes plArrive{0%{opacity:0;transform:translateY(-14px) scale(.6)}60%{opacity:1;transform:translateY(2px) scale(1.06)}100%{opacity:1;transform:none}}
+@keyframes plArriveGlow{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.arrive,.arrive::after{animation:none}}
 .ps.ex{opacity:.6}
 .pi{border:1.5px dashed var(--line);border-radius:10px;padding:5px 8px;min-width:96px;min-height:46px;font-size:.78rem;background:var(--surface);text-align:left;display:flex;flex-direction:column;justify-content:center}
 .pi.full{border-style:solid;border-color:var(--cc,var(--line));background:var(--card-paper)}
@@ -110,11 +118,11 @@ html[data-skin="art"] .pl-over-why{color:#d8c3a0}
 .pl-oppinfo{display:flex;flex-wrap:wrap;gap:6px;font-size:.84rem}
 .pl-oppinfo span{border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--surface)}
 .pl-oppinfo b{font-variant-numeric:tabular-nums}
-.pl-banner{display:flex;gap:10px;align-items:flex-start;border:1.5px solid var(--accent);border-radius:12px;padding:8px 10px;background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.pl-banner{display:flex;gap:10px;align-items:flex-end;border:1.5px solid var(--accent);border-radius:12px;padding:8px 10px;background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
 .pl-banner .bl{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;font-size:.88rem}
 .pl-banner .bl b{font-size:.92rem}
 .pl-banner .bl .hit{color:#C0392B;font-weight:600}
-.pl-banner .btn{margin-left:auto;flex:none}
+.pl-banner .btn{order:-1;align-self:flex-end;margin:0;flex:none}/* Dismiss sits at the bottom left, away from Concede */
 .pl-stats{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface);display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;font-size:.86rem}
 .pl-stats h3{margin:0 0 4px;font-size:.92rem}
 .pl-stats ol{margin:0;padding-left:20px}
@@ -321,7 +329,8 @@ html[data-skin="art"] #play-root .pl-mid .btn{padding:3px 10px;font-size:.9rem}
 html[data-skin="art"] #play-root .pl-mid .pl-endcol{flex-direction:row;align-items:center;gap:6px}
 html[data-skin="art"] #play-root .pl-mid .pl-help>summary{padding:2px 6px}
 html[data-skin="art"] #play-root .pl-mid .pl-help[open]>.pl-help-b{position:absolute;right:0;top:100%;z-index:40;min-width:240px;padding:8px;background:var(--win,#2b1f15);border:2px solid var(--accent,#c79028);border-radius:6px;box-shadow:0 8px 20px #000c}
-html[data-skin="art"] #play-root .pl-mid .pl-banner{padding:4px 10px;font-size:.88rem;line-height:1.25;max-height:5.6em;overflow:auto}
+html[data-skin="art"] #play-root .pl-mid .pl-banner{padding:4px 10px;font-size:.88rem;line-height:1.25}
+html[data-skin="art"] #play-root .pl-mid .pl-banner .bl{max-height:5.2em;overflow:auto}
 html[data-skin="art"] #play-root .pl-mid .pl-banner .btn{padding:2px 10px}
 html[data-skin="art"] #play-root .pl-mid .pl-stats{max-height:46vh;overflow:auto}
 html[data-skin="art"] #play-root .pl-mid{align-content:flex-start}
@@ -665,16 +674,24 @@ function logLine(m){if(LOGC.has(m))return LOGC.get(m);const R=logRe();let out;
   if(!R)out=esc(m);else{out="";let i=0;m.replace(R,(x,off)=>{out+=esc(m.slice(i,off))+`<span class="lgc" data-hc="${esc(LOGMAP.get(x))}">${esc(x)}</span>`;i=off+x.length;return x});out+=esc(m.slice(i))}
   if(LOGC.size>2000)LOGC.clear();LOGC.set(m,out);return out}
 function logHTML(s){return s.log.slice(-300).map(l=>{const sys=/^—/.test(l.m)||/🏆/.test(l.m);return`<p class="${sys?"sys":l.p===U.me?"me":l.p<0?"":"op"}">${logLine(l.m)}</p>`}).join("")}
-function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;
+/* arrival animation: summons, Pillars and inventory items that just showed up pop in (first render of a game marks everything as already there).
+   Re-renders during the animation keep it going with a negative animation-delay. */
+const ARR_MS=700;
+function arrSync(s){const now=Date.now();const ids=[];s.p.forEach(pl=>{pl.bf.forEach(o=>ids.push(o.uid));pl.inv.forEach(o=>o&&ids.push(o.uid))});
+  if(!U.arr||U.arr.key!==U.gameKey){U.arr={key:U.gameKey,t:new Map(ids.map(u=>[u,0]))};return}
+  ids.forEach(u=>{if(!U.arr.t.has(u))U.arr.t.set(u,now)})}
+function arrA(uid){const t=U.arr&&U.arr.t.get(uid);const el=t?Date.now()-t:ARR_MS;return el<ARR_MS?{c:" arrive",st:`animation-delay:-${el}ms;`}:{c:"",st:""}}
+function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;arrSync(s);
   const actor=s.phase==="battle"&&s.prio===pid&&!s.pend.length?E.actorFor(s,pid):null;
   const cands=U.tgt?new Set(U.tgt.slots[U.tgt.i].cands):new Set();
   const slots=E.slots(s,pid);
   const heroes=pl.heroes.map((h,i)=>heroHTML(s,h,i,actor,cands,mine?opts:[])).join("");
-  const bf=pl.bf.map(o=>o.kind==="summon"?summonHTML(s,o,cands):`<span class="pp${cands.has(o.uid)?" cand":""}" data-pa="obj" data-u="${o.uid}">${esc(o.name)}</span>`).join("")||'<span class="pl-note">No summons or Pillars</span>';
+  const bf=pl.bf.map(o=>o.kind==="summon"?summonHTML(s,o,cands):(a=>`<span class="pp${cands.has(o.uid)?" cand":""}${a.c}"${a.st?` style="${a.st}"`:""} data-pa="obj" data-u="${o.uid}">${esc(o.name)}</span>`)(arrA(o.uid))).join("")||'<span class="pl-note">No summons or Pillars</span>';
   const inv=[];for(let i=0;i<slots;i++){const o=pl.inv[i];if(!o){inv.push('<span class="pi">Empty slot</span>');continue}
     const c=o.kind==="equip"?(o.cls||"Generic"):o.kind==="doll"?"Generic":((E.DB[o.id]||{}).cls||"Generic");
-    if(o.fd)inv.push(`<button class="pi full fd${U.man&&U.manT===o.uid?" mansel":""}" data-pa="obj" data-u="${o.uid}">${mine&&o.id?esc(E.DB[o.id].name)+" (set)":"Face-down card"}</button>`);
-    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc(c)};--ci:${ci(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${o.under&&o.under.length?` <span>${o.under.length} under it</span>`:""}${o.x&&o.x.name&&o.name==="Null Stone"?` <span>Names ${esc(o.x.name)}</span>`:""}${o.ctr&&o.ctr.trophy?` <span>${o.ctr.trophy} Trophy</span>`:""}${s.upg&&s.upg[o.uid]!=null?` <span title="Upgraded at the Blacksmith">Upgraded${E.upgradeCost(o)&&E.upgradeCost(o).x?` +${s.upg[o.uid]}`:""}</span>`:""}${invCounts(s,o,pid)}</button>`)}
+    const ar=arrA(o.uid);
+    if(o.fd)inv.push(`<button class="pi full fd${U.man&&U.manT===o.uid?" mansel":""}${ar.c}"${ar.st?` style="${ar.st}"`:""} data-pa="obj" data-u="${o.uid}">${mine&&o.id?esc(E.DB[o.id].name)+" (set)":"Face-down card"}</button>`);
+    else inv.push(`<button class="pi full${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}${ar.c}" style="${ar.st}--cc:${cc(c)};--ci:${ci(c)}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b>${o.kind==="doll"?` <span>${E.hp(s,o)}/5 HP</span>`:""}${o.ctr&&o.ctr.camp!=null?` <span>${o.ctr.camp} counters</span>`:""}${o.ctr&&o.ctr.petal?` <span>${o.ctr.petal} Petal</span>`:""}${o.under&&o.under.length?` <span>${o.under.length} under it</span>`:""}${o.x&&o.x.name&&o.name==="Null Stone"?` <span>Names ${esc(o.x.name)}</span>`:""}${o.ctr&&o.ctr.trophy?` <span>${o.ctr.trophy} Trophy</span>`:""}${s.upg&&s.upg[o.uid]!=null?` <span title="Upgraded at the Blacksmith">Upgraded${E.upgradeCost(o)&&E.upgradeCost(o).x?` +${s.upg[o.uid]}`:""}</span>`:""}${invCounts(s,o,pid)}</button>`)}
   /* Card Art: the acting Hero's buttons sit at the bottom of the right-hand column */
   let zacts="";if(mine&&actor&&heroArt(E.DB[actor.id])&&s.phase==="battle"&&s.prio===U.me&&!s.pend.length&&!s.over&&!U.tgt&&(opts||[]).length){const hb=heroActs(s,opts,actor);
     if(hb.length)zacts=`<div class="pl-acts zs-acts" aria-label="${esc(actor.name)}'s actions"><span class="zs-who">${esc(actor.name)}</span>${hb.join("")}</div>`}
@@ -830,8 +847,10 @@ function statPopHTML(s,h,st,f){const pl=s.p[h.owner];const rows=[];const r=(l,v,
   return`<div class="ph-pop" role="dialog" aria-label="${STAT_NAME[f]}" data-pa="stat" data-u="${h.uid}" data-f="${f}"><h4>${STAT_NAME[f]}</h4>${rows.join("")}<div class="tot"><span>Now</span><b>${st[f]}</b></div>${note}</div>`}
 function auraBarHTML(s,pl){const max=pl.heroes.reduce((n,h)=>n+(h.dead?0:E.heroStats(s,h).aura),0);const p=max?Math.min(100,pl.aura/max*100):0;
   return`<span class="res aubar" title="Aura pool: ${pl.aura} left of ${max} (your living Heroes' Aura). Refreshes at Dawn; unspent Aura is lost at Dusk." style="--ap:${p.toFixed(1)}%"><i class="fill"></i><i class="aura"></i> <b>${pl.aura}</b><small>/ ${max} Aura</small></span>`}
-function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});
-  return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}" style="--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${E.hasBanding(s,o)?"<span class=\"band\">Banding</span>":""}${E.forcedTarget&&E.forcedTarget(s,o)?`<span class="must" style="color:#C0392B;font-weight:700">Must attack ${esc(nameOf(E.forcedTarget(s,o)))}</span>`:""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}</button>`}
+function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});const ar=arrA(o.uid);
+  const hpN=E.hp(s,o),hpM=Math.max(1,E.maxHp(s,o)),hpP=Math.max(0,Math.min(100,hpN/hpM*100));
+  const hpBar=`<span class="ps-hp" role="img" aria-label="${hpN} of ${hpM} Health Points" title="${hpN}/${hpM} HP"><i style="width:${hpP.toFixed(1)}%;background:${hpP>60?"#3fae4f":hpP>30?"#e0b13a":"#d4402c"}"></i></span>`;
+  return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}${ar.c}" style="${ar.st}--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${E.hasBanding(s,o)?"<span class=\"band\">Banding</span>":""}${E.forcedTarget&&E.forcedTarget(s,o)?`<span class="must" style="color:#C0392B;font-weight:700">Must attack ${esc(nameOf(E.forcedTarget(s,o)))}</span>`:""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}${hpBar}</button>`}
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
 function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false,fixBtn="";
   const mineTurn=opts.length>0;

@@ -451,7 +451,7 @@ A revive effect (or the Church in Town) brings a dead Hero back to life. The car
 
 ## 14. Summons
 
-- **The card decides.** Playing a card that creates a summon exhausts the Hero that played it only if the card says “Exhaust this Hero.” Summon cards without that sentence (such as Spore Calling and Heartwood Seed) leave the Hero ready.
+- **The card decides.** Playing a card that creates a summon exhausts the Hero that played it only if the card says “Exhaust this Hero.” Each summon card manages this itself; there is no general rule.
 - Summons enter the battlefield exhausted unless the card says to ready them. They ready at Dawn like your other cards.
 - A summon that attacks becomes exhausted.
 - When you have priority, a ready summon may attack instead of your Hero’s action. Summons aren’t tied to a position.
@@ -779,7 +779,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Echo (Bard)**: If you played it from your hand, exile it and play it again for free at your next Dawn (no Aura, and Harmonize isn't paid again; you may choose new targets), then discard it. A card only repeats once.
 - **Tip (Bard)**: Gain 1 Gold, only once per round.
 - **Harmonize X (Bard)**: Exhaust X other ready Heroes to gain the effect after the colon.
-- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately (they add up).
+- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage.
 - **Stealth (Rogue)**: This Hero can’t be targeted by enemy cards or abilities. It can still be attacked.
 - **Lifelink (Cleric)**: When this Hero deals damage, heal it that much.
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.

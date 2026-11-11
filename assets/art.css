@@ -251,10 +251,13 @@ html[data-skin="art"] .discord-btn:hover{background:#4752c4;border-color:#4752c4
 /* Update 30: your hand lifts on hover (room above so the lift isn't clipped) */
 html[data-skin="art"] .pl-hand{padding-top:8px;margin-top:-8px}
 html[data-skin="art"] .pl-hand .hc{transition:transform .16s ease,filter .16s ease;z-index:1}
-@media (hover:hover){html[data-skin="art"] .pl-hand .hc:hover,html[data-skin="art"] .pl-hand .hc:focus-visible{transform:translateY(-6px);z-index:5;filter:drop-shadow(0 0 12px rgba(242,193,78,.55))}}
-.hc-pop{position:fixed;z-index:70;pointer-events:none;transform-origin:top left;filter:drop-shadow(0 14px 28px rgba(0,0,0,.7)) drop-shadow(0 0 10px rgba(242,193,78,.45));animation:hcUp .14s ease-out both}
+/* Update 31: the card under the pop-up is hidden while it's lifted, so only the raised card shows; no glow, a 3D tilt and a deep shadow instead */
+@media (hover:hover){html[data-skin="art"] .pl-hand .hc.lifted .card{opacity:0}}
+.hc-pop{position:fixed;z-index:70;pointer-events:none;transform-origin:50% 100%;animation:hcUp .16s ease-out both}
+.hc-pop .card{background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important}
+.hc-pop .hc-3d{transform:perspective(900px) rotateX(9deg);transform-origin:50% 100%;filter:drop-shadow(0 2px 2px rgba(0,0,0,.55)) drop-shadow(0 18px 22px rgba(0,0,0,.6)) drop-shadow(0 36px 40px rgba(0,0,0,.35))}
 .hc-pop .zoom,.hc-pop .flip{display:none!important}
-@keyframes hcUp{from{opacity:0;margin-top:14px}}
+@keyframes hcUp{from{opacity:0;margin-top:22px}}
 @media (prefers-reduced-motion:reduce){.hc-pop{animation:none}}
 @media (prefers-reduced-motion:reduce){html[data-skin="art"] .pl-hand .hc{transition:none}}
 /* Update 30: off-screen sheet for the deck image (PNG) */
@@ -283,3 +286,37 @@ html[data-skin="art"] #play-root .pl-hand-h{display:none}
 .pf-dc{display:block;font-size:.75rem;color:#8f99ff;font-weight:400}
 .pf-dc-chip{display:inline-block;margin-top:4px;font-size:.85rem;color:var(--ink);border:1px solid #5865F2;border-radius:999px;padding:2px 10px;background:var(--sunk)}
 .dc-pub{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted)}
+/* Update 31: the game log is a tab docked at the bottom right (clear of the Menu tab); the board gets the full width */
+html[data-skin="art"] #play-root .pl-game,html[data-skin="art"] #play-root .pl-game.nolog{grid-template-columns:minmax(0,1fr)!important}
+html[data-skin="art"] #play-root .pl-logshow{display:none!important}
+html[data-skin="art"] #play-root .pl-side,html[data-skin="art"] #play-root .pl-game.nolog .pl-side{display:flex!important;flex-direction:column;position:fixed!important;right:max(12px,env(safe-area-inset-right,0px));bottom:0;top:auto;width:min(340px,calc(100vw - 24px));height:min(42vh,440px)!important;max-height:none;z-index:58;gap:6px;
+  background:var(--surface);border:2px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;padding:6px 10px calc(8px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 28px rgba(0,0,0,.55)}
+html[data-skin="art"] #play-root .pl-game.nolog .pl-side{height:auto!important}
+html[data-skin="art"] #play-root .pl-game.nolog .pl-log,html[data-skin="art"] #play-root .pl-game.nolog .pl-legend{display:none}
+html[data-skin="art"] #play-root .pl-side-h{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:nowrap}
+.pl-logtab{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.pl-logtab h2{margin:0;font-size:1.05rem}
+.pl-logtab:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+html[data-skin="art"] #play-root .pl-log{flex:1;min-height:0}
+html[data-skin="art"] #play-root .pl-legend{font-size:.7rem}
+/* Update 31: zoom arrows sit over the edge of the zoom window's brown frame so they're easy to spot */
+html[data-skin="art"] .znav.prev{left:max(8px,calc(50% - 315px - 28px))}
+html[data-skin="art"] .znav.next{right:max(8px,calc(50% - 315px - 28px))}
+html[data-skin="art"] .znav{z-index:5}
+/* Update 31: account button (person icon + screen name) and account page */
+.acct-btn{display:inline-flex;align-items:center;gap:6px;max-width:220px}
+.acct-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct-ico{width:16px;height:16px;flex:none}
+.acct-panel{display:grid;gap:16px}
+.acct-me{display:flex;gap:14px;align-items:center}
+.acct-me>div{display:grid;gap:6px;min-width:0}
+.acct-av{width:72px;height:72px;border-radius:12px;border:2px solid var(--line);image-rendering:pixelated;background:var(--sunk);flex:none}
+.acct-nm{font-size:1.4rem;font-family:var(--display)}
+.acct-row{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line)}
+.acct-row .field{flex:1 1 240px;min-width:0}
+.acct-out{border-top:1px solid var(--line);padding-top:12px}
+.add3{font-size:.8rem;padding-inline:8px;white-space:nowrap}
+.dl .mini.add3{width:auto;padding-inline:5px;font-size:.72rem}
+/* card images carry a black print bleed: trim it on the raised copy so only the card itself floats */
+.hc-pop .card{clip-path:inset(3.2% 3.6% 2.2% 3.6% round 2.5%)}
+html[data-skin="art"] .pl-hand .hc.lifted{outline:0!important}

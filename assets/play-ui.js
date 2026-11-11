@@ -577,12 +577,13 @@ const MUS=(()=>{let el=null;const on=()=>store2.get("cq.music",true)!==false;
   return{on,sync,toggle(){store2.set("cq.music",!on());sync(on())}}})();
 /* Update 30: pointing at a card in your hand clicks and pops a 1.4x copy up over the Heroes (the copy ignores the mouse, so clicks still reach the card) */
 let hcPop=null,hcOn=null;
-function hcPopHide(){if(hcPop){hcPop.remove();hcPop=null}hcOn=null}
+function hcPopHide(){if(hcPop){hcPop.remove();hcPop=null}if(hcOn)hcOn.classList.remove("lifted");hcOn=null}
 document.addEventListener("mouseover",e=>{const hc=e.target.closest&&e.target.closest(".pl-hand .hc");if(hc===hcOn)return;hcPopHide();if(!hc||!matchMedia("(hover:hover)").matches)return;hcOn=hc;
   SND.play("tick");const card=hc.querySelector(".card");if(!card)return;const r=card.getBoundingClientRect(),S=1.4,w=r.width*S,h=r.height*S;
-  const d=document.createElement("div");d.className="hc-pop";d.innerHTML=card.outerHTML;d.style.width=r.width+"px";d.style.transform=`scale(${S})`;
+  const d=document.createElement("div");d.className="hc-pop";d.innerHTML=`<div class="hc-3d">${card.outerHTML}</div>`;d.style.width=w+"px";
   const left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)),top=Math.max(8,r.bottom-h-18);d.style.left=left+"px";d.style.top=top+"px";
-  document.body.appendChild(d);hcPop=d;try{if(typeof fitArt==="function")fitArt(d)}catch(err){}},true);
+  const inner=d.querySelector(".card");if(inner){inner.style.width=r.width+"px";inner.style.transform=`scale(${S})`;inner.style.transformOrigin="top left";inner.style.marginBottom=(h-r.height)+"px"}
+  document.body.appendChild(d);hcPop=d;hc.classList.add("lifted");try{if(typeof fitArt==="function")fitArt(d)}catch(err){}},true);
 document.addEventListener("scroll",hcPopHide,true);addEventListener("blur",hcPopHide);
 document.addEventListener("pointerdown",()=>{SND.unlock();if(U.s&&U.mode!=="lobby"&&location.hash==="#play")MUS.sync(true)},{capture:true});
 
@@ -717,7 +718,7 @@ function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
     ${zoneHTML(s,me,opts)}
     ${handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><h2>Game log</h2><span class="actions"><button class="btn sm" data-pa="log-toggle" title="Hide the game log">Hide log</button><button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions"><button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div>
   </aside></div>`}
@@ -941,7 +942,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   if(U.busy){wait=true;prompt="Sending…"}
   const oppActing=!s.over&&wait&&!U.busy&&(pr?pr.pid!==me:(s.phase==="battle"&&s.prio!==me)||(s.phase==="town"&&s.town&&s.town.order[s.town.i]!==me));
   const oppInfo=oppActing?oppInfoHTML(s):"";
-  const ban=U.banner&&!s.over&&!U.tgt?bannerHTML():"";if(ban)acts="";
+  const ban=""; /* Update 31: the blue "just did" banner is gone; the action pop-ups and the log cover it */
   const posm=`<span class="posm" title="Position marker">${[...E.POS,"Last"].map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" title="Turn sound effects on or off" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" title="Turn the music on or off" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
@@ -1079,7 +1080,7 @@ function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f
   const mine=f.pid===U.me;const opts=legal();const acts=[];
   if(mine&&o.kind==="card"){opts.filter(x=>(x.type==="use"||x.type==="clear")&&x.uid===u).forEach(x=>acts.push(btn(x,x.type==="use"?"Activate":"Clear from inventory (discard)")))}
   if(mine&&o.kind==="equip"){opts.filter(x=>(x.type==="equipInv"||x.type==="take"||x.type==="clear")&&x.uid===u).forEach(x=>acts.push(btn(x,x.type==="clear"?"Clear from inventory (discard)":x.type==="take"?"Take it":"Equip it")))}
-  if(mine&&o.kind==="summon")opts.filter(x=>x.type==="attack"&&x.att===u).forEach(x=>acts.push(btn(x,"Attack with it","go")));
+  if(mine&&o.kind==="summon")opts.filter(x=>x.type==="attack"&&x.att===u).forEach(x=>acts.push(btn(x,"Attack with it","atk")));
   if(mine)opts.filter(x=>x.type==="band"&&x.att===u).forEach(x=>acts.push(btn(x,"Lead a Band attack","go")));
   if(mine&&o.kind==="card")opts.filter(x=>x.type==="useFree"&&x.uid===u).forEach(x=>acts.push(btn(x,"Activate (no action)","go")));
   if(mine&&o.kind==="hero"&&o.med)acts.push(`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"wake",hero:u,v:o.keepMed}))}'>${o.keepMed?"Wake at next Dawn":"Keep Meditating"}</button>`);

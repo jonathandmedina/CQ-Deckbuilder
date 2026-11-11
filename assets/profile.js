@@ -168,7 +168,7 @@ async function loadPublicDecks(uid){D.pub[uid]="loading";
 async function loadMe(){if(!SB||!S.uid)return;const uid=S.uid;
   const{data,error}=await SB.from("profiles").select("user_id,screen_name,avatar,decks_reviewed,discord_name,discord_public").eq("user_id",uid).maybeSingle();
   if(uid!==S.uid)return;if(error){D.me=undefined;return}/* table missing (SQL not run yet): stay quiet */
-  D.me=data||null;
+  D.me=data||null;try{renderAcct();if(S.view==="account")render()}catch(e){}
   /* Update 30: copy the Discord name onto the profile so the Leaderboard and profile page can show it */
   const dn=S.me&&S.me.discord||null;if(D.me&&(D.me.discord_name||null)!==dn)SB.from("profiles").update({discord_name:dn}).eq("user_id",uid).then(({error})=>{if(!error)D.at=0});
   if(!D.me||!D.me.decks_reviewed)setTimeout(()=>{if(S.uid===uid&&!document.getElementById("pf-setup")&&S.view!=="play")openSetup(true)},400)}
@@ -203,7 +203,7 @@ async function setupNext(){F.err="";
   if(error){F.err=/duplicate|unique/i.test(error.message)?"That name is taken. Try another.":"Couldn't save: "+error.message;if(/duplicate|unique/i.test(error.message))F.step=0;return drawSetup()}
   const ds=S.decks||[];const want=d=>F.priv.has(String(d.id));const ch=ds.filter(d=>!!d.priv!==want(d));
   for(const d of ch){const{error:e}=await SB.from("decks").update({is_private:want(d)}).eq("id",d.id);if(!e)d.priv=want(d)}
-  D.me={...row};if(D.profiles)D.profiles.set(S.uid,{user_id:S.uid,screen_name:F.name,avatar:F.avatar});
+  D.me={...row};if(D.profiles)D.profiles.set(S.uid,{user_id:S.uid,screen_name:F.name,avatar:F.avatar});try{renderAcct();if(S.view==="account")render()}catch(e){}
   document.getElementById("pf-setup")?.remove();toast("Profile saved.");
   if(S.view==="player"){S.playerName=F.name;location.hash=profileUrl(F.name).slice(1)}else if(S.view==="leaderboard"||S.view==="decks")render()}
 async function setPrivate(id,on){const d=(S.decks||[]).find(x=>String(x.id)===String(id));if(!d)return;

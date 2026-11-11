@@ -255,7 +255,12 @@ html[data-skin="art"] .pl-hand .hc{transition:transform .16s ease,filter .16s ea
 @media (hover:hover){html[data-skin="art"] .pl-hand .hc.lifted .card{opacity:0}}
 .hc-pop{position:fixed;z-index:70;pointer-events:none;transform-origin:50% 100%;animation:hcUp .16s ease-out both}
 .hc-pop .card{background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important}
-.hc-pop .hc-3d{transform:perspective(900px) rotateX(9deg);transform-origin:50% 100%;filter:drop-shadow(0 2px 2px rgba(0,0,0,.55)) drop-shadow(0 18px 22px rgba(0,0,0,.6)) drop-shadow(0 36px 40px rgba(0,0,0,.35))}
+/* Update 31b: the whole card (black border included) floats with rounded corners; it tilts toward the mouse like a held card, drawn at full size so it stays sharp */
+.hc-pop{perspective:1000px}
+.hc-pop .hc-3d{position:relative;border-radius:4.5%/3.2%;overflow:hidden;transform:rotateX(var(--rx,4deg)) rotateY(var(--ry,0deg));transform-style:preserve-3d;transition:transform .08s linear;
+  box-shadow:0 2px 3px rgba(0,0,0,.6),0 14px 24px rgba(0,0,0,.55),0 30px 50px rgba(0,0,0,.4)}
+.hc-pop .hc-3d::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,30%),rgba(255,255,255,.16),transparent 55%);mix-blend-mode:screen}
+.hc-pop .hc-3d .card{display:block;margin:0}
 .hc-pop .zoom,.hc-pop .flip{display:none!important}
 @keyframes hcUp{from{opacity:0;margin-top:22px}}
 @media (prefers-reduced-motion:reduce){.hc-pop{animation:none}}
@@ -318,5 +323,4 @@ html[data-skin="art"] .znav{z-index:5}
 .add3{font-size:.8rem;padding-inline:8px;white-space:nowrap}
 .dl .mini.add3{width:auto;padding-inline:5px;font-size:.72rem}
 /* card images carry a black print bleed: trim it on the raised copy so only the card itself floats */
-.hc-pop .card{clip-path:inset(3.2% 3.6% 2.2% 3.6% round 2.5%)}
 html[data-skin="art"] .pl-hand .hc.lifted{outline:0!important}

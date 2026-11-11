@@ -582,8 +582,11 @@ document.addEventListener("mouseover",e=>{const hc=e.target.closest&&e.target.cl
   SND.play("tick");const card=hc.querySelector(".card");if(!card)return;const r=card.getBoundingClientRect(),S=1.4,w=r.width*S,h=r.height*S;
   const d=document.createElement("div");d.className="hc-pop";d.innerHTML=`<div class="hc-3d">${card.outerHTML}</div>`;d.style.width=w+"px";
   const left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)),top=Math.max(8,r.bottom-h-18);d.style.left=left+"px";d.style.top=top+"px";
-  const inner=d.querySelector(".card");if(inner){inner.style.width=r.width+"px";inner.style.transform=`scale(${S})`;inner.style.transformOrigin="top left";inner.style.marginBottom=(h-r.height)+"px"}
+  /* drawn at the bigger size (not scaled up), so the art and text stay sharp */
+  const inner=d.querySelector(".card");if(inner){inner.style.width=w+"px";inner.style.height="auto"}
   document.body.appendChild(d);hcPop=d;hc.classList.add("lifted");try{if(typeof fitArt==="function")fitArt(d)}catch(err){}},true);
+document.addEventListener("mousemove",e=>{if(!hcPop||!hcOn)return;const r=hcOn.getBoundingClientRect();const x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),y=Math.min(1,Math.max(0,(e.clientY-r.top)/r.height));
+  const t3=hcPop.querySelector(".hc-3d");if(t3){t3.style.setProperty("--rx",((0.5-y)*12).toFixed(2)+"deg");t3.style.setProperty("--ry",((x-0.5)*16).toFixed(2)+"deg");t3.style.setProperty("--gx",(x*100).toFixed(0)+"%");t3.style.setProperty("--gy",(y*100).toFixed(0)+"%")}},{passive:true});
 document.addEventListener("scroll",hcPopHide,true);addEventListener("blur",hcPopHide);
 document.addEventListener("pointerdown",()=>{SND.unlock();if(U.s&&U.mode!=="lobby"&&location.hash==="#play")MUS.sync(true)},{capture:true});
 

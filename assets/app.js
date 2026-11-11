@@ -13,6 +13,9 @@ const ART_VER="5";
 const BLANK_ART={hero:new Set(["Artificer","Barbarian","Bard","Blacksmith","Cleric","Druid","Mage","Monk","Necromancer","Paladin","Ranger","Rogue","Warlock"]),card:new Set(["Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Paladin","Ranger","Rogue","Warlock"]),equip:new Set(["Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Paladin","Ranger","Rogue","Warlock"])};
 const ownArt=c=>!!CARD_ART[c.kind]&&CARD_ART[c.kind].has(artKey(c.name));
 const blankArt=c=>!ownArt(c)&&!!BLANK_ART[c.kind]&&BLANK_ART[c.kind].has(c.cls);
+/* Update 30: the party is 3 fixed slots (Lead, Center, Closer). In the builder d.heroes may hold null for an empty slot so the others keep their place. */
+const HN=d=>d&&d.heroes?d.heroes.filter(Boolean).length:0;
+const hcompact=a=>(a||[]).filter(Boolean);
 const hasArt=c=>SKIN==="art"&&(ownArt(c)||blankArt(c));
 const CLASS_COLOR_CLEAN={Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
 const CLASS_TEXT_CLEAN={Cleric:"#231A00",Monk:"#2A1500"};
@@ -47,7 +50,7 @@ const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
 const RENAMES=(typeof CARD_RENAMES!=="undefined")?CARD_RENAMES:{};
 function fixRenames(d){if(!d)return false;let ch=false;const c=d.cards||{};
   for(const o in RENAMES){if(c[o]!=null){const n=RENAMES[o];c[n]=Math.min(3,(c[n]||0)+c[o]);delete c[o];ch=true}}
-  if(Array.isArray(d.heroes))d.heroes=d.heroes.map(h=>{const nm=String(h).replace(/^h:/,"");if(RENAMES[nm]){ch=true;return"h:"+RENAMES[nm]}return h});
+  if(Array.isArray(d.heroes))d.heroes=d.heroes.map(h=>{if(!h)return null;const nm=String(h).replace(/^h:/,"");if(RENAMES[nm]){ch=true;return"h:"+RENAMES[nm]}return h});
   return ch}
 function localDecks(){const l=store.get("cq.decks",[]);let ch=false;l.forEach(d=>{if(fixRenames(d))ch=true});if(ch)store.set("cq.decks",l);return l}
 const hasGem=c=>c.kind!=="hero"&&!(c.kind==="token"&&c.tkind!=="Equipment");
@@ -144,12 +147,12 @@ const partyClasses=d=>[...new Set(d.heroes.map(h=>BYID.get(h)?.cls).filter(Boole
 function allowed(c,d){return c.cls==="Generic"||partyClasses(d).includes(c.cls)}
 function issues(d){
   const out=[];
-  if(d.heroes.length!==3)out.push(`Pick ${3-d.heroes.length} more Hero${3-d.heroes.length===1?"":"es"}.`);
+  if(HN(d)!==3)out.push(`Pick ${3-HN(d)} more Hero${3-HN(d)===1?"":"es"}.`);
   const t=deckTotal(d);
   if(t<DECK_SIZE)out.push(`Add ${DECK_SIZE-t} more card${DECK_SIZE-t===1?"":"s"} (decks need at least 50).`);
   for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(!c){out.push(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===id)?`${id} is deprecated (removed from play). Take it out of this deck.`:`"${id}" isn't in the card list anymore.`);continue}
     if(q>maxCopies(c))out.push(`${c.name}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`);
-    if(d.heroes.length&&!allowed(c,d))out.push(`${c.name} is ${c.cls}; no Hero in your party can play it.`);}
+    if(HN(d)&&!allowed(c,d))out.push(`${c.name} is ${c.cls}; no Hero in your party can play it.`);}
   return out;
 }
 
@@ -159,7 +162,7 @@ function issues(d){
    Auto Rebuild: 2-ofs become 3-ofs, 1-ofs become 2-ofs (Legendaries stay at 1), then the deck is rounded off to 50:
    first by topping up its own cards (cheapest first), then with new cards from the party's classes (class with the
    fewest cards first, cheapest first). If doubling goes over 50, former 1-ofs drop back (most expensive first). */
-function needsRebuild(d){if(!d||!d.heroes||d.heroes.length!==3)return false;const t=deckTotal(d);return t>0&&t<=30&&Object.values(d.cards).every(q=>q<=2)}
+function needsRebuild(d){if(!d||!d.heroes||HN(d)!==3)return false;const t=deckTotal(d);return t>0&&t<=30&&Object.values(d.cards).every(q=>q<=2)}
 function autoRebuild(d){
   const old=d.cards||{},n={};const ok=c=>c&&(c.kind==="card"||c.kind==="equip")&&allowed(c,d);
   const keys=Object.keys(old).filter(id=>ok(BYID.get(id)));
@@ -200,14 +203,27 @@ async function initAccount(){
   SB.auth.onAuthStateChange((ev,session)=>{
     if(ev==="PASSWORD_RECOVERY"){S.authMode="newpass";go("account")}
     setSession(session);
+    if(ev==="SIGNED_IN"||ev==="USER_UPDATED")discordJoin(session);
   });
   const{data}=await SB.auth.getSession();setSession(data.session);
 }
 let lastUid=undefined;
+/* Update 30: Discord. After a Discord sign-in or link, Supabase hands back Discord's access token once (provider_token);
+   the discord-join Edge Function uses it with the bot token to add the player to the Crystal Quest server. */
+/* DISCORD_AUTH stays false until the Discord provider, bot secrets and the discord-join function are set up in Supabase. */
+const DISCORD_AUTH=false,DISCORD_INVITE="https://discord.gg/wErfNbug5e",DC_SCOPES="identify email guilds.join";
+function discordOf(u){const i=(u&&u.identities||[]).find(x=>x.provider==="discord");if(!i)return null;const d=i.identity_data||{};return d.custom_claims&&d.custom_claims.global_name||d.full_name||d.name||d.user_name||null}
+async function discordJoin(session){if(!DISCORD_AUTH||!session||!session.provider_token||!discordOf(session.user))return;
+  try{const{data,error}=await SB.functions.invoke("discord-join",{body:{token:session.provider_token}});
+    if(error||!data||!data.ok)throw error||new Error(data&&data.error);toast(data.already?"Signed in with Discord.":"Signed in with Discord. You've been added to the Crystal Quest server.")}
+  catch(e){console.warn(e);dcInviteModal()}}
+function dcInviteModal(){document.getElementById("dcm")?.remove();const m=document.createElement("div");m.className="modal";m.id="dcm";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
+  m.innerHTML=`<div class="box"><h2>Join the Crystal Quest Discord</h2><p>Playtest nights, card previews and rules questions all happen there.</p><div class="actions"><a class="btn dc-btn" href="${DISCORD_INVITE}" target="_blank" rel="noopener">Join the server</a><button type="button" class="btn" data-act="close">Not now</button></div></div>`;
+  m.addEventListener("click",e=>{if(e.target===m)m.remove()});$("#layer").appendChild(m)}
 function setSession(session){
   const u=session&&session.user;
   S.uid=u?u.id:null;
-  S.me=u?{email:u.email,name:(u.user_metadata&&u.user_metadata.display_name)||u.email.split("@")[0]}:null;
+  S.me=u?{email:u.email||"",name:(u.user_metadata&&u.user_metadata.display_name)||discordOf(u)||String(u.email||"player").split("@")[0],discord:discordOf(u),hasEmail:(u.identities||[]).some(x=>x.provider==="email")}:null;
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
   lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false};showAdminLink();if(u)loadAccess();if(window.CQProf)window.CQProf.onSession();
@@ -233,7 +249,7 @@ async function loadDecks(){
   if(S.view==="decks")render();
   rebuildPrompt();
 }
-const toRow=d=>({id:d.id,user_id:S.uid,name:(d.name||"Untitled deck").slice(0,80),heroes:d.heroes.slice(0,3),cards:d.cards,updated_at:new Date().toISOString(),...(S.logCol&&d.log?{log:d.log}:{})});
+const toRow=d=>({id:d.id,user_id:S.uid,name:(d.name||"Untitled deck").slice(0,80),heroes:hcompact(d.heroes).slice(0,3),cards:d.cards,updated_at:new Date().toISOString(),...(S.logCol&&d.log?{log:d.log}:{})});
 /* ---------- Deck log (update 30): each save records what changed (name, Heroes, cards +/-). Kept on the deck (decks.log in your account, or in this browser).
    Until the account's log column exists ("Deck Log SQL"), account deck logs are kept in this browser under cq.decklog. ---------- */
 const LOG_MAX=100;
@@ -242,7 +258,7 @@ function logLocalSet(id,log){const m=store.get("cq.decklog",{})||{};m[id]=log;st
 function deckDiff(prev,d){const e={t:Date.now()};
   if(!prev){e.created=1;e.n=deckTotal(d);return e}
   if((prev.name||"")!==(d.name||""))e.name=[prev.name||"",d.name||""];
-  const ha=d.heroes.filter(h=>!prev.heroes.includes(h)),hr=prev.heroes.filter(h=>!d.heroes.includes(h));if(ha.length||hr.length)e.h={add:ha,rem:hr};
+  const ha=hcompact(d.heroes).filter(h=>!prev.heroes.includes(h)),hr=hcompact(prev.heroes).filter(h=>!d.heroes.includes(h));if(ha.length||hr.length)e.h={add:ha,rem:hr};
   const c={};new Set([...Object.keys(prev.cards||{}),...Object.keys(d.cards||{})]).forEach(id=>{const n=(d.cards[id]||0)-((prev.cards||{})[id]||0);if(n)c[id]=n});if(Object.keys(c).length)e.c=c;
   return e.name||e.h||e.c?e:null}
 function withLog(d){const prev=S.decks.find(x=>x.id===d.id);const old=(prev&&prev.log)||d.log||logLocal(d.id)||[];const e=deckDiff(prev,d);
@@ -287,14 +303,16 @@ function viewAccount(){
   if(S.mode==="account")return`<h1>Your account</h1>
     <div class="panel"><p>Signed in as <b>${esc(S.me.name)}</b> (${esc(S.me.email)}). Decks you save sync to this account on any device.</p>
     <form class="authf" data-form="profile"><label class="field col" for="dn">Display name<input id="dn" type="text" name="display_name" maxlength="40" value="${esc(S.me.name)}"></label>
-    <div class="actions"><button class="btn" type="submit">Update name</button><button class="btn danger" type="button" data-act="signout">Sign out</button></div></form></div>`;
+    <div class="actions"><button class="btn" type="submit">Update name</button><button class="btn danger" type="button" data-act="signout">Sign out</button></div></form>
+    ${DISCORD_AUTH?`<div class="dc-row">${S.me.discord?`<span class="dc-chip"><svg class="dc-logo" viewBox="0 0 24 18" aria-hidden="true"><path fill="currentColor" d="M20.3 1.5A19.6 19.6 0 0 0 15.4 0l-.6 1.3a18 18 0 0 0-5.6 0L8.6 0a19.6 19.6 0 0 0-4.9 1.5C.6 6.1-.3 10.6.1 15a19.8 19.8 0 0 0 6 3l1.3-2a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12.2 0l.5.4-2 1 1.3 2a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.6-3.6-13.5ZM8 12.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 7.5 8 7.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>@${esc(S.me.discord)}</span><span class="note">Discord connected</span>${S.me.hasEmail?`<button class="btn sm" type="button" data-act="dc-unlink">Disconnect</button>`:""}`:`<button class="btn sm dc-btn" type="button" data-act="dc-link"><svg class="dc-logo" viewBox="0 0 24 18" aria-hidden="true"><path fill="currentColor" d="M20.3 1.5A19.6 19.6 0 0 0 15.4 0l-.6 1.3a18 18 0 0 0-5.6 0L8.6 0a19.6 19.6 0 0 0-4.9 1.5C.6 6.1-.3 10.6.1 15a19.8 19.8 0 0 0 6 3l1.3-2a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12.2 0l.5.4-2 1 1.3 2a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.6-3.6-13.5ZM8 12.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 7.5 8 7.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>Connect Discord</button><span class="note">Sign in with Discord too, and join the Crystal Quest server.</span>`}</div>`:""}</div>`;
   const m=S.authMode;
   const tabs=`<div class="chips" role="group" aria-label="Account action">${[["signin","Sign in"],["signup","Create account"],["reset","Forgot password"]].map(([k,l])=>`<button type="button" class="chip" data-act="auth-mode" data-v="${k}" aria-pressed="${m===k}">${l}</button>`).join("")}</div>`;
   const email=`<label class="field col" for="em">Email<input id="em" type="email" name="email" required autocomplete="email"></label>`;
   const pw=(ac)=>`<label class="field col" for="pw">Password<input id="pw" type="password" name="password" minlength="8" required autocomplete="${ac}"></label>`;
   let form="";
-  if(m==="signin")form=`<form class="panel authf" data-form="signin">${email}${pw("current-password")}<button class="btn primary" type="submit">Sign in</button></form>`;
-  if(m==="signup")form=`<form class="panel authf" data-form="signup"><label class="field col" for="dn">Display name<input id="dn" type="text" name="display_name" maxlength="40" required></label>${email}${pw("new-password")}<p class="note">At least 8 characters. We'll email you a link to confirm your address.</p><button class="btn primary" type="submit">Create account</button></form>`;
+  const dcBtn=!DISCORD_AUTH?"":`<button class="btn dc-btn wide" type="button" data-act="dc-signin"><svg class="dc-logo" viewBox="0 0 24 18" aria-hidden="true"><path fill="currentColor" d="M20.3 1.5A19.6 19.6 0 0 0 15.4 0l-.6 1.3a18 18 0 0 0-5.6 0L8.6 0a19.6 19.6 0 0 0-4.9 1.5C.6 6.1-.3 10.6.1 15a19.8 19.8 0 0 0 6 3l1.3-2a12.8 12.8 0 0 1-2-1l.5-.4a14 14 0 0 0 12.2 0l.5.4-2 1 1.3 2a19.7 19.7 0 0 0 6-3c.5-5.1-.8-9.6-3.6-13.5ZM8 12.3c-1.2 0-2.2-1.1-2.2-2.4S6.8 7.5 8 7.5s2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Zm8 0c-1.2 0-2.2-1.1-2.2-2.4s1-2.4 2.2-2.4 2.2 1.1 2.2 2.4-1 2.4-2.2 2.4Z"/></svg>Sign in with Discord</button><div class="or-line">or</div>`;
+  if(m==="signin")form=`<form class="panel authf" data-form="signin">${dcBtn}${email}${pw("current-password")}<button class="btn primary" type="submit">Sign in</button></form>`;
+  if(m==="signup")form=`<form class="panel authf" data-form="signup">${dcBtn}<label class="field col" for="dn">Display name<input id="dn" type="text" name="display_name" maxlength="40" required></label>${email}${pw("new-password")}<p class="note">At least 8 characters. We'll email you a link to confirm your address.</p><button class="btn primary" type="submit">Create account</button></form>`;
   if(m==="reset")form=`<form class="panel authf" data-form="reset">${email}<p class="note">We'll email you a link to set a new password.</p><button class="btn primary" type="submit">Send reset link</button></form>`;
   return`<h1>Player account</h1><p class="lede">Make a free account to save your decks and open them on any device. Without one, decks save in this browser only.</p><div class="bar">${tabs}</div>${form}`;
 }
@@ -513,16 +531,16 @@ function heroDigitalHTML(h,slot){
 function partySlots(d){
   const names=["Lead","Center","Closer"];
   return`<div class="party">${names.map((n,i)=>{const h=BYID.get(d.heroes[i]);
-    return h?`<div class="slot full hero-full hero-dig" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${heroDigitalHTML(h,(i+1)+" · "+n.toUpperCase())}<div class="c-ctrl"><button type="button" class="btn sm" data-act="inspect" data-id="${esc(h.id)}">View</button><span class="sp"></span><button type="button" class="btn sm" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div></div>`
-      :`<div class="slot"><small>${i+1} · ${n}</small><span class="cl">Empty</span></div>`}).join("")}</div>`;
+    return h?`<div class="slot full hero-full hero-dig${S.b.swap===i?" swapping":""}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${heroDigitalHTML(h,(i+1)+" · "+n.toUpperCase())}<div class="c-ctrl"><button type="button" class="btn sm" data-act="inspect" data-id="${esc(h.id)}">View</button><span class="sp"></span><button type="button" class="btn sm${S.b.swap===i?" primary":""}" data-act="hero-swap" data-slot="${i}">${S.b.swap===i?"Cancel":"Swap"}</button><button type="button" class="btn sm" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div></div>`
+      :`<div class="slot empty-slot${S.b.target===i?" target":""}"><small>${i+1} · ${n}</small>${HN(d)===2?`<span class="cl">Pick a Hero below</span>`:`<button type="button" class="btn sm${S.b.target===i?" primary":""}" data-act="hero-target" data-slot="${i}">${S.b.target===i?"Pick a Hero below ↓":"Choose Hero"}</button>`}</div>`}).join("")}</div>`;
 }
 function stepsHTML(){
-  const st=S.b.step,h=S.deck.heroes.length===3;
+  const st=S.b.step,h=HN(S.deck)===3;
   return`<div class="steps"><div class="step ${st==="heroes"?"on":"done"}"><b>1</b>Choose 3 Heroes</div><i class="sep"></i><div class="step ${st==="cards"?"on":""}"><b>2</b>Build a deck (50+ cards)</div></div>`;
 }
 function viewBuild(){
   const d=S.deck;
-  if(d.heroes.length<3)S.b.step="heroes";
+  if(HN(d)<3)S.b.step="heroes";
   if(S.b.step==="heroes"){
     const f={cls:S.b.heroCls,type:"Hero",sort:"class",q:""};
     const list=filterSort(HEROES,f);
@@ -530,9 +548,9 @@ function viewBuild(){
     <h2 class="party-h">Choose your party.</h2><p class="lede">Pick three Heroes for your party, in order. Then pick from their specific class cards or generic cards to build your strategy.</p>
     ${partySlots(d)}
     <div class="bar">${classChips(S.b.heroCls,"hero-cls",CLASSES)}</div>
-    <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${d.heroes.length===3?"":"disabled"}>Continue to cards →</button>
-      <span class="count">${d.heroes.length}/3 Heroes chosen</span>
-      ${d.heroes.length||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
+    <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${HN(d)===3?"":"disabled"}>Continue to cards →</button>
+      <span class="count">${HN(d)}/3 Heroes chosen</span>
+      ${HN(d)||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
     <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
   }
   const pcls=partyClasses(d);
@@ -577,7 +595,7 @@ function deckPanel(d){
     <button type="button" class="btn handbtn" data-act="visual" data-src="current" ${total?"":"disabled"} title="See the deck laid out in stacks, one stack per card">Visual View</button>
     <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 3 copies of a card, and 1 of each Legendary.</p>`}
-    ${d.heroes.length?`<div class="dl heroes"><h4><span>Heroes</span><span>${d.heroes.length}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
+    ${HN(d)?`<div class="dl heroes"><h4><span>Heroes</span><span>${HN(d)}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
     <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>${e.c.sup==="Legendary"?'<span class="leg-ico" title="Legendary: 1 copy per deck" aria-label="Legendary">L</span>':""}`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>+</button><button type="button" class="mini rmall" data-act="rmall" data-id="${esc(e.id)}" aria-label="Remove all copies of ${esc(e.c?e.c.name:e.id)}" title="Remove all copies">×</button></li>`).join("")}</ul>`).join("")}</div>
     ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward your deck. Print &amp; Play includes them.</p></div>`:""})()}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}
@@ -596,7 +614,7 @@ function deckPanel(d){
 /* a deck in Decklists that is one of your saved decks opens that deck (no "(copy)"), so saving updates it */
 function ownMatch(d){const key=x=>JSON.stringify([x.heroes.slice().sort(),Object.entries(x.cards).filter(([,q])=>q>0).sort()]);const k=key(d);return S.decks.find(x=>key(x)===k)||null}
 function openOwn(o){if(!o)return false;if(S.dirty&&S.deck.id!==o.id&&!confirmReplace())return true;
-  S.deck={id:o.id,name:o.name,heroes:o.heroes.slice(),cards:{...o.cards}};S.dirty=false;S.b.step=o.heroes.length===3?"cards":"heroes";saveDraft();go("build");toast("This is one of your saved decks. Opened it, so Save deck updates it.");return true}
+  S.deck={id:o.id,name:o.name,heroes:o.heroes.slice(),cards:{...o.cards}};S.dirty=false;S.b.step=HN(o)===3?"cards":"heroes";saveDraft();go("build");toast("This is one of your saved decks. Opened it, so Save deck updates it.");return true}
 function deckLog(d){const o=S.decks.find(x=>x.id===d.id);return(o&&o.log)||d.log||[]}
 const deckSorted=d=>Object.entries(d.cards).filter(([,q])=>q>0).map(([id,q])=>({c:BYID.get(id),id,q})).filter(x=>x.c)
   .sort((a,b)=>costNum(a.c)-costNum(b.c)||sortName(a.c.name).localeCompare(sortName(b.c.name)));
@@ -634,43 +652,27 @@ function myIdentity(){const P=window.CQProf&&window.CQProf._D;const me=P&&P.me;c
   const key=me&&me.avatar?artKey(me.avatar):"Savage_Raider";const h=heroes.find(x=>artKey(x.name)===key)||heroes.find(x=>x.name==="Savage Raider")||heroes[0];
   const dn=S.me&&S.me.name&&S.me.name!==String(S.me.email||"").split("@")[0]?S.me.name:null; /* never put an email address on a public image */
   const name=me&&me.screen_name||dn||"Crystal Quest player";return{name,hero:h}}
+/* Update 30: the deck image is a picture of the real cards. Build an off-screen sheet with the site's own card markup
+   (Card Art images + rules text, hero cards as in the Deck Builder), then turn it into a PNG with html-to-image. */
 async function exportDeckPNG(d){
   const es=deckSorted(d),hs=d.heroes.map(h=>BYID.get(h)).filter(Boolean);if(!es.length&&!hs.length){toast("This deck is empty.");return}
   busy(true,"Drawing the deck image…");await loadFonts();
+  const host=document.createElement("div");host.className="png-sheet";
   try{
+    if(!window.htmlToImage)await new Promise((ok,no)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.11/dist/html-to-image.js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});
     const me=myIdentity();
-    const W=1800,PAD=48,CW=200,CH=280,STEP=34,GAP=22,cols=Math.floor((W-2*PAD+GAP)/(CW+GAP));
-    const groups=VIS_GROUPS.map(([g,label])=>({label,l:es.filter(e=>visGroup(e.c)===g)})).filter(x=>x.l.length);
-    let y0=PAD+300;const layout=[];
-    for(const g of groups){const rows=[];for(let i=0;i<g.l.length;i+=cols)rows.push(g.l.slice(i,i+cols));
-      layout.push({label:g.label,n:g.l.reduce((a,e)=>a+e.q,0),y:y0,rows:rows.map(r=>{const maxq=Math.max(...r.map(e=>e.q));const ry={r,y:0,h:CH+(maxq-1)*STEP};return ry})});
-      y0+=46;for(const r of layout[layout.length-1].rows){r.y=y0;y0+=r.h+GAP}y0+=14}
-    const H=y0+PAD+10;
-    const cv=document.createElement("canvas");cv.width=W;cv.height=H;const x=cv.getContext("2d");
-    const g0=x.createLinearGradient(0,0,0,H);g0.addColorStop(0,"#1c2733");g0.addColorStop(1,"#0f151c");x.fillStyle=g0;x.fillRect(0,0,W,H);
-    const font=(w,px)=>`${w} ${px}px ${getComputedStyle(document.body).fontFamily||"sans-serif"}`;
-    x.fillStyle="#f3e7c9";x.font=font(800,54);x.textBaseline="alphabetic";x.fillText(d.name||"Untitled deck",PAD,PAD+50);
-    x.fillStyle="#9fb3c4";x.font=font(500,24);x.fillText(`Crystal Quest · ${deckTotal(d)} cards · Deck Forge`,PAD,PAD+88);
-    /* player: avatar + name, top right */
-    const av=await loadImg(`${ICON_BASE}art/hero-head/${artKey(me.hero.name)}.png?v=${ART_VER}`);
-    x.font=font(700,30);const nw=x.measureText(me.name).width;const ax=W-PAD-96-16-nw;
-    x.fillStyle=CLASS_COLOR_CLEAN[me.hero.cls]||"#555";rr(x,ax,PAD,96,96,14);x.fill();if(av){x.imageSmoothingEnabled=false;x.drawImage(av,ax+4,PAD+4,88,88);x.imageSmoothingEnabled=true}
-    x.fillStyle="#f3e7c9";x.fillText(me.name,ax+96+16,PAD+44);x.fillStyle="#9fb3c4";x.font=font(500,20);x.fillText("Deck by",ax+96+16,PAD+76);
-    /* Heroes: pixel portraits with name and class */
-    const hy=PAD+120,hw=300;
-    for(let i=0;i<hs.length;i++){const h=hs[i],hx=PAD+i*(hw+24);x.fillStyle="rgba(255,255,255,.06)";rr(x,hx,hy,hw,150,14);x.fill();
-      x.strokeStyle=CLASS_COLOR_CLEAN[h.cls]||"#777";x.lineWidth=3;rr(x,hx,hy,hw,150,14);x.stroke();
-      const im=await loadImg(`${ICON_BASE}art/hero-pix/${artKey(h.name)}-pix.png?v=${ART_VER}`);if(im){x.imageSmoothingEnabled=false;const sc=Math.min(130/im.height,130/im.width);x.drawImage(im,hx+10,hy+10,im.width*sc,im.height*sc);x.imageSmoothingEnabled=true}
-      x.fillStyle="#9fb3c4";x.font=font(600,17);x.fillText(["LEAD","CENTER","CLOSER"][i],hx+150,hy+36);
-      x.fillStyle="#f3e7c9";x.font=font(700,24);fitLine(x,h.name,hx+150,hy+72,hw-160);
-      x.fillStyle="#9fb3c4";x.font=font(500,19);x.fillText(h.cls,hx+150,hy+102)}
-    /* stacks */
-    for(const g of layout){x.fillStyle="#f3e7c9";x.font=font(800,30);x.fillText(`${g.label}`,PAD,g.y+30);const lw=x.measureText(g.label).width;x.fillStyle="#9fb3c4";x.font=font(600,24);x.fillText(String(g.n),PAD+lw+14,g.y+30);
-      for(const r of g.rows)r.r.forEach((e,k)=>{const cx=PAD+k*(CW+GAP);for(let i=0;i<e.q;i++){x.save();x.translate(cx,r.y+i*STEP);x.shadowColor="rgba(0,0,0,.45)";x.shadowBlur=10;x.shadowOffsetY=3;x.fillStyle="#000";rr(x,0,0,CW,CH,9);x.fill();x.shadowColor="transparent";drawCard(x,e.c,CW,CH);x.restore()}
-        if(e.q>1){const bx=cx+CW-44,by=r.y+(e.q-1)*STEP+CH-40;x.fillStyle="rgba(10,14,20,.85)";rr(x,bx,by,38,30,8);x.fill();x.fillStyle="#fff";x.font=font(800,20);x.textAlign="center";x.fillText("×"+e.q,bx+19,by+22);x.textAlign="left"}})}
-    x.fillStyle="#5d7182";x.font=font(500,18);x.fillText("jonathandmedina.github.io/CQ-Deckbuilder",PAD,H-PAD+18);
-    const blob=await new Promise(r=>cv.toBlob(r,"image/png"));busy(false);await offer(safeName(d.name||"deck")+"_deck.png",blob);
-  }catch(e){busy(false);console.error(e);toast("Couldn't draw the deck image. Try again.")}}
+    const stack=e=>`<div class="vs-stack" style="--n:${e.q}">${Array.from({length:e.q},(_,i)=>`<div class="vs-card" style="--i:${i}">${cardHTML(e.c,{nozoom:true})}</div>`).join("")}${e.q>1?`<span class="vs-q">×${e.q}</span>`:""}</div>`;
+    const groups=VIS_GROUPS.map(([g,label])=>{const l=es.filter(e=>visGroup(e.c)===g);return l.length?`<section class="vs-g"><h3>${label} <span>${l.reduce((a,e)=>a+e.q,0)}</span></h3><div class="vs-row">${l.map(stack).join("")}</div></section>`:""}).join("");
+    host.innerHTML=`<div class="ps-top"><div><h2>${esc(d.name||"Untitled deck")}</h2><p>Crystal Quest · ${deckTotal(d)} cards · Deck Forge</p></div>
+      <div class="ps-me"><img src="${ICON_BASE}art/hero-head/${artKey(me.hero.name)}.png?v=${ART_VER}" alt=""><div><b>${esc(me.name)}</b><small>Deck by</small></div></div></div>
+      <div class="party ps-party">${hs.map((h,i)=>`<div class="slot full hero-full hero-dig" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${heroDigitalHTML(h,(i+1)+" · "+["LEAD","CENTER","CLOSER"][i])}</div>`).join("")}</div>
+      ${groups}<p class="ps-foot">jonathandmedina.github.io/CQ-Deckbuilder</p>`;
+    document.body.appendChild(host);
+    await Promise.all([...host.querySelectorAll("img")].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
+    if(SKIN==="art")fitArt(host);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+    const blob=await window.htmlToImage.toBlob(host,{pixelRatio:1,cacheBust:false,backgroundColor:"#120a07",style:{position:"static",left:"0",top:"0"}});
+    host.remove();busy(false);await offer(safeName(d.name||"deck")+"_deck.png",blob);
+  }catch(e){host.remove();busy(false);console.error(e);toast("Couldn't draw the deck image. Try again.")}}
 function fitLine(x,t,X,Y,w){let f=x.font;let px=parseInt(/(\d+)px/.exec(f)[1],10);while(px>12&&x.measureText(t).width>w){px--;x.font=f.replace(/\d+px/,px+"px")}x.fillText(t,X,Y)}
 /* ---------- best decks (win rates from finished Play-tab games) ---------- */
 const BEST_MIN_GAMES=5,BEST_MIN_PCT=60;
@@ -733,7 +735,7 @@ function viewCommunity(){const c=S.comm;
 function commListModal(r){bestListModal(Object.assign({},r,{_comm:true}))}
 async function commShare(d){if(!SB||!S.uid){toast("Sign in to share decks.");return}
   if(issues(d).length||needsRebuild(d)){toast("Only legal decks can be shared. Fix this deck's issues first.");return}
-  const row={user_id:S.uid,deck_id:String(d.id),name:(d.name||"Untitled deck").slice(0,80),author:((S.me&&S.me.name)||"Player").slice(0,40),heroes:d.heroes.slice(0,3),cards:d.cards,updated_at:new Date().toISOString()};
+  const row={user_id:S.uid,deck_id:String(d.id),name:(d.name||"Untitled deck").slice(0,80),author:((S.me&&S.me.name)||"Player").slice(0,40),heroes:hcompact(d.heroes).slice(0,3),cards:d.cards,updated_at:new Date().toISOString()};
   const{data,error}=await SB.from("community_decks").upsert(row,{onConflict:"user_id,deck_id"}).select("id,deck_id").single();
   if(error){toast(/community_decks/.test(error.message)?"Sharing isn't switched on yet (the site's database needs a quick update).":"Couldn't share the deck: "+error.message);return}
   S.commMine=S.commMine||new Map();const was=S.commMine.has(data.deck_id);S.commMine.set(data.deck_id,data.id);S.comm=null;toast(was?"Community copy updated.":"Shared to Community Decks.");render()}
@@ -835,10 +837,10 @@ async function artVote(b){
 }
 loadAllArtRates();
 function inspect(c){
-  const d=S.deck,can=c.kind!=="hero"&&c.kind!=="token"&&d.heroes.length===3&&allowed(c,d);
+  const d=S.deck,can=c.kind!=="hero"&&c.kind!=="token"&&HN(d)===3&&allowed(c,d);
   const q=d.cards[c.id]||0;
   const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);
-  m.innerHTML=`<div class="box">${cardHTML(c,{nozoom:1})}${artRateHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${d.heroes.length<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
+  m.innerHTML=`<div class="box">${cardHTML(c,{nozoom:1})}${artRateHTML(c)}<div class="actions">${can?`<button type="button" class="btn primary" data-act="inc-close" data-id="${esc(c.id)}" ${q>=maxCopies(c)?"disabled":""}>Add to ${esc(d.name)} (${q}/${maxCopies(c)})</button>`:""}<button type="button" class="btn" data-act="close">Close</button></div>${c.kind==="token"?`<p class="note">Token. Made by ${esc(c.madeBy)}. Tokens are created during play and don't count toward your deck.</p>`:""}${c.kind!=="hero"&&c.kind!=="token"&&!can?`<p class="note">${HN(d)<3?"Choose three Heroes in the Deck Builder to start adding cards.":"Your current party can't play this card."}</p>`:""}</div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});
   l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m);
 }
@@ -901,7 +903,7 @@ function parseDeck(txt){
     if(line.startsWith("#")){d.name=line.replace(/^#+\s*/,"")||d.name;continue}
     if(/^tokens?\s*:/i.test(line))continue;
     const hm=line.match(/^heroes?\s*:\s*(.*)$/i);
-    if(hm){for(const n of hm[1].split(",")){if(!n.trim())continue;const h=find(n,HEROES);if(h&&d.heroes.length<3&&!d.heroes.includes(h.id))d.heroes.push(h.id);else if(!h)miss.push(n.trim())}continue}
+    if(hm){for(const n of hm[1].split(",")){if(!n.trim())continue;const h=find(n,HEROES);if(h&&HN(d)<3&&!d.heroes.includes(h.id)){const e=d.heroes.indexOf(null);if(e>=0)d.heroes[e]=h.id;else d.heroes.push(h.id)}else if(!h)miss.push(n.trim())}continue}
     const m=line.match(/^(\d+)\s*x?\s+(.+)$/i);const q=m?+m[1]:1,n=m?m[2]:line;
     const c=find(n,CARDS);if(c)d.cards[c.id]=(d.cards[c.id]||0)+q;else miss.push(n)}
   return{d,miss};
@@ -1058,7 +1060,7 @@ async function exportPnP(d,mode){mode=mode||"all";const plan=printPlan(d);
 }
 async function exportTTS(d){
   if(!window.JSZip){toast("The zip tool didn't load. Reload the page and try again.");return}
-  if(d.heroes.length+Object.keys(d.cards).length===0){toast("This deck is empty.");return}
+  if(HN(d)+Object.keys(d.cards).length===0){toast("This deck is empty.");return}
   busy(true,"Building Tabletop Simulator files…");await loadFonts();
   try{
     const heroes=d.heroes.map(h=>BYID.get(h)).filter(Boolean);
@@ -1207,9 +1209,18 @@ document.addEventListener("click",async e=>{
   else if(a==="b-cls"){S.b.cls=v;render()}
   else if(a==="inspect"){const c=BYID.get(id);if(c){inspect(c);zoomNav(b,"inspect")}}
   else if(a==="art-vote"){artVote(b)}
-  else if(a==="pick-hero"){let added=false;setDeck(d=>{const i=d.heroes.indexOf(id);if(i>=0)d.heroes.splice(i,1);else if(d.heroes.length<3){d.heroes.push(id);added=true}else toast("Your party is full. Remove a Hero first.")});if(added&&S.deck.heroes.length===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
-  else if(a==="unhero"){setDeck(d=>{d.heroes=d.heroes.filter(h=>h!==id)});if(S.deck.heroes.length<3){S.b.step="heroes";render()}}
-  else if(a==="to-cards"){if(S.deck.heroes.length===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
+  else if(a==="dc-signin"){await SB.auth.signInWithOAuth({provider:"discord",options:{scopes:DC_SCOPES,redirectTo:location.origin+location.pathname+"#account"}})}
+  else if(a==="dc-link"){const{error}=await SB.auth.linkIdentity({provider:"discord",options:{scopes:DC_SCOPES,redirectTo:location.origin+location.pathname+"#account"}});if(error)toast("Couldn't connect Discord: "+error.message)}
+  else if(a==="dc-unlink"){const{data}=await SB.auth.getUserIdentities();const i=data&&data.identities.find(x=>x.provider==="discord");if(i){const{error}=await SB.auth.unlinkIdentity(i);toast(error?"Couldn't disconnect: "+error.message:"Discord disconnected.");const s=await SB.auth.getSession();setSession(s.data.session)}}
+  else if(a==="pick-hero"){let added=false,msg="";setDeck(d=>{while(d.heroes.length<3)d.heroes.push(null);const i=d.heroes.indexOf(id);
+      if(S.b.swap!=null&&i<0){const old=BYID.get(d.heroes[S.b.swap]);d.heroes[S.b.swap]=id;msg=`Swapped ${old?old.name:"Hero"} → ${BYID.get(id).name} (${["Lead","Center","Closer"][S.b.swap]}).`;S.b.swap=null;added=true}
+      else if(i>=0){d.heroes[i]=null}
+      else{const s=S.b.target!=null&&!d.heroes[S.b.target]?S.b.target:d.heroes.indexOf(null);if(s>=0){d.heroes[s]=id;added=true;S.b.target=null}else toast("Your party is full. Use Swap on a Hero to replace it.")}});
+    if(msg)toast(msg);if(added&&HN(S.deck)===3&&!msg){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}else render()}
+  else if(a==="hero-swap"){const i=+b.dataset.slot;S.b.swap=S.b.swap===i?null:i;S.b.target=null;render()}
+  else if(a==="hero-target"){const i=+b.dataset.slot;S.b.target=S.b.target===i?null:i;S.b.swap=null;render()}
+  else if(a==="unhero"){setDeck(d=>{while(d.heroes.length<3)d.heroes.push(null);d.heroes=d.heroes.map(h=>h===id?null:h)});S.b.swap=null;if(HN(S.deck)<3){S.b.step="heroes";render()}}
+  else if(a==="to-cards"){if(HN(S.deck)===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
   else if(a==="to-heroes"){S.b.step="heroes";render()}
   else if(a==="inc"||a==="inc-close"){const c=BYID.get(id);if(!c)return;
     if((S.deck.cards[id]||0)>=maxCopies(c)){toast(c.sup==="Legendary"?"Legendary cards are limited to 1 copy.":"You can include up to 3 copies.");return}
@@ -1220,7 +1231,7 @@ document.addEventListener("click",async e=>{
   else if(a==="deckpng"){const d=deckBySrc(b.dataset.src);if(d)exportDeckPNG(d)}
   else if(a==="decklog"){const d=deckBySrc(b.dataset.src);if(d)deckLogModal(d)}
   else if(a==="prune"){setDeck(d=>{for(const k of Object.keys(d.cards)){const c=BYID.get(k);if(!c||!allowed(c,d))delete d.cards[k]}})}
-  else if(a==="new-deck-ask"){const d=S.deck;const has=d.heroes.length||deckTotal(d);
+  else if(a==="new-deck-ask"){const d=S.deck;const has=HN(d)||deckTotal(d);
     if(!S.dirty||!has){S.deck=blankDeck();S.dirty=false;S.b.step="heroes";saveDraft();go("build");render();return}
     const l=$("#layer");const m=document.createElement("div");m.className="modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Start a new deck");
     m.innerHTML=`<div class="box"><h2>Save this deck first?</h2><p>“${esc(d.name||"Untitled deck")}” has unsaved changes. Save it before starting a new deck?</p><div class="actions newdeck-acts"><button type="button" class="btn primary go" data-act="new-deck-save">Save and start new</button><button type="button" class="btn" data-act="new-deck-go">Don't save</button><button type="button" class="btn" data-act="close">Cancel</button></div></div>`;
@@ -1233,7 +1244,7 @@ document.addEventListener("click",async e=>{
   else if(a==="save"){const d=S.deck;d.name=(d.name||"").trim()||"Untitled deck";b.disabled=true;
     try{const where=await persistDeck(d);S.dirty=false;saveDraft();toast(where==="account"?"Deck saved to your account.":"Deck saved in this browser.")}catch(err){}
     render()}
-  else if(a==="open"){const d=S.decks.find(x=>x.id===id);if(!d)return;S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=false;S.b.step=d.heroes.length===3?"cards":"heroes";saveDraft();go("build")}
+  else if(a==="open"){const d=S.decks.find(x=>x.id===id);if(!d)return;S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=false;S.b.step=HN(d)===3?"cards":"heroes";saveDraft();go("build")}
   else if(a==="dup"){const d=S.decks.find(x=>x.id===id);if(!d)return;const c={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};try{await persistDeck(c);toast("Deck duplicated.")}catch(err){}render()}
   else if(a==="del"){const box=document.querySelector(`[data-confirm="${id}"]`);if(box)box.hidden=false}
   else if(a==="del-no"){const box=document.querySelector(`[data-confirm="${id}"]`);if(box)box.hidden=true}
@@ -1248,7 +1259,7 @@ document.addEventListener("click",async e=>{
   else if(a==="tts"){const d=deckBySrc(b.dataset.src);if(d)exportTTS(d)}
   else if(a==="copylist"){const d=deckBySrc(b.dataset.src);if(d)copyText(deckText(d))}
   else if(a==="import"){const t=$("#import-text").value;if(!t.trim()){toast("Paste a deck list first.");return}
-    const{d,miss}=parseDeck(t);S.deck=d;S.dirty=true;S.b.step=d.heroes.length===3?"cards":"heroes";saveDraft();go("build");
+    const{d,miss}=parseDeck(t);S.deck=d;S.dirty=true;S.b.step=HN(d)===3?"cards":"heroes";saveDraft();go("build");
     toast(miss.length?`Imported. Not found: ${miss.slice(0,4).join(", ")}${miss.length>4?"…":""}`:"Deck imported. Press Save deck to keep it.")}
   else if(a==="migrate"){b.disabled=true;await migrateLocal()}
   else if(a==="auth-mode"){S.authMode=v;render()}
@@ -1286,11 +1297,11 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.q
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
 function route(){const h=location.hash.replace("#","");const pm=/^player\/(.+)$/.exec(h);if(pm){try{S.playerName=decodeURIComponent(pm[1])}catch(e){S.playerName=pm[1]}}
-  S.view=pm?"player":["catalog","build","decks","account","rules","quickstart","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&S.deck.heroes.length===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+  S.view=pm?"player":["catalog","build","decks","account","rules","quickstart","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();
-if(S.deck.heroes.length===3&&deckTotal(S.deck)>0)S.b.step="cards";
+if(HN(S.deck)===3&&deckTotal(S.deck)>0)S.b.step="cards";
 route();
 initAccount();
 

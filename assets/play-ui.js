@@ -550,15 +550,31 @@ const SND=(()=>{let ac=null;const on=()=>store2.get("cq.sound",true)!==false;
     draw:t=>{noise(t,0.1,0.12,4000,1500)},
     win:t=>{[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,t+i*0.11,0.3,"square",0.06))},
     lose:t=>{[392,370,349,262].forEach((f,i)=>tone(f,t+i*0.2,0.4,"triangle",0.1))}};
-  function play(k,t){if(!on()||!FX[k])return;try{FX[k](t||0)}catch(e){}}
+  /* Update 30: recorded sound effects (assets/sfx, .ogg with .mp3 for Safari). Anything without a file stays synthesized. */
+  const FILES={store:"sfx_item_2_bag_and_chime",level:"sfx_legendary_2_choir_ascension",shatter:"sfx_shatter_1_glass",crumble:"sfx_shatter_3_stone_crumble",
+    heal:"sfx_spell_2_ice_cure_sparkle",birdsong:"sfx_animal_1_songbird",arrow:"sfx_hit_1_sword_slash",
+    smith:"sfx_smith_2_strikes_and_quench",death:"sfx_spell_calm_3_reverse_gong",status:"sfx_status_2_poison_bubbles",curse:"sfx_status_3_curse_tritone",revive:"sfx_legendary_3_crystal_motif"};
+  const ext=(()=>{try{return new Audio().canPlayType('audio/ogg; codecs="vorbis"')?"ogg":"mp3"}catch(e){return"mp3"}})();
+  const BUF={},last={};let loading=false;
+  function load(){const a=ctx();if(!a||loading)return;loading=true;
+    for(const[k,f]of Object.entries(FILES))fetch(`${ICON_BASE}sfx/${f}.${ext}?v=1`).then(r=>r.arrayBuffer()).then(b=>new Promise((ok,no)=>a.decodeAudioData(b,ok,no))).then(d=>{BUF[k]=d}).catch(()=>{})}
+  function file(k,t){const a=ctx(),b=BUF[k];if(!a||!b)return false;const now=a.currentTime;if(last[k]&&now-last[k]<0.25)return true;last[k]=now;
+    const src=a.createBufferSource(),g=a.createGain();g.gain.value=0.6;src.buffer=b;src.connect(g).connect(a.destination);src.start(now+(t||0));return true}
+  function play(k,t){if(!on())return;if(FILES[k]&&file(k,t))return;if(k==="crumble")k="hit";if(k==="birdsong")k="summon";if(k==="store")k="gold";if(k==="smith")k="equip";if(k==="revive")k="heal";if(k==="curse")k="status";if(!FX[k])return;try{FX[k](t||0)}catch(e){}}
   /* one sound per log line, picked from what happened */
-  const RULES=[[/🏆/,"win"],[/ dies\b|has died/,"death"],[/\(summon\) is destroyed|destroys /,"destroy"],[/ is destroyed/,"shatter"],[/ equips /,"equip"],[/levels? up|gains a level|\(Level \d+\)/,"level"],[/ heals? |healed|resurrected|revives /,"heal"],
+  const RULES=[[/🏆/,"win"],[/ is resurrected| revives |is revived/,"revive"],[/ at the Blacksmith /,"smith"],[/ stays at the Inn| visits the Shop/,"store"],[/ dies\b|has died/,"death"],[/\(summon\) is destroyed/,"destroy"],[/ is destroyed| destroys /,"shatter"],[/ equips /,"equip"],[/ reaches Level \d|levels? up|gains a level/,"level"],[/ heals? |healed|resurrected|revives /,"heal"],
     [/activates (?:[A-Z][\w'-]*\s)*(?:Arrow|Shot|Bolt|Dart|Force)\b|Arrow/,"arrow"],[/ attacks\b|band attack/i,"attack"],[/summons |Summon a|conjures |creates a/,"summon"],
     [/ deals? \d+ (?:\w+ )?damage| loses \d+ HP/,"hit"],[/ (Burn|Poison|Stun|Wound|Confuse)/,"status"],[/ Gold\b/,"gold"],[/ Aura\b/,"aura"],
     [/ plays /,"card"],[/ passes\./,"pass"],[/ draws? /,"draw"]];
   function pick(m){for(const[r,k]of RULES)if(r.test(m))return k;return null}
-  return{on,play,pick,toggle(){store2.set("cq.sound",!on());if(on())play("chime")},unlock(){ctx()}}})();
-document.addEventListener("pointerdown",()=>SND.unlock(),{once:true,capture:true});
+  return{on,play,pick,toggle(){store2.set("cq.sound",!on());if(on())play("chime")},unlock(){ctx();load()}}})();
+/* Update 30: Play tab background music, with its own on/off (cq.music). Plays while a game is open on the Play tab. */
+const MUS=(()=>{let el=null;const on=()=>store2.get("cq.music",true)!==false;
+  function get(){if(!el){el=new Audio();const ogg=el.canPlayType('audio/ogg; codecs="vorbis"');el.src=`${ICON_BASE}sfx/theme_3_boss_fight_it_all_rides_on_this.${ogg?"ogg":"mp3"}?v=1`;el.loop=true;el.volume=0.32;el.preload="auto"}return el}
+  function sync(want){if(want&&on()&&location.hash==="#play"){const a=get();if(a.paused)a.play().catch(()=>{})}else if(el&&!el.paused)el.pause()}
+  addEventListener("hashchange",()=>sync(false));document.addEventListener("visibilitychange",()=>{if(document.hidden)sync(false);else if(U.s&&U.mode!=="lobby")sync(true)});
+  return{on,sync,toggle(){store2.set("cq.music",!on());sync(on())}}})();
+document.addEventListener("pointerdown",()=>{SND.unlock();if(U.s&&U.mode!=="lobby"&&location.hash==="#play")MUS.sync(true)},{capture:true});
 
 /* new game events since the last render: destroyed pop-ups, sounds, and a chime when the action shifts */
 function gameFx(s){if(U.fxFor!==U.gameKey){U.fxFor=U.gameKey;U.fxSeen=(s.fx&&s.fx.length?s.fx[s.fx.length-1].n:0);U.sndSeen=Math.max(0,...s.log.map(l=>l.n||0));U.lastTurn=turnKey(s);return}
@@ -566,10 +582,37 @@ function gameFx(s){if(U.fxFor!==U.gameKey){U.fxFor=U.gameKey;U.fxSeen=(s.fx&&s.f
   const fresh=(s.fx||[]).filter(f=>f.n>U.fxSeen);if(fresh.length){U.fxSeen=fresh[fresh.length-1].n;fresh.slice(-4).forEach((f,i)=>setTimeout(()=>destroyPop(f),i*420))}
   /* sounds from new log lines */
   const lines=s.log.filter(l=>(l.n||0)>U.sndSeen);if(lines.length){U.sndSeen=Math.max(...lines.map(l=>l.n||0));
-    const ks=[];lines.forEach(l=>{const k=SND.pick(l.m);if(k&&ks[ks.length-1]!==k)ks.push(k)});
-    let ov=s.over&&s.winner!=null&&s.winner!==U.me;ks.slice(0,5).forEach((k,i)=>SND.play(k==="win"&&ov?"lose":k,i*0.16))}
+    const ks=soundKeys(lines);
+    let ov=s.over&&s.winner!=null&&s.winner!==U.me;ks.slice(0,5).forEach((k,i)=>SND.play(k==="win"&&ov?"lose":k,i*0.16));
+    try{opPops(s,lines)}catch(e){console.warn(e)}}
   /* chime when the action shifts to the other player (or a new phase starts) */
   const tk=turnKey(s);if(tk!==U.lastTurn){U.lastTurn=tk;SND.play("chime",lines.length?0.5:0)}}
+/* Update 30: opponent action pop-ups. Each opponent "starter" line (plays, activates, attacks, summons, equips, Town) opens a pop-up;
+   the lines after it, up to the next starter, give its target(s) and a one-line result. Your own actions never pop up. */
+const POP_START=/^(?:⚔ )?(.+?) (plays|activates|attacks|uses its ability|summons|conjures|creates|equips|visits the Shop|stays at the Inn|pays the Church|upgrades) ?(.*?)(?: \(|\.| for |: |$)/;
+function opPops(s,lines){if(!window.CQPop||U.me==null)return;const objs=[];s.p.forEach(pl=>{pl.heroes.forEach(h=>objs.push(h));(pl.bf||[]).forEach(o=>objs.push(o))});
+  const uidOf=n=>{const o=objs.find(x=>x.name===n);return o?o.uid:null};
+  const groups=[];lines.forEach(l=>{const m=POP_START.exec(String(l.m).replace(/^✋ /,""));const sub=m&&/^(summons|conjures|creates)$/.test(m[2])&&groups.length&&groups[groups.length-1].l.p===l.p;
+    if(m&&!sub&&l.p!=null&&l.p>=0){groups.push({l,m,after:[]})}else if(groups.length)groups[groups.length-1].after.push(l)});
+  groups.filter(g=>g.l.p!==U.me).slice(-5).forEach(g=>{const[,actor,verb,rest]=g.m;const card=byName(rest)||null;
+    const tgts=[];const add=n=>{const u=uidOf(n);if(u&&!tgts.includes(u))tgts.push(u)};
+    if(verb==="attacks")add(rest);
+    const names=objs.map(o=>o.name).filter((n,i,a)=>n&&n!==actor&&a.indexOf(n)===i).sort((x,y)=>y.length-x.length);
+    let self=false;g.after.forEach(a=>{let m=String(a.m);if(/ (summons|conjures|creates) /.test(m))return;for(const n of names)if(m.includes(n)){add(n);m=m.split(n).join("")}if(actor&&m.includes(actor))self=true});
+    const to=/→ ([^.]+?)\.?$/.exec(String(g.l.m));if(to){to[1].split(/, | and /).forEach(n=>{n=n.trim();if(n===actor)self=true;else add(n)})}
+    const tn=tgts.map(u=>objs.find(o=>o.uid===u)).filter(Boolean).map(o=>o.name);
+    const summoned=g.after.some(a=>/ (summons|conjures|creates) /.test(a.m));
+    const dest=tn.length?tn.join(", "):self&&uidOf(actor)&&verb!=="attacks"?actor:verb==="summons"||verb==="conjures"||summoned?"Battlefield":verb==="equips"?rest.split(" to ")[1]||"":card&&/Item/.test(card.type||"")?"Inventory":card&&/Equipment/.test(card.type||"")?actor:card?"Discard":"";
+    const label={"uses its ability":"uses its ability",plays:"plays",activates:"activates",attacks:"attacks",summons:"summons",conjures:"conjures",creates:"creates",equips:"equips",upgrades:"upgrades"}[verb];
+    const att=verb==="attacks"?byName(actor):null;
+    CQPop.push({who:(s.p[g.l.p]?s.p[g.l.p].name:"Opponent")+(uidOf(actor)&&!att?" · "+actor:""),cardId:att?att.id:card?card.id:null,verb:att?"":label||"",name:att?actor+" attacks":label?rest:g.l.m.replace(/\.$/,""),
+      dest:verb==="attacks"?rest:dest,sub:g.after.length?g.after[0].m.replace(/\s*\(\d+\/\d+ HP\)/,""):"",actorU:uidOf(actor),targetU:verb==="attacks"&&uidOf(rest)?[uidOf(rest)]:tgts})})}
+function classOf(name){const n=String(name||"").trim();if(!n)return null;const c=(typeof CARDS!=="undefined"&&CARDS.find(x=>x.name===n))||(typeof HEROES!=="undefined"&&HEROES.find(x=>x.name===n));return c?c.cls:null}
+/* one sound key per log line; damage right after an attack is the attack's damage (stone crumble); a summon from a Druid card or Druid Hero is birdsong */
+function soundKeys(lines){const ks=[];let atk=false,cls=null;lines.forEach(l=>{let k=SND.pick(l.m);const m=/^(?:⚔ )?(.+?) (plays|activates) (.+?)(?: \(| for |\.|$)/.exec(l.m);
+    if(m){atk=false;cls=classOf(m[3])||classOf(m[1]);const cd=typeof CARDS!=="undefined"&&CARDS.find(x=>x.name===m[3].trim());if(cd&&cd.sub==="Curse")k="curse"}if(/ attacks /.test(l.m)&&!m)atk=true;
+    if(k==="hit"&&atk)k="crumble";if(k==="summon"&&cls==="Druid")k="birdsong";if(k&&ks[ks.length-1]!==k)ks.push(k)});return ks}
+U.snd={SND,MUS,classOf,soundKeys,starterDeck}; /* for tests */
 function turnKey(s){if(s.over)return"over";if(s.pend[0])return"p"+s.pend[0].pid+":"+s.phase;if(s.phase==="battle")return"b"+s.prio;if(s.phase==="town")return"t"+(s.town&&s.town.order[s.town.i]);return s.phase+s.round}
 function destroyPop(f){let L=document.getElementById("pl-fx");if(!L){L=document.createElement("div");L.id="pl-fx";L.setAttribute("aria-hidden","true");document.body.appendChild(L)}
   const c=(f.id&&cardOf(f.id))||byName(f.name);const el=document.createElement("div");el.className="fxc";
@@ -605,7 +648,7 @@ function fitPlay(root){const g=root&&root.querySelector(".pl-game");if(!g||typeo
   try{if(typeof fitArt==="function")fitArt(hand||root)}catch(e){}}
 let fitT=null;addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(()=>{U.fitW=0;const r=ROOT();if(r)fitPlay(r)},120)});
 function render(){const root=ROOT();if(!root)return;injectCSS();
-  if(U.mode==="lobby"){root.innerHTML=lobbyHTML();return}
+  if(U.mode==="lobby"){MUS.sync(false);if(window.CQPop)CQPop.clear();root.innerHTML=lobbyHTML();return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
   const s=view();if(!s){root.innerHTML=roomHTML();return}
   if(!U.gameKey)U.gameKey="g"+Date.now();mergeLog(s);try{trackBanner(s)}catch(e){console.warn(e)}
@@ -616,6 +659,8 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   const lg=root.querySelector(".pl-log");if(lg&&atBottom)lg.scrollTop=lg.scrollHeight;
   const he=root.querySelector(".pl-hand");if(he){he.scrollLeft=hs;handOvf(he);he.addEventListener("scroll",()=>handOvf(he),{passive:true})}
   try{gameFx(s)}catch(e){console.warn(e)}
+  try{MUS.sync(true)}catch(e){}
+  try{if(window.CQPop)CQPop.redraw()}catch(e){}
   try{if(typeof fitArt==="function")fitArt(root)}catch(e){}
   try{fitPlay(root)}catch(e){console.warn(e)}
   modals(s)}
@@ -888,7 +933,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const ban=U.banner&&!s.over&&!U.tgt?bannerHTML():"";if(ban)acts="";
   const posm=`<span class="posm" title="Position marker">${[...E.POS,"Last"].map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
-  return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" title="Turn game sounds on or off" aria-pressed="${SND.on()}">${SND.on()?"🔊 Sound on":"🔇 Sound off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
+  return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" title="Turn sound effects on or off" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" title="Turn the music on or off" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
     <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn?helpHTML(fixBtn):""}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
 /* opponent's turn: what they have to work with */
 function oppInfoHTML(s){const op=E.opp(U.me);const pl=s.p[op];const a=s.phase==="battle"&&s.prio===op?E.actorFor(s,op):null;
@@ -1089,6 +1134,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="close"){closeModal();return}
   if(k==="hscr"){const he=b.parentElement&&b.parentElement.querySelector(".pl-hand");if(he)he.scrollBy({left:(+b.dataset.d)*Math.max(200,he.clientWidth*0.8),behavior:"smooth"});return}
   if(k==="snd"){SND.toggle();render();return}
+  if(k==="mus"){MUS.toggle();render();return}
   if(k==="start-ai"){startAI();return}
   if(k==="rematch"){U.s=null;startAI();return}
   if(k==="over-hide"){U.overHide=true;render();return}

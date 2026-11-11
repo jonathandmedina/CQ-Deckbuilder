@@ -232,3 +232,45 @@ html[data-skin="art"] .t-removed{color:#ff8a80}html[data-skin="art"] .t-renamed,
 @media (max-width:480px){html[data-skin="art"] .brand{font-size:1.3rem}html[data-skin="art"] .tabs a{font-size:1rem}}
 /* header order: brand, menu, account, theme, Discord (the retro rule moves Discord to the left) */
 @media (min-width:721px) and (max-width:1499px){html[data-skin="art"] .top .brand{order:0}html[data-skin="art"] .discord-btn{order:0;margin-left:0}}
+/* Update 30: hero slots keep their place; Choose Hero on empty slots, Swap on full ones */
+html[data-skin="art"] .party .slot.empty-slot{display:grid;align-content:center;justify-items:center;gap:10px;min-height:120px;text-align:center}
+html[data-skin="art"] .party .slot.empty-slot.target{border-color:var(--accent);box-shadow:0 0 0 3px rgba(242,193,78,.25)}
+html[data-skin="art"] .party .slot.swapping .dh-card{outline:3px solid var(--accent);outline-offset:3px;filter:brightness(.75)}
+html[data-skin="art"] .party .slot .c-ctrl{gap:6px}
+html[data-skin="art"] .party .slot.empty-slot{justify-self:center;width:min(300px,100%);min-height:330px}
+/* Update 30: Discord button in Discord blurple */
+html[data-skin="art"] .discord-btn{background:#5865F2;border-color:#5865F2;color:#fff}
+html[data-skin="art"] .discord-btn:hover{background:#4752c4;border-color:#4752c4;color:#fff}
+/* Update 30: online counter (green dot, people online · games), modeled on Endstep's header counter */
+.online-pill{flex:none;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--sunk);font-size:.9rem;color:var(--ink);font-variant-numeric:tabular-nums;cursor:default;white-space:nowrap}
+.online-pill .on-g{color:var(--muted)} .online-pill span.on-g{font-weight:400}
+.on-dot{width:9px;height:9px;border-radius:50%;background:#43d17a;animation:onBeat 2.4s infinite}
+@keyframes onBeat{0%{box-shadow:0 0 0 0 rgba(67,209,122,.55)}70%{box-shadow:0 0 0 7px rgba(67,209,122,0)}100%{box-shadow:0 0 0 0 rgba(67,209,122,0)}}
+@media (max-width:700px){.online-pill .on-w,.online-pill .on-g{display:none}}
+@media (prefers-reduced-motion:reduce){.on-dot{animation:none}}
+/* Update 30: your hand lifts on hover (room above so the lift isn't clipped) */
+html[data-skin="art"] .pl-hand{padding-top:22px;margin-top:-22px}
+html[data-skin="art"] .pl-hand .hc{transition:transform .16s ease,filter .16s ease;z-index:1}
+@media (hover:hover){html[data-skin="art"] .pl-hand .hc:hover,html[data-skin="art"] .pl-hand .hc:focus-visible{transform:translateY(-18px) scale(1.06);z-index:5;filter:drop-shadow(0 0 12px rgba(242,193,78,.55))}}
+@media (prefers-reduced-motion:reduce){html[data-skin="art"] .pl-hand .hc{transition:none}}
+/* Update 30: off-screen sheet for the deck image (PNG) */
+.png-sheet{position:fixed;left:-99999px;top:0;width:1800px;padding:48px;background:#120a07 radial-gradient(1400px 700px at 50% -200px,#2a150d,transparent);color:var(--ink);font-family:var(--body);display:grid;gap:26px}
+.png-sheet .ps-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.png-sheet h2{font:700 3.2rem/1.1 var(--display);margin:0;color:var(--accent)} .png-sheet .ps-top p{margin:6px 0 0;color:var(--muted);font-size:1.3rem}
+.png-sheet .ps-me{display:flex;gap:14px;align-items:center;font-size:1.4rem} .png-sheet .ps-me img{width:88px;height:88px;image-rendering:pixelated;border-radius:12px;border:2px solid var(--line)}
+.png-sheet .ps-me small{display:block;color:var(--muted);font-size:1rem}
+.png-sheet .ps-party{display:grid;grid-template-columns:repeat(3,300px);gap:26px;justify-content:start}
+.png-sheet .vs-g h3{font:700 1.8rem var(--display);margin:0 0 12px} .png-sheet .vs-g h3 span{color:var(--muted);font-size:1.3rem;margin-left:8px}
+.png-sheet .vs-stack{--w:230px;--step:58px}
+.png-sheet .vs-q{position:absolute;right:8px;bottom:8px;background:rgba(10,14,20,.88);color:#fff;font:700 1.1rem/1 var(--body);padding:5px 8px;border-radius:7px;z-index:5}
+.png-sheet .ps-foot{color:var(--muted);margin:0;font-size:1rem}
+.png-sheet .zoom,.png-sheet .flip{display:none!important}
+/* Update 30: Discord sign-in */
+.dc-btn{background:#5865F2!important;border-color:#5865F2!important;color:#fff!important;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.dc-btn.wide{width:100%}
+.dc-logo{width:18px;height:14px;flex:none}
+.or-line{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.85rem;margin:4px 0} .or-line::before,.or-line::after{content:"";flex:1;height:1px;background:var(--line)}
+.dc-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.dc-chip{display:inline-flex;align-items:center;gap:7px;border:1px solid #5865F2;border-radius:999px;padding:4px 11px;background:var(--sunk);color:var(--ink)}
+.dc-chip .dc-logo{color:#8f99ff}
+a.dc-btn{text-decoration:none}

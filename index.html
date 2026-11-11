@@ -460,16 +460,17 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 #adminTab[hidden]{display:none!important}
 .sitebar .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/art.css?v=20261111e">
+<link rel="stylesheet" href="assets/art.css?v=20261111f">
+<link rel="stylesheet" href="assets/home.css?v=20261111f">
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <div class="brand">Crystal Quest <small>Deck Forge</small></div>
+  <a class="brand" href="#home" title="Home">Crystal Quest <small>Deck Forge</small></a>
   <nav class="tabs" id="tabs">
     <a href="#catalog" data-view="catalog">Cards</a>
     <span class="tab-dd"><a href="#community" data-view="community" aria-haspopup="true">Decklists</a><span class="tab-sub" role="menu"><a href="#best" data-view="best" role="menuitem">Best Decks</a><a href="#community" role="menuitem">Community Decks</a><a href="#decks" data-view="decks" role="menuitem">My Decks</a><a href="#build" data-view="build" role="menuitem">Deck Builder</a></span></span>
     <span class="tab-dd"><a href="#rules" data-view="rules" aria-haspopup="true">Rules</a><span class="tab-sub" role="menu"><a href="#rules" role="menuitem">Full Rules</a><a href="#quickstart" data-view="quickstart" role="menuitem">Quick Start</a></span></span>
-    <a href="#play" data-view="play">Play</a>
+    <span class="tab-dd"><a href="#play" data-view="play" aria-haspopup="true">Play</a><span class="tab-sub" role="menu"><a href="#play" role="menuitem">Start a Game</a><a role="menuitem" aria-disabled="true" title="Coming soon">Learn to Play</a></span></span>
     <a href="#leaderboard" data-view="leaderboard">Leaderboard</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
@@ -479,6 +480,7 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <main><div class="wrap" id="view"></div></main>
 <footer class="sitebar" id="sitebar"><div class="wrap">
   <span class="sb-links"><a href="#changelog" data-view="changelog" class="sb-link">Changelog</a><a href="#admin" data-view="admin" id="adminTab" class="sb-link" hidden>Admin</a></span>
+  <button type="button" class="sb-link sb-music" id="sbMusic" aria-pressed="true" title="Turn the music on or off"><span aria-hidden="true">🎵</span> Music on</button>
 </div></footer>
 <div id="layer"></div>
 <noscript><p class="wrap">Deck Forge needs JavaScript turned on.</p></noscript>
@@ -486,18 +488,19 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261111e"></script>
-<script src="assets/app.js?v=20261111e"></script>
-<script src="assets/play-engine.js?v=20261111e"></script>
-<script src="assets/play-cards.js?v=20261111e"></script>
-<script src="assets/play-ai.js?v=20261111e"></script>
-<script src="assets/play-ui.js?v=20261111e"></script>
-<script src="assets/changelog-data.js?v=20261111e"></script>
-<script src="assets/changelog.js?v=20261111e"></script>
-<script src="assets/admin.js?v=20261111e"></script>
-<script src="assets/profile.js?v=20261111e"></script>
-<script src="assets/action-pop.js?v=20261111e"></script>
-<script src="assets/online.js?v=20261111e"></script>
+<script src="assets/cards-data.js?v=20261111f"></script>
+<script src="assets/app.js?v=20261111f"></script>
+<script src="assets/home.js?v=20261111f"></script>
+<script src="assets/play-engine.js?v=20261111f"></script>
+<script src="assets/play-cards.js?v=20261111f"></script>
+<script src="assets/play-ai.js?v=20261111f"></script>
+<script src="assets/play-ui.js?v=20261111f"></script>
+<script src="assets/changelog-data.js?v=20261111f"></script>
+<script src="assets/changelog.js?v=20261111f"></script>
+<script src="assets/admin.js?v=20261111f"></script>
+<script src="assets/profile.js?v=20261111f"></script>
+<script src="assets/action-pop.js?v=20261111f"></script>
+<script src="assets/online.js?v=20261111f"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>

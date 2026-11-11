@@ -497,7 +497,10 @@ function render(){
   document.querySelectorAll("#tabs a[data-view],#sitebar a[data-view]").forEach(a=>{const sub=a.closest(".tab-dd")&&!a.closest(".tab-sub")?[...a.closest(".tab-dd").querySelectorAll(".tab-sub a")]:null;
     const on=sub?sub.some(x=>x.getAttribute("href")==="#"+S.view):a.dataset.view===S.view;if(on)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   const v=$("#view");
-  if(S.view==="catalog")v.innerHTML=viewCatalog();
+  if(S.view!=="home"&&window.CQHome)window.CQHome.leave();
+  if(S.view==="home"){if(window.CQHome)window.CQHome.mount(v)}
+  else if(S.view==="learn"){if(window.CQHome)window.CQHome.mountLearn(v)}
+  else if(S.view==="catalog")v.innerHTML=viewCatalog();
   else if(S.view==="build"){/* update 30: keep the deck list's scroll position (and the page's) when a card is added or removed */
     const dp=v.querySelector(".deckpanel"),st=dp?dp.scrollTop:0,wy=window.scrollY;v.innerHTML=viewBuild();
     const dp2=v.querySelector(".deckpanel");if(dp2&&st)dp2.scrollTop=st;if(window.scrollY!==wy)window.scrollTo(0,wy)}
@@ -1309,7 +1312,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.q
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
 function route(){const h=location.hash.replace("#","");const pm=/^player\/(.+)$/.exec(h);if(pm){try{S.playerName=decodeURIComponent(pm[1])}catch(e){S.playerName=pm[1]}}
-  S.view=pm?"player":["catalog","build","decks","account","rules","quickstart","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+  S.view=pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

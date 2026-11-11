@@ -1,0 +1,103 @@
+/* Crystal Quest Deck Forge: Home page (#home) and Learn to Play (#learn). See assets/home.js. */
+html.hm-page main .wrap{max-width:none;padding:0}
+html.hm-page body{overflow-x:hidden}
+
+/* ---------- banner: under the menu bar, down to the fold, fading into the page ---------- */
+.hm-hero{position:relative;height:calc(100svh - var(--hm-top,60px) - var(--hm-bot,52px));min-height:520px;max-height:1200px;
+  display:flex;flex-direction:column;align-items:center;text-align:center;overflow:hidden;isolation:isolate}
+.hm-bg{position:absolute;inset:0;z-index:-1;background-size:cover;background-position:center 40%;image-rendering:pixelated;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 62%,rgba(0,0,0,.55) 82%,transparent 100%);
+          mask-image:linear-gradient(to bottom,#000 0%,#000 62%,rgba(0,0,0,.55) 82%,transparent 100%);
+  animation:hmFade .6s ease}
+.hm-day .hm-bg{background-image:image-set(url("art/banner/riverstead-1920.webp") 1x,url("art/banner/riverstead-2560.webp") 2x)}
+.hm-night .hm-bg{background-image:image-set(url("art/banner/draven-1920.webp") 1x,url("art/banner/draven-2560.webp") 2x)}
+@media (min-width:1921px){
+  .hm-day .hm-bg{background-image:url("art/banner/riverstead-2560.webp")}
+  .hm-night .hm-bg{background-image:url("art/banner/draven-2560.webp")}}
+/* soft shade behind the words so they read on bright sky */
+.hm-hero::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(58% 40% at 50% 25%,rgba(12,8,22,.7),rgba(12,8,22,.32) 60%,rgba(12,8,22,0) 85%)}
+@keyframes hmFade{from{opacity:0}to{opacity:1}}
+
+/* Daylight / Nightfall switch, top left of the banner */
+.hm-toggle{position:absolute;top:14px;left:16px;display:flex;border-radius:999px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.75)}
+.hm-tg{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:4px 11px;font:600 .8rem/1.2 var(--body);letter-spacing:.02em;text-shadow:none;transition:filter .15s,opacity .15s}
+.hm-tg span{font-size:1rem;line-height:1}
+.hm-day.hm-tg{background:#fff;color:#4a3a10}
+.hm-day.hm-tg span{color:#e7a400}
+.hm-night.hm-tg{background:#0d0a14;color:#efe9ff}
+.hm-night.hm-tg span{color:#c9b8ff}
+.hm-tg[aria-pressed="false"]{opacity:.55}
+.hm-tg[aria-pressed="false"]:hover{opacity:.85}
+.hm-tg:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+
+/* words: centered in the sky, then a gap, then the button where the picture fades */
+.hm-copy{max-width:760px;padding:clamp(28px,7vh,90px) 20px 0}
+html[data-skin] .hm-title{margin:0;font-family:"Pirata One",var(--display)!important;font-weight:400;font-size:clamp(3rem,7.5vw,6.2rem);line-height:1;letter-spacing:.02em;color:#ffd75a;
+  text-shadow:0 3px 0 #5a2a0a,0 0 2px #2a1004,3px 3px 0 #2a1004,0 8px 24px rgba(0,0,0,.6)}
+.hm-lede{font-weight:500;margin:18px auto 0;padding:12px 20px;border-radius:14px;background:rgba(20,11,8,.5);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);max-width:640px;font-size:clamp(1rem,1.5vw,1.2rem);line-height:1.5;color:#fff8ea;text-shadow:0 1px 2px #000,0 0 3px #000,0 0 16px rgba(0,0,0,.85)}
+.hm-cta{text-decoration:none!important;position:absolute;left:50%;transform:translateX(-50%);bottom:13%;font-size:1.25rem!important;padding:12px 30px!important;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.55)}
+
+/* phones: keep the heroes in frame */
+@media (max-width:720px){
+  .hm-day .hm-bg{background-position:22% 50%}
+  .hm-night .hm-bg{background-position:76% 50%}
+  .hm-hero{min-height:440px}
+  .hm-copy{padding-top:58px}
+  html[data-skin] .hm-title{font-size:2.7rem}
+  .hm-lede{font-size:.95rem;margin-top:10px}
+  .hm-cta{bottom:7%;font-size:1.1rem!important;padding:10px 24px!important}}
+
+/* ---------- below the fold ---------- */
+.hm-body{max-width:1240px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-left,0px)) 40px}
+.hm-sec{padding:44px 0;border-top:1px solid rgba(184,116,58,.35)}
+.hm-sec:first-child{border-top:0;padding-top:16px}
+.hm-sec h2{font-family:"Pirata One",var(--display);font-weight:400;font-size:clamp(1.8rem,3.4vw,2.5rem);margin:0 0 8px;color:#ffd75a;letter-spacing:.02em}
+.hm-sub{margin:0 0 22px;color:var(--muted);max-width:720px}
+.hm-txt p{max-width:560px}
+.hm-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:36px;align-items:center}
+.hm-rev .hm-txt{order:2}
+.hm-cards{display:grid;gap:12px;align-items:start}
+.hm-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.hm-two{grid-template-columns:repeat(2,minmax(0,220px));justify-content:center}
+.hm-cards .card{width:100%}
+@media (max-width:860px){.hm-split{grid-template-columns:1fr}.hm-rev .hm-txt{order:0}}
+
+.hm-classes{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.hm-cls{display:grid;grid-template-columns:40px 1fr;column-gap:12px;row-gap:2px;align-items:center;text-decoration:none;color:var(--ink);
+  background:rgba(42,23,17,.75);border:1px solid var(--line);border-left:4px solid var(--cc);border-radius:10px;padding:10px 12px;transition:transform .15s,border-color .15s}
+.hm-cls img{grid-row:span 2;width:40px;height:40px;image-rendering:pixelated}
+.hm-cls b{font-family:var(--display);font-weight:600;font-size:1.1rem}
+.hm-cls span{font-size:.88rem;color:var(--muted);line-height:1.3}
+.hm-cls:hover{transform:translateY(-2px);border-color:var(--cc)}
+
+.hm-phases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.hm-ph{display:flex;flex-direction:column;gap:6px}
+.hm-ph-art{border-radius:12px;overflow:hidden;aspect-ratio:751/560;background:var(--sunk);border:1px solid var(--line)}
+.hm-ph-art img{width:100%;height:auto;display:block;transform:translate(0,-7%) scale(1.18);transform-origin:50% 0}
+.hm-ph b{font-family:var(--display);font-weight:600;font-size:1.2rem;display:flex;align-items:center;gap:8px}
+.hm-n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:.9rem;text-shadow:none}
+.hm-ph span:last-child{color:var(--muted);font-size:.95rem}
+@media (max-width:860px){.hm-phases{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.hm-ways,.hm-learn{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.hm-way{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:var(--ink);background:linear-gradient(180deg,rgba(80,46,34,.9),rgba(52,28,22,.9));border:2px solid #b8743a;border-radius:12px;padding:16px 18px;transition:transform .15s}
+.hm-way b{font-family:var(--display);font-size:1.2rem;font-weight:600;color:#ffd75a}
+.hm-way span{color:var(--muted);font-size:.95rem}
+.hm-way:hover{transform:translateY(-2px)}
+.hm-learn{margin-top:18px;max-width:900px}
+.hm-end{text-align:center}
+.hm-end .hm-sub{margin-inline:auto}
+.hm-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
+/* bottom bar: music switch on the right */
+.sitebar .sb-music{all:unset;cursor:pointer;margin-left:auto;font-family:"Pirata One",var(--display);font-size:1.1rem;color:#f3e6cf;padding:5px 10px;border-radius:8px}
+.sitebar .sb-music:hover{background:rgba(255,255,255,.08);color:#ffc100}
+.sitebar .sb-music[aria-pressed="false"]{opacity:.7}
+.sitebar .sb-music:focus-visible{outline:2px solid var(--accent)}
+@media (prefers-reduced-motion:reduce){.hm-bg{animation:none}.hm-cls,.hm-way{transition:none}}
+a.brand{text-decoration:none;color:inherit}
+
+.hm-body a.btn,.hm-learn a,.hm-cta{text-decoration:none}
+html[data-skin] .hm-sec h2{color:#ffd75a}
+a[aria-disabled="true"]{cursor:default}

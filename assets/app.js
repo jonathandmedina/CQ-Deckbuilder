@@ -44,8 +44,28 @@ const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
 /* Set 2 (hidden playtest set): cards named in SET2_CARDS (cards-data.js) only show for admins and players an admin gave Set 2 access (Admin page). */
 const SET2=new Set(typeof SET2_CARDS!=="undefined"?SET2_CARDS:[]);
 [...HEROES,...CARDS,...TOKENS].forEach(c=>{if(SET2.has(c.name))c.set=2});
-const canSee=c=>!c||c.set!==2||!!(S.access&&S.access.set2);
+const canSee=c=>!c||(c.set!==2||!!(S.access&&S.access.set2))&&(c.set!=="trials"||!!(S.access&&S.access.trials));
 const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
+/* Trials module (co-op boss Trials, trials-data.js). Stricter than Set 2: these objects only exist in CARDS, TOKENS and BYID while the
+   signed-in player has Trials access (admins, or the Trials box in Admin > Users). Without access, Trials names are masked everywhere. */
+const TRIALS_SET=new Set(typeof TRIALS_NAMES!=="undefined"?TRIALS_NAMES:[]);
+const TRIALS_OBJS=typeof TRIALS_LOOT==="undefined"?[]:[
+  ...TRIALS_LOOT.map(r=>{const c={id:r[0],kind:"equip",name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:+r[7]||0,pdef:+r[8]||0,ver:r[9]||1,set:"trials"};
+    const u=TRIALS_LOOT_UPGRADES[r[0]];if(u)c.up={cost:+u[0],rules:u[1],pstr:+u[2]||0,pdef:+u[3]||0};return c}),
+  ...TRIALS_BOSSES.map(r=>({id:"t:"+r[0],kind:"token",tkind:"Boss",name:r[0],type:"Token",sub:"Trial "+r[1]+" boss",cls:"Trials",sup:"",cost:"",rules:`Health Points: ${r[2]} per party. Defense: ${r[3]}, plus its Stone Plates.\n${r[6]}`,ver:r[7]||1,set:"trials"})),
+  ...TRIALS_BOSS_CARDS.map(r=>({id:"t:"+r[0],kind:"token",tkind:"Boss Card",name:r[0],type:"Token",sub:`${r[1]} boss card · ${r[2]} in its deck`,cls:"Trials",sup:"",cost:"",rules:`Target: ${r[3]}\n${r[4]}`,ver:r[5]||1,set:"trials"})),
+  ...TRIALS_SPAWNS.map(r=>({id:"t:"+r[0],kind:"token",tkind:"Summon",name:r[0],type:"Token",sub:`Spawn · ${r[1]}`,cls:"Trials",sup:"",cost:"",str:r[2],def:r[3],hp:r[4],rules:r[5],ver:r[6]||1,set:"trials"}))];
+const trialsOn=()=>!!(S.access&&S.access.trials);
+/* a card name or id the viewer may not see (a Trials card without Trials access) */
+const trialsHidden=id=>{const k=String(id||"").replace(/^t:/,"");return TRIALS_SET.has(k)&&!trialsOn()};
+const hiddenLabel=id=>trialsHidden(id)?"A card you don't have access to":id;
+/* a deck row from someone else (Best Decks, Community, profiles): hidden when it uses a card the viewer can't see */
+const showRow=r=>!Object.keys((r&&r.cards)||{}).some(trialsHidden);
+function warnHidden(d){if(d&&Object.keys(d.cards||{}).some(trialsHidden))toast("Some cards in this deck aren't available to you.")}
+function syncTrials(){const on=trialsOn();
+  for(const c of TRIALS_OBJS){const L=c.kind==="equip"?CARDS:TOKENS,i=L.indexOf(c);
+    if(on&&i<0){L.push(c);BYID.set(c.id,c);if(c.kind==="token")TOKEN_BY_NAME.set(c.name,c)}
+    else if(!on&&i>=0){L.splice(i,1);BYID.delete(c.id);if(TOKEN_BY_NAME.get(c.name)===c)TOKEN_BY_NAME.delete(c.name)}}}
 /* Renamed cards (cards-data.js CARD_RENAMES): old saved decks, share links, imports and Best Decks lists still find the card. */
 const RENAMES=(typeof CARD_RENAMES!=="undefined")?CARD_RENAMES:{};
 function fixRenames(d){if(!d)return false;let ch=false;const c=d.cards||{};
@@ -150,7 +170,7 @@ function issues(d){
   if(HN(d)!==3)out.push(`Pick ${3-HN(d)} more Hero${3-HN(d)===1?"":"es"}.`);
   const t=deckTotal(d);
   if(t<DECK_SIZE)out.push(`Add ${DECK_SIZE-t} more card${DECK_SIZE-t===1?"":"s"} (decks need at least 50).`);
-  for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(!c){out.push(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===id)?`${id} is deprecated (removed from play). Take it out of this deck.`:`"${id}" isn't in the card list anymore.`);continue}
+  for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(!c&&trialsHidden(id)){out.push("This deck has a card you don't have access to.");continue}if(!c){out.push(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===id)?`${id} is deprecated (removed from play). Take it out of this deck.`:`"${id}" isn't in the card list anymore.`);continue}
     if(q>maxCopies(c))out.push(`${c.name}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`);
     if(HN(d)&&!allowed(c,d))out.push(`${c.name} is ${c.cls}; no Hero in your party can play it.`);}
   return out;
@@ -233,14 +253,14 @@ function setSession(session){
   S.me=u?{email:u.email||"",name:(u.user_metadata&&u.user_metadata.display_name)||discordOf(u)||String(u.email||"player").split("@")[0],discord:discordOf(u),hasEmail:(u.identities||[]).some(x=>x.provider==="email")}:null;
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
-  lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false};showAdminLink();if(u)loadAccess();if(window.CQProf)window.CQProf.onSession();
+  lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false,trials:false};syncTrials();showAdminLink();if(u)loadAccess();if(window.CQProf)window.CQProf.onSession();
   if(u)loadDecks().then(()=>{try{if(window.CQTut)window.CQTut.onAccount()}catch(e){console.warn(e)}});else{S.decks=localDecks();setTimeout(rebuildPrompt,50)}
   renderAcct();render();
 }
 /* Admin and Set 2 access (Supabase RPC my_access; see "Admin Panel SQL" in the project). Signed out or no SQL yet = no access. */
-async function loadAccess(){const uid=S.uid;let a={admin:false,set2:false};
-  try{const{data,error}=await SB.rpc("my_access");if(!error&&data)a={admin:!!data.admin,set2:!!(data.set2||data.admin)}}catch(e){}
-  if(uid!==S.uid)return;S.access=a;showAdminLink();if(["catalog","build","admin"].includes(S.view))render()}
+async function loadAccess(){const uid=S.uid;let a={admin:false,set2:false,trials:false};
+  try{const{data,error}=await SB.rpc("my_access");if(!error&&data)a={admin:!!data.admin,set2:!!(data.set2||data.admin),trials:!!(data.trials||data.admin)}}catch(e){}
+  if(uid!==S.uid)return;S.access=a;syncTrials();showAdminLink();if(["catalog","build","admin","rules","quickstart","trials-rules","best","community","decks"].includes(S.view))render()}
 function showAdminLink(){const l=document.getElementById("adminTab");if(l)l.hidden=!(S.access&&S.access.admin)}
 async function loadDecks(){
   /* own decks only (the profiles update adds a public-read policy, so filter by user); is_private may not exist before the Profiles SQL runs */
@@ -365,13 +385,14 @@ function shareURL(d){return location.origin+location.pathname+"?deck="+shareCode
 /* ---------- rendering: card tile ---------- */
 function typeLine(c){const v=`<i class="cver" title="Card version">v${c.ver||1}</i>`;
   if(c.kind==="hero")return`<span>Hero</span><span>${esc(c.cls)} ${v}</span>`;
-  if(c.kind==="token")return`<span>Token — ${esc(c.sub)}</span><span>${esc(c.cls)} ${v}</span>`;
+  if(c.kind==="token")return`<span>${c.set==="trials"?"":"Token — "}${esc(c.sub)}</span><span>${esc(c.cls)} ${v}</span>`;
   const left=(c.sup?`<span class="leg${c.sup==="Legendary"?" legendary":""}">${esc(c.sup)}</span> `:"")+esc(c.type)+(c.sub?" — "+esc(c.sub):"");
   return`<span>${left}</span><span>${esc(c.cls)} ${v}</span>`;
 }
 function footHTML(c){
   if(c.kind==="hero")return`<div class="stats">${[["STR",c.str],["DEF",c.def],["AURA",c.aura],["HP",c.hp]].map(([k,v])=>`<div class="stat s-${k.toLowerCase()}"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
   if(c.kind==="token"){const st=tokenStats(c);if(st)return`<div class="stats">${st.map(([k,v])=>`<div class="stat"><b>${esc(v)}</b><i>${k}</i></div>`).join("")}</div>`;
+    if(c.set==="trials")return c.tkind==="Boss"?"Trials boss":"Boss card";
     return c.tkind==="Equipment"?[esc(c.region),"+"+esc(c.str)+" STR","Token"].join(" · "):"Pillar token"}
   if(c.kind==="equip"){const b=[esc(c.region)];if(c.pstr)b.push("+"+c.pstr+" STR");if(c.pdef)b.push("+"+c.pdef+" DEF");if(c.face==="up")b.push(`<b class="upcost">Upgraded · ${c.up.cost} Gold</b>`);
     return b.join(" · ")+(c.up?`<span class="flip" role="button" tabindex="0" data-flip title="${c.face==="up"?"Flip back to the normal side":`Flip to see the upgrade (${c.up.cost} Gold at the Blacksmith)`}" aria-label="${c.face==="up"?"Show normal side":"Show upgraded side"}">⟳</span>`:"")}
@@ -474,9 +495,9 @@ function artCardHTML(c,o,tag,attrs){
 const kindRank=c=>c.kind==="hero"?0:c.kind==="token"?2:1;
 function filterSort(list,f){
   const q=f.q.trim().toLowerCase();
-  let l=list.filter(c=>canSee(c)&&(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
+  let l=list.filter(c=>canSee(c)&&(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Trials"?c.set==="trials":f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
   const byName=(a,b)=>sortName(a.name).localeCompare(sortName(b.name));
-  const s={class:(a,b)=>kindRank(a)-kindRank(b)||clsOrder(a.cls)-clsOrder(b.cls)||byName(a,b),
+  const s={class:(a,b)=>kindRank(a)-kindRank(b)||clsOrder(a.cls)-clsOrder(b.cls)||(a.set==="trials"&&b.set==="trials"?(a.tkind||"").localeCompare(b.tkind||""):0)||byName(a,b),
     name:byName,cost:(a,b)=>costNum(a)-costNum(b)||byName(a,b),type:(a,b)=>a.type.localeCompare(b.type)||byName(a,b)}[f.sort]||byName;
   return l.sort(s);
 }
@@ -484,7 +505,7 @@ function gridWithGroups(list,f,tile){
   if(!list.length)return`<div class="empty">No cards match these filters.</div>`;
   if(f.sort!=="class")return list.map(tile).join("");
   let out="",last=null;
-  const gk=c=>(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
+  const gk=c=>c.set==="trials"&&c.kind==="token"?"Trials module · "+(c.tkind==="Boss Card"?"Boss cards":c.tkind==="Boss"?"Bosses":"Spawns"):(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
   const counts={};list.forEach(c=>{const k=gk(c);counts[k]=(counts[k]||0)+1});
   for(const c of list){const k=gk(c);
     if(k!==last){out+=`<div class="group-h" style="--cc:${cc(c.cls)};--ci:${ci(c.cls)}"><i class="dot"></i>${esc(k)} <span>${counts[k]}</span></div>`;last=k}
@@ -526,11 +547,11 @@ function viewCatalog(){
   const all=[...HEROES,...CARDS,...TOKENS];
   const list=filterSort(all,f);
   return`<div class="bhead"><h1>Cards</h1><a href="#build" class="btn primary go newdeck build-go">Build a Deck</a></div>
-  <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.filter(canSee).length} Heroes, ${CARDS.filter(canSee).length} deck cards, ${TOKENS.filter(canSee).length} tokens.${SET2.size&&S.access&&S.access.set2?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===2).length} Set 2 cards (hidden playtest set).`:""}</p>
+  <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.filter(canSee).length} Heroes, ${CARDS.filter(canSee).length} deck cards, ${TOKENS.filter(canSee).length} tokens.${SET2.size&&S.access&&S.access.set2?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===2).length} Set 2 cards (hidden playtest set).`:""}${trialsOn()&&TRIALS_OBJS.length?` Includes ${TRIALS_OBJS.length} Trials module cards (hidden; pick Trials module under Type).`:""}</p>
   <div class="bar">${classChips(f.cls,"cat-cls",[...CLASSES,"Generic"])}</div>
   <div class="bar">
     <label class="field" for="cat-q">Search <input type="search" id="cat-q" data-act="cat-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
-    <label class="field" for="cat-type">Type ${selectHTML("cat-type","cat-type",f.type,[["all","All"],["Hero","Heroes"],...TYPES.map(t=>[t,t]),["Token","Tokens"]])}</label>
+    <label class="field" for="cat-type">Type ${selectHTML("cat-type","cat-type",f.type,[["all","All"],["Hero","Heroes"],...TYPES.map(t=>[t,t]),["Token","Tokens"],...(trialsOn()?[["Trials","Trials module"]]:[])])}</label>
     <label class="field" for="cat-sort">Sort by ${selectHTML("cat-sort","cat-sort",f.sort,SORTS)}</label>
     <span class="count">${list.length} shown</span>
   </div>
@@ -615,7 +636,7 @@ function deckPanel(d){
     <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 3 copies of a card, and 1 of each Legendary.</p>`}
     ${HN(d)?`<div class="dl heroes"><h4><span>Heroes</span><span>${HN(d)}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
-    <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>${e.c.sup==="Legendary"?'<span class="leg-ico" title="Legendary: 1 copy per deck" aria-label="Legendary">L</span>':""}`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>+</button><button type="button" class="mini add3" data-act="inc-max" data-id="${esc(e.id)}" title="Fill to ${e.c?maxCopies(e.c):3} copies" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>×${e.c?maxCopies(e.c):3}</button><button type="button" class="mini rmall" data-act="rmall" data-id="${esc(e.id)}" aria-label="Remove all copies of ${esc(e.c?e.c.name:e.id)}" title="Remove all copies">×</button></li>`).join("")}</ul>`).join("")}</div>
+    <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>${e.c.sup==="Legendary"?'<span class="leg-ico" title="Legendary: 1 copy per deck" aria-label="Legendary">L</span>':""}`:`<span class="n bad">${esc(hiddenLabel(e.id))}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>+</button><button type="button" class="mini add3" data-act="inc-max" data-id="${esc(e.id)}" title="Fill to ${e.c?maxCopies(e.c):3} copies" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>×${e.c?maxCopies(e.c):3}</button><button type="button" class="mini rmall" data-act="rmall" data-id="${esc(e.id)}" aria-label="Remove all copies of ${esc(e.c?e.c.name:hiddenLabel(e.id))}" title="Remove all copies">×</button></li>`).join("")}</ul>`).join("")}</div>
     ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward your deck. Print &amp; Play includes them.</p></div>`:""})()}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}
     <div class="actions">
@@ -673,7 +694,7 @@ function myIdentity(){const P=window.CQProf&&window.CQProf._D;const me=P&&P.me;c
   const name=me&&me.screen_name||dn||"Crystal Quest player";return{name,hero:h}}
 /* Update 30: the deck image is a picture of the real cards. Build an off-screen sheet with the site's own card markup
    (Card Art images + rules text, hero cards as in the Deck Builder), then turn it into a PNG with html-to-image. */
-async function exportDeckPNG(d){
+async function exportDeckPNG(d){warnHidden(d);
   const es=deckSorted(d),hs=d.heroes.map(h=>BYID.get(h)).filter(Boolean);if(!es.length&&!hs.length){toast("This deck is empty.");return}
   busy(true,"Drawing the deck image…");await loadFonts();
   const host=document.createElement("div");host.className="png-sheet";
@@ -719,7 +740,7 @@ function viewBest(){const b=S.best;
   if(!SB)return head+`<div class="empty">Win tracking needs the site's account service, which isn't reachable right now.</div>`;
   if(!b||b.loading&&!b.rows)return head+`<div class="empty">Loading results…</div>`;
   if(b.err)return head+`<div class="empty">Couldn't load results: ${esc(b.err)}</div>`;
-  const top=b.rows.filter(r=>r.games>=BEST_MIN_GAMES),soon=b.rows.filter(r=>r.games<BEST_MIN_GAMES);
+  const top=b.rows.filter(r=>showRow(r)&&r.games>=BEST_MIN_GAMES),soon=b.rows.filter(r=>showRow(r)&&r.games<BEST_MIN_GAMES);
   return head+(top.length?`<div class="decks">${top.map((r,i)=>bestCard(r,i+1)).join("")}</div>`:`<div class="empty">No deck has ${BEST_MIN_GAMES}+ games above ${BEST_MIN_PCT}% yet. Finish games in the Play tab to fill this list.</div>`)
     +(soon.length?`<h2 style="margin-top:28px">On the rise</h2><p class="lede">Over ${BEST_MIN_PCT}% wins but fewer than ${BEST_MIN_GAMES} games so far.</p><div class="decks">${soon.slice(0,24).map(r=>bestCard(r,0)).join("")}</div>`:"")}
 /* ---------- Decklists: Community Decks (decks players share) + recently played decks ----------
@@ -748,8 +769,8 @@ function viewCommunity(){const c=S.comm;
   if(!SB)return head+`<div class="empty">Community decks need the site's account service, which isn't reachable right now.</div>`;
   if(!c||c.loading&&!c.rows)return head+`<div class="empty">Loading decks…</div>`;
   const shared=c.err?`<div class="empty">Community decks aren't available yet${/community_decks/.test(c.err)?" (the site's database needs a quick update)":`: ${esc(c.err)}`}.</div>`
-    :c.rows.length?`<div class="decks">${c.rows.map(commCard).join("")}</div>`:`<div class="empty">No shared decks yet. Be the first: open My Decks and press Share to community.</div>`;
-  const recent=c.recent&&c.recent.length?`<h2 style="margin-top:28px">Recently played</h2><p class="lede">Decks from the latest finished Play-tab games, any win rate.</p><div class="decks">${c.recent.map(r=>bestCard(r,0)).join("")}</div>`:"";
+    :c.rows.filter(showRow).length?`<div class="decks">${c.rows.filter(showRow).map(commCard).join("")}</div>`:`<div class="empty">No shared decks yet. Be the first: open My Decks and press Share to community.</div>`;
+  const recentRows=(c.recent||[]).filter(showRow);const recent=recentRows.length?`<h2 style="margin-top:28px">Recently played</h2><p class="lede">Decks from the latest finished Play-tab games, any win rate.</p><div class="decks">${recentRows.map(r=>bestCard(r,0)).join("")}</div>`:"";
   return head+shared+recent}
 function commListModal(r){bestListModal(Object.assign({},r,{_comm:true}))}
 async function commShare(d){if(!SB||!S.uid){toast("Sign in to share decks.");return}
@@ -765,7 +786,7 @@ function bestListModal(r){const d=r._comm?commDeck(r):bestDeck(r);const l=$("#la
   const rows=Object.entries(d.cards).map(([id,q])=>({c:BYID.get(id),id,q})).sort((a,b)=>(a.c?costNum(a.c):99)-(b.c?costNum(b.c):99)||a.id.localeCompare(b.id));
   m.innerHTML=`<div class="box"><h2>${esc(d.name)}</h2><p class="note">${r._comm?`Shared by ${esc(r.author||"Player")}`:`${r.wins}–${r.losses}${r.draws?`–${r.draws}`:""} · ${Number(r.win_pct).toFixed(1)}% wins in ${r.games} games`}</p>
     <div class="dl"><h4><span>Heroes</span><span>3</span></h4><ul>${d.heroes.map(h=>{const c=BYID.get(h);return c?`<li style="--cc:${cc(c.cls)};--ci:${ci(c.cls)}"><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(c.id)}">${esc(c.name)}</button></li>`:""}).join("")}</ul>
-    <h4><span>Cards</span><span>${rows.reduce((a,e)=>a+e.q,0)}</span></h4><ul>${rows.map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink" data-act="inspect" data-id="${esc(e.id)}">${esc(e.c.name)}</button><span class="cst">${esc(e.c.cost)}</span>`:`<span class="n bad">${esc(e.id)}</span>`}</li>`).join("")}</ul></div>
+    <h4><span>Cards</span><span>${rows.reduce((a,e)=>a+e.q,0)}</span></h4><ul>${rows.map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink" data-act="inspect" data-id="${esc(e.id)}">${esc(e.c.name)}</button><span class="cst">${esc(e.c.cost)}</span>`:`<span class="n bad">${esc(hiddenLabel(e.id))}</span>`}</li>`).join("")}</ul></div>
     <div class="actions"><button type="button" class="btn primary" data-act="${r._comm?"comm-open":"best-open"}" data-id="${esc(r._comm?r.id:r.deck_key)}">Open in Deck Builder</button><button type="button" class="btn" data-act="close">Close</button></div></div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m)}
 function confirmReplace(){return window.confirm("Replace your unsaved draft in the Deck Builder with this deck?")}
@@ -909,7 +930,7 @@ function handMull(){const H=S.hand;if(!H||H.mull||H.extra)return;
 function deckText(d,withTokens=true){
   const lines=[`# ${d.name}`,`Heroes: ${d.heroes.map(h=>BYID.get(h)?.name||h).join(", ")}`];
   const e=Object.entries(d.cards).filter(([,q])=>q>0).sort((a,b)=>{const A=BYID.get(a[0]),B=BYID.get(b[0]);return(A&&B?clsOrder(A.cls)-clsOrder(B.cls)||costNum(A)-costNum(B):0)||a[0].localeCompare(b[0])});
-  for(const[id,q]of e)lines.push(`${q} ${BYID.get(id)?.name||id}`);
+  for(const[id,q]of e)lines.push(`${q} ${BYID.get(id)?.name||hiddenLabel(id)}`);
   const tk=tokensFor(d);if(withTokens&&tk.length)lines.push(`Tokens: ${tk.map(t=>t.q+" "+t.c.name).join(", ")}`);
   return lines.join("\n");
 }
@@ -1039,7 +1060,7 @@ function choosePrint(d){const p=printPlan(d);const l=$("#layer");const m=documen
     <p class="note">${p.rec?`Last printed ${esc(new Date(p.rec.at).toLocaleString())} in this browser. Updated means a newer card version or a card added to the deck since then.${names.length?`<br><b>To print:</b> ${esc(names.join(", "))}`:"<br>Nothing has changed since then."}`:"This deck hasn't been printed from this browser yet, so print the whole deck first."}</p>
     <div class="actions"><button type="button" class="btn" data-act="close">Cancel</button></div></div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m)}
-async function exportPnP(d,mode){mode=mode||"all";const plan=printPlan(d);
+async function exportPnP(d,mode){warnHidden(d);mode=mode||"all";const plan=printPlan(d);
   if(!window.jspdf){toast("The PDF tool didn't load. Reload the page and try again.");return}
   const iss=issues(d);
   busy(true,"Building print & play PDF…");await loadFonts();
@@ -1077,7 +1098,7 @@ async function exportPnP(d,mode){mode=mode||"all";const plan=printPlan(d);
     await offer(safeName(d.name)+(mode==="upd"?"_updated_cards.pdf":"_print_and_play.pdf"),blob);
   }catch(e){busy(false);console.error(e);toast("Couldn't build the PDF. Try again.")}
 }
-async function exportTTS(d){
+async function exportTTS(d){warnHidden(d);
   if(!window.JSZip){toast("The zip tool didn't load. Reload the page and try again.");return}
   if(HN(d)+Object.keys(d.cards).length===0){toast("This deck is empty.");return}
   busy(true,"Building Tabletop Simulator files…");await loadFonts();

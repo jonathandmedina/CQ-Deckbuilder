@@ -147,7 +147,7 @@ function viewPlayer(){
   const prog=nx?Math.min(100,Math.round(100*(p.games-prev)/(nx[1]-prev))):100;
   const mine=p.uid===S.uid;
   if(!D.pub[p.uid])loadPublicDecks(p.uid);
-  const decks=D.pub[p.uid];
+  const decks=Array.isArray(D.pub[p.uid])&&typeof showRow==="function"?D.pub[p.uid].filter(showRow):D.pub[p.uid]; /* Trials: hide decks with cards this viewer can't see */
   return`<div class="pf-head">${avatarHTML(p.avatar,"lg")}<div><h1>${E(p.name)}</h1>${p.discord?`<div class="pf-dc-chip">Discord @${E(p.discord)}</div>`:""}
     <div class="pf-metal" style="margin-top:6px">${m?crestHTML(m[0],56):""}<span><b>${m?m[0]+" playtester":"No complete games yet"}</b>${p.rank?` · Rank #${p.rank}`:""}</span></div>
     ${nx?`<div class="pf-note" style="margin-top:6px">${fmt(nx[1]-p.games)} more complete game${nx[1]-p.games>1?"s":""} to ${nx[0]}</div><div class="pf-bar" style="max-width:280px"><i style="width:${prog}%"></i></div>`:""}

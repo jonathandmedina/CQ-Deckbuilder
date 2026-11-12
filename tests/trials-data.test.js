@@ -1,0 +1,27 @@
+/* Node check for assets/trials-data.js (Trials module, Plan A Task 2). Run: node tests/trials-data.test.js */
+const fs=require("fs"),vm=require("vm"),path=require("path"),assert=require("assert");
+const A=path.join(__dirname,"..","assets");
+const src=f=>fs.readFileSync(path.join(A,f),"utf8");
+const base=vm.runInNewContext(src("cards-data.js")+";({eq:RAW_EQUIP.length})");
+const c=vm.runInNewContext(src("cards-data.js")+"\n"+src("trials-data.js")+`;({RAW_CARDS,RAW_HEROES,RAW_EQUIP,RAW_TOKENS,SET2_CARDS,TRIALS_BOSSES,TRIALS_BOSS_CARDS,TRIALS_SPAWNS,TRIALS_LOOT,TRIALS_LOOT_UPGRADES,TRIALS_NAMES})`);
+let n=0;const ok=(cond,msg)=>{assert.ok(cond,msg);n++};
+ok(c.TRIALS_BOSS_CARDS.length===9,"9 boss card rows");
+ok(c.TRIALS_BOSS_CARDS.reduce((s,r)=>s+r[2],0)===20,"boss deck is 20 cards");
+const want={"Tusk Gore":4,"Crushing Step":3,"Boulder Toss":2,"Grudge Stomp":2,"Rockslide":2,"Tremor":1,"Call the Mountain":3,"The Mountain Wakes":1,"Stone Skin":2};
+c.TRIALS_BOSS_CARDS.forEach(r=>ok(want[r[0]]===r[2]&&r[1]==="Rock Mammoth"&&r[5]===1,"boss card "+r[0]));
+const b=c.TRIALS_BOSSES.find(r=>r[0]==="Rock Mammoth");
+ok(b&&b[1]===1&&b[2]===25&&b[3]===0&&b[4]===1&&b[5]===1&&/Raging Stampede/.test(b[6])&&/number of parties plus 1/.test(b[6])&&b[7]===1,"Rock Mammoth stats");
+const g=c.TRIALS_SPAWNS.find(r=>r[0]==="Golem");ok(g&&g[2]===1&&g[3]===0&&g[4]===4&&g[6]===1,"Golem 1/0/4");
+ok(c.TRIALS_LOOT.length===6,"6 loot cards");
+c.TRIALS_LOOT.forEach(r=>{ok(r.length===10&&r[1]==="Legendary"&&r[3]==="Generic"&&r[9]===1,"loot row "+r[0]);ok(Array.isArray(c.TRIALS_LOOT_UPGRADES[r[0]])&&c.TRIALS_LOOT_UPGRADES[r[0]].length===4,"upgrade "+r[0]);
+  ok(!/\b(STR|DEF|HP)\b/.test(r[4]+c.TRIALS_LOOT_UPGRADES[r[0]][1]),"spelled-out stats "+r[0])});
+const L=Object.fromEntries(c.TRIALS_LOOT.map(r=>[r[0],r]));
+ok(L["Rockbreaker Maul"][5]===3&&L["Rockbreaker Maul"][6]==="Two-Handed"&&L["Rockbreaker Maul"][7]===3,"Maul");
+ok(L["Mammoth Tusk"][5]===2&&L["Mammoth Tusk"][7]===1,"Tusk");
+["Crag Helm","Stampede Boots","Stoneplate Mantle"].forEach(nm=>ok(L[nm][8]===1&&c.TRIALS_LOOT_UPGRADES[nm][0]===5&&c.TRIALS_LOOT_UPGRADES[nm][3]===2,nm));
+ok(L["Stoneplate Mantle"][5]===3&&L["Heart of the Mountain"][5]===2,"costs");
+const taken=new Set([...c.RAW_CARDS.map(r=>r[1]),...c.RAW_EQUIP.map(r=>r[0]),...c.RAW_HEROES.map(r=>r[0]),...c.RAW_TOKENS.map(r=>r[0]),...c.SET2_CARDS]);
+c.TRIALS_NAMES.forEach(nm=>ok(!taken.has(nm),"no name clash: "+nm));
+ok(c.TRIALS_NAMES.length===1+9+1+6,"TRIALS_NAMES lists all 17");
+ok(c.RAW_EQUIP.length===base.eq,"RAW_EQUIP untouched");
+console.log(`PASS trials-data (${n} checks)`);

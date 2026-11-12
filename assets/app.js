@@ -534,6 +534,7 @@ function render(){
   else if(S.view==="account")v.innerHTML=viewAccount();
   else if(S.view==="rules"){v.innerHTML=viewRules();if(!S.rules)loadRules()}
   else if(S.view==="quickstart"){v.innerHTML=viewQuick();if(!S.quick)loadQuick()}
+  else if(S.view==="trials-rules"){if(trialsOn()){v.innerHTML=viewTrialsRules();if(!S.trules)loadTrialsRules()}else{v.innerHTML=viewRules();if(!S.rules)loadRules()}}
   else if(S.view==="play"){if(window.CQPlay)window.CQPlay.mount(v);else v.innerHTML='<p class="lede">Loading the game…</p>'}
   else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
   else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
@@ -1185,7 +1186,7 @@ function mdToHtml(md){
 async function loadRules(){
   try{const r=await fetch("assets/rules.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.rules=mdToHtml(await r.text());S.rulesErr=false}
   catch(e){S.rulesErr=true}
-  if(S.view==="rules")render();
+  if(S.view==="rules"||S.view==="trials-rules")render();
 }
 function viewRules(){
   if(!S.rules)return`${rulesSubtabs("rules")}<h1>Rules</h1><p class="lede">${S.rulesErr?"The rules didn't load. Check your connection and reload the page.":"Loading the rules…"}</p>`;
@@ -1202,7 +1203,19 @@ function viewRules(){
   </div>`;
 }
 /* Rules sub-menu: the full rules and the Quick Start guide (assets/quickstart.md, a separate document) */
-function rulesSubtabs(cur){return`<nav class="subtabs" aria-label="Rules pages"><a href="#rules"${cur==="rules"?' aria-current="page"':""}>Full Rules</a><a href="#quickstart"${cur==="quickstart"?' aria-current="page"':""}>Quick Start</a></nav>`}
+function rulesSubtabs(cur){return`<nav class="subtabs" aria-label="Rules pages"><a href="#rules"${cur==="rules"?' aria-current="page"':""}>Full Rules</a><a href="#quickstart"${cur==="quickstart"?' aria-current="page"':""}>Quick Start</a>${trialsOn()?`<a href="#trials-rules"${cur==="trials-rules"?' aria-current="page"':""}>Trials Supplement</a>`:""}</nav>`}
+/* Trials Module Supplement (assets/trials-rules.md): only for players with Trials access; everyone else gets the full rules */
+S.trules=null;S.trulesErr=false;
+async function loadTrialsRules(){
+  try{const r=await fetch("assets/trials-rules.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.trules=mdToHtml(await r.text());S.trulesErr=false}
+  catch(e){S.trulesErr=true}
+  if(S.view==="trials-rules")render();
+}
+function viewTrialsRules(){
+  if(!S.trules)return`${rulesSubtabs("trials-rules")}<h1>Trials Module Supplement</h1><p class="lede">${S.trulesErr?"The Trials Supplement didn't load. Check your connection and reload the page.":"Loading…"}</p>`;
+  const R=S.trules;
+  return`${rulesSubtabs("trials-rules")}<h1>${R.title||"Trials Module Supplement"}</h1>${R.sub.map(x=>`<p class="lede">${x}</p>`).join("")}<article class="rules quick">${R.html}</article>`;
+}
 S.quick=null;S.quickErr=false;
 async function loadQuick(){
   try{const r=await fetch("assets/quickstart.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.quick=mdToHtml(await r.text());S.quickErr=false}
@@ -1339,7 +1352,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.q
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
 function route(){const h=location.hash.replace("#","");const pm=/^player\/(.+)$/.exec(h);if(pm){try{S.playerName=decodeURIComponent(pm[1])}catch(e){S.playerName=pm[1]}}
-  S.view=pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+  S.view=pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","trials-rules","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

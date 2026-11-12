@@ -30,7 +30,7 @@ const OPP=3; /* AI plays the Grand Stage starter (the friendliest matchup for al
 /* Coached card tips: shown when the card is playable for the acting Hero, in this order. */
 const TIPS={
   barbarian:[
-    {id:"Pump",t:a=>`Play <b>Pump</b>: click it in your hand, then pick ${esc(a.name)}. It gets +2 Strength this turn, so its next attack hits harder.`,once:true},
+    {id:"Pump",t:a=>`Play <b>Pump</b>: drag it from your hand up onto the board (or click it), then pick ${esc(a.name)}. It gets +2 Strength this turn, so its next attack hits harder.`,once:true},
     {id:"Great Axe",t:a=>`Equip the <b>Great Axe</b> on ${esc(a.name)}: +3 Strength. Equipment stays on the Hero for the whole game.`},
     {id:"Bloodthirst",t:()=>`<b>Bloodthirst</b> attacks with this Hero. If the enemy dies, your Hero readies and can act again.`,when:"low"},
     {id:"Blunt Force",t:()=>`<b>Blunt Force</b> gives a Barbarian +4 Strength this turn. Play it, then attack.`,once:true}],
@@ -216,7 +216,7 @@ function coach(s,root){
     const c=hand.find(x=>x.id===tip.id&&plays.some(o=>o.uid===x.uid));if(!c)continue;
     if(tip.when==="summonReady"&&!mySummonsReady)continue;
     if(tip.when==="low"&&!s.p[1].heroes.some(h=>!h.dead&&E().hp(s,h)<=E().str(s,a)))continue;
-    T.lastTip=tip.id;T.suggest=tip.id==="Pump"||tip.id==="Blunt Force"?a.uid:(tip.id==="Lightning Bolt"||tip.id==="Ice Jab"||tip.id==="Flame Jab"?(bestTarget(s,a,3)||{h:{}}).h.uid:null);return R(tip.t(a),handEl(root,c.uid))}
+    T.lastTip=tip.id;const how=!T.seen.drag&&tip.id!=="Pump"?(T.seen.dragAt=T.seen.dragAt||Date.now(),Date.now()-T.seen.dragAt<60000?`<br><span style="color:#d8c3a0">To play a card, drag it from your hand up onto the board, or click it.</span>`:""):"";T.suggest=tip.id==="Pump"||tip.id==="Blunt Force"?a.uid:(tip.id==="Lightning Bolt"||tip.id==="Ice Jab"||tip.id==="Flame Jab"?(bestTarget(s,a,3)||{h:{}}).h.uid:null);return R(tip.t(a)+how,handEl(root,c.uid))}
   /* summons attack */
   const sAtk=opts.filter(o=>{if(o.type!=="attack"||o.att===a.uid)return false;const f=E().find(s,o.att);return f&&f.o&&E().str(s,f.o)>0}).sort((x,y)=>E().str(s,E().find(s,y.att).o)-E().str(s,E().find(s,x.att).o));
   if(sAtk.length&&k==="druid"){const sm=E().find(s,sAtk[0].att).o,b=bestTarget(s,sm);if(b)T.suggest=b.h.uid;return R(`Your <b>${esc(nm(s,sAtk[0].att))}</b> is ready. Summons can't attack the round they arrive, but after that they attack like Heroes. Attack ${b?`<b>${esc(b.h.name)}</b>`:"an enemy"} with it.`,btnsFor(root,o=>o.type==="attack"&&o.att===sAtk[0].att).concat(objEl(root,sAtk[0].att)))}
@@ -324,6 +324,9 @@ setTimeout(firstVisit,1500);
 
 /* any click may close a window or move things: redraw the rings from what is still on the page */
 document.addEventListener("click",()=>{const U=P();if(U&&U.tut)setTimeout(rings,80)});
+/* a window closed with Escape (or anything else that moves without a click): drop stale rings and refresh the coach */
+document.addEventListener("keydown",e=>{const U=P();if(U&&U.tut&&e.key==="Escape")setTimeout(()=>{if(!document.querySelector(".modal"))U.render()},60)});
+setInterval(()=>{const U=P();if(U&&U.tut&&q(".tut-ring").length)rings()},500);
 /* clicking a hand card opens the card's Play window: point at its Play button */
 document.addEventListener("click",e=>{const U=P();if(!U||!U.tut||!e.target.closest||!e.target.closest(".pl-hand .hc"))return;
   setTimeout(()=>{const b=document.querySelector('.modal [data-pa="play"]'),m=document.querySelector("#tut-coach .tc-msg");

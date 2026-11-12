@@ -584,7 +584,9 @@ const MUS=(()=>{let el=null;const on=()=>store2.get("cq.music",true)!==false;
 /* Update 30: pointing at a card in your hand clicks and pops a 1.4x copy up over the Heroes (the copy ignores the mouse, so clicks still reach the card) */
 let hcPop=null,hcOn=null;
 function hcPopHide(){if(hcPop){hcPop.remove();hcPop=null}if(hcOn)hcOn.classList.remove("lifted");hcOn=null}
-document.addEventListener("mouseover",e=>{if(typeof drag!=="undefined"&&drag&&drag.on)return;const hc=e.target.closest&&e.target.closest(".pl-hand .hc");if(hc===hcOn)return;hcPopHide();if(!hc||!matchMedia("(hover:hover)").matches)return;hcOn=hc;
+/* touch screens send a fake mouseover on every tap: no hover pop-up or tick sound for those (Nov 12, 2026, iPad proposal 3) */
+let lastTouch=0;document.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"||e.pointerType==="pen")lastTouch=Date.now()},true);document.addEventListener("touchstart",()=>{lastTouch=Date.now()},{capture:true,passive:true});
+document.addEventListener("mouseover",e=>{if(Date.now()-lastTouch<1000)return;if(typeof drag!=="undefined"&&drag&&drag.on)return;const hc=e.target.closest&&e.target.closest(".pl-hand .hc");if(hc===hcOn)return;hcPopHide();if(!hc||!matchMedia("(hover:hover)").matches)return;hcOn=hc;
   SND.play("tick");const card=hc.querySelector(".card");if(!card)return;const r=card.getBoundingClientRect(),S=1.4,w=r.width*S,h=r.height*S;
   const d=document.createElement("div");d.className="hc-pop";d.innerHTML=`<div class="hc-3d">${card.outerHTML}</div>`;d.style.width=w+"px";
   const left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)),top=Math.max(8,r.bottom-h-18);d.style.left=left+"px";d.style.top=top+"px";
@@ -596,17 +598,19 @@ document.addEventListener("mousemove",e=>{if(!hcPop||!hcOn)return;const r=hcOn.g
 document.addEventListener("scroll",hcPopHide,true);addEventListener("blur",hcPopHide);
 /* Drag to play: pull a card from your hand up onto the board and let go to play it (the same as pressing Play in the card's window).
    A short drag back into the hand cancels; a plain click still opens the card's window; sideways drags still scroll the hand. */
-const DRAG_CSS=`.pl-hand .hc{touch-action:pan-x;user-select:none;-webkit-user-select:none}.pl-hand .hc img{-webkit-user-drag:none;user-drag:none}
+const DRAG_CSS=`.pl-hand .hc{touch-action:pan-x;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}.pl-hand .hc img{-webkit-user-drag:none;user-drag:none;-webkit-touch-callout:none}
 .pl-hand .hc.dragsrc .card{opacity:.25}
-.hc-drag{position:fixed;z-index:130;pointer-events:none;transform:translate(-50%,-62%) rotate(var(--tilt,0deg)) scale(var(--sc,1));transition:transform .08s linear;filter:drop-shadow(0 18px 26px rgba(0,0,0,.65))}
+/* the card follows the finger or mouse with a GPU transform (no layout or repaint while it moves); it stays held at the spot you grabbed */
+.hc-drag{position:fixed;left:0;top:0;z-index:130;pointer-events:none;will-change:transform;contain:layout style}
+.hc-drag-in{rotate:var(--tilt,0deg);scale:var(--sc,1.08);transition:scale .12s ease-out;will-change:transform;border-radius:12px;box-shadow:0 18px 30px rgba(0,0,0,.6)}
 .hc-drag .card{margin:0}.hc-drag .zoom,.hc-drag .c-ctrl,.hc-drag .flip{display:none!important}
-.hc-drag.over{--sc:1.12}.hc-drag.over.ok{filter:drop-shadow(0 0 18px rgba(255,193,0,.85)) drop-shadow(0 18px 26px rgba(0,0,0,.65))}
+.hc-drag.over{--sc:1.16}.hc-drag.over.ok .hc-drag-in{box-shadow:0 0 0 3px #ffc100,0 0 22px rgba(255,193,0,.8),0 18px 30px rgba(0,0,0,.6)}
 .hc-drag-tag{position:absolute;left:50%;top:100%;transform:translate(-50%,10px);white-space:nowrap;font:700 .9rem/1 var(--body);padding:7px 12px;border-radius:999px;background:#1b130c;color:#f3e6cf;border:2px solid #8A5E40;box-shadow:0 6px 16px rgba(0,0,0,.6)}
 .hc-drag.over.ok .hc-drag-tag{background:#ffc100;color:#2A1606;border-color:#ffc100}
 .hc-drag.over.no .hc-drag-tag{background:#5a1a12;color:#ffd2c8;border-color:#C0392B}
 html.pl-dragging #play-root .pl-board{outline:3px dashed rgba(255,193,0,.55);outline-offset:-6px;border-radius:14px}
 html.pl-dragging.pl-over #play-root .pl-board{outline-color:#ffc100;background:color-mix(in srgb,#ffc100 5%,transparent)}
-@media (prefers-reduced-motion:reduce){.hc-drag{transition:none}}`;
+@media (prefers-reduced-motion:reduce){.hc-drag-in{transition:none}}`;
 {const st=document.createElement("style");st.textContent=DRAG_CSS;document.head.appendChild(st)}
 let drag=null,dragEat=0;
 /* card art is an image: stop the browser's own image drag so the card drag can run */
@@ -620,18 +624,27 @@ function dragInfo(uid){const s=view();if(!s)return{ok:false,why:""};const c=s.p[
 document.addEventListener("pointerdown",e=>{if(e.button!==0)return;const hc=e.target.closest&&e.target.closest("#play-root .pl-hand .hc");if(!hc||e.target.closest(".zoom,.flip,[data-zoom]"))return;
   drag={uid:hc.dataset.u,el:hc,x:e.clientX,y:e.clientY,id:e.pointerId,on:false}},true);
 document.addEventListener("pointermove",e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=drag.y-e.clientY;
-  if(!drag.on){if(dy<14||Math.abs(dy)<Math.abs(dx))return;/* start dragging upward */
+  if(!drag.on){if(dy<8||dy<Math.abs(dx)*0.7)return;/* start dragging upward (a short, mostly upward pull) */
     const card=drag.el.querySelector(".card");if(!card){drag=null;return}const r=card.getBoundingClientRect();hcPopHide();
-    const g=document.createElement("div");g.className="hc-drag";g.style.width=r.width*1.15+"px";g.innerHTML=card.outerHTML+'<span class="hc-drag-tag"></span>';
+    const g=document.createElement("div");g.className="hc-drag";g.style.width=r.width+"px";g.innerHTML='<div class="hc-drag-in">'+card.outerHTML+'</div><span class="hc-drag-tag"></span>';
     const inner=g.querySelector(".card");if(inner){inner.style.width="100%";inner.style.height="auto"}
+    /* keep the spot you grabbed under your finger */
+    drag.ox=Math.max(0,Math.min(r.width,drag.x-r.left));drag.oy=Math.max(0,Math.min(r.height,drag.y-r.top));
+    g.querySelector(".hc-drag-in").style.transformOrigin=drag.ox+"px "+drag.oy+"px";
     document.body.appendChild(g);try{if(typeof fitArt==="function")fitArt(g)}catch(err){}
-    drag.on=true;drag.g=g;drag.info=dragInfo(drag.uid);drag.el.classList.add("dragsrc");document.documentElement.classList.add("pl-dragging");
+    drag.on=true;drag.g=g;drag.tilt=0;drag.info=dragInfo(drag.uid);drag.el.classList.add("dragsrc");document.documentElement.classList.add("pl-dragging");
     try{drag.el.setPointerCapture(e.pointerId)}catch(err){}}
-  e.preventDefault();const g=drag.g,over=e.clientY<dragLine(),inf=drag.info;
-  g.style.left=e.clientX+"px";g.style.top=e.clientY+"px";g.style.setProperty("--tilt",Math.max(-10,Math.min(10,(e.clientX-(drag.lx||e.clientX))*0.8)).toFixed(1)+"deg");drag.lx=e.clientX;
-  g.classList.toggle("over",over);g.classList.toggle("ok",over&&inf.ok);g.classList.toggle("no",over&&!inf.ok);document.documentElement.classList.toggle("pl-over",over);
-  const tag=g.querySelector(".hc-drag-tag");if(tag)tag.textContent=over?(inf.ok?inf.label:inf.why):"Drag onto the board to play"},{passive:false});
-function dragEnd(e,cancel){if(!drag||(e&&e.pointerId!==drag.id))return;const d=drag;drag=null;if(!d.on)return;
+  e.preventDefault();drag.cx=e.clientX;drag.cy=e.clientY;
+  if(!drag.raf)drag.raf=requestAnimationFrame(dragFrame)},{passive:false});
+/* one screen update per frame, however many move events arrive */
+function dragFrame(){const d=drag;if(!d||!d.on)return;d.raf=0;const g=d.g,inf=d.info,x=d.cx,y=d.cy;
+  g.style.transform=`translate3d(${(x-d.ox).toFixed(1)}px,${(y-d.oy).toFixed(1)}px,0)`;
+  const want=Math.max(-12,Math.min(12,(x-(d.lx==null?x:d.lx))*0.9));d.lx=x;d.tilt+=(want-d.tilt)*0.35;if(Math.abs(d.tilt)<0.05)d.tilt=0;
+  g.style.setProperty("--tilt",d.tilt.toFixed(2)+"deg");
+  const over=y<dragLine();if(over!==d.over){d.over=over;g.classList.toggle("over",over);g.classList.toggle("ok",over&&inf.ok);g.classList.toggle("no",over&&!inf.ok);document.documentElement.classList.toggle("pl-over",over);
+    const tag=g.querySelector(".hc-drag-tag");if(tag)tag.textContent=over?(inf.ok?inf.label:inf.why):"Drag onto the board to play"}
+  if(d.tilt)d.raf=requestAnimationFrame(dragFrame)}/* keep easing the tilt back to level after the hand stops */
+function dragEnd(e,cancel){if(!drag||(e&&e.pointerId!==drag.id))return;const d=drag;drag=null;if(!d.on)return;if(d.raf)cancelAnimationFrame(d.raf);
   dragEat=Date.now();d.g.remove();d.el.classList.remove("dragsrc");document.documentElement.classList.remove("pl-dragging","pl-over");
   if(cancel||!e||e.clientY>=dragLine())return;
   const inf=dragInfo(d.uid);if(!inf.ok){toast(inf.why||"You can't play that card right now.");return}

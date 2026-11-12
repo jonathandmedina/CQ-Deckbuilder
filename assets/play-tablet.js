@@ -61,7 +61,7 @@ function bar(){let b=document.getElementById("pl-tbar");if(b)return b;b=document
   b.innerHTML=`<button type="button" data-tb="log"><span class="ic" aria-hidden="true">📜</span>Log</button><button type="button" data-tb="menu"><span class="ic" aria-hidden="true">☰</span>Menu</button><button type="button" data-tb="fs"><span class="ic" aria-hidden="true">⛶</span><span class="lb">Full screen</span></button>`;
   b.addEventListener("click",e=>{const t=e.target.closest("[data-tb]");if(!t)return;e.stopPropagation();const U=window.CQPlay;const v=t.dataset.tb;
     if(v==="log"&&U){U.logHidden=!U.logHidden;U.render()}
-    else if(v==="menu"){const m=document.getElementById("pl-menutab");if(m)m.click()}
+    else if(v==="menu"){const m=document.getElementById("pl-menutab");if(m&&getComputedStyle(m).display!=="none"&&!document.documentElement.classList.contains("pl-portrait"))m.click();else if(document.documentElement.classList.contains("pl-portrait")){const R=document.documentElement;R.classList.toggle("pl-pmenu");const h=document.querySelector("header.top");if(h)R.style.setProperty("--pl-hdrh",h.offsetHeight+"px")}else if(m)m.click()}
     else if(v==="fs")fsToggle();
     sync()});
   document.body.appendChild(b);return b}
@@ -72,7 +72,8 @@ function sync(){const U=window.CQPlay,root=document.documentElement;
   const inGame=location.hash==="#play"&&!!document.querySelector("#play-root .pl-game")&&!!(U&&U.mode==="game"&&U.s);
   const tab=inGame&&tabletOn();root.classList.toggle("pl-has-game",inGame);root.classList.toggle("pl-tablet",tab);
   /* a new game on a tablet starts with the log tucked away */
-  if(tab&&U.gameKey&&U.gameKey!==sync.key){sync.key=U.gameKey;if(!U.logHidden){U.logHidden=true;setTimeout(()=>U.render(),0)}}
+  if(tab&&U.gameKey&&U.gameKey!==sync.key){sync.key=U.gameKey;const big=innerWidth>=1300;if(U.logHidden===big){U.logHidden=!big;setTimeout(()=>U.render(),0)}}
+  portrait(tab);if(!tab)hidePop();
   const b=document.getElementById("pl-tbar");
   if(tab){const bb=bar();const fsb=bb.querySelector('[data-tb="fs"]');fsb.hidden=!fsAvail();fsb.setAttribute("aria-pressed",String(!!fsEl()));fsb.querySelector(".lb").textContent=fsEl()?"Exit full screen":"Full screen";
     bb.querySelector('[data-tb="log"]').setAttribute("aria-pressed",String(!!(U&&!U.logHidden)));bb.querySelector('[data-tb="menu"]').setAttribute("aria-pressed",String(root.classList.contains("pl-menu")))}
@@ -101,6 +102,92 @@ function lobbySetting(){const host=document.querySelector("#play-root .pl-lobby"
   host.appendChild(sec)}
 document.addEventListener("change",e=>{if(!e.target.matches||!e.target.matches("[data-tabmode]"))return;ls.set(e.target.value);sync()});
 
-window.CQTablet={after(){lobbySetting();sync()},sync,on:tabletOn,fullscreen:fsToggle};
+/* ===== Proposal 3: touch controls ===== */
+const css3=`
+.tz-wrap{position:fixed;inset:0;z-index:140;display:grid;place-items:center;background:rgba(6,4,2,.6);animation:tzIn .15s ease-out both}
+.tz-wrap .tz-card{width:min(420px,calc(68vh*.733),88vw)}.tz-wrap .tz-card .card{width:100%;margin:0}.tz-wrap .card .zoom,.tz-wrap .card .c-ctrl{display:none!important}
+.tz-wrap .tz-hint{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:#f3e6cf;font:600 .95rem/1 var(--body);text-shadow:0 2px 6px #000}
+@keyframes tzIn{from{opacity:0}}
+.tb-pop{position:fixed;z-index:72;display:flex;flex-wrap:wrap;gap:8px;padding:10px;border-radius:14px;background:linear-gradient(#2e2216,#1b130c);border:2px solid #ffc100;box-shadow:0 14px 34px rgba(0,0,0,.7);max-width:min(520px,94vw)}
+.tb-pop .btn{min-height:44px!important;padding:0 14px!important;font-size:1rem!important}
+.tb-pop .tb-who{flex:1 1 100%;font:600 .75rem/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:#c99566}
+/* ===== Proposal 4: portrait ===== */
+#pl-rotate{position:fixed;inset:0;z-index:150;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%,#3a2a1c,#120c08);color:#f3e6cf;text-align:center;padding:24px}
+#pl-rotate .rt-ic{font-size:5rem;display:inline-block;animation:rtSpin 2.4s ease-in-out infinite}
+#pl-rotate h2{font:400 2.2rem/1.1 "Pirata One",var(--display);color:#ffc100;margin:14px 0 8px}
+#pl-rotate p{margin:0 0 18px;color:#d8c3a0;font-size:1.05rem}
+#pl-rotate button{all:unset;cursor:pointer;color:#ffd98a;text-decoration:underline;font:600 1rem/1 var(--body);padding:12px}
+@keyframes rtSpin{0%,20%{transform:rotate(0)}50%,70%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+html.pl-tablet.pl-portrait header.top{display:none}
+html.pl-tablet.pl-portrait.pl-pmenu header.top{display:block;position:fixed;top:0;left:0;right:0;z-index:80}
+html.pl-tablet.pl-portrait #play-root .pl-handwrap{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:8px 0 10px;background:linear-gradient(rgba(18,12,8,.0),#120c08 18%)}
+html.pl-tablet.pl-portrait #play-root .pl-hand{padding-right:12px!important}
+html.pl-tablet.pl-portrait #play-root .pl-hand .hc{flex-basis:clamp(130px,19vw,170px)!important}
+html.pl-tablet.pl-portrait #play-root .pl-board{padding-bottom:calc(19vw * 1.36 + 40px)}
+html.pl-tablet.pl-portrait #pl-tbar{top:max(10px,env(safe-area-inset-top,0px));bottom:auto}
+html.pl-tablet.pl-portrait.pl-pmenu #pl-tbar{top:calc(var(--pl-hdrh,64px) + 10px)}
+html.pl-tablet.pl-portrait #play-root .pl-side{bottom:auto!important;top:68px!important}
+@media (prefers-reduced-motion:reduce){.tz-wrap{animation:none}#pl-rotate .rt-ic{animation:none}}`;
+{const s3=document.createElement("style");s3.textContent=css3;document.head.appendChild(s3)}
+const isTab=()=>document.documentElement.classList.contains("pl-tablet");
+/* the card behind something on the board: a card in hand, a Hero, a summon, an item or a name in the log */
+function cardFor(el){const U=window.CQPlay,s=U&&U.s,E=window.CQE;if(!s||typeof BYID==="undefined")return null;
+  const lg=el.closest(".lgc[data-hc]");if(lg){const id=lg.dataset.hc;return BYID.get(id)||BYID.get("h:"+id)||BYID.get("t:"+id)}
+  const hc=el.closest(".pl-hand .hc");if(hc){const c=s.p[U.me].hand.find(x=>x.uid===hc.dataset.u);return c?BYID.get(c.id):null}
+  const ob=el.closest('[data-pa="obj"][data-u]');if(ob){const f=E.find(s,ob.dataset.u);if(!f||!f.o)return null;const o=f.o;
+    if(o.fd&&o.owner!==U.me)return null; /* face-down Hidden cards stay hidden */
+    return(o.id&&BYID.get(o.id))||(o.kind==="hero"&&BYID.get("h:"+o.name))||BYID.get("t:"+o.name)||BYID.get(o.name)||null}
+  return null}
+let zoomEl=null,holdT=null,hold=null,eatClick=0;
+function zoomShow(c,tapToClose){zoomHide();if(!c||typeof cardHTML!=="function")return;const w=document.createElement("div");w.className="tz-wrap";w.setAttribute("role","dialog");w.setAttribute("aria-label",c.name||"Card");
+  w.innerHTML=`<div class="tz-card">${cardHTML(c,{nozoom:1})}</div><div class="tz-hint">${tapToClose?"Tap anywhere to close":"Let go to close"}</div>`;
+  if(tapToClose)w.addEventListener("click",e=>{e.stopPropagation();zoomHide()});document.body.appendChild(w);zoomEl=w;try{typeof fitArt==="function"&&fitArt(w)}catch(e){}}
+function zoomHide(){if(zoomEl){zoomEl.remove();zoomEl=null}}
+const HOLD_SEL='#play-root .pl-hand .hc,#play-root [data-pa="obj"][data-u],#play-root .pl-log .lgc[data-hc]';
+/* press and hold: zoom the card full size; let go to close */
+document.addEventListener("pointerdown",e=>{if(!isTab()||e.button>0)return;const el=e.target.closest&&e.target.closest(HOLD_SEL);if(!el)return;
+  hold={x:e.clientX,y:e.clientY,el,id:e.pointerId};clearTimeout(holdT);
+  holdT=setTimeout(()=>{if(!hold||document.querySelector(".hc-drag"))return;const c=cardFor(hold.el);if(!c)return;hold.shown=true;zoomShow(c,false);try{navigator.vibrate&&navigator.vibrate(12)}catch(err){}},430)},true);
+/* moving cancels the hold; once a zoomed hand card starts moving, the zoom closes so the drag to play carries on */
+document.addEventListener("pointermove",e=>{if(!hold||e.pointerId!==hold.id)return;if(Math.hypot(e.clientX-hold.x,e.clientY-hold.y)>10){clearTimeout(holdT);if(hold.shown)zoomHide();hold=null}},true);
+const holdEnd=e=>{clearTimeout(holdT);if(hold&&hold.shown){zoomHide();eatClick=Date.now()}hold=null};
+document.addEventListener("pointerup",holdEnd,true);document.addEventListener("pointercancel",holdEnd,true);
+document.addEventListener("contextmenu",e=>{if(isTab()&&e.target.closest&&e.target.closest(HOLD_SEL))e.preventDefault()},true);
+document.addEventListener("click",e=>{
+  /* the tap that ends a press-and-hold doesn't also act */
+  if(Date.now()-eatClick<450&&e.target.closest&&e.target.closest(HOLD_SEL)){e.stopPropagation();e.preventDefault();return}
+  if(!isTab()||!e.target.closest)return;
+  /* tap a card name in the log: show that card */
+  const lg=e.target.closest("#play-root .pl-log .lgc[data-hc]");if(lg){e.stopPropagation();e.preventDefault();zoomShow(cardFor(lg),true);return}
+  /* tap your acting Hero: its actions in a bar right under it */
+  const ob=e.target.closest('#play-root [data-pa="obj"][data-u]');if(ob&&!skipOnce){const U=window.CQPlay,s=U&&U.s;if(!s||U.tgt||(s.pend[0]&&s.pend[0].type==="manual"))return;
+    const src=document.querySelector("#play-root .zs-acts");const a=window.CQE.actorFor(s,U.me);
+    if(src&&a&&a.uid===ob.dataset.u){e.stopPropagation();e.preventDefault();showPop(ob,a,src);return}}
+  if(!e.target.closest(".tb-pop"))hidePop()},true);
+let skipOnce=false;
+function showPop(ob,a,src){hidePop();const p=document.createElement("div");p.className="tb-pop";p.dataset.u=a.uid;
+  /* the bar sits outside the board (which redraws), and each button presses the matching real button */
+  const real=[...src.querySelectorAll("button")];
+  p.innerHTML=`<span class="tb-who">${a.name}'s actions</span>`+real.map((b,i)=>{const c=b.cloneNode(true);c.removeAttribute("data-pa");c.removeAttribute("id");c.dataset.tbi=i;return c.outerHTML}).join("")+'<button type="button" class="btn" data-tbx="info">Details</button>';
+  p.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;e.stopPropagation();const uid=p.dataset.u;hidePop();
+    if(b.dataset.tbx==="info"){const o=document.querySelector(`#play-root [data-pa="obj"][data-u="${uid}"]`);if(o){skipOnce=true;o.click();skipOnce=false}return}
+    const s2=document.querySelector("#play-root .zs-acts");const r=s2&&s2.querySelectorAll("button")[+b.dataset.tbi];if(r&&!r.disabled)r.click()});
+  document.body.appendChild(p);place(p,ob)}
+function place(p,ob){const r=ob.getBoundingClientRect(),w=p.offsetWidth,h=p.offsetHeight;
+  let top=r.bottom+8;if(top+h>innerHeight-8)top=Math.max(8,r.top-h-8);p.style.top=top+"px";p.style.left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2))+"px"}
+function hidePop(){document.querySelectorAll(".tb-pop").forEach(p=>p.remove())}
+/* ===== Proposal 4: portrait ===== */
+function portrait(tab){const root=document.documentElement;const tall=tab&&innerHeight>innerWidth;let ok=false;try{ok=sessionStorage.getItem("cq.play.portrait")==="1"}catch(e){}
+  root.classList.toggle("pl-portrait",tall&&ok);if(!tall)root.classList.remove("pl-pmenu");
+  let r=document.getElementById("pl-rotate");
+  if(tall&&!ok){if(!r){r=document.createElement("div");r.id="pl-rotate";r.setAttribute("role","dialog");r.setAttribute("aria-label","Turn your iPad sideways");
+      r.innerHTML='<div><span class="rt-ic" aria-hidden="true">📱</span><h2>Turn your iPad sideways to play</h2><p>The board has two rows of three Heroes and your hand, so it fits best in landscape.</p><button type="button" data-rt="ok">Play in portrait anyway</button></div>';
+      r.addEventListener("click",e=>{if(!e.target.closest('[data-rt="ok"]'))return;try{sessionStorage.setItem("cq.play.portrait","1")}catch(err){}r.remove();sync()});document.body.appendChild(r)}}
+  else if(r)r.remove()}
+/* after each redraw: keep the action bar on the same Hero if it can still act, otherwise close it */
+function refreshPop(){const p=document.querySelector(".tb-pop");if(!p)return;const U=window.CQPlay,uid=p.dataset.u;const a=U&&U.s&&window.CQE.actorFor(U.s,U.me);
+  const ob=uid&&document.querySelector(`#play-root [data-pa="obj"][data-u="${uid}"]`),src=document.querySelector("#play-root .zs-acts");
+  if(!isTab()||!a||a.uid!==uid||!ob||!src||U.tgt){hidePop();return}showPop(ob,a,src)}
+window.CQTablet={after(){lobbySetting();sync();refreshPop()},sync,on:tabletOn,fullscreen:fsToggle};
 setTimeout(sync,300);
 })();

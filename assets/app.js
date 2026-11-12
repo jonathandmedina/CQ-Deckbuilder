@@ -213,9 +213,15 @@ let lastUid=undefined;
 /* DISCORD_AUTH stays false until the Discord provider, bot secrets and the discord-join function are set up in Supabase. */
 const DISCORD_AUTH=true,DISCORD_INVITE="https://discord.gg/wErfNbug5e",DC_SCOPES="identify email guilds.join";
 function discordOf(u){const i=(u&&u.identities||[]).find(x=>x.provider==="discord");if(!i)return null;const d=i.identity_data||{};return d.custom_claims&&d.custom_claims.global_name||d.full_name||d.name||d.user_name||null}
+/* Asked once per account (per browser): after the first Discord sign-in either adds you to the server or shows the invite once.
+   Supabase re-sends SIGNED_IN on page loads and tab refocus, so without this the invite kept popping up. */
+const DC_DONE="cq.dc.done";
+function dcDone(uid){try{return!!(JSON.parse(localStorage.getItem(DC_DONE)||"{}")[uid])}catch(e){return false}}
+function dcMark(uid){try{const m=JSON.parse(localStorage.getItem(DC_DONE)||"{}");m[uid]=Date.now();localStorage.setItem(DC_DONE,JSON.stringify(m))}catch(e){}}
 async function discordJoin(session){if(!DISCORD_AUTH||!session||!session.provider_token||!discordOf(session.user))return;
+  const uid=session.user.id;if(dcDone(uid))return;dcMark(uid);
   try{const{data,error}=await SB.functions.invoke("discord-join",{body:{token:session.provider_token}});
-    if(error||!data||!data.ok)throw error||new Error(data&&data.error);toast(data.already?"Signed in with Discord.":"Signed in with Discord. You've been added to the Crystal Quest server.")}
+    if(error||!data||!data.ok)throw error||new Error(data&&data.error);if(!data.already)toast("Signed in with Discord. You've been added to the Crystal Quest server.")}
   catch(e){console.warn(e);dcInviteModal()}}
 document.addEventListener("change",async e=>{if(e.target.id!=="dcPub")return;const v=e.target.checked;const ok=window.CQProfDiscordPublic&&await window.CQProfDiscordPublic(v);toast(ok?(v?"Your Discord name shows on your profile.":"Your Discord name is hidden."):"Couldn't save that. Try again.")});
 function dcInviteModal(){document.getElementById("dcm")?.remove();const m=document.createElement("div");m.className="modal";m.id="dcm";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");

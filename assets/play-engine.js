@@ -840,7 +840,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   /* update 29: playing a Summon card no longer exhausts the Hero by rule; the card text says so when it does ("Exhaust this Hero") */
   const trig={kind:"card",src:actor,pid,card:d,cardUid:c.uid,targets,cost,cls:d.cls,type:d.type,name:d.name};
   /* update 23 Echo: only a card played from your hand can Echo; Songweaver gives its Songs Echo; Sing Along gives the ally's next Tactic or Song Echo */
-  let grant=false;if(actor&&actor.kind==="hero"&&/Tactic|Song/.test(d.type)){if(d.type==="Song"&&actor.name==="Songweaver"&&!actor.dead)grant=true;if(actor.fl.singRound===s.round){actor.fl.singRound=null;grant=true;log(s,`Sing Along: ${d.name} gains Echo.`,pid)}}
+  let grant=false;if(actor&&actor.kind==="hero"&&/Tactic|Song/.test(d.type)){if(d.type==="Song"&&actor.name==="Songweaver"&&!actor.dead&&fromHand){/* Nov 12, 2026: first Song from your hand each turn; every one at Level 3 */actor.fl=actor.fl||{};if(actor.lvl>=3||actor.fl.swRound!==s.round){actor.fl.swRound=s.round;grant=true}}if(actor.fl.singRound===s.round){actor.fl.singRound=null;grant=true;log(s,`Sing Along: ${d.name} gains Echo.`,pid)}}
   queueResolve(s,pid,{k:"card",actor:actor&&actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},targets,modes:a.modes||[],x,combo:!!o.combo,echo:!!o.echo,hand:fromHand,grant},trig);
 }
 E.playCard=playCard;
@@ -914,10 +914,8 @@ function resolveCont(s,pid,cont,mods){
   if(d.sub==="Combo"&&pl.fl.splitKick&&sc&&(cont.targets||[]).length){const t0=resolveTarget(s,cont.targets[0]);const sp=specsFor(sc,cont.modes)[0];
     if(t0&&t0.kind==="hero"&&sp){pl.fl.splitKick=false;const cs=candidates(s,pid,sp,{actor,card:d}).map(u=>resolveTarget(s,u)).filter(o=>o&&o.kind==="hero"&&o.uid!==t0.uid);
       if(cs.length)ask(s,pid,`Split Kick: second Hero for ${d.name}`,targetOpts(s,pid,cs,1).concat([{label:"No second target",v:null}]),"splitKick",{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,rest:cont.targets.slice(1),name:"Split Kick"})}}
-  /* Echo Performer (Nov 12, 2026; was an activated ability): whenever you play your first Song each turn, duplicate it; at Level 3, every Song you play.
-     The copy is exactly as played (rules: Duplicate) and isn't itself played, so it never counts as your first Song. */
-  if(/Song/.test(d.type)){living(pl).filter(h=>h.name==="Echo Performer").forEach(h=>{h.fl=h.fl||{};if(h.lvl>=3||h.fl.epRound!==s.round){h.fl.epRound=s.round;
-    log(s,`Echo Performer duplicates ${d.name}${h.lvl>=3?"":" (your first Song this turn)"}.`,pid);copyTargets(s,pid,{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,picked:[],orig:cont.targets||[]})}})}
+  /* Echo Performer: duplicate the Bard Tactic or Song it played */
+  if(s.bonus&&s.bonus.pid===pid&&s.bonus.dup&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)){s.bonus.dup=false;log(s,`Echo Performer duplicates ${d.name}.`,pid);copyTargets(s,pid,{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,picked:[],orig:cont.targets||[]})}
   /* triggers on card played */
   if(d.type==="Spell"){living(pl).forEach(h=>{if(h.name==="Diviner Mage")pushScry(s,pid,1)})}
   /* Staff of Doom (update 21): the first Spell the equipped Hero plays each turn (every Spell when upgraded): target Hero loses HP equal to its Aura cost */

@@ -57,9 +57,12 @@ def("Magic Sink",{t:[EN],run(c){D(c,c.t[0],c.x||0)}});
 def("Volt Jab",dmgCard(2,{type:"Lightning",pil:"Spell Damage Pillar",ex:1}));
 def("Lightning Lance",dmgCard(4,{type:"Lightning",pil:"Spell Damage Pillar",ex:1}));
 def("Chain Lightning",{run(c){living(c.op).forEach(h=>{if(D(c,h,4,{type:"Lightning"})>0&&!h.dead)st(c,h,"stun")});exMe(c)}});
-def("Flame Wave",{run(c){const L=c.actor&&c.actor.lvl>=6?5:3;living(c.op).forEach(h=>D(c,h,L,{type:"Fire"}));exMe(c)}});
+/* Nov 12, 2026: Flame Wave hits each enemy (Heroes and summons); Hail hits everything (every Hero and summon, both parties) */
+def("Flame Wave",{run(c){const L=c.actor&&c.actor.lvl>=6?5:3;enemies(c).forEach(h=>D(c,h,L,{type:"Fire"}));exMe(c)}});
 def("Pop Rocks",allDmg(1,{times:3,ex:1}));
-def("Hail",{t:[t("enemyPlayer","target party")],run(c){const p=c.t[0];if(!p)return;living(c.s.p[p.pid]).forEach(h=>D(c,h,1,{type:"Ice"}))}});
+def("Hail",{run(c){c.s.p.flatMap(pl=>[...living(pl),...summons(pl)]).forEach(o=>D(c,o,1,{type:"Ice"}))}});
+/* new card (Nov 12, 2026): Twin Bolt, 3 Aura Mage Spell: 2 Lightning damage to each of two different targets */
+def("Twin Bolt",{t:[t("any","first target"),t("any","second target",null,{distinct:true})],run(c){D(c,c.t[0],2,{type:"Lightning"});D(c,c.t[1],2,{type:"Lightning"})}});
 def("Storm of Insight",{run(c){let tot=0;living(c.op).forEach(e=>tot+=D(c,e,3,{type:"Lightning"}));exMe(c);if(tot)scry(c,tot)}});
 def("Heat Wave",{t:[ANY],run(c){st(c,c.t[0],"burn")}});
 def("Ice Ray",{t:[ANY],run(c){st(c,c.t[0],"stun")}});

@@ -9,7 +9,11 @@ const SCENES={
   night:{img:"draven",song:"theme_5_lost_in_the_woods",alt:"Three heroes on a rocky ridge facing Draven Temple under a purple storm"}};
 const get=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}};
 const set=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-let mode=get("cq.home.mode","day")==="night"?"night":"day";
+/* Nov 12, 2026: Dawn or Dusk follows the visitor's own clock (Dawn 6:00 am to 5:59 pm, Dusk otherwise).
+   The switch still flips it, but only for this visit; the next visit follows the clock again. */
+const clockMode=()=>{const h=new Date().getHours();return h>=6&&h<18?"day":"night"};
+let mode=clockMode(),picked=false;
+setInterval(()=>{if(picked)return;const m=clockMode();if(m===mode)return;mode=m;if(typeof S!=="undefined"&&S.view==="home"){const old=document.querySelector(".hm-hero");if(old){old.outerHTML=banner();fit();syncMusic()}}},60000);
 const musicOn=()=>get("cq.music",true)!==false;
 
 /* ---------- music ---------- */
@@ -127,7 +131,7 @@ function mount(el){el.innerHTML=view();document.documentElement.classList.add("h
 function mountLearn(el){if(window.CQTut){window.CQTut.mount(el);musicBtn();return}el.innerHTML=learnView();musicBtn()}
 function leave(){document.documentElement.classList.remove("hm-page")}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-hm]");if(!t||S.view!=="home")return;
-  const m=t.dataset.hm;if(m===mode)return;mode=m;set("cq.home.mode",mode);
+  const m=t.dataset.hm;if(m===mode)return;mode=m;picked=true;
   const old=document.querySelector(".hm-hero");if(old)old.outerHTML=banner();fit();syncMusic()});
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-hm-cls]");if(!t)return;
   try{if(S.cat)S.cat.cls=t.dataset.hmCls}catch(err){}});

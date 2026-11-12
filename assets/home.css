@@ -19,7 +19,7 @@ html.hm-page body{overflow-x:hidden}
   background:radial-gradient(58% 40% at 50% 25%,rgba(12,8,22,.7),rgba(12,8,22,.32) 60%,rgba(12,8,22,0) 85%)}
 @keyframes hmFade{from{opacity:0}to{opacity:1}}
 
-/* Daylight / Nightfall switch, top left of the banner */
+/* Dawn / Dusk switch, top left of the banner */
 .hm-toggle{position:absolute;top:14px;left:16px;display:flex;border-radius:999px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.75)}
 .hm-tg{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;padding:4px 11px;font:600 .8rem/1.2 var(--body);letter-spacing:.02em;text-shadow:none;transition:filter .15s,opacity .15s}
 .hm-tg span{font-size:1rem;line-height:1}

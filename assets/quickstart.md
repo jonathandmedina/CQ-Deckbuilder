@@ -1,6 +1,8 @@
 # Quick Start
 *New to Crystal Quest? Start here. This page gets you playing your first game. The full Rules cover every detail.*
 
+*Rather learn by playing? Try [Learn to Play](#learn): a few quick screens, then a coached game against the AI. You can keep the deck afterwards.*
+
 ## 1. The Goal
 
 You lead a party of three Heroes. **Defeat all of your opponents’ Heroes to win.** A Hero is defeated when its HP drops to 0. The last player with a Hero still standing wins. You also lose if you have to draw a card when your library is empty.
@@ -13,7 +15,7 @@ If a card ever disagrees with the rules, the card wins.
 - A six-sided die for each Hero to track its level.
 - Counters for damage and status effects, and something to track your **Aura** and **Gold**.
 
-Build your deck in the **Deck Builder**: pick three Heroes, then add cards of their classes and Generic cards. You can practice against the AI in the **Play** tab.
+Build your deck in the **Deck Builder**: pick three Heroes, then add cards of their classes and Generic cards. You can practice against the AI in the **Play** tab, or take a coached first game in [Learn to Play](#learn).
 
 ## 3. Build Your Party
 

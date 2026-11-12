@@ -1134,7 +1134,7 @@ async function copyText(t,msg){try{await navigator.clipboard.writeText(t);toast(
 
 /* ---------- rules ---------- */
 S.rules=null;S.rulesErr=false;
-function mdInline(t){return esc(t).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>")}
+function mdInline(t){return esc(t).replace(/\[([^\]]+)\]\((#[a-z0-9/-]+|https:\/\/[^)\s]+)\)/g,(m,x,u)=>u[0]==="#"?`<a href="${u}">${x}</a>`:`<a href="${u}" target="_blank" rel="noopener">${x}</a>`).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/\*(.+?)\*/g,"<em>$1</em>")}
 function mdToHtml(md){
   const lines=md.split(/\r?\n/),toc=[];let html="",i=0,open=false,title="",sub=[];
   const slug=t=>"r-"+t.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");

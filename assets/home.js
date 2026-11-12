@@ -1,5 +1,5 @@
 /* Crystal Quest Deck Forge: Home page (#home, the site's landing page) and Learn to Play (#learn).
-   Banner: Riverstead (Daylight) or Draven Temple (Nightfall), with its own music.
+   Banner: Riverstead (Dawn) or Draven Temple (Dusk), with its own music.
    Music on/off lives in the bottom bar (#sbMusic) and shares the cq.music setting with the Play tab.
    Uses app.js globals: ICON_BASE, HEROES, CARDS, cardHTML, esc, cc, S. */
 (function(){
@@ -60,7 +60,7 @@ function banner(){const s=SCENES[mode];
   return`<section class="hm-hero hm-${mode}" aria-label="Crystal Quest">
   <div class="hm-bg" role="img" aria-label="${esc(s.alt)}"></div>
   <div class="hm-toggle" role="group" aria-label="Time of day">
-    <button type="button" class="hm-tg hm-day" data-hm="day" aria-pressed="${mode==="day"}"><span aria-hidden="true">☀</span> Daylight</button><button type="button" class="hm-tg hm-night" data-hm="night" aria-pressed="${mode==="night"}"><span aria-hidden="true">☾</span> Nightfall</button>
+    <button type="button" class="hm-tg hm-day" data-hm="day" aria-pressed="${mode==="day"}"><span aria-hidden="true">☀</span> Dawn</button><button type="button" class="hm-tg hm-night" data-hm="night" aria-pressed="${mode==="night"}"><span aria-hidden="true">☾</span> Dusk</button>
   </div>
   <div class="hm-copy">
     <h1 class="hm-title">Crystal Quest</h1>

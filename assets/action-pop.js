@@ -65,7 +65,8 @@
   function arrows(){if(!svg)return;svg.querySelectorAll("path.ap-a").forEach(p=>p.remove());document.querySelectorAll(".ap-tgt").forEach(e=>e.classList.remove("ap-tgt"));
     const top=items[0];const ae=top&&q(top.a.actorU);if(!ae)return;
     const s=center(ae);(top.a.targetU||[]).map(q).filter(t=>t&&t!==ae).forEach(t=>{t.classList.add("ap-tgt");const e=center(t);
-      const up=e.y<s.y,y1=up?s.r.top+6:s.r.bottom-6,y2=up?e.r.bottom+12:e.r.top-12,mx=(s.x+e.x)/2+(Math.abs(s.x-e.x)<40?120:0),my=(y1+y2)/2;
+      /* same row (a target in the actor's own party): arc over the top of the cards instead of cutting across them */
+      const row=Math.abs(e.y-s.y)<40,up=e.y<s.y,y1=row?s.r.top+4:up?s.r.top+6:s.r.bottom-6,y2=row?e.r.top-10:up?e.r.bottom+12:e.r.top-12,mx=(s.x+e.x)/2+(!row&&Math.abs(s.x-e.x)<40?120:0),my=row?Math.max(8,Math.min(s.r.top,e.r.top)-70):(y1+y2)/2;
       const p=document.createElementNS("http://www.w3.org/2000/svg","path");p.setAttribute("class","ap-a");p.setAttribute("d",`M${s.x} ${y1} Q${mx} ${my} ${e.x} ${y2}`);
       p.setAttribute("fill","none");p.setAttribute("stroke","#F2C14E");p.setAttribute("stroke-width","4");p.setAttribute("stroke-linecap","round");p.setAttribute("stroke-dasharray","10 7");p.setAttribute("marker-end","url(#apHead)");svg.appendChild(p)})}
   window.CQPop={push,clear,drop,redraw(){if(wrap&&items.length){anchor();arrows()}}};

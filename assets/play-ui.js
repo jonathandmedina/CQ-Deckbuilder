@@ -412,7 +412,7 @@ function deckChoices(){const out=[];
 function deckById(id){const c=deckChoices().find(d=>d.id===id);return c&&c.ok?c.deck:null}
 
 /* ---------- persistence ---------- */
-function saveLocal(){if(U.vsAI&&U.s)store2.set("cq.play.local",{s:U.s,me:U.me,meta:U.meta||null});if(U.net&&U.net.role==="host"&&U.s)store2.set("cq.play.host",{code:U.net.code,s:U.s,guest:U.net.guest||null,meta:U.meta||null});}
+function saveLocal(){if(U.tut)return;if(U.vsAI&&U.s)store2.set("cq.play.local",{s:U.s,me:U.me,meta:U.meta||null});if(U.net&&U.net.role==="host"&&U.s)store2.set("cq.play.host",{code:U.net.code,s:U.s,guest:U.net.guest||null,meta:U.meta||null});}
 /* ---------- win tracking for Best Decks ---------- */
 const newGid=()=>"g"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 function deckMeta(d){return{name:(d.name||"Untitled deck").replace(/ \(starter\)$/,"").slice(0,80),heroes:d.heroes.slice(0,3),cards:Object.assign({},d.cards)}}
@@ -445,6 +445,12 @@ function startAI(){const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!d
   U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
   U.meta={gid:newGid(),mode:"ai",t0:Date.now(),lt:Date.now(),act:0,decks:[deckMeta(dm),deckMeta(da)]};
   U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.net=null;U.mode="game";U.tgt=null;U.man=null;saveLocal();render();pumpAI()}
+/* Learn to Play (tutorial.js): a coached game vs the AI. No result is recorded and no resume slot is kept. fix(s) may stack the opening hand and first draws. */
+U.startTutorial=function(dm,da,fix){clearTimeout(U.aiT);
+  U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
+  if(typeof fix==="function")fix(U.s);
+  U.meta=null;U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.net=null;U.mode="game";U.tgt=null;U.man=null;U.overHide=false};
+U.pumpAI=()=>pumpAI();U.render=()=>render();U.leave=()=>leaveGame();
 function view(){return U.s}
 function send(a){
   if(U.net&&U.net.role==="guest"){U.net.ch.send({type:"broadcast",event:"act",payload:{a,cid}});U.busy=true;U.tgt=null;render();return}
@@ -491,7 +497,7 @@ async function claimResult(gid){const c=sb(),st=AS();if(!c||!st||!st.uid||!gid||
   for(let i=0;i<6;i++){await new Promise(r=>setTimeout(r,i?4000:2500));try{const{data,error}=await c.rpc("claim_result",{gid});if(error)return;if(data>0){toast("Result saved to your profile.");return}}catch(e){return}}}
 function leaveGame(){U.gameKey=null;clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
   if(U.net&&U.net.role==="guest")store2.del("cq.play.guest");if(U.net&&U.net.role==="host")store2.del("cq.play.host");
-  if(U.vsAI)store2.del("cq.play.local");U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";U.tgt=null;U.man=null;render()}
+  if(U.vsAI)store2.del("cq.play.local");U.net=null;U.s=null;U.vsAI=false;U.tut=null;U.mode="lobby";U.tgt=null;U.man=null;render()}
 
 /* ---------- helpers ---------- */
 const nameOf=u=>{const s=view();if(!s||!u)return"?";if(u[0]==="P")return s.p[+u.slice(1)].name;const f=E.find(s,u);return f?f.o.name:"?"};
@@ -621,7 +627,9 @@ function opPops(s,lines){if(!window.CQPop||U.me==null)return;const objs=[];s.p.f
     const label={"uses its ability":"uses its ability",plays:"plays",activates:"activates",attacks:"attacks",summons:"summons",conjures:"conjures",creates:"creates",equips:"equips",upgrades:"upgrades"}[verb];
     const att=verb==="attacks"?byName(actor):null;
     CQPop.push({who:(g.m.echo?"Echo · ":"")+(s.p[g.l.p]?(g.l.p===U.me?"You":s.p[g.l.p].name):"Opponent")+(uidOf(actor)&&!att?" · "+actor:""),cardId:att?att.id:card?card.id:null,verb:att?"":g.m.echo?"replays":label||"",name:att?actor+" attacks":label?rest:g.l.m.replace(/\.$/,""),
-      dest:verb==="attacks"?rest:dest,sub:g.after.length?g.after[0].m.replace(/\s*\(\d+\/\d+ HP\)/,""):"",actorU:uidOf(actor),targetU:verb==="attacks"&&uidOf(rest)?[uidOf(rest)]:tgts})})}
+      dest:g.m.echo?"":verb==="attacks"?rest:dest,sub:g.after.length?g.after[0].m.replace(/\s*\(\d+\/\d+ HP\)/,""):"",actorU:uidOf(actor),
+      /* an Echo replay happens on its own at Dawn and pays no costs, so it draws no arrow (the Heroes named in its lines were exhausted when it was first played) */
+      targetU:g.m.echo?[]:verb==="attacks"&&uidOf(rest)?[uidOf(rest)]:tgts})})}
 function classOf(name){const n=String(name||"").trim();if(!n)return null;const c=(typeof CARDS!=="undefined"&&CARDS.find(x=>x.name===n))||(typeof HEROES!=="undefined"&&HEROES.find(x=>x.name===n));return c?c.cls:null}
 /* one sound key per log line; damage right after an attack is the attack's damage (stone crumble); a summon from a Druid card or Druid Hero is birdsong */
 function soundKeys(lines){const ks=[];let atk=false,cls=null;lines.forEach(l=>{let k=SND.pick(l.m);const m=/^(?:⚔ )?(.+?) (plays|activates) (.+?)(?: \(| for |\.|$)/.exec(l.m);
@@ -679,7 +687,8 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   hcPopHide();
   try{if(typeof fitArt==="function")fitArt(root)}catch(e){}
   try{fitPlay(root)}catch(e){console.warn(e)}
-  modals(s)}
+  modals(s);
+  try{if(window.CQTut&&U.tut)CQTut.after(s,root)}catch(e){console.warn(e)}}
 function lobbyHTML(){const ch=deckChoices();const resL=store2.get("cq.play.local",null),resH=store2.get("cq.play.host",null),resG=store2.get("cq.play.guest",null);
   if(!U.lobby.deck||!ch.some(d=>d.id===U.lobby.deck&&d.ok))U.lobby.deck=(ch.find(d=>d.ok)||{}).id||"";
   if(U.lobby.ai===U.lobby.deck&&!U.lobby.aiPicked)U.lobby.ai=U.lobby.deck==="starter:1"?"starter:0":"starter:1";
@@ -968,7 +977,7 @@ function showBanner(s,lines){const mine=new Set([...s.p[U.me].heroes.map(h=>h.na
   U.banT=setTimeout(()=>{U.banner=null;render()},Math.min(6000,3000+Math.max(0,show.length-2)*500))}
 function bannerHTML(){const b=U.banner;return`<div class="pl-banner" role="status"><div class="bl"><b>${esc(b.opp)} just:</b>${b.lines.map(l=>`<span class="${l.hit?"hit":""}">${esc(l.m)}</span>`).join("")}</div><button class="btn sm" data-pa="banner-x">Dismiss</button></div>`}
 /* end-of-game pop-up: sits over the game layer so Return to Lobby is always on screen (no-scroll layout hides the action bar's overflow) */
-function overHTML(s){if(!s.over||U.overHide)return"";const me=U.me;
+function overHTML(s){if(!s.over||U.overHide||U.tut)return"";const me=U.me;
   const head=s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`;
   const why=(s.conceded!=null?(s.conceded===me?"You conceded.":`${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");
   return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${head}</h2>${why?`<p class="pl-over-why">${why.trim()}</p>`:""}${statsHTML(s)}
@@ -1152,7 +1161,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="snd"){SND.toggle();render();return}
   if(k==="mus"){MUS.toggle();render();return}
   if(k==="start-ai"){startAI();return}
-  if(k==="rematch"){U.s=null;startAI();return}
+  if(k==="rematch"){U.s=null;U.tut=null;startAI();return}
   if(k==="over-hide"){U.overHide=true;render();return}
   if(k==="over-show"){U.overHide=false;render();return}
   if(k==="host"){hostRoom();return}

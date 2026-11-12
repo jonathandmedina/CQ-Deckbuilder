@@ -66,7 +66,7 @@ function banner(){const s=SCENES[mode];
     <h1 class="hm-title">Crystal Quest</h1>
     <p class="hm-lede">Riverstead is calling for heroes! Gather your party of three heroes, build your deck, and take on rival parties in tactical, turn-based battles for the fate of Riverstead. Combine spells, gear and tactics, earn Gold to upgrade and level your heroes into something unstoppable. Ready to start your quest?</p>
   </div>
-  <a class="btn primary hm-cta" aria-disabled="true" title="Coming soon">Learn to Play</a>
+  <a class="btn primary hm-cta" href="#learn">Learn to Play</a>
 </section>`}
 function view(){
   return`${banner()}
@@ -111,7 +111,7 @@ function view(){
   <section class="hm-sec hm-end">
     <h2>Join the adventure</h2>
     <p class="hm-sub">Crystal Quest is in open playtesting. Tell us what you find, share decks and meet other players.</p>
-    <div class="hm-btns"><a class="btn primary" aria-disabled="true" title="Coming soon">Learn to Play</a><a class="btn" href="#play">Start a Game</a><a class="btn discord-btn" href="https://discord.gg/wErfNbug5e" target="_blank" rel="noopener">Join the Discord</a></div>
+    <div class="hm-btns"><a class="btn primary" href="#learn">Learn to Play</a><a class="btn" href="#play">Start a Game</a><a class="btn discord-btn" href="https://discord.gg/wErfNbug5e" target="_blank" rel="noopener">Join the Discord</a></div>
   </section>
 </div>`}
 function learnView(){
@@ -123,7 +123,8 @@ function learnView(){
     <a class="hm-way" href="#rules"><b>Full Rules</b><span>Every rule and keyword, with a glossary.</span></a>
   </div>`}
 function mount(el){el.innerHTML=view();document.documentElement.classList.add("hm-page");fit();requestAnimationFrame(fit);musicBtn();syncMusic()}
-function mountLearn(el){el.innerHTML=learnView();musicBtn()}
+/* Learn to Play: the New Player Tutorial (tutorial.js); this page of links stays as the fallback if it fails to load */
+function mountLearn(el){if(window.CQTut){window.CQTut.mount(el);musicBtn();return}el.innerHTML=learnView();musicBtn()}
 function leave(){document.documentElement.classList.remove("hm-page")}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-hm]");if(!t||S.view!=="home")return;
   const m=t.dataset.hm;if(m===mode)return;mode=m;set("cq.home.mode",mode);

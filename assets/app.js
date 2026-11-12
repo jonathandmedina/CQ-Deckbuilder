@@ -228,7 +228,7 @@ function setSession(session){
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
   lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false};showAdminLink();if(u)loadAccess();if(window.CQProf)window.CQProf.onSession();
-  if(u)loadDecks();else{S.decks=localDecks();setTimeout(rebuildPrompt,50)}
+  if(u)loadDecks().then(()=>{try{if(window.CQTut)window.CQTut.onAccount()}catch(e){console.warn(e)}});else{S.decks=localDecks();setTimeout(rebuildPrompt,50)}
   renderAcct();render();
 }
 /* Admin and Set 2 access (Supabase RPC my_access; see "Admin Panel SQL" in the project). Signed out or no SQL yet = no access. */

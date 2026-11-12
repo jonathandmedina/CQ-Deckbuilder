@@ -134,3 +134,12 @@ window.CQHome={mount,mountLearn,leave,musicBtn,syncMusic};
 })();
 /* app.js routes before this file loads: draw the page now if it's Home or Learn */
 (function(){try{const v=document.getElementById("view");if(!v||typeof S==="undefined")return;if(S.view==="home")CQHome.mount(v);else if(S.view==="learn")CQHome.mountLearn(v);else CQHome.musicBtn()}catch(e){}})();
+
+/* phone menu: hamburger opens and closes the menu panel; picking a page closes it */
+(function(){const b=document.getElementById("navBurger"),top=document.querySelector("header.top");if(!b||!top)return;
+  const set=o=>{top.classList.toggle("nav-open",o);b.setAttribute("aria-expanded",String(o));b.setAttribute("aria-label",o?"Close menu":"Menu")};
+  b.addEventListener("click",e=>{e.stopPropagation();set(!top.classList.contains("nav-open"))});
+  document.addEventListener("click",e=>{if(!top.classList.contains("nav-open"))return;const a=e.target.closest&&e.target.closest("#navPanel a[href]");if(a||!top.contains(e.target))set(false)});
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&top.classList.contains("nav-open")){set(false);b.focus()}});
+  window.addEventListener("hashchange",()=>set(false));
+  matchMedia("(min-width:721px)").addEventListener("change",m=>{if(m.matches)set(false)})})();

@@ -218,7 +218,15 @@ song("Song of Healing",{run(c){c.s.p.forEach(pl=>living(pl).forEach(o=>heal(c,o,
 song("Call and Response",{modes:{n:1,opts:[{label:"Draw a card"},{label:"Draw a card, Harmonize 1: draw an additional card"}]},run(c){draw(c,1);if((c.modes||[])[0]===1&&(c.echo||living(c.me).some(h=>!h.ex&&h!==c.actor)))harmonize(c,1,"draw1")}});
 song("Solo Act",{can:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length>=2,run(c){harmonize(c,2,"soloAct",{notActor:true,verb:"Solo Act"})}});
 song("Understanding",{modes:{n:1,opts:[{label:"Scry 3"},{label:"Scry 3, Harmonize 1: draw a card"}]},run(c){if((c.modes||[])[0]===1&&(c.echo||living(c.me).some(h=>!h.ex&&h!==c.actor)))harmonize(c,1,"understanding");else scry(c,3)}});
-song("Opening Act",{run(c){const first=(c.me.t.acts||0)<=1;const top=c.me.lib.splice(-3);log(c,`Revealed: ${top.map(x=>E.DB[x.id].name).join(", ")}.`);const si=top.findIndex(x=>E.DB[x.id].type==="Song");if(si>=0){c.me.hand.push(top.splice(si,1)[0]);log(c,"A Song goes to hand.")}c.me.disc.push(...top);if(first){c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)}}});
+/* Nov 12, 2026: you choose which revealed Song goes to your hand, and both players see it */
+song("Opening Act",{run(c){const first=(c.me.t.acts||0)<=1;const top=c.me.lib.splice(-3);log(c,`Revealed: ${top.map(x=>E.DB[x.id].name).join(", ")}.`);
+  if(first){c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)}
+  const songs=top.filter(x=>E.DB[x.id].type==="Song");if(!songs.length){c.me.disc.push(...top);log(c,"Opening Act: no Song among them; all go to the discard pile.");return}
+  const show={};top.forEach(x=>{show[x.uid]=x.id});
+  E.pushChoose(c.s,c.pid,{title:"Opening Act: you may put a Song from among them into your hand (the rest go to your discard pile)",cards:songs.map(x=>x.uid),show,min:0,max:1,op:"openingAct",hold:top})}});
+OPS.openingAct=(s,pid,pr,picks)=>{const pl=s.p[pid];const top=pr.hold||[];const pick=top.find(x=>x.uid===picks[0]);
+  if(pick){pl.hand.push(pick);E.log(s,`Opening Act: ${pl.name} puts ${E.DB[pick.id].name} into their hand.`,pid)}else E.log(s,`Opening Act: ${pl.name} takes no Song.`,pid);
+  top.filter(x=>x!==pick).forEach(x=>pl.disc.push(x))};
 def("Embolden",{run(c){c.me.fl.emb={round:c.s.round,n:1};log(c,"The next time an ally would gain Strength this turn, it gains double that instead.")}});
 def("Strong Stance",{t:[HERO],run(c){buff(c.t[0],{def:2})}});
 def("Weakening Dirge",{run(c){c.me.pm.enemyStr=(c.me.pm.enemyStr||0)+1;log(c,"Enemies get -1 STR this turn.")}});
@@ -473,8 +481,11 @@ def("Rapacious Encore",{can:(s,pid,a)=>s.p[pid].disc.some(x=>{const d=E.DB[x.id]
   run(c){const songs=c.me.disc.filter(x=>{const d=E.DB[x.id];return d&&d.type==="Song"&&E.cardCost(c.s,c.pid,c.actor,d,0)<=c.me.aura});
     if(!songs.length||!c.actor){log(c,"Rapacious Encore: no Song in your discard pile you can pay for.");return}
     c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:songs.map(x=>x.uid),pay:true,fromDisc:true,encore:true,title:"Rapacious Encore: play a Song from your discard pile (pay its Aura cost)"})}});
-def("Sonic Recall",{t:[HERO],run(c){exMe(c);const songs=c.me.disc.filter(x=>E.DB[x.id].type==="Song");if(!songs.length){log(c,"No Songs in your discard pile: 0 damage.");return}
-  E.pushChoose(c.s,c.pid,{title:"Sonic Recall: shuffle any number of Songs into your library (X)",cards:songs.map(x=>x.uid),min:0,max:songs.length,op:"sonicRecall",tgt:c.t[0]&&c.t[0].uid,actor:c.actor.uid})}});
+/* Nov 12, 2026: X is chosen as Sonic Recall is played (before the opponent can respond), and Step In can redirect its damage */
+def("Sonic Recall",{t:[HERO],x:{label:"X: Songs to shuffle from your discard pile into your library (X damage)",max:(s,pid)=>s.p[pid].disc.filter(x=>E.DB[x.id]&&E.DB[x.id].type==="Song").length,free:true},run(c){exMe(c);
+  const pl=c.me,songs=pl.disc.filter(x=>E.DB[x.id].type==="Song"),n=Math.min(c.x||0,songs.length);
+  songs.slice(-n||songs.length).slice(0,n).forEach(x=>{const i=pl.disc.indexOf(x);if(i>=0)pl.lib.push(pl.disc.splice(i,1)[0])});if(n)E.shuffle(c.s,pl.lib);
+  log(c,`${pl.name} shuffles ${n} Song${n===1?"":"s"} into their library.`);if(n)D(c,c.t[0],n)}});
 OPS.sonicRecall=(s,pid,pr,picks)=>{const pl=s.p[pid];let n=0;picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){pl.lib.push(pl.disc.splice(i,1)[0]);n++}});if(n)E.shuffle(s,pl.lib);E.log(s,`${pl.name} shuffles ${n} Song${n===1?"":"s"} into their library.`,pid);
   const t2=pr.tgt&&E.resolveTarget(s,pr.tgt);const a=E.find(s,pr.actor);if(t2&&n)E.damage(s,a?a.o:{name:"Sonic Recall"},t2,n,{card:true,srcName:"Sonic Recall"})};
 /* Cleric */
@@ -519,7 +530,11 @@ def("Split Kick",{run(c){c.me.fl.splitKick=true;log(c,"Your next Combo card may 
 hid("Retribution","attack",(s,pid,tr)=>{const f=E.find(s,tr.target);return f&&f.pid===pid&&f.o.kind==="hero"},c=>{const a=atkr(c.s,c.trig),f=E.find(c.s,c.trig.target);if(!a||!f)return;const n=E.defn(c.s,f.o);log(c,`Retribution: ${a.o.name} takes ${n}.`);E.damage(c.s,{name:"Retribution"},a.o,n,{card:true,noTrig:true,srcName:"Retribution"})}); /* update 26 */
 hid("Step In",["attack","card"],(s,pid,tr)=>{const fs=tr.kind==="attack"?[tr.target]:(tr.targets||[]);return fs.some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"})},c=>{const tr=c.trig;
   const fs=tr.kind==="attack"?[tr.target]:(tr.targets||[]);const from=fs.find(u=>{const f=E.find(c.s,u);return f&&f.pid===c.pid&&f.o.kind==="hero"&&f.o.uid!==c.actor.uid});if(!from)return;
-  c.mods.stepIn={from,to:c.actor.uid};log(c,`${c.actor.name} will take that damage instead.`)});
+  /* Nov 12, 2026: you choose which of your Paladins takes the damage */
+  const pals=c.me.heroes.filter(h=>!h.dead&&h.uid!==from&&E.heroIs(h,"Paladin"));if(!pals.length){log(c,"Step In: no other Paladin can take it.");return}
+  if(pals.length===1){c.mods.stepIn={from,to:pals[0].uid};log(c,`${pals[0].name} will take that damage instead.`);return}
+  E.ask(c.s,c.pid,"Step In: which Paladin takes the damage instead?",pals.map(h=>({label:`${h.name} (${E.hp(c.s,h)}/${E.maxHp(c.s,h)} HP)`,v:h.uid})),"stepIn",{from,name:"Step In"})});
+A.stepIn=(s,pid,pr,v)=>{const w=s.pend.find(p=>p.type==="window");if(!w||v==null)return;w.mods.stepIn={from:pr.data.from,to:v};const h=E.find(s,v);E.log(s,`${h?h.o.name:"That Paladin"} will take that damage instead.`,pid)};
 S["Step In"].hidden.excl=true;
 hid("Self Sacrifice","dying",(s,pid,tr)=>{const f=E.find(s,tr.hero);return f&&f.pid===pid},c=>{const h=E.find(c.s,c.trig.hero).o;const p=c.actor;
   h.dmg=E.maxHp(c.s,h)-1;log(c,`${p.name} dies in ${h.name}'s place; ${h.name} stays at 1 HP.`);p.fl.dyingDone=true;E.loseHp(c.s,p,E.hp(c.s,p),"Self Sacrifice")});

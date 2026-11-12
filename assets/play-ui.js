@@ -657,7 +657,11 @@ function gameFx(s){if(U.fxFor!==U.gameKey){U.fxFor=U.gameKey;U.fxSeen=(s.fx&&s.f
 /* Update 30: opponent action pop-ups. Each opponent "starter" line (plays, activates, attacks, summons, equips, Town) opens a pop-up;
    the lines after it, up to the next starter, give its target(s) and a one-line result. Your own actions never pop up. */
 const POP_START=/^(?:⚔ )?(.+?) (plays|activates|attacks|uses its ability|summons|conjures|creates|equips|visits the Shop|stays at the Inn|pays the Church|upgrades) ?(.*?)(?: \(|\.| for |: |$)/;
-function opPops(s,lines){if(!window.CQPop||U.me==null)return;const objs=[];s.p.forEach(pl=>{pl.heroes.forEach(h=>objs.push(h));(pl.bf||[]).forEach(o=>objs.push(o))});
+function opPops(s,lines){if(!window.CQPop||U.me==null)return;
+  /* Nov 12, 2026: the Song Opening Act puts into a hand pops up for both players */
+  lines.forEach(l=>{const m=/^Opening Act: (.+) puts (.+) into their hand\.$/.exec(String(l.m));if(!m)return;const c=byName(m[2]);
+    CQPop.push({who:(l.p===U.me?"You":(s.p[l.p]||{}).name||"Opponent")+" · Opening Act",cardId:c?c.id:null,verb:"puts",name:m[2],dest:"Hand",sub:"This Song goes into their hand.",actorU:null,targetU:[]})});
+  const objs=[];s.p.forEach(pl=>{pl.heroes.forEach(h=>objs.push(h));(pl.bf||[]).forEach(o=>objs.push(o))});
   const uidOf=n=>{const o=objs.find(x=>x.name===n);return o?o.uid:null};
   const groups=[];lines.forEach(l=>{const echo=/^Echo: /.test(l.m);const m=POP_START.exec(String(l.m).replace(/^✋ /,"").replace(/^Echo: /,"").replace(/ again\.$/,"."));if(m)m.echo=echo;const sub=m&&/^(summons|conjures|creates)$/.test(m[2])&&groups.length&&groups[groups.length-1].l.p===l.p;
     if(m&&!sub&&l.p!=null&&l.p>=0){groups.push({l,m,after:[]})}else if(groups.length)groups[groups.length-1].after.push(l)});
@@ -751,25 +755,31 @@ addEventListener("hashchange",()=>{if(location.hash!=="#play"){document.getEleme
 /* Town window (Nov 12, 2026): Inn, Shop, Church and Blacksmith in one window in the middle of the screen, with Leave Town.
    Places you can't use right now stay listed with the reason. */
 function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.town.order[s.town.i]!==me||s.pend.length||U.townHide)return"";
-  const opts=legal(),pl=s.p[me],g=pl.gold,used=s.town.used||{};const B=(o,label,cls)=>`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${label}</button>`;
-  const why=(k,cost)=>used[k]?"Already used this visit":g<cost?`Needs ${cost} Gold`:"";
-  const inn=opts.filter(o=>o.type==="inn"),shop=opts.find(o=>o.type==="shop"),church=opts.filter(o=>o.type==="church"),ups=opts.filter(o=>o.type==="upgrade");
-  const hpOf=uid=>{const h=E.find(s,uid);return h&&h.o?` <span class="tw-hp">${E.hp(s,h.o)}/${E.maxHp(s,h.o)} HP</span>`:""};
+  /* Nov 12, 2026: every option is listed; ones you can't use right now are greyed out with the reason */
+  const opts=legal(),pl=s.p[me],g=pl.gold,used=s.town.used||{};
+  const on=(o,label,cls)=>`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${label}</button>`;
+  const off=(label,why)=>`<button class="btn tw-off" disabled title="${esc(why)}">${label}<small>${esc(why)}</small></button>`;
+  const has=(type,k,v)=>opts.find(o=>o.type===type&&(k==null||o[k]===v));
+  const hp=h=>` <span class="tw-hp">${E.hp(s,h)}/${E.maxHp(s,h)} HP</span>`;
   const place=(icon,name,desc,body)=>`<section class="tw-place"><div class="tw-h"><span class="tw-ic" aria-hidden="true">${icon}</span><div><b>${name}</b><span>${desc}</span></div></div><div class="tw-acts">${body}</div></section>`;
-  const none=t=>`<span class="tw-no">${esc(t)}</span>`;
-  const seen=new Set();const upBody=ups.map(o=>{if(seen.has(o.uid))return"";seen.add(o.uid);const f=E.find(s,o.uid);if(!f)return"";
-    if(o.x==null){const uc=E.upgradeCost(f.o);return`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="${esc(((E.DB[f.o.id]||{}).up||{}).rules||"")}">Upgrade ${esc(f.o.name)}${uc&&uc.cost?` (${uc.cost} Gold)`:""}</button>`}
-    const xs=ups.filter(u=>u.uid===o.uid).map(u=>u.x);return`<span class="pl-up">Upgrade ${esc(f.o.name)} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>`}).join("");
+  const innBody=pl.heroes.filter(h=>!h.dead).map(h=>{const o=has("inn","hero",h.uid);const lab=`Heal ${esc(h.name)}${hp(h)}`;
+    return o?on(o,lab):off(lab,used.inn?"Used this visit":g<E.INN_COST?`Needs ${E.INN_COST} Gold`:h.dmg<=0?"Full HP":"Not available")}).join("");
+  const sh=has("shop");const shopBody=sh?on(sh,"Draw a card"):off("Draw a card",used.shop?"Used this visit":g<E.SHOP_COST?`Needs ${E.SHOP_COST} Gold`:"Not available");
+  const dead=pl.heroes.filter(h=>h.dead);const churchBody=dead.length?dead.map(h=>{const o=has("church","hero",h.uid);const lab=`Resurrect ${esc(h.name)}`;
+    return o?on(o,lab):off(lab,h.surr?"Its soul was surrendered":used.church?"Used this visit":g<E.CHURCH_COST?`Needs ${E.CHURCH_COST} Gold`:"Not available")}).join(""):off("Resurrect a Hero","No Hero has died");
+  const ups=(E.upgradables?E.upgradables(s,me):[]);const upBody=ups.length?ups.map(o=>{const uc=E.upgradeCost(o)||{};const nm=esc(o.name||(E.DB[o.id]||{}).name||"");const tip=esc(((E.DB[o.id]||{}).up||{}).rules||"");
+    if(uc.x){const xs=opts.filter(u=>u.type==="upgrade"&&u.uid===o.uid).map(u=>u.x);return xs.length?`<span class="pl-up">Upgrade ${nm} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>`:off(`Upgrade ${nm}`,"Needs at least 1 Gold")}
+    const op=has("upgrade","uid",o.uid);const lab=`Upgrade ${nm}${uc.cost?` (${uc.cost} Gold)`:""}`;return op?`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(op))}' title="${tip}">${lab}</button>`:off(lab,`Needs ${uc.cost} Gold`)}).join(""):off("Upgrade","Nothing in play can be upgraded");
   return`<div class="pl-town" role="dialog" aria-modal="false" aria-label="Town"><div class="pl-town-box">
     <div class="tw-top"><h2>Town</h2><span class="tw-gold"><b>${g}</b> Gold</span><button class="btn sm" data-pa="town-hide" title="Hide this window to look at the board">Hide</button></div>
-    <p class="tw-note">Each place can be used once per visit. Gold you don't spend carries over.</p>
+    <p class="tw-note">Each place can be used once per visit. Gold you don't spend carries over. Greyed-out choices can't be used right now.</p>
     <div class="tw-grid">
-    ${place("🛏","Inn",`Heal a Hero ${E.INN_HEAL} HP · ${E.INN_COST} Gold`,inn.length?inn.map(o=>B(o,`Heal ${esc(nameOf(o.hero))}${hpOf(o.hero)}`)).join(""):none(why("inn",E.INN_COST)||"No Hero needs healing"))}
-    ${place("🛒","Shop",`Draw a card · ${E.SHOP_COST} Gold`,shop?B(shop,"Draw a card"):none(why("shop",E.SHOP_COST)||"Not available"))}
-    ${place("⛪","Church",`Resurrect a dead Hero with ${E.CHURCH_HP} HP · ${E.CHURCH_COST} Gold`,church.length?church.map(o=>B(o,`Resurrect ${esc(nameOf(o.hero))}`)).join(""):none(why("church",E.CHURCH_COST)||"No Hero has died"))}
-    ${place("⚒","Blacksmith","Upgrade items and equipment in play that have an Upgrade cost",upBody||none(g<3?"Not enough Gold":"Nothing to upgrade"))}
+    ${place("🛏","Inn",`Heal a Hero ${E.INN_HEAL} HP · ${E.INN_COST} Gold`,innBody)}
+    ${place("🛒","Shop",`Draw a card · ${E.SHOP_COST} Gold`,shopBody)}
+    ${place("⛪","Church",`Resurrect a dead Hero with ${E.CHURCH_HP} HP · ${E.CHURCH_COST} Gold`,churchBody)}
+    ${place("⚒","Blacksmith","Upgrade items and equipment in play that have an Upgrade cost",upBody)}
     </div>
-    <div class="tw-foot">${B({type:"leave"},"Leave Town","go")}</div></div></div>`}
+    <div class="tw-foot">${on({type:"leave"},"Leave Town","go")}</div></div></div>`}
 {const st=document.createElement("style");st.textContent=`
 .pl-town{position:fixed;inset:0;z-index:62;display:grid;place-items:center;padding:16px;background:rgba(6,4,2,.45);pointer-events:auto}
 .pl-town-box{width:min(760px,100%);max-height:calc(100vh - 40px);overflow:auto;background:linear-gradient(#2b1f15,#1b130c);color:#f3e6cf;border:2px solid #b8743a;border-radius:16px;padding:16px 20px 18px;box-shadow:0 24px 60px rgba(0,0,0,.7);animation:twIn .2s ease-out both}
@@ -781,6 +791,8 @@ function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.t
 .tw-h{display:flex;gap:10px;align-items:flex-start}.tw-ic{font-size:1.5rem;line-height:1}.tw-h b{display:block;font:400 1.3rem/1.1 "Pirata One",var(--display);color:#ffd98a}.tw-h span{font-size:.85rem;color:#d8c3a0}
 .tw-acts{display:flex;flex-wrap:wrap;gap:6px}.tw-acts .btn{font-size:.9rem}.tw-hp{opacity:.75;font-size:.8em}
 .tw-no{font-size:.85rem;color:#a8906f;font-style:italic}
+.tw-acts .btn.tw-off{opacity:.45;filter:grayscale(.7);cursor:not-allowed;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px}.tw-acts .btn.tw-off small{font-size:.72rem;font-weight:400;opacity:.9}
+#play-root .pl-man{position:fixed;right:16px;top:64px;z-index:112;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 84px);overflow:auto;background:linear-gradient(#2b1f15,#1b130c);color:#f3e6cf;border:2px solid #ffc100;box-shadow:0 20px 50px rgba(0,0,0,.7)}
 .tw-foot{display:flex;justify-content:flex-end;margin-top:14px}.tw-foot .btn{min-width:150px;font-size:1rem}
 @keyframes twIn{from{opacity:0;transform:translateY(10px) scale(.98)}}
 #pl-waitpop{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:64;display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:14px;background:rgba(27,19,12,.96);color:#f3e6cf;border:2px solid #ffc100;box-shadow:0 18px 44px rgba(0,0,0,.7);pointer-events:none;opacity:0;animation:wpIn .25s ease-out .6s forwards}
@@ -874,7 +886,7 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;arrSync(s)
       ${auraBarHTML(s,pl)}<span class="res gold" title="Gold: earned at Dusk, spent in Town"><i class="coin" aria-hidden="true"></i> <b>${pl.gold}</b> Gold</span>
       ${mine?"":turnCounts(s,pid).join("")}${s.passed[pid]&&s.phase==="battle"?'<span class="res">Passed</span>':""}
       ${pc?`<button class="btn sm" data-pa="pick" data-u="P${pid}" style="outline:3px solid var(--warn)">Target ${esc(pl.name)}'s party</button>`:""}
-      <span class="pl-piles">${pl.echo.length?`<span class="res">Echo <b>${pl.echo.length}</b></span>`:""}<span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
+      <span class="pl-piles">${pl.echo.length?`<button class="res" data-pa="echo" data-p="${pid}" title="Cards waiting to be played again at the next Dawn">Echo <b>${pl.echo.length}</b></button>`:""}<span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
       <button class="res" data-pa="disc" data-p="${pid}">Discard <b>${pl.disc.length}</b></button>${pl.exile.length?`<button class="res" data-pa="exile" data-p="${pid}">Exile <b>${pl.exile.length}</b></button>`:""}</span></div>
     <div class="pl-row"><span class="lbl">Battlefield</span>${bf}</div>
     <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div>${zacts}</div></div>
@@ -1198,8 +1210,8 @@ function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f
     ${o.kind==="hero"?`<p class="pl-note">Level ${o.lvl}${o.bon.str||o.bon.def||o.bon.aura?` · level bonuses: ${["str","def","aura"].filter(k=>o.bon[k]).map(k=>`+${o.bon[k]} ${k.toUpperCase()}`).join(", ")}`:""}${o.dmg?` · ${o.dmg} damage taken`:""}</p>`:""}
     ${o.kind==="hero"&&o.ench.length?`<p class="pl-note">Enchantments: ${o.ench.map(e=>esc(e.name)).join(", ")}</p>`:""}
     <div class="actions">${acts.join("")}<button class="btn" data-pa="close">Close</button></div>`)}
-function showPile(pid,z){const s=view();const pl=s.p[pid];const list=pl[z];
-  modal(`<h2>${esc(pl.name)} · ${z==="disc"?"Discard pile":"Exile"} (${list.length})</h2><div class="pick-list">${list.slice().reverse().map(c=>c.id?cardHTML(cardOf(c.id)):"").join("")||'<p class="pl-note">Empty.</p>'}</div><div class="actions"><button class="btn" data-pa="close">Close</button></div>`,{wide:true})}
+function showPile(pid,z){const s=view();const pl=s.p[pid];const list=z==="echo"?pl.echo.map(e=>e.card||{}):pl[z];
+  modal(`<h2>${esc(pl.name)} · ${z==="disc"?"Discard pile":z==="echo"?"Echo":"Exile"} (${list.length})</h2>${z==="echo"?'<p class="pl-note">These cards are played again at the next Dawn, for free.</p>':""}<div class="pick-list">${list.slice().reverse().map(c=>c.id?cardHTML(cardOf(c.id)):"").join("")||'<p class="pl-note">Empty.</p>'}</div><div class="actions"><button class="btn" data-pa="close">Close</button></div>`,{wide:true})}
 
 /* ---------- starting an action (modes, X, targets) ---------- */
 function begin(a){const s=view();
@@ -1303,7 +1315,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     modal(`${cardHTML(cardOf(c.id),{nozoom:1})}<p class="pl-note">${E.isScripted(d.name)||d.kind==="equip"?"Resolves automatically.":"Resolves by hand: after you pay, a panel opens to apply the effect."}</p>${why?`<p class="note warn">${esc(why)}</p>`:""}
       <div class="actions">${ok?`<button class="btn primary go" data-pa="play" data-u="${c.uid}">Play${d.sup==="Hidden"?" face down":d.type==="Item"?" to inventory":""} (${E.cardCost(s,U.me,E.actorFor(s,U.me),d,0)}${d.cost==="X"?"+X":""} Aura)</button>`:""}<button class="btn" data-pa="close">Close</button></div>`);return}
   if(k==="play"){closeModal();begin({type:"play",uid:b.dataset.u});return}
-  if(k==="disc"||k==="exile"){showPile(+b.dataset.p,k==="disc"?"disc":"exile");return}
+  if(k==="disc"||k==="exile"||k==="echo"){showPile(+b.dataset.p,k);return}
   if(k==="soul"){const opts=legal().filter(o=>o.type==="soul"&&(!b.dataset.h||o.hero===b.dataset.h));const heroes=[...new Set(opts.map(o=>o.hero))];
     modal(`<h2>Surrender a soul</h2><p class="pl-note">A surrendered Hero can never be revived. Uses your priority; no Hero is exhausted.</p>${heroes.map(h=>`<h3>${esc(nameOf(h))}</h3><div class="actions" style="flex-direction:column;align-items:stretch">${opts.filter(o=>o.hero===h).map(o=>btn(o,E.SOULS[o.ch])).join("")}</div>`).join("")}<div class="actions"><button class="btn" data-pa="close">Cancel</button></div>`);return}
   if(k==="mode"){const i=+b.dataset.i;const c=U.modeCtx;const n=Math.min(c.sc.modes.n,c.sc.modes.opts.length);if(U.modeSel.includes(i))U.modeSel=U.modeSel.filter(x=>x!==i);else{if(n===1)U.modeSel=[i];else if(U.modeSel.length<n)U.modeSel.push(i)}c.draw();return}

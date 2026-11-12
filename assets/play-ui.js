@@ -608,8 +608,6 @@ const DRAG_CSS=`.pl-hand .hc{touch-action:pan-x;user-select:none;-webkit-user-se
 .hc-drag-tag{position:absolute;left:50%;top:100%;transform:translate(-50%,10px);white-space:nowrap;font:700 .9rem/1 var(--body);padding:7px 12px;border-radius:999px;background:#1b130c;color:#f3e6cf;border:2px solid #8A5E40;box-shadow:0 6px 16px rgba(0,0,0,.6)}
 .hc-drag.over.ok .hc-drag-tag{background:#ffc100;color:#2A1606;border-color:#ffc100}
 .hc-drag.over.no .hc-drag-tag{background:#5a1a12;color:#ffd2c8;border-color:#C0392B}
-html.pl-dragging #play-root .pl-board{outline:3px dashed rgba(255,193,0,.55);outline-offset:-6px;border-radius:14px}
-html.pl-dragging.pl-over #play-root .pl-board{outline-color:#ffc100;background:color-mix(in srgb,#ffc100 5%,transparent)}
 @media (prefers-reduced-motion:reduce){.hc-drag-in{transition:none}}`;
 {const st=document.createElement("style");st.textContent=DRAG_CSS;document.head.appendChild(st)}
 let drag=null,dragEat=0;
@@ -621,18 +619,23 @@ function dragInfo(uid){const s=view();if(!s)return{ok:false,why:""};const c=s.p[
   const ok=legal().some(o=>o.type==="play"&&s.p[U.me].hand.find(x=>x.uid===o.uid&&x.id===c.id));const d=E.DB[c.id];
   let cost="";try{cost=E.cardCost(s,U.me,E.actorFor(s,U.me),d,0)+(d.cost==="X"?"+X":"")}catch(e){}
   return{ok,c,d,why:ok?"":(whyNot(s,c)||"Can't play this now"),label:ok?`Release to play${cost!==""?` (${cost} Aura)`:""}`:""}}
+/* the moving card is built (art already decoded) as soon as you press, and only shown once you pull up */
+function dragGhost(hc){const card=hc.querySelector(".card");if(!card)return null;const r=card.getBoundingClientRect();
+  const g=document.createElement("div");g.className="hc-drag";g.style.width=r.width+"px";g.style.visibility="hidden";g.innerHTML='<div class="hc-drag-in">'+card.outerHTML+'</div><span class="hc-drag-tag"></span>';
+  const inner=g.querySelector(".card");if(inner){inner.style.width="100%";inner.style.height="auto"}
+  g.querySelectorAll("img").forEach(i=>{i.loading="eager";i.decoding="sync"});
+  document.body.appendChild(g);try{if(typeof fitArt==="function")fitArt(g)}catch(err){}return{g,r}}
 document.addEventListener("pointerdown",e=>{if(e.button!==0)return;const hc=e.target.closest&&e.target.closest("#play-root .pl-hand .hc");if(!hc||e.target.closest(".zoom,.flip,[data-zoom]"))return;
-  drag={uid:hc.dataset.u,el:hc,x:e.clientX,y:e.clientY,id:e.pointerId,on:false}},true);
+  if(drag&&drag.g&&!drag.on)drag.g.remove();
+  const gh=dragGhost(hc);drag={uid:hc.dataset.u,el:hc,x:e.clientX,y:e.clientY,id:e.pointerId,on:false,g:gh&&gh.g,r:gh&&gh.r}},true);
 document.addEventListener("pointermove",e=>{if(!drag||e.pointerId!==drag.id)return;const dx=e.clientX-drag.x,dy=drag.y-e.clientY;
   if(!drag.on){if(dy<8||dy<Math.abs(dx)*0.7)return;/* start dragging upward (a short, mostly upward pull) */
-    const card=drag.el.querySelector(".card");if(!card){drag=null;return}const r=card.getBoundingClientRect();hcPopHide();
-    const g=document.createElement("div");g.className="hc-drag";g.style.width=r.width+"px";g.innerHTML='<div class="hc-drag-in">'+card.outerHTML+'</div><span class="hc-drag-tag"></span>';
-    const inner=g.querySelector(".card");if(inner){inner.style.width="100%";inner.style.height="auto"}
+    if(!drag.g){drag=null;return}const g=drag.g,r=drag.r;hcPopHide();
     /* keep the spot you grabbed under your finger */
     drag.ox=Math.max(0,Math.min(r.width,drag.x-r.left));drag.oy=Math.max(0,Math.min(r.height,drag.y-r.top));
     g.querySelector(".hc-drag-in").style.transformOrigin=drag.ox+"px "+drag.oy+"px";
-    document.body.appendChild(g);try{if(typeof fitArt==="function")fitArt(g)}catch(err){}
-    drag.on=true;drag.g=g;drag.tilt=0;drag.info=dragInfo(drag.uid);drag.el.classList.add("dragsrc");document.documentElement.classList.add("pl-dragging");
+    g.style.transform=`translate3d(${(e.clientX-drag.ox).toFixed(1)}px,${(e.clientY-drag.oy).toFixed(1)}px,0)`;g.style.visibility="";
+    drag.on=true;drag.tilt=0;drag.info=dragInfo(drag.uid);drag.el.classList.add("dragsrc");document.documentElement.classList.add("pl-dragging");
     try{drag.el.setPointerCapture(e.pointerId)}catch(err){}}
   e.preventDefault();drag.cx=e.clientX;drag.cy=e.clientY;
   if(!drag.raf)drag.raf=requestAnimationFrame(dragFrame)},{passive:false});
@@ -641,11 +644,11 @@ function dragFrame(){const d=drag;if(!d||!d.on)return;d.raf=0;const g=d.g,inf=d.
   g.style.transform=`translate3d(${(x-d.ox).toFixed(1)}px,${(y-d.oy).toFixed(1)}px,0)`;
   const want=Math.max(-12,Math.min(12,(x-(d.lx==null?x:d.lx))*0.9));d.lx=x;d.tilt+=(want-d.tilt)*0.35;if(Math.abs(d.tilt)<0.05)d.tilt=0;
   g.style.setProperty("--tilt",d.tilt.toFixed(2)+"deg");
-  const over=y<dragLine();if(over!==d.over){d.over=over;g.classList.toggle("over",over);g.classList.toggle("ok",over&&inf.ok);g.classList.toggle("no",over&&!inf.ok);document.documentElement.classList.toggle("pl-over",over);
+  const over=y<dragLine();if(over!==d.over){d.over=over;g.classList.toggle("over",over);g.classList.toggle("ok",over&&inf.ok);g.classList.toggle("no",over&&!inf.ok);
     const tag=g.querySelector(".hc-drag-tag");if(tag)tag.textContent=over?(inf.ok?inf.label:inf.why):"Drag onto the board to play"}
   if(d.tilt)d.raf=requestAnimationFrame(dragFrame)}/* keep easing the tilt back to level after the hand stops */
-function dragEnd(e,cancel){if(!drag||(e&&e.pointerId!==drag.id))return;const d=drag;drag=null;if(!d.on)return;if(d.raf)cancelAnimationFrame(d.raf);
-  dragEat=Date.now();d.g.remove();d.el.classList.remove("dragsrc");document.documentElement.classList.remove("pl-dragging","pl-over");
+function dragEnd(e,cancel){if(!drag||(e&&e.pointerId!==drag.id))return;const d=drag;drag=null;if(!d.on){if(d.g)d.g.remove();return}if(d.raf)cancelAnimationFrame(d.raf);
+  dragEat=Date.now();d.g.remove();d.el.classList.remove("dragsrc");document.documentElement.classList.remove("pl-dragging");
   if(cancel||!e||e.clientY>=dragLine())return;
   const inf=dragInfo(d.uid);if(!inf.ok){toast(inf.why||"You can't play that card right now.");return}
   closeModal();begin({type:"play",uid:d.uid})}
@@ -755,7 +758,14 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   try{fitPlay(root)}catch(e){console.warn(e)}
   modals(s);
   try{if(window.CQTut&&U.tut)CQTut.after(s,root)}catch(e){console.warn(e)}
-  try{window.CQTablet&&CQTablet.after()}catch(e){}}
+  preloadArt();try{window.CQTablet&&CQTablet.after()}catch(e){}}
+/* when a game starts, load and decode the art of every card in both decks, so nothing pops in while you play or drag */
+const ART_DONE=new Set();
+function preloadArt(){const s=U.s;if(!s||typeof BYID==="undefined"||typeof artSrc!=="function")return;const key=U.gameKey||"g";if(preloadArt.key===key)return;preloadArt.key=key;
+  const ids=new Set();const walk=(v,d)=>{if(!v||d>4)return;if(Array.isArray(v)){v.forEach(x=>walk(x,d+1));return}if(typeof v==="object"){if(typeof v.id==="string")ids.add(v.id);for(const k in v)if(v[k]&&typeof v[k]==="object")walk(v[k],d+1)}};
+  (s.p||[]).forEach(p=>walk(p,0));const srcs=[];
+  ids.forEach(id=>{const c=BYID.get(id);if(!c)return;try{const a=artSrc(c);if(a&&!ART_DONE.has(a)){ART_DONE.add(a);srcs.push(a)}}catch(e){}});
+  let i=0;const next=()=>{const batch=srcs.slice(i,i+6);i+=6;if(!batch.length)return;Promise.all(batch.map(src=>{const im=new Image();im.decoding="async";im.src=src;return(im.decode?im.decode():Promise.resolve()).catch(()=>{})})).then(()=>setTimeout(next,30))};next()}
 /* Waiting pop-up (Nov 12, 2026): when the game is waiting for the opponent to respond (a Hidden-card window, a choice, a card resolved by hand),
    a small notice shows in the middle of the screen. It appears after a short delay so instant AI answers don't flash it. */
 function waitPop(s){let el=document.getElementById("pl-waitpop");const pr=s&&s.pend&&s.pend[0];

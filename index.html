@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- Add to Home Screen (iPad proposal, Nov 12, 2026): opens Deck Forge like an app, without Safari's bars -->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Deck Forge">
+<meta name="theme-color" content="#1b130c">
+<link rel="apple-touch-icon" href="assets/app/icon-180.png">
 <title>Crystal Quest Deck Forge</title>
 <meta name="description" content="Browse every Crystal Quest card, build decks, save them to your account, export print-and-play PDFs or Tabletop Simulator decks, and play games against the AI or friends online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -461,8 +469,8 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 .sitebar .sb-fb{display:inline-flex;align-items:center;gap:7px}.sb-fb-i{width:20px;height:20px;flex:none}
 .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/art.css?v=20261112g">
-<link rel="stylesheet" href="assets/home.css?v=20261112g">
+<link rel="stylesheet" href="assets/art.css?v=20261112h">
+<link rel="stylesheet" href="assets/home.css?v=20261112h">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -493,20 +501,21 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261112g"></script>
-<script src="assets/app.js?v=20261112g"></script>
-<script src="assets/home.js?v=20261112g"></script>
-<script src="assets/play-engine.js?v=20261112g"></script>
-<script src="assets/play-cards.js?v=20261112g"></script>
-<script src="assets/play-ai.js?v=20261112g"></script>
-<script src="assets/play-ui.js?v=20261112g"></script>
-<script src="assets/changelog-data.js?v=20261112g"></script>
-<script src="assets/changelog.js?v=20261112g"></script>
-<script src="assets/admin.js?v=20261112g"></script>
-<script src="assets/profile.js?v=20261112g"></script>
-<script src="assets/action-pop.js?v=20261112g"></script>
-<script src="assets/online.js?v=20261112g"></script>
-<script src="assets/tutorial.js?v=20261112g"></script>
+<script src="assets/cards-data.js?v=20261112h"></script>
+<script src="assets/app.js?v=20261112h"></script>
+<script src="assets/home.js?v=20261112h"></script>
+<script src="assets/play-engine.js?v=20261112h"></script>
+<script src="assets/play-cards.js?v=20261112h"></script>
+<script src="assets/play-ai.js?v=20261112h"></script>
+<script src="assets/play-ui.js?v=20261112h"></script>
+<script src="assets/changelog-data.js?v=20261112h"></script>
+<script src="assets/changelog.js?v=20261112h"></script>
+<script src="assets/admin.js?v=20261112h"></script>
+<script src="assets/profile.js?v=20261112h"></script>
+<script src="assets/action-pop.js?v=20261112h"></script>
+<script src="assets/online.js?v=20261112h"></script>
+<script src="assets/tutorial.js?v=20261112h"></script>
+<script src="assets/play-tablet.js?v=20261112h"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>

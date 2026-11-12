@@ -722,7 +722,7 @@ function fitPlay(root){const g=root&&root.querySelector(".pl-game");if(!g||typeo
   try{if(typeof fitArt==="function")fitArt(hand||root)}catch(e){}}
 let fitT=null;addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(()=>{U.fitW=0;const r=ROOT();if(r)fitPlay(r)},120)});
 function render(){const root=ROOT();if(!root)return;injectCSS();
-  if(U.mode==="lobby"){MUS.sync(false);if(window.CQPop)CQPop.clear();root.innerHTML=lobbyHTML();return}
+  if(U.mode==="lobby"){MUS.sync(false);if(window.CQPop)CQPop.clear();root.innerHTML=lobbyHTML();try{window.CQTablet&&CQTablet.after()}catch(e){}return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
   const s=view();if(!s){root.innerHTML=roomHTML();return}
   if(!U.gameKey)U.gameKey="g"+Date.now();mergeLog(s);try{trackBanner(s)}catch(e){console.warn(e)}
@@ -741,7 +741,8 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   try{if(typeof fitArt==="function")fitArt(root)}catch(e){}
   try{fitPlay(root)}catch(e){console.warn(e)}
   modals(s);
-  try{if(window.CQTut&&U.tut)CQTut.after(s,root)}catch(e){console.warn(e)}}
+  try{if(window.CQTut&&U.tut)CQTut.after(s,root)}catch(e){console.warn(e)}
+  try{window.CQTablet&&CQTablet.after()}catch(e){}}
 /* Waiting pop-up (Nov 12, 2026): when the game is waiting for the opponent to respond (a Hidden-card window, a choice, a card resolved by hand),
    a small notice shows in the middle of the screen. It appears after a short delay so instant AI answers don't flash it. */
 function waitPop(s){let el=document.getElementById("pl-waitpop");const pr=s&&s.pend&&s.pend[0];

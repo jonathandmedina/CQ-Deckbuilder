@@ -9,7 +9,7 @@ FAKE_SB = """window.supabase={createClient(){const res=d=>({data:d,error:null});
  window.__RPC=[];
  return{auth:{getSession:async()=>res({session:{user}}),getUser:async()=>res({user}),
    onAuthStateChange:cb=>{setTimeout(()=>cb('SIGNED_IN',{user}),0);return{data:{subscription:{unsubscribe(){}}}}},signOut:async()=>res(null)},
-  rpc:async(n,a)=>{window.__RPC.push([n,a]);if(n==='my_access')return res(window.__ACCESS__);return res(null)},
+  rpc:async(n,a)=>{window.__RPC.push([n,a]);if(n==='my_access')return res(window.__ACCESS__);if(n==='admin_list_users')return res(window.__USERS__||[]);return res(null)},
   from:()=>chain(),channel:()=>({on(){return this},subscribe(){return this}}),removeChannel(){}}}};"""
 NAMES = ["Rock Mammoth","Golem","Crag Helm","Tusk Gore","Raging Stampede","Stoneplate Mantle"]
 
@@ -91,7 +91,16 @@ def main():
                 ctx.close()
         # Admin page Trials column (admin access)
         ctx, pg, errs = page_for(b, port, {"admin": True, "set2": True, "trials": True}, 1280, url="#admin")
-        pg.evaluate("window.__USERS__=1")
+        pg.evaluate("""window.__USERS__=[{id:'u1',email:'tester@x',name:'Tester',created_at:null,last_sign_in_at:null,is_admin:true,set2:true,trials:true,games:0,last_game:null},
+          {id:'u2',email:'p@x',name:'Pat',created_at:null,last_sign_in_at:null,is_admin:false,set2:false,trials:false,games:3,last_game:null}]""")
+        pg.evaluate("document.querySelectorAll('#layer .modal').forEach(m=>m.remove())"); pg.click('[data-ad-tab="users"]'); pg.wait_for_timeout(600)
+        check(pg.evaluate("[...document.querySelectorAll('.ad-users th')].map(t=>t.textContent).join('|').includes('Set 2|Trials')"), "admin: no Trials column after Set 2")
+        check(pg.evaluate("(()=>{const i=document.querySelector('input[data-ad-role=trials][data-uid=u1]');return !!i&&i.checked&&i.disabled&&i.title==='Admins always see Trials'})()"), "admin: admin row Trials box not checked+disabled")
+        check("Can see Trials" in text(pg), "admin: no Can see Trials KPI")
+        pg.click('input[data-ad-role=trials][data-uid=u2]'); pg.wait_for_timeout(500)
+        check(pg.evaluate("JSON.stringify(window.__RPC.find(x=>x[0]==='admin_set_trials'))") == '["admin_set_trials",{"target":"u2","allow":true}]', "admin: toggle did not call admin_set_trials")
+        check("Pat can now see Trials." in text(pg), "admin: no grant toast")
+        check(not errs, f"admin: console errors {errs[:3]}")
         ctx.close()
         b.close()
     srv.shutdown()

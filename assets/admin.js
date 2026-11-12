@@ -269,14 +269,15 @@ function usersTab(){
   if(!D.users&&!D.usersErr)return`<p class="ad-empty">Loading players…</p>`;
   if(D.usersErr)return`<div class="empty">${/admin_list_users|function/i.test(D.usersErr)?"The Users list needs the Admin Panel SQL run in Supabase first.":"Couldn't load players: "+E(D.usersErr)}</div>`;
   const q=st.uq.trim().toLowerCase();const U=D.users.filter(u=>!q||(u.name+" "+u.email).toLowerCase().includes(q));
-  const na=D.users.filter(u=>u.is_admin).length,ns=D.users.filter(u=>u.set2||u.is_admin).length;
-  return`<div class="ad-kpis">${kpi(fmt(D.users.length),"Players with accounts","")}${kpi(fmt(na),"Admins","")}${kpi(fmt(ns),"Can see Set 2","admins always can")}${kpi(fmt(SET2.size),"Cards in Set 2",SET2.size?"":"none added yet")}</div>
-  <p class="ad-note"><b>Admin</b>: sees this page and Set 2. <b>Set 2</b>: sees the hidden Set 2 cards in Cards and the Deck Builder.${SET2.size?"":" Set 2 cards go in the SET2_CARDS list in cards-data.js."}</p>
+  const na=D.users.filter(u=>u.is_admin).length,ns=D.users.filter(u=>u.set2||u.is_admin).length,nt=D.users.filter(u=>u.trials||u.is_admin).length;
+  return`<div class="ad-kpis">${kpi(fmt(D.users.length),"Players with accounts","")}${kpi(fmt(na),"Admins","")}${kpi(fmt(ns),"Can see Set 2","admins always can")}${kpi(fmt(SET2.size),"Cards in Set 2",SET2.size?"":"none added yet")}${kpi(fmt(nt),"Can see Trials","admins always can")}</div>
+  <p class="ad-note"><b>Admin</b>: sees this page and Set 2. <b>Set 2</b>: sees the hidden Set 2 cards in Cards and the Deck Builder. <b>Trials</b>: sees the Trials module (bosses, boss cards, loot and the Trials Supplement rules).${SET2.size?"":" Set 2 cards go in the SET2_CARDS list in cards-data.js."}</p>
   <div class="ad-bar"><label class="field">Search<input type="search" data-ad="uq" value="${E(st.uq)}" placeholder="Name or email"></label><button type="button" class="btn sm" data-ad-act="users-refresh">Refresh</button></div>
-  <section class="ad-card"><div class="ad-scroll"><table class="ad-t ad-users"><thead><tr><th>Player</th><th class="ad-hide-sm">Email</th><th class="ad-hide-sm">Joined</th><th>Last sign-in</th><th class="n">Games</th><th>Admin</th><th>Set 2</th></tr></thead><tbody>
+  <section class="ad-card"><div class="ad-scroll"><table class="ad-t ad-users"><thead><tr><th>Player</th><th class="ad-hide-sm">Email</th><th class="ad-hide-sm">Joined</th><th>Last sign-in</th><th class="n">Games</th><th>Admin</th><th>Set 2</th><th>Trials</th></tr></thead><tbody>
     ${U.map(u=>`<tr><td><b>${E(u.name)}</b>${u.id===S.uid?' <span class="ad-tag">you</span>':""}</td><td class="em ad-hide-sm">${E(u.email)}</td><td class="ad-hide-sm">${u.created_at?new Date(u.created_at).toLocaleDateString():"–"}</td><td>${ago(u.last_sign_in_at)}</td><td class="n">${fmt(u.games)}</td>
       <td><label class="ad-sw"><input type="checkbox" data-ad-role="admin" data-uid="${E(u.id)}" data-nm="${E(u.name)}"${u.is_admin?" checked":""}><span class="sr-only">Admin</span></label></td>
-      <td><label class="ad-sw"><input type="checkbox" data-ad-role="set2" data-uid="${E(u.id)}" data-nm="${E(u.name)}"${u.set2||u.is_admin?" checked":""}${u.is_admin?' disabled title="Admins always see Set 2"':""}><span class="sr-only">Set 2</span></label></td></tr>`).join("")||`<tr><td colspan="7" class="ad-empty">No players match.</td></tr>`}
+      <td><label class="ad-sw"><input type="checkbox" data-ad-role="set2" data-uid="${E(u.id)}" data-nm="${E(u.name)}"${u.set2||u.is_admin?" checked":""}${u.is_admin?' disabled title="Admins always see Set 2"':""}><span class="sr-only">Set 2</span></label></td>
+      <td><label class="ad-sw"><input type="checkbox" data-ad-role="trials" data-uid="${E(u.id)}" data-nm="${E(u.name)}"${u.trials||u.is_admin?" checked":""}${u.is_admin?' disabled title="Admins always see Trials"':""}><span class="sr-only">Trials</span></label></td></tr>`).join("")||`<tr><td colspan="8" class="ad-empty">No players match.</td></tr>`}
   </tbody></table></div></section>`}
 
 /* ---------- page ---------- */
@@ -327,9 +328,10 @@ document.addEventListener("change",async e=>{const t=e.target;if(!root||S.view!=
   const role=t.dataset.adRole;if(!role)return;const uid=t.dataset.uid,on=t.checked,nm=t.dataset.nm;
   if(role==="admin"){const msg=on?`Make ${nm} an admin? Admins see this page, can change other players' access and see Set 2.`:(uid===S.uid?"Remove your own admin access? You'll lose this page.":`Remove admin from ${nm}?`);
     if(!confirm(msg)){t.checked=!on;return}}
-  t.disabled=true;const{error}=await SB.rpc(role==="admin"?"admin_set_admin":"admin_set_set2",role==="admin"?{target:uid,make:on}:{target:uid,allow:on});
-  if(error){toast("Couldn't change that: "+error.message);t.checked=!on;t.disabled=false;return}
-  toast(role==="admin"?(on?`${nm} is now an admin.`:`${nm} is no longer an admin.`):(on?`${nm} can now see Set 2.`:`${nm} can no longer see Set 2.`));
+  t.disabled=true;const{error}=await SB.rpc(role==="admin"?"admin_set_admin":role==="trials"?"admin_set_trials":"admin_set_set2",role==="admin"?{target:uid,make:on}:{target:uid,allow:on});
+  if(error){toast(/admin_set_trials/.test(error.message)?"Trials access needs the Trials SQL run in Supabase first.":"Couldn't change that: "+error.message);t.checked=!on;t.disabled=false;return}
+  const what=role==="trials"?"Trials":"Set 2";
+  toast(role==="admin"?(on?`${nm} is now an admin.`:`${nm} is no longer an admin.`):(on?`${nm} can now see ${what}.`:`${nm} can no longer see ${what}.`));
   if(uid===S.uid&&typeof loadAccess==="function")loadAccess();loadUsers()});
 document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||t.dataset.ad!=="uq")return;st.uq=t.value;rerender()});
 window.CQAdmin={mount};

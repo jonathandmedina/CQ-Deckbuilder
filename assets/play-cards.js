@@ -88,8 +88,10 @@ def("Curse of Exhaustion",{t:[t("player","target party")],run(c){const p=c.t[0];
 def("Power Vacuum",{t:[t("enemyPlayer","target party")],run(c){const pl=c.op;const r=Math.min(pl.aura,c.x||0);pl.aura-=r;log(c,`${pl.name} loses ${r} Aura.`);exMe(c)}});
 def("Bewilder",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Bewilder: you may discard one card from their hand",cards:c.op.hand.map(x=>x.uid),min:0,max:1,op:"opDiscard",target:1-c.pid})}});
 def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic, Spell or Song",cards:c.op.hand.filter(x=>/Tactic|Spell|Song/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:1-c.pid})}});
-const curse=(name)=>def(name,{t:[HERO],run(c){const h=c.t[0];if(!h)return"stay";h.ench.push({uid:c.inst.uid,id:c.def.id,name:c.def.name,kind:"card",owner:c.pid,ctrl:c.pid,cardUid:c.inst.uid});log(c,`${c.def.name} is attached to ${h.name}.`);return"stay"}});
-["Aura Leech","Blood Aura","Burden","Slow Down","Chains of Darkness","Distract","Mark of Doom","Memory Loss","Weaken","Life Boost","Sanctuary","Arrested Development"].forEach(curse);
+const curse=(name,tg)=>def(name,{t:[tg||HERO],run(c){const h=c.t[0];if(!h)return"stay";h.ench.push({uid:c.inst.uid,id:c.def.id,name:c.def.name,kind:"card",owner:c.pid,ctrl:c.pid,cardUid:c.inst.uid});log(c,`${c.def.name} is attached to ${h.name}.`);return"stay"}});
+["Aura Leech","Blood Aura","Burden","Slow Down","Chains of Darkness","Distract","Memory Loss","Weaken","Life Boost","Sanctuary","Arrested Development"].forEach(n=>curse(n));
+/* Nov 12, 2026: Mark of Doom attaches to an enemy Hero only */
+curse("Mark of Doom",t("enemyHero","target enemy Hero"));
 /* ===== Cleric ===== */
 def("Healing Beam",{t:[t("any","heal target")],run(c){heal(c,c.t[0],5)}});
 def("Healing Touch",{t:[t("hero","Hero to heal")],run(c){heal(c,c.t[0],2)}});
@@ -136,7 +138,8 @@ def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:4})}});
 def("Blood Frenzy",{t:[cls("Barbarian")],run(c){const b=c.t[0];if(!b)return;E.costHp(c.s,c.pid,b,3,"Blood Frenzy cost");if(!b.dead){buff(b,{str:3});log(c,`${b.name} gains +3 STR until Dusk.`)}}});
 def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buff(c.actor,{str:1});const h=c.t[0];if(c.actor.lvl>=3&&h&&dfn(c,h)<str(c,c.actor)){h.ex=true;log(c,`${h.name} is exhausted.`)}}});
 def("Battered",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
-def("Pummel",{t:[HERO],run(c){const n=living(c.me).filter(h=>h.cls==="Barbarian").length;D(c,c.t[0],dstr(c,c.actor,c.t[0])*n);exMe(c)}});
+/* Nov 12, 2026: double this Hero's Strength (was Strength times the number of Barbarians) */
+def("Pummel",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0])*2);exMe(c)}});
 def("Awestruck",{t:[t("any","Hero or summon with less STR",(s,o,x)=>x.actor&&E.str(s,o)<E.str(s,x.actor))],run(c){st(c,c.t[0],"stun")}});
 def("Bloodthirst",{t:[EN],run(c){c.actor.ex=false;attack(c,c.actor,c.t[0],{after:"readyIfKill"})}});
 def("Unstoppable",{t:[EN],run(c){attack(c,c.actor,c.t[0],{noHidden:true})}});
@@ -539,8 +542,7 @@ hab("Dr. Vonugutt",[{label:"Add another counter of a type on a Hero",t:[HERO],ru
     if(!o.length){log(c,`${h.name} has no counters.`);return}E.ask(c.s,c.pid,`Dr. Vonugutt: add another counter to ${h.name}`,o,"vonu",{h:h.uid,name:"Dr. Vonugutt"})}},
   {label:"Double the status counters on a Hero",lvl:3,t:[HERO],run:c=>{const h=c.t[0];if(!h)return;E.STATUS.forEach(k=>{if(h.st[k]>0)E.addStatus(c.s,h,k,h.st[k])})}}]);
 A.vonu=(s,pid,pr,v)=>{const h=E.heroByUid(s,pr.data.h);if(!h||h.dead)return;if(v==="plus"){h.plus++;E.log(s,`${h.name} gets another meditation counter.`,pid)}else if(v==="fat"){h.fat=(h.fat||0)+1;E.log(s,`${h.name} gets another Fatigue counter.`,pid)}else if(v==="lvl")E.levelUp(s,h,"str");else E.addStatus(s,h,v,1)};
-hab("Echo Performer",[{label:"Play a Bard Tactic or Song, then duplicate it",cost:2,can:(s,pid,a)=>s.p[pid].hand.some(x=>{const d=E.DB[x.id];return d&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)&&E.cardCost(s,pid,a,d,0)+2<=s.p[pid].aura}),
-  run:c=>{c.s.bonus={pid:c.pid,uid:c.actor.uid,n:2,only:"bard",dup:true,allowEx:true};log(c,`${c.actor.name} may now play a Bard Tactic or Song (paying its Aura cost); it will be duplicated.`)}}]);
+/* Echo Performer (Nov 12, 2026): no activated ability any more; its Song duplication is a passive in play-engine.js (playCard) */
 hab("Hexcaster",[{label:"Lose 2 HP: opponents can't use Consumable items this turn",can:(s,pid,a)=>E.hp(s,a)>2,run:c=>{E.costHp(c.s,c.pid,c.actor,2,"Hexcaster");c.op.fl.noConsum=c.s.round;log(c,`${c.op.name} can't use Consumable items this turn.`)}}]);
 /* Equipment with a colon ability (uses the Hero's action) */
 const EQ2=root.CQ_EQACT=root.CQ_EQACT||{};

@@ -725,7 +725,9 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   const keepScroll=root.querySelector(".pl-log");const atBottom=!keepScroll||keepScroll.scrollTop+keepScroll.clientHeight>=keepScroll.scrollHeight-20;
   const handEl=root.querySelector(".pl-hand");const hs=handEl?handEl.scrollLeft:0;
   if(U.overFor!==U.gameKey){U.overFor=U.gameKey;U.overHide=false}
-  root.innerHTML=gameHTML(s)+overHTML(s);
+  if(s.phase!=="town"||!s.town||s.town.order[s.town.i]!==U.me)U.townHide=false;
+  root.innerHTML=gameHTML(s)+overHTML(s)+townHTML(s);
+  try{waitPop(s)}catch(e){console.warn(e)}
   const lg=root.querySelector(".pl-log");if(lg&&atBottom)lg.scrollTop=lg.scrollHeight;
   const he=root.querySelector(".pl-hand");if(he){he.scrollLeft=hs;handOvf(he);he.addEventListener("scroll",()=>handOvf(he),{passive:true})}
   try{gameFx(s)}catch(e){console.warn(e)}
@@ -736,6 +738,57 @@ function render(){const root=ROOT();if(!root)return;injectCSS();
   try{fitPlay(root)}catch(e){console.warn(e)}
   modals(s);
   try{if(window.CQTut&&U.tut)CQTut.after(s,root)}catch(e){console.warn(e)}}
+/* Waiting pop-up (Nov 12, 2026): when the game is waiting for the opponent to respond (a Hidden-card window, a choice, a card resolved by hand),
+   a small notice shows in the middle of the screen. It appears after a short delay so instant AI answers don't flash it. */
+function waitPop(s){let el=document.getElementById("pl-waitpop");const pr=s&&s.pend&&s.pend[0];
+  const on=U.mode==="game"&&location.hash==="#play"&&s&&!s.over&&pr&&pr.pid!==U.me&&pr.pid!=null&&pr.pid>=0;
+  if(!on){if(el)el.remove();return}
+  const who=esc(s.p[pr.pid].name),what=pr.type==="window"?"They may respond with a Hidden card.":pr.type==="manual"?"They're resolving a card by hand.":"They're making a choice.";
+  const key=pr.type+"|"+pr.pid+"|"+(s.logN||s.log.length);
+  if(el&&el.dataset.k===key)return;if(!el){el=document.createElement("div");el.id="pl-waitpop";el.setAttribute("role","status");el.setAttribute("aria-live","polite");document.body.appendChild(el)}
+  el.dataset.k=key;el.innerHTML=`<span class="wp-spin" aria-hidden="true"></span><div><b>Waiting for ${who} to respond…</b><span>${what}</span></div>`}
+addEventListener("hashchange",()=>{if(location.hash!=="#play"){document.getElementById("pl-waitpop")?.remove()}});
+/* Town window (Nov 12, 2026): Inn, Shop, Church and Blacksmith in one window in the middle of the screen, with Leave Town.
+   Places you can't use right now stay listed with the reason. */
+function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.town.order[s.town.i]!==me||s.pend.length||U.townHide)return"";
+  const opts=legal(),pl=s.p[me],g=pl.gold,used=s.town.used||{};const B=(o,label,cls)=>`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${label}</button>`;
+  const why=(k,cost)=>used[k]?"Already used this visit":g<cost?`Needs ${cost} Gold`:"";
+  const inn=opts.filter(o=>o.type==="inn"),shop=opts.find(o=>o.type==="shop"),church=opts.filter(o=>o.type==="church"),ups=opts.filter(o=>o.type==="upgrade");
+  const hpOf=uid=>{const h=E.find(s,uid);return h&&h.o?` <span class="tw-hp">${E.hp(s,h.o)}/${E.maxHp(s,h.o)} HP</span>`:""};
+  const place=(icon,name,desc,body)=>`<section class="tw-place"><div class="tw-h"><span class="tw-ic" aria-hidden="true">${icon}</span><div><b>${name}</b><span>${desc}</span></div></div><div class="tw-acts">${body}</div></section>`;
+  const none=t=>`<span class="tw-no">${esc(t)}</span>`;
+  const seen=new Set();const upBody=ups.map(o=>{if(seen.has(o.uid))return"";seen.add(o.uid);const f=E.find(s,o.uid);if(!f)return"";
+    if(o.x==null){const uc=E.upgradeCost(f.o);return`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="${esc(((E.DB[f.o.id]||{}).up||{}).rules||"")}">Upgrade ${esc(f.o.name)}${uc&&uc.cost?` (${uc.cost} Gold)`:""}</button>`}
+    const xs=ups.filter(u=>u.uid===o.uid).map(u=>u.x);return`<span class="pl-up">Upgrade ${esc(f.o.name)} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>`}).join("");
+  return`<div class="pl-town" role="dialog" aria-modal="false" aria-label="Town"><div class="pl-town-box">
+    <div class="tw-top"><h2>Town</h2><span class="tw-gold"><b>${g}</b> Gold</span><button class="btn sm" data-pa="town-hide" title="Hide this window to look at the board">Hide</button></div>
+    <p class="tw-note">Each place can be used once per visit. Gold you don't spend carries over.</p>
+    <div class="tw-grid">
+    ${place("🛏","Inn",`Heal a Hero ${E.INN_HEAL} HP · ${E.INN_COST} Gold`,inn.length?inn.map(o=>B(o,`Heal ${esc(nameOf(o.hero))}${hpOf(o.hero)}`)).join(""):none(why("inn",E.INN_COST)||"No Hero needs healing"))}
+    ${place("🛒","Shop",`Draw a card · ${E.SHOP_COST} Gold`,shop?B(shop,"Draw a card"):none(why("shop",E.SHOP_COST)||"Not available"))}
+    ${place("⛪","Church",`Resurrect a dead Hero with ${E.CHURCH_HP} HP · ${E.CHURCH_COST} Gold`,church.length?church.map(o=>B(o,`Resurrect ${esc(nameOf(o.hero))}`)).join(""):none(why("church",E.CHURCH_COST)||"No Hero has died"))}
+    ${place("⚒","Blacksmith","Upgrade items and equipment in play that have an Upgrade cost",upBody||none(g<3?"Not enough Gold":"Nothing to upgrade"))}
+    </div>
+    <div class="tw-foot">${B({type:"leave"},"Leave Town","go")}</div></div></div>`}
+{const st=document.createElement("style");st.textContent=`
+.pl-town{position:fixed;inset:0;z-index:62;display:grid;place-items:center;padding:16px;background:rgba(6,4,2,.45);pointer-events:auto}
+.pl-town-box{width:min(760px,100%);max-height:calc(100vh - 40px);overflow:auto;background:linear-gradient(#2b1f15,#1b130c);color:#f3e6cf;border:2px solid #b8743a;border-radius:16px;padding:16px 20px 18px;box-shadow:0 24px 60px rgba(0,0,0,.7);animation:twIn .2s ease-out both}
+.tw-top{display:flex;align-items:center;gap:12px}.tw-top h2{margin:0;font:400 2rem/1 "Pirata One",var(--display);color:#ffc100}.tw-top .btn{margin-left:auto}
+.tw-gold{display:inline-flex;align-items:baseline;gap:5px;padding:4px 12px;border-radius:999px;background:#2a1d05;border:2px solid #d4a017;color:#ffd98a}.tw-gold b{font:400 1.4rem/1 "Pirata One",var(--display);color:#ffc100}
+.tw-note{margin:8px 0 12px;color:#d8c3a0;font-size:.9rem}
+.tw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tw-place{border:1.5px solid #8A5E40;border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.22);display:flex;flex-direction:column;gap:8px}
+.tw-h{display:flex;gap:10px;align-items:flex-start}.tw-ic{font-size:1.5rem;line-height:1}.tw-h b{display:block;font:400 1.3rem/1.1 "Pirata One",var(--display);color:#ffd98a}.tw-h span{font-size:.85rem;color:#d8c3a0}
+.tw-acts{display:flex;flex-wrap:wrap;gap:6px}.tw-acts .btn{font-size:.9rem}.tw-hp{opacity:.75;font-size:.8em}
+.tw-no{font-size:.85rem;color:#a8906f;font-style:italic}
+.tw-foot{display:flex;justify-content:flex-end;margin-top:14px}.tw-foot .btn{min-width:150px;font-size:1rem}
+@keyframes twIn{from{opacity:0;transform:translateY(10px) scale(.98)}}
+#pl-waitpop{position:fixed;left:50%;top:42%;transform:translate(-50%,-50%);z-index:64;display:flex;gap:12px;align-items:center;padding:14px 18px;border-radius:14px;background:rgba(27,19,12,.96);color:#f3e6cf;border:2px solid #ffc100;box-shadow:0 18px 44px rgba(0,0,0,.7);pointer-events:none;opacity:0;animation:wpIn .25s ease-out .6s forwards}
+#pl-waitpop b{display:block;font-size:1.02rem}#pl-waitpop span{font-size:.85rem;color:#d8c3a0}
+.wp-spin{width:22px;height:22px;border-radius:50%;border:3px solid rgba(255,193,0,.25);border-top-color:#ffc100;animation:wpSpin .9s linear infinite;flex:none}
+@keyframes wpIn{to{opacity:1}}@keyframes wpSpin{to{transform:rotate(360deg)}}
+@media (max-width:640px){.tw-grid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.pl-town-box,.wp-spin{animation:none}#pl-waitpop{animation:none;opacity:1}}`;document.head.appendChild(st)}
 function lobbyHTML(){const ch=deckChoices();const resL=store2.get("cq.play.local",null),resH=store2.get("cq.play.host",null),resG=store2.get("cq.play.guest",null);
   if(!U.lobby.deck||!ch.some(d=>d.id===U.lobby.deck&&d.ok))U.lobby.deck=(ch.find(d=>d.ok)||{}).id||"";
   if(U.lobby.ai===U.lobby.deck&&!U.lobby.aiPicked)U.lobby.ai=U.lobby.deck==="starter:1"?"starter:0":"starter:1";
@@ -988,13 +1041,9 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
     if(!s.p[me].mullDone)acts='<button class="btn go" data-pa="do" data-a=\'{"type":"keep"}\'>Keep</button><button class="btn" data-pa="do" data-a=\'{"type":"mull"}\'>Mulligan</button>'}
   else if(s.phase==="dawn"){if(s.dawnDone[me]){wait=true;prompt="Waiting for your opponent to finish Dawn…"}else{prompt="Dawn: you may use Gemstones (exhausting a Hero) before battle.";
     acts=opts.filter(o=>o.type==="gem").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(nameOf(o.uid))} (exhaust ${esc(nameOf(o.hero))})</button>`).join("")+opts.filter(o=>o.type==="wake").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${o.v?`Wake ${esc(nameOf(o.hero))} at next Dawn`:`Keep ${esc(nameOf(o.hero))} Meditating`}</button>`).join("")+'<button class="btn go" data-pa="do" data-a=\'{"type":"dawnDone"}\'>Start battle</button>'}}
-  else if(s.phase==="town"){const t=s.town&&s.town.order[s.town.i];if(t!==me){wait=true;prompt=`${esc(s.p[t].name)} is in Town…`}else{const used=(s.town&&s.town.used)||{};prompt=`Town: you have ${s.p[me].gold} Gold. Inn ${E.INN_COST} Gold (a Hero heals ${E.INN_HEAL})${used.inn?" ✓ used":""} · Shop ${E.SHOP_COST} Gold (draw a card)${used.shop?" ✓ used":""} · Church ${E.CHURCH_COST} Gold (resurrect a dead Hero with ${E.CHURCH_HP} HP)${used.church?" ✓ used":""}. Each once per visit. Blacksmith: upgrade items and equipment that have an Upgrade cost.`;
-    acts=opts.filter(o=>o.type==="inn").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Inn: heal ${esc(nameOf(o.hero))}</button>`).join("")+(opts.some(o=>o.type==="shop")?'<button class="btn" data-pa="do" data-a=\'{"type":"shop"}\'>Shop: draw a card</button>':"")
-      +opts.filter(o=>o.type==="church").map(o=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}'>Church: resurrect ${esc(nameOf(o.hero))}</button>`).join("")
-      +(()=>{const ups=opts.filter(o=>o.type==="upgrade");const seen=new Set();return ups.map(o=>{if(seen.has(o.uid))return"";seen.add(o.uid);const f=E.find(s,o.uid);
-        if(o.x==null){const uc=E.upgradeCost(f.o);return`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="${esc(((E.DB[f.o.id]||{}).up||{}).rules||"")}">Blacksmith: upgrade ${esc(f.o.name)}${uc&&uc.cost?` (${uc.cost} Gold)`:""}</button>`}
-        const xs=ups.filter(u=>u.uid===o.uid).map(u=>u.x);return`<span class="pl-up">Blacksmith: upgrade ${esc(f.o.name)} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>`}).join("")})()
-      +'<button class="btn go" data-pa="do" data-a=\'{"type":"leave"}\'>Leave Town</button>'}}
+  else if(s.phase==="town"){const t=s.town&&s.town.order[s.town.i];if(t!==me){wait=true;prompt=`${esc(s.p[t].name)} is in Town…`}else{
+    /* Nov 12, 2026: every Town action is in the Town window in the middle of the screen (townHTML) */
+    prompt=`Town: you have ${s.p[me].gold} Gold. Choose in the Town window.`;acts=U.townHide?'<button class="btn go" data-pa="town-show">Open Town</button>':""}}
   else if(s.phase==="battle"){if(s.prio!==me){wait=true;prompt=`${esc(s.p[s.prio].name)} is acting…`}else{const a=E.actorFor(s,me);const refire=s.bonus&&s.bonus.pid===me&&s.bonus.only==="arrow";const fz=a&&E.forcedTarget(s,a);
       const bb=s.bonus&&s.bonus.pid===me?s.bonus:null;
       prompt=bb&&bb.only==="bard"?`Echo Performer: <b>${esc(a?a.name:"")}</b> plays a Bard Tactic or Song (pay its Aura cost); it will be duplicated.`:bb&&bb.rapid?`Rapid Shot: <b>${esc(a?a.name:"")}</b> activates Arrows (Piercing 1), then it's exhausted.`:bb&&bb.free?`Line It Up: <b>${esc(a?a.name:"")}</b> may fire an Arrow for free.`:refire?`Refire: <b>${esc(a?a.name:"")}</b> activates an Arrow (pay its Aura). If it resolves, it returns to your inventory.`:a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}${fz?` — it <b>must attack ${esc(nameOf(fz))}</b> (Arrow of Persuasion)`:""}. ${fz?"It must attack now.":"Play a highlighted card, or choose an action:"}`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
@@ -1199,6 +1248,7 @@ function pickX(a,d,sc){const s=view();const pl=s.p[U.me];const actor=E.actorFor(
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!b)return;if(!b.closest("#play-root")&&!b.closest("#pl-modal"))return;
   let k=b.dataset.pa;const s=view();
+  if(k==="town-hide"){U.townHide=true;render();return}if(k==="town-show"){U.townHide=false;render();return}
   if(k==="stat"&&(U.tgt||(s&&s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===U.me))){k="obj"}
   else if(k==="stat"){e.stopPropagation();const u=b.dataset.u,f=b.dataset.f;U.statPop=U.statPop&&U.statPop.u===u&&U.statPop.f===f?null:{u,f};render();return}
   if(U.statPop&&k!=="stat"){U.statPop=null;document.querySelectorAll("#play-root .ph-pop").forEach(x=>x.remove());document.querySelectorAll("#play-root .ph-num.on").forEach(x=>x.classList.remove("on"))}

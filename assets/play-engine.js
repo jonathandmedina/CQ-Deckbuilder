@@ -862,7 +862,7 @@ function queueResolve(s,pid,cont,trig){const op=opp(pid);trig.pid=pid;
 function closeWindow(s,pr){const m=pr.mods||{};if(m.retarget&&pr.cont&&pr.cont.targets){pr.cont.targets[m.retarget.i]=m.retarget.uid}resolveCont(s,pr.trig.pid,pr.cont,m)}
 ASK.redirect=(s,pid,pr,v)=>{const w=s.pend.find(p=>p.type==="window");if(!w||v==null)return;w.mods.retarget={i:pr.data.i,uid:v};const t=resolveTarget(s,v);log(s,`Redirect: the new target is ${t?t.name:"?"}.`,pid)};
 function doReveal(s,pid,o,pr,heroUid){const pl=P(s,pid);const d=def(o);const h=revealHero(s,pid,o,pr,heroUid);const cost=hiddenCost(s,pid,o);
-  h.ex=true;pay(s,pid,h,cost);o.fd=false;pl.inv.splice(pl.inv.indexOf(o),1);
+  h.ex=true;pay(s,pid,h,cost);o.fd=false;pl.inv.splice(pl.inv.indexOf(o),1);if(pr&&pr.type==="window")pr.revealed=true;
   log(s,`${pl.name} reveals ${d.name}${cost?` (${cost} Aura)`:""}, exhausting ${h.name}.`,pid);
   trapGold(s,pid,d);
   const hs=hiddenScript(o);
@@ -914,8 +914,10 @@ function resolveCont(s,pid,cont,mods){
   if(d.sub==="Combo"&&pl.fl.splitKick&&sc&&(cont.targets||[]).length){const t0=resolveTarget(s,cont.targets[0]);const sp=specsFor(sc,cont.modes)[0];
     if(t0&&t0.kind==="hero"&&sp){pl.fl.splitKick=false;const cs=candidates(s,pid,sp,{actor,card:d}).map(u=>resolveTarget(s,u)).filter(o=>o&&o.kind==="hero"&&o.uid!==t0.uid);
       if(cs.length)ask(s,pid,`Split Kick: second Hero for ${d.name}`,targetOpts(s,pid,cs,1).concat([{label:"No second target",v:null}]),"splitKick",{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,rest:cont.targets.slice(1),name:"Split Kick"})}}
-  /* Echo Performer: duplicate the Bard Tactic or Song it played */
-  if(s.bonus&&s.bonus.pid===pid&&s.bonus.dup&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)){s.bonus.dup=false;log(s,`Echo Performer duplicates ${d.name}.`,pid);copyTargets(s,pid,{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,picked:[],orig:cont.targets||[]})}
+  /* Echo Performer (Nov 12, 2026; was an activated ability): whenever you play your first Song each turn, duplicate it; at Level 3, every Song you play.
+     The copy is exactly as played (rules: Duplicate) and isn't itself played, so it never counts as your first Song. */
+  if(/Song/.test(d.type)){living(pl).filter(h=>h.name==="Echo Performer").forEach(h=>{h.fl=h.fl||{};if(h.lvl>=3||h.fl.epRound!==s.round){h.fl.epRound=s.round;
+    log(s,`Echo Performer duplicates ${d.name}${h.lvl>=3?"":" (your first Song this turn)"}.`,pid);copyTargets(s,pid,{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,picked:[],orig:cont.targets||[]})}})}
   /* triggers on card played */
   if(d.type==="Spell"){living(pl).forEach(h=>{if(h.name==="Diviner Mage")pushScry(s,pid,1)})}
   /* Staff of Doom (update 21): the first Spell the equipped Hero plays each turn (every Spell when upgraded): target Hero loses HP equal to its Aura cost */
@@ -1105,7 +1107,11 @@ function cloakCheck(s){s.p.forEach((pl,pid)=>pl.heroes.forEach(h=>{const was=!!h
 function settle(s){let guard=0;
   while(!s.over&&guard++<200){
     if(s.phase==="battle")cloakCheck(s);
-    if(s.pend.length){if(s.pend[0].type==="comboGo"){const pr=s.pend.shift();comboTrigger(s,pr.pid,pr.actor?heroByUid(s,pr.actor):null);continue}
+    if(s.pend.length){
+      /* Nov 12, 2026: once a Hidden card (such as Redirect) has been revealed in a response window and has finished resolving,
+         the window closes on its own unless that player can still reveal another Hidden card; it no longer asks "Don't reveal" afterwards */
+      if(s.pend[0].type==="window"&&s.pend[0].revealed&&!promptOptions(s,s.pend[0].pid,s.pend[0]).some(o=>o.type==="reveal")){const pr=s.pend.shift();closeWindow(s,pr);continue}
+      if(s.pend[0].type==="comboGo"){const pr=s.pend.shift();comboTrigger(s,pr.pid,pr.actor?heroByUid(s,pr.actor):null);continue}
       if(s.pend[0].type==="attackGo"){const pr=s.pend.shift();const f=find(s,pr.cont.att);if(f&&!f.o.dead)queueResolve(s,pr.pid,pr.cont,pr.trig);continue}
       if(s.pend[0].type==="bottomRest"){const pr=s.pend.shift();const pl=P(s,pr.pid);let n=0;pr.uids.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){pl.lib.unshift(pl.lib.splice(i,1)[0]);n++}});if(n)log(s,`${pl.name} puts ${n} revealed card${n>1?"s":""} on the bottom of their library.`,pr.pid);continue}
       /* AI-free auto answers handled by controller */return}

@@ -116,9 +116,9 @@ const REMINDERS=[
   [/\bStealth\b/,()=>"It can't be targeted by enemy cards or abilities, but it can be attacked."],
   [/\bStun\b/,()=>"It can't play cards or activate abilities."],
   [/\bConfuse\b/,()=>"Its attacks and targets are chosen at random."],
-  [/\bBurn\b(?! counters?)/,()=>"It loses 1 HP at Dawn."],
-  [/\bPoison\b(?! counters?)/,()=>"It loses 1 HP at Dawn."],
-  [/\bWound\b(?! counters?)/,()=>"It loses 1 HP at Dawn."],
+  [/\bBurn\b(?! counters?)/,()=>"It loses 1 Health Point at Dawn."],
+  [/\bPoison\b(?! counters?)/,()=>"It loses 1 Health Point at Dawn."],
+  [/\bWound\b(?! counters?)/,()=>"It loses 1 Health Point at Dawn."],
   [/\bFatigue\b(?! counters?)/,()=>"It doesn't ready at the next Dawn."]
 ];
 function withReminders(text){

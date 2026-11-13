@@ -1161,7 +1161,7 @@ function doDawn(s){
   });
   s.p.forEach((pl,pid)=>{const all=[...living(pl),...pl.bf.filter(o=>o.kind==="summon")];
     /* Burned, Poisoned and Wounded counters make the target lose 1 HP each (HP loss, not damage) (Nov 12, 2026) */
-    all.forEach(o=>{const n=o.st.burn+o.st.poison+o.st.wound;if(n>0){o.dmg+=n;const why=[["burn","Burned"],["poison","Poisoned"],["wound","Wounded"]].filter(([k])=>o.st[k]>0).map(([,w])=>w).join(", ");log(s,`${o.name} loses ${n} HP (${why}).${hpTag(s,o)}`,pid)}
+    all.forEach(o=>{const n=o.st.burn+o.st.poison+o.st.wound;if(n>0){o.dmg+=n;const why=[["burn","Burned"],["poison","Poisoned"],["wound","Wounded"]].filter(([k])=>o.st[k]>0).map(([,w])=>w).join(", ");log(s,`${o.name} loses ${n} Health Point${n===1?"":"s"} (${why}).${hpTag(s,o)}`,pid)}
       STATUS.forEach(k=>{if(o.st[k]>0)o.st[k]--})})});
   checkDeaths(s);if(s.over)return;
   /* At Dawn effects (active player first) */

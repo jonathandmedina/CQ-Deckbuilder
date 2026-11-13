@@ -43,7 +43,7 @@ Every round has four phases, and all players go through them together.
 
 | Phase | What you do |
 |---|---|
-| **1. Dawn** | Ready your Heroes, refill your Aura, lose HP from Burn, Poison and Wound counters, then draw a card. |
+| **1. Dawn** | Ready your Heroes, refill your Aura, lose Health Points from Burn, Poison and Wound counters, then draw a card. |
 | **2. Battle** | Take turns acting, one Hero at a time, in party order: Lead, then Center, then Closer. Keep going until everyone passes. |
 | **3. Dusk** | Lose unspent Aura, collect Gold, discard down to 5 cards, and pass initiative. |
 | **4. Town** | Spend Gold: heal at the Inn, draw at the Shop, upgrade gear at the Blacksmith, or resurrect a Hero at the Church. |
@@ -68,7 +68,7 @@ Cards explain their keywords in *(italic reminder text)*. A few you’ll see a l
 - **Piercing X**: its damage ignores X of the target’s DEF, and at least X always gets through (no number: ignores all of it).
 - **Combo**: after the card resolves, reveal your top card. If it’s a Combo card, you may play it.
 - **Stun**: the target can’t play cards or activate abilities.
-- **Burn, Poison, Wound**: the target loses 1 HP at Dawn.
+- **Burn, Poison, Wound**: the target loses 1 Health Point at Dawn.
 - **Hidden** cards are set face down and spring when their trigger happens.
 
 ## 9. Tips for Your First Game

@@ -199,7 +199,7 @@ Crystal Quest is played in rounds. Every player goes through each round together
 
 | Phase | What happens |
 |---|---|
-| **1. Dawn** | Ready up, refresh Aura, take status damage, resolve “At Dawn” effects, draw a card. |
+| **1. Dawn** | Ready up, refresh Aura, lose HP from status counters, resolve “At Dawn” effects, draw a card. |
 | **2. Battle** | Heroes take actions in position order until every player passes. |
 | **3. Dusk** | Resolve “At Dusk” effects, end round-long effects, lose unspent Aura, collect Gold, discard down to 5 cards, pass initiative. |
 | **4. Town** | Spend Gold at the Blacksmith, Inn, Shop and Church, starting with the player who has initiative. |
@@ -222,7 +222,7 @@ All players do these steps together:
 
 1. **Ready.** Ready all your exhausted cards. A Meditating Hero first gets a meditation counter; then you may choose to keep it exhausted (see Meditate). A Hero with a Fatigue counter doesn’t ready; remove the counter instead.
 2. **Refresh Aura.** Your Aura pool becomes the total Aura of your Heroes that aren’t dead.
-3. **Status damage.** Each Burned, Poisoned or Wounded counter deals 1 damage. Then remove one of each status counter from each Hero and summon.
+3. **Status HP loss.** Each Burned, Poisoned or Wounded counter makes its Hero or summon lose 1 HP. Then remove one of each status counter from each Hero and summon.
 4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when exiled Echo cards are played again and Gemstones can be used.
 5. **Draw.** Each player draws a card.
 
@@ -395,11 +395,11 @@ You must have a ready Hero to trigger a Hidden card. If all your matching Heroes
 
 **Damage dealt = STR (for attacks) or the card’s damage amount (for cards) − the target’s DEF.** Damage can’t go below 0.
 
-- **Piercing X** ignores X points of the target’s DEF for any damage it deals. **Piercing** with no number ignores all of it.
+- **Piercing X** ignores X points of the target’s DEF for any damage it deals, and at least X of the damage always gets through, however much DEF the target has. Example: 2 damage with Piercing 1 against a Hero with 3 DEF deals 1 damage. **Piercing** with no number ignores all of the DEF.
 - **Spell Damage +X** adds X to the damage your spells deal.
 - **Spell Damage Pillars are used up.** All of your Spell Damage Pillars add +2 each to the next Spell you play (any Spell, even one that deals no damage), then they are sacrificed after that Spell resolves. Pillars that the Spell itself conjures (such as Lightning Lance or Ritual of Power) stay for your next Spell.
 - **“Each enemy Hero”** hits only Heroes, not summons. **“All enemies”** and **“each enemy”** include summons.
-- **Status damage** from Burned, Poisoned and Wounded ignores DEF.
+- **Burned, Poisoned and Wounded** make the target lose HP; that isn’t damage, so DEF doesn’t reduce it.
 - **“Lose X HP”** isn’t damage. It ignores DEF.
 
 On-hit effects that apply a status still apply, even if DEF reduces the damage to 0. If an effect depends on “damage dealt”, use the damage after DEF.
@@ -463,15 +463,15 @@ A revive effect (or the Church in Town) brings a dead Hero back to life. The car
 
 ### Status Counters
 
-There are five status counters. At Dawn, each damaging status deals its damage, then one of each status counter is removed from each Hero and summon.
+There are five status counters. At Dawn, each Burned, Poisoned and Wounded counter makes its Hero or summon lose 1 HP, then one of each status counter is removed from each Hero and summon.
 
 **Applying a status.** Cards use a verb: **Burn**, **Poison**, **Wound**, **Confuse** or **Stun** a target (for example, “Deal 3 Fire damage to any target and Burn it” or “Stun any target”). That puts one counter of that status on the target: if it has none, it gets one; if it already has one or more, add another. “Twice” or “three times” means that many counters. Words like “is Burned” or “a Poisoned target” only check whether the target has that status.
 
 | Status | Effect |
 |---|---|
-| **Burned** | Deals 1 damage at Dawn. |
-| **Poisoned** | Deals 1 damage at Dawn. |
-| **Wounded** | Deals 1 damage at Dawn. |
+| **Burned** | Loses 1 HP at Dawn. |
+| **Poisoned** | Loses 1 HP at Dawn. |
+| **Wounded** | Loses 1 HP at Dawn. |
 | **Confused** | The Hero’s attacks and the targets of its cards and abilities are chosen at random from all legal targets, including allies. |
 | **Stunned** | The Hero can’t activate abilities or play cards. It can still attack, equip from inventory and move equipment. |
 
@@ -567,7 +567,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, it gets a meditation counter, then you may keep it exhausted. When it readies (at Dawn or any other way), it stops Meditating: remove all its meditation counters (including any from Monk Tactics), your party gains that much Aura, and the Hero gains +1 Strength for each one removed until Dusk. |
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
-| **Piercing X** | Damage from this ignores X points of the target’s DEF (attacks, spells, abilities and any other damage). Piercing with no number ignores all of the target’s DEF. |
+| **Piercing X** | Damage from this ignores X points of the target’s DEF (attacks, spells, abilities and any other damage), and at least X of it always gets through. Piercing with no number ignores all of the target’s DEF. |
 | **Poisonous X** | Whenever this Hero or card deals damage, Poison the target X times. **Poisonous** with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage. |
 | **Scry X** | Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order. |
 | **Spell Damage +X** | Your spells deal X extra damage. |
@@ -613,7 +613,7 @@ A face-down card in an opponent’s inventory can be targeted by effects that ta
 
 *Ava (with initiative) and Ben each have three Heroes. Ava’s party: a Paladin (Lead), a Mage (Center) and a Rogue (Closer). Ben’s party: a Barbarian, a Cleric and a Ranger.*
 
-**Dawn.** Both players ready their cards. Ava’s Heroes have 1, 2 and 1 Aura, so her pool is 4. Ben’s Ranger has a Poison counter, so it takes 1 damage, and the counter comes off. Both players draw.
+**Dawn.** Both players ready their cards. Ava’s Heroes have 1, 2 and 1 Aura, so her pool is 4. Ben’s Ranger has a Poison counter, so it loses 1 HP, and the counter comes off. Both players draw.
 
 **Battle, Lead.** The marker is on Lead. Ava’s Paladin plays Extra Protection (+1 DEF until Dusk) and stays ready. Ben’s Barbarian makes a basic attack on Ava’s Mage: 4 STR − 1 DEF = 3 damage. The Barbarian exhausts.
 
@@ -635,7 +635,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 
 - **Round**: One full cycle of play: Dawn, Battle, Dusk, Town. On cards, “turn” means round. Effects that last “this turn” end at Dusk.
 - **Phase**: One part of a round: Dawn, Battle, Dusk, Town.
-- **Dawn Phase**: First phase of a round. Ready cards, refresh Aura, take status damage, resolve “At Dawn” effects, draw a card.
+- **Dawn Phase**: First phase of a round. Ready cards, refresh Aura, lose HP from status counters, resolve “At Dawn” effects, draw a card.
 - **Battle Phase**: Second phase. Heroes act in position order, using the Position marker, until every player passes.
 - **Dusk Phase**: Third phase. Resolve “At Dusk” effects, end round-long effects, lose unspent Aura, collect Gold, discard down to 5 cards, then pass initiative.
 - **Town Phase (Enter Town)**: Each player may spend Gold at the Blacksmith, Inn, Shop and Church. The player with initiative goes first.
@@ -746,15 +746,15 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **X**: A number chosen by the player or set by the card.
 - **Trigger window**: Opens after an action is announced and paid for. Triggered abilities and Hidden cards resolve here, before the action.
 - **Stack**: Where simultaneous triggers wait. Active player adds first, then passive players clockwise. Resolve top down.
-- **Damage**: STR or the card’s damage amount minus the target’s DEF, minimum 0. Status damage and “lose X HP” ignore DEF.
+- **Damage**: STR or the card’s damage amount minus the target’s DEF, minimum 0. “Lose X HP” (including from Burned, Poisoned and Wounded) isn’t damage and ignores DEF.
 - **Lose X HP**: HP loss that isn’t damage. Ignores DEF.
 
 ### Statuses, death and summons
 
-- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. Status damage ignores DEF. Meditation, Petal and Fury counters are not status counters.
-- **Burned**: Status. 1 damage each Dawn Phase. Cards say “Burn”.
-- **Poisoned**: Status. 1 damage each Dawn Phase. Cards say “Poison”.
-- **Wounded**: Status. 1 damage each Dawn Phase. Cards say “Wound”.
+- **Status counter**: Burned, Poisoned, Wounded, Confused or Stunned. One of each is removed each Dawn Phase. HP lost to statuses ignores DEF. Meditation, Petal and Fury counters are not status counters.
+- **Burned**: Status. Loses 1 HP each Dawn Phase. Cards say “Burn”.
+- **Poisoned**: Status. Loses 1 HP each Dawn Phase. Cards say “Poison”.
+- **Wounded**: Status. Loses 1 HP each Dawn Phase. Cards say “Wound”.
 - **Confused**: Status. The Hero's attacks and targets are random. Cards say “Confuse”.
 - **Burn / Poison / Wound / Confuse / Stun (verbs)**: Put one counter of that status on the target; if it already has one, add another.
 - **Stunned**: Status. The Hero can't activate abilities or play cards. It can still attack and equip from inventory. Cards say “Stun”.
@@ -775,7 +775,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Petal counter (Monk)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
 - **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn it gets a meditation counter, then you may keep it exhausted. When it readies, remove its counters: your party gains that much Aura, and it gets +1 STR per counter until Dusk.
 - **Meditation counter (Monk)**: Builds up on a Meditating Hero (some Monk Tactics add more). It does nothing until the Hero readies, then each one becomes 1 Aura and +1 STR until Dusk.
-- **Piercing X (Monk)**: Damage from this ignores X points of the target's DEF. Piercing with no number ignores all DEF.
+- **Piercing X (Monk)**: Damage from this ignores X points of the target's DEF, and at least X always gets through. Piercing with no number ignores all DEF.
 - **Echo (Bard)**: If you played it from your hand, exile it and play it again for free at your next Dawn (no Aura, and Harmonize isn't paid again; you may choose new targets), then discard it. A card only repeats once.
 - **Tip (Bard)**: Gain 1 Gold, only once per round.
 - **Harmonize X (Bard)**: Exhaust X other ready Heroes to gain the effect after the colon.

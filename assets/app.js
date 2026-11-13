@@ -88,7 +88,7 @@ const REMINDERS=[
   [/\bLifelink\b/,()=>"When it deals damage, it heals that much."],
   [/\bMeditates?\b/,()=>"Exhaust it. Each Dawn it gets a meditation counter and may stay exhausted. When it readies, remove them: gain that much Aura and +1 Strength each until Dusk."],
   [/\bMills? (\d+|X)\b/,m=>`Move the top ${m[1]==="1"?"card":m[1]+" cards"} of the library to the discard pile.`],
-  [/\bPiercing(?: (\d+|X))?\b/,m=>m[1]?`Its damage ignores ${m[1]} of the target's DEF.`:"Its damage ignores all of the target's DEF."],
+  [/\bPiercing(?: (\d+|X))?\b/,m=>m[1]?`Its damage ignores ${m[1]} of the target's DEF, and at least ${m[1]} always gets through.`:"Its damage ignores all of the target's DEF."],
   [/\bTip\b/,()=>"Gain 1 Gold. You gain Gold from Tip only once per round."],
   [/\bPoisonous(?: (\d+|X))?\b/,m=>m[1]?`When it deals damage, Poison the target ${m[1]==="1"?"once":m[1]+" times"}.`:"When it deals damage, Poison the target once for each damage dealt."],
   [/\bScry (\d+|X)\b/,m=>m[1]==="1"?"Look at the top card of your library. You may put it on the bottom.":`Look at the top ${m[1]} cards of your library. Put any on the bottom and the rest back in any order.`],
@@ -96,9 +96,9 @@ const REMINDERS=[
   [/\bStealth\b/,()=>"It can't be targeted by enemy cards or abilities, but it can be attacked."],
   [/\bStun\b/,()=>"It can't play cards or activate abilities."],
   [/\bConfuse\b/,()=>"Its attacks and targets are chosen at random."],
-  [/\bBurn\b(?! counters?)/,()=>"It takes 1 damage at Dawn."],
-  [/\bPoison\b(?! counters?)/,()=>"It takes 1 damage at Dawn."],
-  [/\bWound\b(?! counters?)/,()=>"It takes 1 damage at Dawn."],
+  [/\bBurn\b(?! counters?)/,()=>"It loses 1 HP at Dawn."],
+  [/\bPoison\b(?! counters?)/,()=>"It loses 1 HP at Dawn."],
+  [/\bWound\b(?! counters?)/,()=>"It loses 1 HP at Dawn."],
   [/\bFatigue\b(?! counters?)/,()=>"It doesn't ready at the next Dawn."]
 ];
 function withReminders(text){

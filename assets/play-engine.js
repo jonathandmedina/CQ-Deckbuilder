@@ -301,7 +301,7 @@ function heal(s,healer,o,n,pid){
 /* picks the enemy the damage hurts most (skips targets Guard/DEF would block, Stealth, Cloak); prefers kills */
 function bestDamageTarget(s,pid,n,o){o=o||{};const op=P(s,opp(pid));let best=null,bv=0;
   [...living(op),...op.bf.filter(x=>x.kind==="summon")].forEach(t=>{if(stealth(s,t)||cardProof(s,t))return;
-    const g=t.kind==="hero"?t.guard+t.eqGuard:0;const eff=Math.max(0,n-g-(o.ignoreDef?0:Math.max(0,defOf(s,t)-(o.pierce||0))));const hp=hpOf(s,t);
+    const g=t.kind==="hero"?t.guard+t.eqGuard:0;const a0=Math.max(0,n-g),pc=o.pierce||0;let eff=Math.max(0,a0-(o.ignoreDef?0:Math.max(0,defOf(s,t)-pc)));if(pc>0)eff=Math.max(eff,Math.min(pc,a0));const hp=hpOf(s,t);
     const v=eff<=0?0:Math.min(eff,hp)+(eff>=hp?50:0)+(t.kind==="hero"?5:0)-hp*0.01;if(v>bv){bv=v;best=t}});
   return best}
 E.bestDamageTarget=bestDamageTarget;
@@ -316,9 +316,11 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   let d=defOf(s,tgt);let pierce=o.pierce||0;
   if(tgt.kind==="hero"&&hasEqN(tgt,"Unpiercing Chestplate"))pierce=0;
   if(o.ignoreDef)d=0;else d=Math.max(0,d-pierce);
-  const dealt=Math.max(0,a-d);
+  let dealt=Math.max(0,a-d);
+  /* Piercing punches through: at least X of the damage always gets through, however much DEF the target has (Nov 12, 2026) */
+  if(pierce>0&&!o.ignoreDef)dealt=Math.max(dealt,Math.min(pierce,a));
   tgt.dmg=(tgt.dmg||0)+dealt;
-  if(!o.ignoreDef&&a>0)creditDef(s,tgt,Math.min(a,d));
+  if(!o.ignoreDef&&a>dealt)creditDef(s,tgt,a-dealt);
   if(dealt>0){s.dmgTo=s.dmgTo||null;if(s.dmgTo){const sd=ctrl(s,tgt);s.dmgTo[sd]=(s.dmgTo[sd]||0)+dealt}}
   /* Scrap Metal: this Hero's damage to an enemy Hero destroys a piece of its equipment */
   if(dealt>0&&src&&src.kind==="hero"&&src.fl&&src.fl.scrapRound===s.round&&tgt.kind==="hero"&&ctrl(s,tgt)!==src.owner){const eq=eqList(tgt);if(eq.length)ask(s,src.owner,`Scrap Metal: destroy one of ${tgt.name}'s equipment`,eq.map(e=>({label:e.name,v:e.uid})),"destroyEq",{by:src.uid,name:"Scrap Metal"})}
@@ -1158,7 +1160,8 @@ function doDawn(s){
     pl.aura=Math.max(0,aura);
   });
   s.p.forEach((pl,pid)=>{const all=[...living(pl),...pl.bf.filter(o=>o.kind==="summon")];
-    all.forEach(o=>{const n=o.st.burn+o.st.poison+o.st.wound;if(n>0){o.dmg+=n;log(s,`${o.name} takes ${n} status damage.${hpTag(s,o)}`,pid)}
+    /* Burned, Poisoned and Wounded counters make the target lose 1 HP each (HP loss, not damage) (Nov 12, 2026) */
+    all.forEach(o=>{const n=o.st.burn+o.st.poison+o.st.wound;if(n>0){o.dmg+=n;const why=[["burn","Burned"],["poison","Poisoned"],["wound","Wounded"]].filter(([k])=>o.st[k]>0).map(([,w])=>w).join(", ");log(s,`${o.name} loses ${n} HP (${why}).${hpTag(s,o)}`,pid)}
       STATUS.forEach(k=>{if(o.st[k]>0)o.st[k]--})})});
   checkDeaths(s);if(s.over)return;
   /* At Dawn effects (active player first) */

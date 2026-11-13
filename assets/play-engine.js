@@ -379,7 +379,7 @@ E.bestDamageTarget=bestDamageTarget;
 E.heal=heal;
 /* damage: o={combat,spell,pierce,ignoreDef,card,actor,type,noTrig} returns damage dealt */
 function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
-  if(tgt.imp){log(s,`${tgt.name} can't be dealt damage (Impervious).`);return 0} /* Set 2 Impervious */
+  if(tgt.imp||(tgt.kind==="hero"&&hasEqN(tgt,"Dragonscale Scale"))){log(s,`${tgt.name} can't be dealt damage (Impervious).`);return 0} /* Set 2 Impervious (Revenants; a Hero wearing Dragonscale Scale) */
   if(tgt.kind==="hero"&&tgt.fl.noDmgRound===s.round&&!o.status){log(s,`${tgt.name} takes no damage (prevented).`);stat(s,"prev",tgt.owner,tgt.fl.noDmgBy||"Damage prevention",amt);return 0}
   let a=Math.max(0,amt);
   if(tgt.kind==="hero"){const tp=P(s,tgt.owner);if(tp.fl.preventNext&&(o.card||o.combat)&&!sameTeam(s,ctrl(s,src||tgt),tgt.owner)){tp.fl.preventNext=false;log(s,`Smoke Trail Arrow prevents the damage to ${tgt.name}.`);stat(s,"prev",tgt.owner,"Smoke Trail Arrow",amt);return 0}
@@ -416,6 +416,9 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
       if(src.fl.rendRound===s.round&&dealt>0){const dp=ctrl(s,tgt);const dpl=P(s,dp);if(dpl.hand.length){log(s,`Mind Rend: ${dpl.name} discards a card.`);pushChoose(s,dp,{title:"Mind Rend: discard a card",cards:dpl.hand.map(c=>c.uid),min:1,max:1,op:"discard"})}}
       if(o.combat&&dealt>0){const th=eqList(src).filter(e=>e.name==="Thief's Dagger").reduce((n,e)=>n+(isUp(s,e)?2:1),0);if(th)stealGold(s,src.owner,ctrl(s,tgt),th,"Thief's Dagger")} /* update 18 */
       if(o.combat&&dealt>0)eqList(src).forEach(e=>{if(e.x&&e.x.stun&&tgt.st)addStatus(s,tgt,"stun",1)});
+      /* Set 2 The Archfrost: any damage this Hero deals to an enemy Stuns it; The Archflame: its attacks Burn the enemy three times */
+      if(dealt>0&&tgt.st&&!sameTeam(s,ctrl(s,tgt),src.owner)){eqList(src).filter(e=>e.name==="The Archfrost").forEach(()=>{log(s,`The Archfrost: ${tgt.name} is Stunned.`);addStatus(s,tgt,"stun",1)});
+        if(o.combat)eqList(src).filter(e=>e.name==="The Archflame").forEach(()=>{log(s,`The Archflame: ${tgt.name} is Burned three times.`);addStatus(s,tgt,"burn",3)})}
       if(o.combat&&dealt>0&&(hasEqN(src,"Hammer of Ruin")||hasEqN(src,"Hammer"))){const dp=P(s,ctrl(s,tgt));let it=dp.inv.find(x=>!x.fd&&x.kind!=="equip");
         /* upgraded Hammer of Ruin: an item or a piece of equipment (picks the most expensive) */
         if(hasUpN(s,src,"Hammer of Ruin")){const c=[...dp.inv.filter(x=>!x.fd&&x.kind!=="doll"),...living(dp).flatMap(h=>eqList(h))];c.sort((a,b)=>num(def(b).cost||b.cost)-num(def(a).cost||a.cost));it=c[0]||null}
@@ -944,7 +947,9 @@ E.levelUp=levelUp;
    Wildcards (each covers one ingredient): Quicksilver (any ingredient; it's used up), Artificer C (once each turn: any item in your inventory),
    Tinker's Goggles (once each turn: any Metal; upgraded: any item), Scavenger's Tongs (once each turn: one ingredient from your discard pile; upgraded: any discard pile).
    The engine picks the cheapest way to pay (cards from a discard pile first, then exact matches, then wildcards, Quicksilver last) and logs what it used. */
-function ingMatch(spec,d){if(!d)return false;if(spec.name)return d.name===spec.name;if(spec.any==="Metal")return d.sub==="Metal";if(spec.any==="Cloak")return d.kind==="equip"&&/Cloak/.test(d.name);return false}
+function ingMatch(spec,d){if(!d)return false;if(spec.name)return d.name===spec.name;if(spec.any==="Metal")return d.sub==="Metal";if(spec.any==="Cloak")return d.kind==="equip"&&/Cloak/.test(d.name);
+  /* Nov 13: "any Sword" = a Weapon with Sword in its name; "any Chest armor" = equipment in the Chest region */
+  if(spec.any==="Sword")return d.kind==="equip"&&d.sub==="Weapon"&&/Sword/.test(d.name);if(spec.any==="Chest")return d.kind==="equip"&&d.region==="Chest";return false}
 function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl=P(s,pid);
   const inv=pl.inv.filter(o=>!o.fd&&!o.tok&&o.id&&DB[o.id]&&(o.kind==="card"||o.kind==="equip"));
   const val=o=>num(def(o).cost)+(o.kind==="equip"?1:0);
@@ -1196,7 +1201,7 @@ function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);let tgt=resolve
   let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0)+(att.kind==="hero"&&hasEqN(att,"Mithril Blade")?2:0)+(att.kind==="hero"?eqList(att).filter(e=>isUp(s,e)&&(e.name==="Sword of Riverstead"||e.name==="Long Dagger"||e.name==="Shadow Cloak")).length:0);
   /* Trials loot: Rockbreaker Maul, Piercing 2 against a target with 3 or more Defense */
   if(att.kind==="hero"&&hasEqN(att,"Rockbreaker Maul")&&defOf(s,tgt)>=3)pierce+=2;
-  const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att));
+  const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att))||(att.kind==="hero"&&(hasEqN(att,"The Archfrost")||hasEqN(att,"The Archflame"))); /* Set 2: Piercing (ignores all Defense) */
   let dealt=0;
   if(mods.noDamage){log(s,`The attack deals no damage.`)}
   else dealt=damage(s,att,tgt,Math.max(0,str),{combat:true,pierce,ignoreDef:ign,band:!!o.band});

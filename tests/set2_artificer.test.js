@@ -19,7 +19,7 @@ function resolve(s){let g=0;while(s.pend.length&&g++<20){const pr=s.pend[0];cons
 
 /* data */
 ok(ctx.SET2_CARDS.length>=25,"Set 2 names (Artificer and later classes)");
-ok(Object.keys(ctx.RECIPES).length===9,"9 Recipes");
+ok(Object.keys(ctx.RECIPES).length===12,"12 Recipes (9 + The Archfrost, The Archflame, Dragonscale Scale, Nov 13)");
 ok(E.DB["Iron Guardians"].type==="Recipe"&&E.DB["Iron Guardians"].recipe,"Recipe in DB with its ingredients");
 ok(E.DB["Gearwork Hammer"]&&E.DB["Gearwork Hammer"].kind==="equip"&&E.DB["Gearwork Hammer"].made==="Gearwork Hammer Recipe","made weapon in DB");
 ok(E.DB["h:Artificer A"]&&E.DB["h:Artificer A"].aura===2,"Artificer Heroes in DB");

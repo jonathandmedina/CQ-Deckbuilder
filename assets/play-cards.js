@@ -599,6 +599,15 @@ def("Reclamation Kit",item(0,[],c=>{const ms=c.me.disc.filter(x=>(E.DB[x.id]||{}
 OPS.discToInv=OPS.discToInv||((s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i<0)return;if(pl.inv.length>=E.slots(s,pid)){E.log(s,"There's no empty inventory slot.",pid);return}
   const x=pl.disc.splice(i,1)[0];pl.inv.push(E.invObj(s,pid,x));E.log(s,`${E.DB[x.id].name} returns to ${pl.name}'s inventory.`,pid)})});
 S["Pocket Watch"]={}; /* answered from the response window (E.canStall) */
+/* Nov 13: Pearls and Dragon Scale (generic items, Artificer ingredients); The Right Mix; Dragonscale Scale's ability */
+def("Flame Pearl",{t:[ANY],enter(c){if(c.t[0])D(c,c.t[0],2)}});
+def("Frost Pearl",{t:[ANY],enter(c){if(c.t[0])st(c,c.t[0],"stun",1)}});
+def("Dragon Scale",{t:[AL],enter(c){const a=c.t[0];if(a){buff(a,{def:3});log(c,`${a.name} gains +3 Defense this turn.`)}}});
+def("The Right Mix",{run(c){const top=c.me.lib.slice(-4).reverse();if(!top.length){log(c,"The Right Mix: the library is empty.");return}
+  log(c,`The Right Mix reveals ${top.map(x=>E.DB[x.id].name).join(", ")}.`);
+  top.forEach(x=>{const i=c.me.lib.indexOf(x);if(i<0)return;c.me.lib.splice(i,1);if((E.DB[x.id]||{}).type==="Item"){c.me.hand.push(x);log(c,`${E.DB[x.id].name} goes to ${c.me.name}'s hand.`)}else c.me.lib.unshift(x)});
+  const rest=top.filter(x=>(E.DB[x.id]||{}).type!=="Item").length;if(rest)log(c,`${rest} card${rest>1?"s go":" goes"} to the bottom of ${c.me.name}'s library.`)}});
+EQ2["Dragonscale Scale"]={label:"2 Aura: +1 Strength this turn",cost:2,run:c=>{buff(c.actor,{str:1});log(c,`${c.actor.name} gains +1 Strength this turn (Dragonscale Scale).`)}};
 /* Heroes */
 hab("Artificer A",[{label:"Look at the top 3 (a Metal to inventory)",can:(s,pid)=>s.p[pid].lib.length>0,run(c){const top=c.me.lib.slice(-3);
   const room=c.me.inv.length<E.slots(c.s,c.pid);const ms=top.filter(x=>(E.DB[x.id]||{}).sub==="Metal");

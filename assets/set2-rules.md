@@ -38,12 +38,14 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 
 - **Recipe:** a two-sided card type. The front lists its ingredients and Aura cost. The back shows what it makes.
 - **Craft:** play this only if its ingredients are in your inventory. Pay its Aura cost, sacrifice the ingredients, then flip the card. A made item or weapon goes into your inventory. A made summon enters play, and the Recipe then goes to your discard pile.
-- **Ingredients** always come from your inventory unless a card says otherwise. "Any Metal" means any card with the Metal subtype. "Any Cloak" means any equipment card with Cloak in its name.
+- **Ingredients** always come from your inventory unless a card says otherwise. "Any Metal" means any card with the Metal subtype. "Any Cloak" means any equipment card with Cloak in its name. "Any Sword" means any Weapon card with Sword in its name. "Any Chest armor" means any equipment card in the Chest region.
 - **Metal:** a generic item subtype (Copper, Iron, Silver, Platinum and Mithril Ingots). Each Metal has its own use, so any class can play them; Artificers also use them as ingredients.
 - **Quicksilver:** a special Artificer material (2 Aura item). It does nothing on its own, but it can be used as any ingredient.
 - **Stall** (Pocket Watch): set the card being played aside with 2 stall counters on it. Each time that player takes an action, remove a stall counter. When the last one is removed, they may play the card without paying its Aura cost. The Aura they already paid is not refunded.
 - **Protection counters** (Warded Cloak): whenever a Hero in your party would be dealt damage, prevent that damage and remove a protection counter instead. With no counters left, nothing is prevented.
 - **Made weapons** are equipped by the normal rules: a Hero equips one from your inventory to itself by paying the weapon's Aura cost.
+- **Piercing** (The Archfrost, The Archflame): attacks from the equipped Hero ignore all of the target's Defense.
+- **Dragonscale Scale:** the equipped Hero has Impervious (see Necromancer). It still dies if it loses all its Health Points.
 
 ## Tokens
 

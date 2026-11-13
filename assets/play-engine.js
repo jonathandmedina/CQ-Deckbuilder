@@ -134,8 +134,8 @@ function newSide(s,pid,name,ai,heroes,deckName){return{name,ai,heroes,hand:[],li
 function mkBossHero(s,name,hp,defn,str){const id="boss:"+name;if(!DB[id])DB[id]={id,name,cls:"Boss",str:str||0,def:defn||0,aura:0,hp,rules:"",type:"Hero",kind:"hero",boss:true};
   const h=mkHero(s,s.trials.boss,id);h.base.hp=hp;h.base.def=defn||0;h.base.str=str||0;h.boss=true;return h}
 E.mkBossHero=mkBossHero;
-E.validateDeck=function(d){
-  const out=[];if(!d||!d.heroes||d.heroes.length!==3)out.push("Needs 3 Heroes.");
+E.validateDeck=function(d,opt){const tr=!!(opt&&opt.trials);
+  const out=[];const nh=d&&d.heroes?d.heroes.filter(Boolean).length:0;if(tr?nh!==2:(!d||!d.heroes||d.heroes.length!==3))out.push(tr?"Trials parties need 2 Heroes.":"Needs 3 Heroes.");
   let t=0;for(const[id,q]of Object.entries(d.cards||{})){if(!DB[id])out.push(`Unknown card ${id}`);else if(DB[id].dep)out.push(`${id} is deprecated (removed from play).`);t+=q}
   for(const[id,q]of Object.entries(d.cards||{})){const c=DB[id];if(c&&q>(c.sup==="Legendary"?1:3))out.push(`${id}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`)}
   if(t<50)out.push(`Deck has ${t} cards (needs at least 50).`);return out};

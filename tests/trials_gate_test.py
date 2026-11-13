@@ -102,10 +102,59 @@ def main():
         check("Pat can now see Trials." in text(pg), "admin: no grant toast")
         check(not errs, f"admin: console errors {errs[:3]}")
         ctx.close()
+        party_checks(b, port, check)
         b.close()
     srv.shutdown()
     if fails:
         print(f"FAIL {len(fails)}/{n}"); [print(" -", f) for f in fails]; sys.exit(1)
     print(f"PASS trials gate ({n} checks)")
+
+# Plan B+C Task 6: Trials party decks (2 Heroes)
+PARTY_JS = """(()=>{const hs=HEROES.filter(h=>canSee(h)).slice(0,2).map(h=>h.id);const d={id:'party1',name:'My Party Deck',heroes:hs,cards:{},trials:true};
+  const pool=CARDS.filter(c=>canSee(c)&&c.set!=='trials'&&(c.cls==='Generic'||hs.some(h=>BYID.get(h).cls===c.cls))&&c.sup!=='Legendary');let n=0;
+  for(const c of pool){if(n>=50)break;const q=Math.min(3,50-n);d.cards[c.id]=q;n+=q}return d})()"""
+def party_checks(b, port, check):
+    for w in (1280, 390):
+        ACC = {"admin": False, "set2": False, "trials": True}
+        ctx, pg, errs = page_for(b, port, ACC, w, url="#build")
+        check(pg.evaluate("!!document.querySelector('[data-act=new-party]')"), f"[{w}] party: no New Trials party button with access")
+        pg.evaluate("document.querySelectorAll('#layer .modal').forEach(m=>m.remove());document.querySelector('[data-act=new-party]').click()"); pg.wait_for_timeout(300)
+        check(pg.evaluate("isTrialsDeck(S.deck)&&S.deck.heroes.length===2"), f"[{w}] party: new party isn't a 2-slot Trials party")
+        slots = pg.evaluate("[...document.querySelectorAll('.party .slot')].map(s=>s.innerText).join('|')")
+        check(pg.evaluate("document.querySelectorAll('.party .slot').length") == 2 and "lead" in slots.lower() and "closer" in slots.lower() and "center" not in slots.lower(), f"[{w}] party: slots not Lead and Closer: {slots[:80]}")
+        for _ in range(3):
+            pg.evaluate("(()=>{const b=[...document.querySelectorAll('[data-act=pick-hero]')].find(x=>!x.closest('.picked')&&!x.closest('.card.picked'));if(b)b.click()})()"); pg.wait_for_timeout(250)
+        check(pg.evaluate("HN(S.deck)") == 2, f"[{w}] party: Hero picker didn't stop at 2 (HN={pg.evaluate('HN(S.deck)')})")
+        pg.evaluate(f"(()=>{{const d={PARTY_JS};S.deck.heroes=d.heroes;S.deck.cards=d.cards;S.deck.name=d.name;S.b.step='cards';saveDraft();render()}})()"); pg.wait_for_timeout(300)
+        check(pg.evaluate("issues(S.deck).length===0&&CQE.validateDeck(S.deck,{trials:true}).length===0"), f"[{w}] party: legal party has issues {pg.evaluate('issues(S.deck)')}")
+        check(pg.evaluate("CQE.validateDeck(S.deck).length>0&&CQE.validateDeck(S.deck).join(' ').includes('3 Heroes')"), f"[{w}] party: a party passes the 3-Hero check")
+        pg.evaluate("document.querySelectorAll('#layer .modal').forEach(m=>m.remove());document.querySelector('[data-act=save]').click()"); pg.wait_for_timeout(500)
+        pg.reload(); pg.wait_for_timeout(1200)
+        check(pg.evaluate("isTrialsDeck(S.deck)&&issues(S.deck).length===0&&HN(S.deck)===2"), f"[{w}] party: not a legal Trials party after reload")
+        check(pg.evaluate("issues({name:'x',heroes:['h:'+HEROES[0].name],cards:{},trials:true}).includes('Trials parties need 2 Heroes.')"), f"[{w}] party: wrong issue for a 1-Hero party")
+        check(pg.evaluate("!needsRebuild({heroes:[HEROES[0].id,HEROES[1].id],cards:{'Potion':1}})"), f"[{w}] party: needsRebuild flags a party")
+        check(pg.evaluate("showRow({heroes:['h:A','h:B'],cards:{}})===false&&showRow({heroes:['h:A','h:B','h:C'],cards:{}})===true"), f"[{w}] party: Best Decks / Community would list a party")
+        pg.evaluate(f"(async()=>{{S.decks=[{PARTY_JS}];await commShare(S.decks[0])}})()"); pg.wait_for_timeout(300)
+        check("Trials parties can't be shared yet." in text(pg), f"[{w}] party: sharing not blocked")
+        pg.evaluate(f"S.decks=[{PARTY_JS}];go('decks');render()"); pg.wait_for_timeout(400)
+        t = text(pg)
+        check("Trials party" in t and "My Party Deck" in t, f"[{w}] party: My Decks has no Trials party tag")
+        check(not pg.evaluate("!!document.querySelector('.deck [data-act=comm-share]')"), f"[{w}] party: Share to community shown on a party")
+        pg.goto(f"http://127.0.0.1:{port}/index.html#play"); pg.wait_for_timeout(900)
+        pg.evaluate(f"S.decks=[{PARTY_JS}];CQPlay.mount(document.getElementById('view'))"); pg.wait_for_timeout(400)
+        check(pg.evaluate("![...document.querySelectorAll('#play-root select option')].some(o=>/My Party Deck/.test(o.textContent))"), f"[{w}] party: regular Play lobby lists a Trials party")
+        check(not errs, f"[{w}] party (access): console errors {errs[:3]}")
+        ctx.close()
+        NO = {"admin": False, "set2": False, "trials": False}
+        ctx, pg, errs = page_for(b, port, NO, w, url="#build")
+        check(not pg.evaluate("!!document.querySelector('[data-act=new-party]')"), f"[{w}] party: New Trials party shown without access")
+        check(pg.evaluate("showRow({heroes:['h:A','h:B'],cards:{}})===false"), f"[{w}] party: showRow shows a 2-Hero row without access")
+        hs = pg.evaluate("HEROES.slice(0,2).map(h=>h.name)")
+        pg.evaluate("S.decks=[{id:'party9',name:'Secret Party',heroes:[HEROES[0].id,HEROES[1].id],cards:{'Potion':3}}];go('decks');render()"); pg.wait_for_timeout(400)
+        t = text(pg)
+        check("A deck you don't have access to" in t, f"[{w}] party: My Decks doesn't mask a party without access")
+        check("Secret Party" not in t and not any(h in t for h in hs) and "Potion" not in t, f"[{w}] party: My Decks leaks a party's names without access")
+        check(not errs, f"[{w}] party (no access): console errors {errs[:3]}")
+        ctx.close()
 
 if __name__ == "__main__": main()

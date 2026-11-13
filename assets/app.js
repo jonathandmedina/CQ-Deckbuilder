@@ -18,6 +18,11 @@ const blankArt=c=>!ownArt(c)&&!!BLANK_ART[c.kind]&&BLANK_ART[c.kind].has(c.cls);
 /* Update 30: the party is 3 fixed slots (Lead, Center, Closer). In the builder d.heroes may hold null for an empty slot so the others keep their place. */
 const HN=d=>d&&d.heroes?d.heroes.filter(Boolean).length:0;
 const hcompact=a=>(a||[]).filter(Boolean);
+/* Trials party deck (Plan B+C): a deck with exactly 2 Heroes (Lead and Closer). No new database column: decks.heroes already holds the list.
+   d.trials marks a party while it's being built (fewer than 2 Heroes picked yet). */
+const isTrialsDeck=d=>!!d&&(d.trials===true||(d.trials!==false&&Array.isArray(d.heroes)&&d.heroes.length===2&&d.heroes.every(Boolean)));
+const HSLOTS=d=>isTrialsDeck(d)?2:3;
+const SLOT_NAMES=d=>isTrialsDeck(d)?["Lead","Closer"]:["Lead","Center","Closer"];
 const hasArt=c=>SKIN==="art"&&(ownArt(c)||blankArt(c));
 const CLASS_COLOR_CLEAN={Artificer:"#507B7F",Necromancer:"#466E6B",Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
 const CLASS_TEXT_CLEAN={Cleric:"#231A00",Monk:"#2A1500"};
@@ -72,7 +77,8 @@ const trialsOn=()=>!!(S.access&&S.access.trials);
 const trialsHidden=id=>{const k=String(id||"").replace(/^[th]:/,"");return(TRIALS_SET.has(k)&&!trialsOn())||(SET2.has(k)&&!set2On())};
 const hiddenLabel=id=>trialsHidden(id)?"A card you don't have access to":id;
 /* a deck row from someone else (Best Decks, Community, profiles): hidden when it uses a card the viewer can't see */
-const showRow=r=>!Object.keys((r&&r.cards)||{}).some(trialsHidden);
+/* Best Decks and Community Decks never list Trials parties (2 Heroes), with or without access */
+const showRow=r=>!Object.keys((r&&r.cards)||{}).some(trialsHidden)&&hcompact(r&&r.heroes).length!==2;
 function warnHidden(d){if(d&&Object.keys(d.cards||{}).some(trialsHidden))toast("Some cards in this deck aren't available to you.")}
 function syncTrials(){const on=trialsOn();
   for(const c of TRIALS_OBJS){const L=c.kind==="equip"?CARDS:TOKENS,i=L.indexOf(c);
@@ -179,7 +185,8 @@ const partyClasses=d=>[...new Set(d.heroes.map(h=>BYID.get(h)?.cls).filter(Boole
 function allowed(c,d){return c.cls==="Generic"||partyClasses(d).includes(c.cls)}
 function issues(d){
   const out=[];
-  if(HN(d)!==3)out.push(`Pick ${3-HN(d)} more Hero${3-HN(d)===1?"":"es"}.`);
+  if(isTrialsDeck(d)){if(HN(d)!==2)out.push("Trials parties need 2 Heroes.")}
+  else if(HN(d)!==3)out.push(`Pick ${3-HN(d)} more Hero${3-HN(d)===1?"":"es"}.`);
   const t=deckTotal(d);
   if(t<DECK_SIZE)out.push(`Add ${DECK_SIZE-t} more card${DECK_SIZE-t===1?"":"s"} (decks need at least 50).`);
   for(const[id,q]of Object.entries(d.cards)){const c=BYID.get(id);if(!c&&trialsHidden(id)){out.push("This deck has a card you don't have access to.");continue}if(!c){out.push(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===id)?`${id} is deprecated (removed from play). Take it out of this deck.`:`"${id}" isn't in the card list anymore.`);continue}
@@ -194,7 +201,7 @@ function issues(d){
    Auto Rebuild: 2-ofs become 3-ofs, 1-ofs become 2-ofs (Legendaries stay at 1), then the deck is rounded off to 50:
    first by topping up its own cards (cheapest first), then with new cards from the party's classes (class with the
    fewest cards first, cheapest first). If doubling goes over 50, former 1-ofs drop back (most expensive first). */
-function needsRebuild(d){if(!d||!d.heroes||HN(d)!==3)return false;const t=deckTotal(d);return t>0&&t<=30&&Object.values(d.cards).every(q=>q<=2)}
+function needsRebuild(d){if(!d||!d.heroes||isTrialsDeck(d)||HN(d)!==3)return false;const t=deckTotal(d);return t>0&&t<=30&&Object.values(d.cards).every(q=>q<=2)}
 function autoRebuild(d){
   const old=d.cards||{},n={};const ok=c=>c&&(c.kind==="card"||c.kind==="equip")&&allowed(c,d);
   const keys=Object.keys(old).filter(id=>ok(BYID.get(id)));
@@ -590,29 +597,29 @@ function heroDigitalHTML(h,slot){
     <div class="dh-st">${sq("str","STR","Strength")}${sq("hp","HP","Health Points")}${sq("def","DEF","Defense")}<span class="dh-ab" tabindex="0">Ability<span class="dh-tip" role="tooltip"><span class="dh-tt">${esc(h.name)} <small>${esc(h.cls)} Hero</small></span>${h.rules?artRulesHTML(h.rules):"<p>No ability.</p>"}</span></span></div>
   </div>`}
 function partySlots(d){
-  const names=["Lead","Center","Closer"];
-  return`<div class="party">${names.map((n,i)=>{const h=BYID.get(d.heroes[i]);
+  const names=SLOT_NAMES(d);
+  return`<div class="party${names.length===2?" p2":""}">${names.map((n,i)=>{const h=BYID.get(d.heroes[i]);
     return h?`<div class="slot full hero-full hero-dig${S.b.swap===i?" swapping":""}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${heroDigitalHTML(h,(i+1)+" · "+n.toUpperCase())}<div class="c-ctrl"><button type="button" class="btn sm" data-act="inspect" data-id="${esc(h.id)}">View</button><span class="sp"></span><button type="button" class="btn sm${S.b.swap===i?" primary":""}" data-act="hero-swap" data-slot="${i}">${S.b.swap===i?"Cancel":"Swap"}</button><button type="button" class="btn sm" data-act="unhero" data-id="${esc(h.id)}">Remove</button></div></div>`
-      :`<div class="slot empty-slot${S.b.target===i?" target":""}"><small>${i+1} · ${n}</small>${HN(d)===2?`<span class="cl">Pick a Hero below</span>`:`<button type="button" class="btn sm${S.b.target===i?" primary":""}" data-act="hero-target" data-slot="${i}">${S.b.target===i?"Pick a Hero below ↓":"Choose Hero"}</button>`}</div>`}).join("")}</div>`;
+      :`<div class="slot empty-slot${S.b.target===i?" target":""}"><small>${i+1} · ${n}</small>${HN(d)===names.length-1?`<span class="cl">Pick a Hero below</span>`:`<button type="button" class="btn sm${S.b.target===i?" primary":""}" data-act="hero-target" data-slot="${i}">${S.b.target===i?"Pick a Hero below ↓":"Choose Hero"}</button>`}</div>`}).join("")}</div>`;
 }
 function stepsHTML(){
-  const st=S.b.step,h=HN(S.deck)===3;
-  return`<div class="steps"><div class="step ${st==="heroes"?"on":"done"}"><b>1</b>Choose 3 Heroes</div><i class="sep"></i><div class="step ${st==="cards"?"on":""}"><b>2</b>Build a deck (50+ cards)</div></div>`;
+  const st=S.b.step,h=HN(S.deck)===HSLOTS(S.deck);
+  return`<div class="steps"><div class="step ${st==="heroes"?"on":"done"}"><b>1</b>Choose ${HSLOTS(S.deck)} Heroes</div><i class="sep"></i><div class="step ${st==="cards"?"on":""}"><b>2</b>Build a deck (50+ cards)</div></div>`;
 }
 function viewBuild(){
-  const d=S.deck;
-  if(HN(d)<3)S.b.step="heroes";
+  const d=S.deck;const NS=HSLOTS(d),party=isTrialsDeck(d);
+  if(HN(d)<NS)S.b.step="heroes";
   if(S.b.step==="heroes"){
     const f={cls:S.b.heroCls,type:"Hero",sort:"class",q:""};
     const list=filterSort(HEROES,f);
-    return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button></div>${stepsHTML()}
-    <h2 class="party-h">Choose your party.</h2><p class="lede">Pick three Heroes for your party, in order. Then pick from their specific class cards or generic cards to build your strategy.</p>
+    return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button>${trialsOn()?`<button type="button" class="btn newparty" data-act="new-party" title="A 2-Hero party for the co-op Trials">New Trials party</button>`:""}</div>${stepsHTML()}
+    <h2 class="party-h">${party?"Choose your Trials party.":"Choose your party."}</h2><p class="lede">${party?"A Trials party has two Heroes: a Lead and a Closer. Then build a deck of at least 50 cards from their class cards and generic cards. Trials parties are for the co-op Trials in the Play tab.":"Pick three Heroes for your party, in order. Then pick from their specific class cards or generic cards to build your strategy."}</p>
     ${partySlots(d)}
     <div class="bar">${classChips(S.b.heroCls,"hero-cls",visClasses())}</div>
-    <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${HN(d)===3?"":"disabled"}>Continue to cards →</button>
-      <span class="count">${HN(d)}/3 Heroes chosen</span>
+    <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${HN(d)===NS?"":"disabled"}>Continue to cards →</button>
+      <span class="count">${HN(d)}/${NS} Heroes chosen</span>
       ${HN(d)||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
-    <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",picked:i>=0,slot:i>=0?["LEAD","CENTER","CLOSER"][i]:""})})}</div>`;
+    <div class="grid">${gridWithGroups(list,f,c=>{const i=d.heroes.indexOf(c.id);return cardHTML(c,{button:"pick-hero",picked:i>=0,slot:i>=0?SLOT_NAMES(d)[i].toUpperCase():""})})}</div>`;
   }
   const pcls=partyClasses(d);
   const f=S.b;
@@ -620,7 +627,7 @@ function viewBuild(){
   if(f.type!=="all"&&!visTypes().includes(f.type))f.type="all";
   const pool=filterSort(CARDS.filter(c=>allowed(c,d)),f);
   const total=deckTotal(d);
-  return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button></div>${stepsHTML()}
+  return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button>${trialsOn()?`<button type="button" class="btn newparty" data-act="new-party" title="A 2-Hero party for the co-op Trials">New Trials party</button>`:""}</div>${stepsHTML()}
   ${partySlots(d)}
   <div class="split">
     <section aria-label="Card pool">
@@ -657,7 +664,7 @@ function deckPanel(d){
     <button type="button" class="btn handbtn" data-act="visual" data-src="current" ${total?"":"disabled"} title="See the deck laid out in stacks, one stack per card">Visual View</button>
     <button type="button" class="btn primary handbtn" data-act="hand" data-src="current" ${total>=HAND_SIZE?"":"disabled"} title="Shuffle and draw 4. Then mulligan or draw a card.">Draw starting hand</button>
     ${entries.length?"":`<p class="note">Use + on a card to add it. You can include up to 3 copies of a card, and 1 of each Legendary.</p>`}
-    ${HN(d)?`<div class="dl heroes"><h4><span>Heroes</span><span>${HN(d)}/3</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${["Lead","Center","Closer"][i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
+    ${HN(d)?`<div class="dl heroes"><h4><span>Heroes</span><span>${HN(d)}/${HSLOTS(d)}</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${SLOT_NAMES(d)[i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
     <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>${e.c.sup==="Legendary"?'<span class="leg-ico" title="Legendary: 1 copy per deck" aria-label="Legendary">L</span>':""}`:`<span class="n bad">${esc(hiddenLabel(e.id))}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>+</button><button type="button" class="mini add3" data-act="inc-max" data-id="${esc(e.id)}" title="Fill to ${e.c?maxCopies(e.c):3} copies" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>×${e.c?maxCopies(e.c):3}</button><button type="button" class="mini rmall" data-act="rmall" data-id="${esc(e.id)}" aria-label="Remove all copies of ${esc(e.c?e.c.name:hiddenLabel(e.id))}" title="Remove all copies">×</button></li>`).join("")}</ul>`).join("")}</div>
     ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward your deck. Print &amp; Play includes them.</p></div>`:""})()}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}
@@ -795,7 +802,7 @@ function viewCommunity(){const c=S.comm;
   const recentRows=(c.recent||[]).filter(showRow);const recent=recentRows.length?`<h2 style="margin-top:28px">Recently played</h2><p class="lede">Decks from the latest finished Play-tab games, any win rate.</p><div class="decks">${recentRows.map(r=>bestCard(r,0)).join("")}</div>`:"";
   return head+shared+recent}
 function commListModal(r){bestListModal(Object.assign({},r,{_comm:true}))}
-async function commShare(d){if(!SB||!S.uid){toast("Sign in to share decks.");return}
+async function commShare(d){if(isTrialsDeck(d)){toast("Trials parties can't be shared yet.");return}if(!SB||!S.uid){toast("Sign in to share decks.");return}
   if(issues(d).length||needsRebuild(d)){toast("Only legal decks can be shared. Fix this deck's issues first.");return}
   const row={user_id:S.uid,deck_id:String(d.id),name:(d.name||"Untitled deck").slice(0,80),author:((S.me&&S.me.name)||"Player").slice(0,40),heroes:hcompact(d.heroes).slice(0,3),cards:d.cards,updated_at:new Date().toISOString()};
   const{data,error}=await SB.from("community_decks").upsert(row,{onConflict:"user_id,deck_id"}).select("id,deck_id").single();
@@ -816,10 +823,13 @@ function viewDecks(){
   const ds=S.decks;if(S.uid&&SB&&S.commMine===undefined){S.commMine=null;loadMineShared()}
   return`<h1>My Decks</h1>
   <p class="lede">${S.mode==="account"?`Signed in${S.me&&S.me.name?" as "+esc(S.me.name):""}. Decks you save are stored in your account and follow you to any device.`:"You're browsing as a guest, so decks are saved in this browser only."+(SB?' <a href="#account">Create a free account</a> to keep decks on any device.':"")}</p>
-  <div class="bar"><button type="button" class="btn primary" data-act="new-deck-go">New deck</button>
+  <div class="bar"><button type="button" class="btn primary" data-act="new-deck-go">New deck</button>${trialsOn()?`<button type="button" class="btn" data-act="new-party" title="A 2-Hero party for the co-op Trials">New Trials party</button>`:""}
   ${S.mode==="account"&&localDecks().length?`<button type="button" class="btn" data-act="migrate">Move ${localDecks().length} browser deck(s) into my account</button>`:""}</div>
-  <div class="decks">${ds.length?ds.map(d=>{const iss=issues(d);const t=deckTotal(d);
-    return`<div class="deck"><h3>${esc(d.name)}</h3>
+  <div class="decks">${ds.length?ds.map(d=>{const iss=issues(d);const t=deckTotal(d);const party=isTrialsDeck(d);
+    /* without Trials access an owned Trials party shows no names at all */
+    if(party&&!trialsOn())return`<div class="deck"><h3>A deck you don't have access to</h3><div class="actions"><button type="button" class="btn sm danger" data-act="del" data-id="${d.id}">Delete</button></div>
+      <div class="actions" data-confirm="${d.id}" hidden><span class="note">Delete this deck for good?</span><button type="button" class="btn sm danger" data-act="del-yes" data-id="${d.id}">Delete</button><button type="button" class="btn sm" data-act="del-no" data-id="${d.id}">Keep</button></div></div>`;
+    return`<div class="deck"><h3>${esc(d.name)}${party?' <span class="tag party-tag">Trials party</span>':""}</h3>
     ${(hs=>hs.length?deckFacesHTML(hs):'<div class="pips"><span class="note">No Heroes yet</span></div>')(d.heroes.map(h=>BYID.get(h)).filter(Boolean))}
     <div class="note">${t}/${DECK_SIZE} cards${d.updated?" · saved "+new Date(d.updated).toLocaleDateString():""}</div>
     <span class="status ${iss.length?"no":"ok"}">${needsRebuild(d)?"Needs a rebuild (decks are now 50 cards)":iss.length?iss.length+" issue"+(iss.length>1?"s":""):"Legal deck"}</span>
@@ -831,7 +841,7 @@ function viewDecks(){
       <button type="button" class="btn sm" data-act="visual" data-src="${d.id}">Visual View</button>
       <button type="button" class="btn sm" data-act="deckpng" data-src="${d.id}">Deck image</button>
       <button type="button" class="btn sm" data-act="decklog" data-src="${d.id}">Log${d.log&&d.log.length?` (${d.log.length})`:""}</button>
-      ${S.uid&&SB?(S.commMine&&S.commMine.has(String(d.id))?`<button type="button" class="btn sm" data-act="comm-share" data-id="${d.id}" title="Send your latest changes to the community copy">Update community</button><button type="button" class="btn sm" data-act="comm-unshare" data-id="${d.id}">Unshare</button>`:`<button type="button" class="btn sm" data-act="comm-share" data-id="${d.id}" title="List this deck on Decklists → Community Decks">Share to community</button>`):""}
+      ${S.uid&&SB&&!party?(S.commMine&&S.commMine.has(String(d.id))?`<button type="button" class="btn sm" data-act="comm-share" data-id="${d.id}" title="Send your latest changes to the community copy">Update community</button><button type="button" class="btn sm" data-act="comm-unshare" data-id="${d.id}">Unshare</button>`:`<button type="button" class="btn sm" data-act="comm-share" data-id="${d.id}" title="List this deck on Decklists → Community Decks">Share to community</button>`):""}
       ${window.CQProf?window.CQProf.privButton(d):""}
       <button type="button" class="btn sm" data-act="dup" data-id="${d.id}">Duplicate</button>
       <button type="button" class="btn sm danger" data-act="del" data-id="${d.id}">Delete</button></div>
@@ -1304,15 +1314,15 @@ document.addEventListener("click",async e=>{
   else if(a==="dc-signin"){await SB.auth.signInWithOAuth({provider:"discord",options:{scopes:DC_SCOPES,redirectTo:location.origin+location.pathname}})}
   else if(a==="dc-link"){const{error}=await SB.auth.linkIdentity({provider:"discord",options:{scopes:DC_SCOPES,redirectTo:location.origin+location.pathname}});if(error)toast("Couldn't connect Discord: "+error.message)}
   else if(a==="dc-unlink"){const{data}=await SB.auth.getUserIdentities();const i=data&&data.identities.find(x=>x.provider==="discord");if(i){const{error}=await SB.auth.unlinkIdentity(i);toast(error?"Couldn't disconnect: "+error.message:"Discord disconnected.");const s=await SB.auth.getSession();setSession(s.data.session)}}
-  else if(a==="pick-hero"){let added=false,msg="";setDeck(d=>{while(d.heroes.length<3)d.heroes.push(null);const i=d.heroes.indexOf(id);
-      if(S.b.swap!=null&&i<0){const old=BYID.get(d.heroes[S.b.swap]);d.heroes[S.b.swap]=id;msg=`Swapped ${old?old.name:"Hero"} → ${BYID.get(id).name} (${["Lead","Center","Closer"][S.b.swap]}).`;S.b.swap=null;added=true}
+  else if(a==="pick-hero"){let added=false,msg="";setDeck(d=>{const n=HSLOTS(d);while(d.heroes.length<n)d.heroes.push(null);const i=d.heroes.indexOf(id);
+      if(S.b.swap!=null&&i<0){const old=BYID.get(d.heroes[S.b.swap]);d.heroes[S.b.swap]=id;msg=`Swapped ${old?old.name:"Hero"} → ${BYID.get(id).name} (${SLOT_NAMES(d)[S.b.swap]}).`;S.b.swap=null;added=true}
       else if(i>=0){d.heroes[i]=null}
       else{const s=S.b.target!=null&&!d.heroes[S.b.target]?S.b.target:d.heroes.indexOf(null);if(s>=0){d.heroes[s]=id;added=true;S.b.target=null}else toast("Your party is full. Use Swap on a Hero to replace it.")}});
-    if(msg)toast(msg);if(added&&HN(S.deck)===3&&!msg){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}else render()}
+    if(msg)toast(msg);if(added&&HN(S.deck)===HSLOTS(S.deck)&&!msg){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}else render()}
   else if(a==="hero-swap"){const i=+b.dataset.slot;S.b.swap=S.b.swap===i?null:i;S.b.target=null;render()}
   else if(a==="hero-target"){const i=+b.dataset.slot;S.b.target=S.b.target===i?null:i;S.b.swap=null;render()}
-  else if(a==="unhero"){setDeck(d=>{while(d.heroes.length<3)d.heroes.push(null);d.heroes=d.heroes.map(h=>h===id?null:h)});S.b.swap=null;if(HN(S.deck)<3){S.b.step="heroes";render()}}
-  else if(a==="to-cards"){if(HN(S.deck)===3){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
+  else if(a==="unhero"){setDeck(d=>{const n=HSLOTS(d);while(d.heroes.length<n)d.heroes.push(null);d.heroes=d.heroes.map(h=>h===id?null:h)});S.b.swap=null;if(HN(S.deck)<HSLOTS(S.deck)){S.b.step="heroes";render()}}
+  else if(a==="to-cards"){if(HN(S.deck)===HSLOTS(S.deck)){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
   else if(a==="to-heroes"){S.b.step="heroes";render()}
   else if(a==="inc-max"){const c=BYID.get(id);if(!c)return;const m=maxCopies(c),q=S.deck.cards[id]||0;if(q>=m)return;setDeck(d=>{d.cards[id]=m});toast(`${m} × ${c.name} in your deck.`)}
   else if(a==="inc"||a==="inc-close"){const c=BYID.get(id);if(!c)return;
@@ -1334,10 +1344,12 @@ document.addEventListener("click",async e=>{
     b.closest(".modal")?.remove();S.deck=blankDeck();S.dirty=false;S.b.step="heroes";saveDraft();go("build");render()}
   else if(a==="new-deck"||a==="new-deck-go"){if(a==="new-deck-go")b.closest(".modal")?.remove();if(S.dirty&&a==="new-deck"&&!b.dataset.sure){b.dataset.sure="1";b.textContent="Discard unsaved changes?";setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent=b.closest(".deckpanel")?"New deck":"Start over"}},3500);return}
     S.deck=blankDeck();S.dirty=false;S.b.step="heroes";saveDraft();go("build");render()}
+  else if(a==="new-party"){if(!trialsOn())return;b.closest(".modal")?.remove();if(S.dirty&&!b.dataset.sure&&HN(S.deck)+deckTotal(S.deck)>0){b.dataset.sure="1";b.textContent="Discard unsaved changes?";setTimeout(()=>{if(b.isConnected){delete b.dataset.sure;b.textContent="New Trials party"}},3500);return}
+    S.deck=Object.assign(blankDeck(),{name:"Untitled Trials party",heroes:[null,null],trials:true});S.dirty=false;S.b.step="heroes";S.b.target=null;S.b.swap=null;saveDraft();go("build");render()}
   else if(a==="save"){const d=S.deck;d.name=(d.name||"").trim()||"Untitled deck";b.disabled=true;
     try{const where=await persistDeck(d);S.dirty=false;saveDraft();toast(where==="account"?"Deck saved to your account.":"Deck saved in this browser.")}catch(err){}
     render()}
-  else if(a==="open"){const d=S.decks.find(x=>x.id===id);if(!d)return;S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=false;S.b.step=HN(d)===3?"cards":"heroes";saveDraft();go("build")}
+  else if(a==="open"){const d=S.decks.find(x=>x.id===id);if(!d)return;if(isTrialsDeck(d)&&!trialsOn())return;S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards},...(isTrialsDeck(d)?{trials:true}:{})};S.dirty=false;S.b.step=HN(d)===HSLOTS(d)?"cards":"heroes";saveDraft();go("build")}
   else if(a==="dup"){const d=S.decks.find(x=>x.id===id);if(!d)return;const c={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};try{await persistDeck(c);toast("Deck duplicated.")}catch(err){}render()}
   else if(a==="del"){const box=document.querySelector(`[data-confirm="${id}"]`);if(box)box.hidden=false}
   else if(a==="del-no"){const box=document.querySelector(`[data-confirm="${id}"]`);if(box)box.hidden=true}
@@ -1371,7 +1383,7 @@ document.addEventListener("click",async e=>{
   else if(a==="best-open"){const r=(S.best&&S.best.rows||[]).find(x=>x.deck_key===id)||(S.comm&&S.comm.recent||[]).find(x=>x.deck_key===id);if(!r)return;b.closest(".modal")?.remove();const d=bestDeck(r);
     if(openOwn(ownMatch(d)))return;
     if(S.dirty&&!confirmReplace())return;S.deck={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=true;S.b.step="cards";saveDraft();go("build");toast("Deck copied into the Deck Builder. Press Save deck to keep it.")}
-  else if(a==="share"){const d=deckBySrc(b.dataset.src);if(d)copyText(shareURL(d),"Share link copied. Anyone with it can open this deck.")}
+  else if(a==="share"){const d=deckBySrc(b.dataset.src);if(d&&isTrialsDeck(d)){toast("Trials parties can't be shared yet.");return}if(d)copyText(shareURL(d),"Share link copied. Anyone with it can open this deck.")}
 });
 let qT;
 document.addEventListener("input",e=>{const t=e.target,a=t.dataset&&t.dataset.act;if(!a)return;

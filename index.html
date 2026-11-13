@@ -237,6 +237,7 @@ button.card:hover{border-color:var(--cc)}
 .step.done b{background:var(--ink);color:var(--surface);border-color:var(--ink)}
 .steps .sep{width:28px;height:1px;background:var(--line)}
 .party{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:16px 0}
+.party.p2{grid-template-columns:repeat(2,minmax(0,1fr));max-width:68%}.party-tag{font-size:.7em;vertical-align:middle;margin-left:6px;padding:1px 6px;border:1px solid currentColor;border-radius:4px;opacity:.8}
 .slot{border:1.5px dashed var(--line);border-radius:12px;padding:10px 12px;min-height:74px;display:flex;flex-direction:column;gap:2px;background:var(--surface)}
 .slot.full{border-style:solid;border-color:var(--cc)}
 .slot small{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -460,6 +461,7 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 }
 @media (max-width:560px){
   .party{grid-template-columns:minmax(0,1fr)}
+  .party.p2{grid-template-columns:minmax(0,1fr);max-width:none}
   .grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
   input[type=search]{width:100%}
   .acct{margin-left:0;width:100%}

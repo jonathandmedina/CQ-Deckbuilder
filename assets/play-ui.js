@@ -412,7 +412,7 @@ const STARTER_LISTS=[
 function starterDeck(i){const st=STARTERS[i];return{id:"starter:"+i,name:st.name,heroes:st.heroes.map(n=>"h:"+n),cards:Object.assign({},STARTER_LISTS[i])}}
 U.starterDeck=starterDeck;
 function deckChoices(){const out=[];
-  const mine=(AS()&&S.decks)||[];mine.forEach(d=>{const bad=E.validateDeck(d);out.push({id:d.id,name:d.name+(bad.length?" (not legal: "+bad[0]+")":""),ok:!bad.length,deck:d})});
+  const mine=((AS()&&S.decks)||[]).filter(d=>(d.heroes||[]).filter(Boolean).length===3);mine.forEach(d=>{const bad=E.validateDeck(d);out.push({id:d.id,name:d.name+(bad.length?" (not legal: "+bad[0]+")":""),ok:!bad.length,deck:d})});
   if(AS()&&S.deck&&S.deck.heroes.length===3&&!mine.some(d=>d.id===S.deck.id)){const bad=E.validateDeck(S.deck);out.push({id:"draft",name:"Current draft: "+(S.deck.name||"Untitled")+(bad.length?" (not legal)":""),ok:!bad.length,deck:S.deck})}
   STARTERS.forEach((st,i)=>out.push({id:"starter:"+i,name:st.name,ok:true,deck:starterDeck(i)}));
   return out}

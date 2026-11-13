@@ -214,7 +214,7 @@ html[data-skin="art"] .c-foot .flip{background:radial-gradient(circle,#5a3426 0%
 html[data-skin="art"] .card.upside{outline:2px solid var(--accent)}
 /* card images: no frame or window of their own, smooth scaling */
 html[data-skin="art"] .card.art{background:radial-gradient(120% 70% at 50% 32%,color-mix(in srgb,var(--cc) 45%,#3a2418),#120a07 78%);border:0;border-radius:5%/3.6%;box-shadow:0 0 0 1px #000,0 6px 14px rgba(0,0,0,.5);outline-offset:2px}
-html[data-skin="art"] button.card.art:hover{box-shadow:0 0 0 2px var(--accent),0 6px 14px rgba(0,0,0,.5)}
+html[data-skin="art"] button.card.art:hover,html[data-skin="art"] .card.art[role="button"]:hover{box-shadow:0 0 0 2px var(--accent),0 6px 14px rgba(0,0,0,.5)}
 html[data-skin="art"] .card.art.upside{box-shadow:0 0 0 3px var(--accent),0 6px 14px rgba(0,0,0,.5);outline:0}
 html[data-skin="art"] .card.art .c-ctrl{background:rgba(20,10,6,.9);border-top:1px solid var(--frame)}
 html[data-skin="art"] .c-art{image-rendering:auto}

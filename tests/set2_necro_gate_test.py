@@ -57,7 +57,7 @@ def main():
             check("Necromancer" not in text(pg), f"[{w}] no access: Necromancer in Cards")
             for nm in NEC:
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(150)
-                check(nm not in text(pg).replace("Search", ""), f"[{w}] no access: search shows {nm}")
+                check(nm not in text(pg).replace("Search", "").replace(f"“{nm}”", ""), f"[{w}] no access: search shows {nm}")
             check(pg.evaluate("trialsHidden('Raise Revenant')&&trialsHidden('h:Necromancer C')&&trialsHidden('Consecrate')"), f"[{w}] no access: Necromancer names not masked")
             go(pg, port, "#build"); check("Necromancer" not in text(pg), f"[{w}] no access: Necromancer in the Deck Builder")
             go(pg, port, "#rules"); pg.wait_for_timeout(500); check("Set 2 Supplement" not in text(pg), f"[{w}] no access: Set 2 Supplement tab")
@@ -99,6 +99,18 @@ def main():
             pg.wait_for_timeout(400); pg.click("[data-pa=resume-local]"); pg.wait_for_timeout(900); pt = text(pg)
             for frag in ["Revenant", "Impervious", "Remains", "Summon Aura", "Play Reawaken (Exhume"]:
                 check(frag in pt, f"[{w}] Play tab shows {frag}")
+            check("Use Remains (no action)" not in pt and "Use Remains" in pt, f"[{w}] Remains uses an action")
+            # Grave Tide: pick the 3 Revenants to sacrifice on the board
+            pg.evaluate("""(()=>{const st=JSON.parse(localStorage.getItem('cq.play.local'));const s=st.s;s.p[0].hand.push({uid:'gt1',id:'Grave Tide',owner:0});s.p[0].aura=6;
+              const r=JSON.parse(JSON.stringify(s.p[0].bf.find(o=>o.name==='Revenant')));r.uid='rv3';s.p[0].bf.push(r);
+              localStorage.setItem('cq.play.local',JSON.stringify(st));CQPlay.mode='lobby';CQPlay.mount(document.getElementById('view'))})()""")
+            pg.wait_for_timeout(300); pg.click("[data-pa=resume-local]"); pg.wait_for_timeout(700)
+            pg.locator("[data-pa=hand][data-u=gt1]").dispatch_event("click"); pg.wait_for_timeout(300); pg.locator("#layer [data-pa=play]").first.dispatch_event("click"); pg.wait_for_timeout(400)
+            pt2 = text(pg); check("Revenant to sacrifice (1 of 3)" in pt2, f"[{w}] Grave Tide asks which Revenants to sacrifice")
+            if SHOTS and w == 1280: pg.screenshot(path=f"{SHOTS}/grave_tide_pick.png")
+            for k in range(3):
+                pg.locator("#play-root .ps.cand").nth(k).dispatch_event("click"); pg.wait_for_timeout(300)
+            pt3 = text(pg); check(pt3.count("Revenant") >= 5 and "sacrifices 3 Revenants" in pt3, f"[{w}] Grave Tide resolves after picking 3")
             if SHOTS and w == 1280: pg.screenshot(path=f"{SHOTS}/play_necro.png")
             ow = pg.evaluate("document.documentElement.scrollWidth-innerWidth"); check(ow <= 1, f"[{w}] horizontal overflow {ow}")
             check(not errs, f"[{w}] access errors: {errs[:3]}"); ctx.close()

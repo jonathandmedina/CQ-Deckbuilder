@@ -613,18 +613,20 @@ hab("Artificer A",[{label:"Look at the top 3 (a Metal to inventory)",can:(s,pid)
 const REV=t("allySummon","your Revenant",(s,o)=>o.name==="Revenant");
 const revs=c=>E.revenants(c.s,c.pid);
 const raise=(c,n)=>{for(let i=0;i<n;i++)summon(c,"Revenant")};
-/* sacrifice n Revenants as a cost (exhausted ones first) */
-const sacRevs=(c,n)=>{const l=revs(c).slice().sort((a,b)=>(b.ex?1:0)-(a.ex?1:0)).slice(0,n);if(l.length)log(c,`${c.me.name} sacrifices ${l.length} Revenant${l.length>1?"s":""} (additional cost).`);l.forEach(o=>E.sacrifice(c.s,o));return l.length};
+/* sacrifice n Revenants as a cost: the ones the player picked (c.t, the "Revenant to sacrifice" slots); any still missing are picked automatically, exhausted ones first */
+const SACT=(n)=>Array.from({length:n},(_,i)=>t("allySummon",n>1?`Revenant to sacrifice (${i+1} of ${n})`:"Revenant to sacrifice",(s,o)=>o.name==="Revenant",{distinct:true}));
+const sacRevs=(c,n)=>{const pick=(c.t||[]).filter(o=>o&&o.name==="Revenant"&&o.kind==="summon"&&E.ctrl(c.s,o)===c.pid);const l=pick.slice(0,n);
+  revs(c).filter(o=>!l.includes(o)).sort((a,b)=>(b.ex?1:0)-(a.ex?1:0)).forEach(o=>{if(l.length<n)l.push(o)});if(l.length)log(c,`${c.me.name} sacrifices ${l.length} Revenant${l.length>1?"s":""} (additional cost).`);l.forEach(o=>E.sacrifice(c.s,o));return l.length};
 const needRevs=n=>(s,pid)=>E.revenants(s,pid).length>=n;
 const millMark=(c,pid,cards)=>{const pl=c.s.p[pid];cards.forEach(x=>{const i=pl.lib.indexOf(x);if(i>=0){pl.lib.splice(i,1);pl.disc.push(x);E.markMilled(c.s,pid,x)}})};
 def("Raise Revenant",{run(c){raise(c,1);exMe(c)}});
 def("Restless Dead",{run(c){raise(c,2);exMe(c)}});
 def("Grave Whispers",{run(c){draw(c,1);raise(c,1);exMe(c)}});
 def("Rise from the Grave",{run(c){raise(c,c.fromDisc?3:2);if(c.fromDisc)log(c,"Played from the discard pile: three Revenants.");exMe(c)}});
-def("Grave Tide",{can:needRevs(3),payCost:c=>sacRevs(c,3),run(c){raise(c,5);exMe(c)}});
-def("From Darkness",{can:needRevs(4),payCost:c=>sacRevs(c,4),run(c){const o=summon(c,"Abomination",true);o.stealth=true;log(c,"The Abomination enters with Stealth and ready.")}});
-def("Devastating Ritual",{x:{max:(s,pid)=>E.revenants(s,pid).length,step:1},payCost:c=>{c.me.t.ritualSac=sacRevs(c,c.x||0)},run(c){const n=Math.min(c.x||0,c.me.t.ritualSac||0);c.me.t.ritualSac=0;c.me.aura+=n;log(c,`${c.me.name} gains ${n} Aura.`)}});
-def("Corpse Harvest",{can:needRevs(1),payCost:c=>sacRevs(c,1),run(c){draw(c,2)}});
+def("Grave Tide",{t:SACT(3),can:needRevs(3),payCost:c=>sacRevs(c,3),run(c){raise(c,5);exMe(c)}});
+def("From Darkness",{t:SACT(4),can:needRevs(4),payCost:c=>sacRevs(c,4),run(c){const o=summon(c,"Abomination",true);o.stealth=true;log(c,"The Abomination enters with Stealth and ready.")}});
+def("Devastating Ritual",{tx:x=>SACT(x),x:{max:(s,pid)=>E.revenants(s,pid).length,step:1,label:"Choose X (Revenants to sacrifice)"},payCost:c=>{c.me.t.ritualSac=sacRevs(c,c.x||0)},run(c){const n=Math.min(c.x||0,c.me.t.ritualSac||0);c.me.t.ritualSac=0;c.me.aura+=n;log(c,`${c.me.name} gains ${n} Aura.`)}});
+def("Corpse Harvest",{t:SACT(1),can:needRevs(1),payCost:c=>sacRevs(c,1),run(c){draw(c,2)}});
 def("Bone Wall",{run(c){const n=revs(c).length;if(c.actor&&n){buff(c.actor,{def:n});log(c,`${c.actor.name} gains +${n} Defense this turn.`)}else log(c,"Bone Wall: you control no Revenants.")}});
 def("Army of Darkness",{t:[t("enemy","target enemy")],run(c){const tg=c.t[0];const rd=revs(c).filter(o=>!o.ex&&!(o.st&&o.st.stun));
   if(!tg||!rd.length){log(c,"Army of Darkness: no ready Revenants.");return}
@@ -659,7 +661,8 @@ S["Ossuary"]={}; /* engine strOf */
 S["Cursed Urn"]={}; /* engine destroyObj */
 S["Soul Lantern"]={}; /* engine doDawn */
 def("Skeleton Key",item(0,[],c=>{c.me.fl.freeTown=true;log(c,`Skeleton Key: ${c.me.name}'s next Town action costs no Gold.`)},{exile:true}));
-S["Remains"]={act:{free:true,anyClass:true,cost:0,run(c){const pl=c.me;const o=c.inst;const i=pl.inv.indexOf(o);if(i>=0)pl.inv.splice(i,1);
+/* Remains: "Sacrifice this:" uses the acting Hero's action (it isn't exhausted) */
+S["Remains"]={act:{anyClass:true,cost:0,sac:true,run(c){const pl=c.me;
   pl.t.sAura=(pl.t.sAura||0)+1;log(c,`${pl.name} sacrifices Remains: +1 Aura, only for Summon cards (${pl.t.sAura} this turn).`)}}};
 /* Generic Set 2 cards */
 def("Consecrate",{run(c){const all=[...c.me.bf,...c.op.bf].filter(o=>o.kind==="summon");if(!all.length){log(c,"Consecrate: there are no summons.");return}all.forEach(o=>E.loseHp(c.s,o,1,"Consecrate"))}});

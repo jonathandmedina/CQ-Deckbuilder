@@ -56,7 +56,7 @@ def main():
             check(not pg.evaluate("[...document.querySelectorAll('#cat-type option')].some(o=>o.value==='Recipe')"), f"[{w}] no access: Recipe type offered")
             for nm in NAMES:
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(200)
-                check(nm not in text(pg).replace("Search", ""), f"[{w}] no access: search shows {nm}")
+                check(nm not in text(pg).replace("Search", "").replace(f"“{nm}”", ""), f"[{w}] no access: search shows {nm}")
             pg.fill("#cat-q", "")
             go(pg, port, "#build")
             check("Artificer" not in text(pg), f"[{w}] no access: Artificer Heroes in the Deck Builder")

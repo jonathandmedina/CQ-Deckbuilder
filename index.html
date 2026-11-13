@@ -104,7 +104,7 @@ html[data-skin="art"] .grid:not(.hand-grid){grid-template-columns:repeat(auto-fi
 .card.art{background:radial-gradient(120% 70% at 50% 32%,color-mix(in srgb,var(--cc) 55%,#3a3a44),#121218 78%);border:0;border-radius:5%/3.6%;align-self:start}
 .card.art .c-art{display:block;width:100%;height:auto;aspect-ratio:5/7}
 /* Card Image Template: rules text and numbers drawn over the blank card export (sizes are export px / 751 overlay width) */
-.card.art .art-frame{position:relative;container-type:inline-size}
+.card.art .art-frame{position:relative;width:100%;container-type:inline-size}
 .art-ov{position:absolute;inset:0;pointer-events:none;font-family:"Pirata One",var(--display);color:#fff}
 .ov-line{position:absolute;transform:translateY(-50%);text-align:center;white-space:nowrap;line-height:1;font-size:6.658cqw;color:#fff5de;text-shadow:0 .4cqw .25cqw rgba(0,0,0,.85)}
 .ov-fit{display:inline-block}
@@ -132,7 +132,8 @@ html[data-skin="retro"] .kw-aura,html[data-skin="art"] .kw-aura,.ov-rules .kw-au
 .card.art .flip:hover,.card.art .flip:focus-visible{border-color:#D9A53A;color:#FFD27A;outline:none}
 .card.art .slotbadge{top:17%}
 .card.art .c-ctrl{border-top:0}
-button.card.art:hover{box-shadow:0 0 0 2px var(--cc),var(--shadow)}
+button.card.art:hover,.card.art[role="button"]:hover{box-shadow:0 0 0 2px var(--cc),var(--shadow)}
+.card.art[role="button"]{cursor:pointer}.card.art[role="button"]:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .card.art.upside{box-shadow:0 0 0 3px #D9A53A,var(--shadow)}
 .modal .card.art{max-width:min(600px,calc((90vh - 150px)*5/7));width:100%;margin-inline:auto}
 .art-rate{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;font-size:.85rem;color:var(--muted,#8a8f99);margin-top:-4px}
@@ -464,13 +465,13 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
   .acct{margin-left:0;width:100%}
   h1{font-size:1.55rem}
 }
-@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover{transform:translateY(-2px)}}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s, transform .15s} button.card:hover,.card.art[role="button"]:hover{transform:translateY(-2px)}}
 #adminTab[hidden]{display:none!important}
 .sitebar .sb-fb{display:inline-flex;align-items:center;gap:7px}.sb-fb-i{width:20px;height:20px;flex:none}
 .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/art.css?v=20261112v">
-<link rel="stylesheet" href="assets/home.css?v=20261112v">
+<link rel="stylesheet" href="assets/art.css?v=20261112x">
+<link rel="stylesheet" href="assets/home.css?v=20261112x">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -501,22 +502,22 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261112v"></script>
-<script src="assets/trials-data.js?v=20261112v"></script>
-<script src="assets/app.js?v=20261112v"></script>
-<script src="assets/home.js?v=20261112v"></script>
-<script src="assets/play-engine.js?v=20261112v"></script>
-<script src="assets/play-cards.js?v=20261112v"></script>
-<script src="assets/play-ai.js?v=20261112v"></script>
-<script src="assets/play-ui.js?v=20261112v"></script>
-<script src="assets/changelog-data.js?v=20261112v"></script>
-<script src="assets/changelog.js?v=20261112v"></script>
-<script src="assets/admin.js?v=20261112v"></script>
-<script src="assets/profile.js?v=20261112v"></script>
-<script src="assets/action-pop.js?v=20261112v"></script>
-<script src="assets/online.js?v=20261112v"></script>
-<script src="assets/tutorial.js?v=20261112v"></script>
-<script src="assets/play-tablet.js?v=20261112v"></script>
+<script src="assets/cards-data.js?v=20261112x"></script>
+<script src="assets/trials-data.js?v=20261112x"></script>
+<script src="assets/app.js?v=20261112x"></script>
+<script src="assets/home.js?v=20261112x"></script>
+<script src="assets/play-engine.js?v=20261112x"></script>
+<script src="assets/play-cards.js?v=20261112x"></script>
+<script src="assets/play-ai.js?v=20261112x"></script>
+<script src="assets/play-ui.js?v=20261112x"></script>
+<script src="assets/changelog-data.js?v=20261112x"></script>
+<script src="assets/changelog.js?v=20261112x"></script>
+<script src="assets/admin.js?v=20261112x"></script>
+<script src="assets/profile.js?v=20261112x"></script>
+<script src="assets/action-pop.js?v=20261112x"></script>
+<script src="assets/online.js?v=20261112x"></script>
+<script src="assets/tutorial.js?v=20261112x"></script>
+<script src="assets/play-tablet.js?v=20261112x"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>

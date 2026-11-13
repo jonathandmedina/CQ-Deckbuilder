@@ -57,7 +57,7 @@ def main():
             check(pg.evaluate("document.querySelector('.lede').innerText") == base, f"[{w}] lede counts change without access")
             for nm in NAMES:
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(250)
-                check(nm not in text(pg).replace("Search", ""), f"[{w}] no-access search shows {nm}")
+                check(nm not in text(pg).replace("Search", "").replace(f"“{nm}”", ""), f"[{w}] no-access search shows {nm}")
             check(pg.evaluate("[...document.querySelectorAll('#cat-type option')].every(o=>o.value!=='Trials')"), f"[{w}] Trials type option shown without access")
             check(pg.evaluate("!CARDS.some(c=>c.set==='trials')&&!TOKENS.some(c=>c.set==='trials')&&!BYID.has('Crag Helm')"), f"[{w}] Trials objects loaded without access")
             check(pg.evaluate("showRow({cards:{'Crag Helm':1,'Potion':3}})===false&&showRow({cards:{'Potion':3}})===true"), f"[{w}] showRow wrong without access")

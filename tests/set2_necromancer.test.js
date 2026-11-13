@@ -52,14 +52,15 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
   ok(revs(s).length===2&&s.p[1].lib.length===ol-2,"Necromancer B triggers once per Revenant (2)")}
 /* Grave Tide: sacrifice 3 as a cost, summon 5; Cursed Urn on sacrifice */
 {const s=game();const c=hand(s,0,"Grave Tide");rev(s,2);ok(!canPlay(s,c),"Grave Tide needs 3 Revenants");rev(s,1);ok(canPlay(s,c),"playable with 3");
-  inv(s,0,"Cursed Urn");play(s,c);ok(revs(s).length===5,"5 Revenants after sacrificing 3 ("+revs(s).length+")");
+  inv(s,0,"Cursed Urn");ok(!E.act(s,0,{type:"play",uid:c.uid}).ok,"you must pick the Revenants to sacrifice");play(s,c,{targets:revs(s).map(r=>r.uid)});ok(revs(s).length===5,"5 Revenants after sacrificing 3 ("+revs(s).length+")");
   ok(s.p[0].inv.filter(o=>o.name==="Remains").length===3,"Cursed Urn: a Remains token per sacrificed Revenant (inventory has room for 3)")}
 /* Cursed Urn: death by Health Point loss; no slot, no token */
 {const s=game();inv(s,0,"Cursed Urn");inv(s,0,"Potion");inv(s,0,"Potion");rev(s,3);const c=hand(s,0,"Consecrate");play(s,c);
   ok(revs(s).length===0,"Consecrate: each summon loses 1 HP (Revenants die)");ok(s.p[0].inv.filter(o=>o.name==="Remains").length===1,"only one empty slot: one Remains")}
 /* Remains: Aura for Summon cards only */
 {const s=game();s.p[0].aura=0;s.p[0].inv.push({uid:uid(),id:"Remains",kind:"card",fd:false,name:"Remains",owner:0,tok:true,ctr:{}});
-  const o=opts(s,0).find(x=>x.type==="useFree");ok(o,"Remains can be sacrificed without an action");E.act(s,0,o);ok(s.p[0].t.sAura===1&&!s.p[0].inv.length,"Remains: +1 Summon Aura, token gone");
+  ok(!opts(s,0).some(x=>x.type==="useFree"),"Remains isn't a free action");const a0=E.actorFor(s,0);const o=opts(s,0).find(x=>x.type==="use");ok(o,"Remains: sacrifice it with the Hero's action");E.act(s,0,o);resolve(s);back(s);
+  ok(s.p[0].t.sAura===1&&!s.p[0].inv.length,"Remains: +1 Summon Aura, token gone");ok(!a0.ex&&s.p[0].t.lastActor===a0.uid,"uses that Hero's action without exhausting it");
   const t=hand(s,0,"Bone Wall"),r=hand(s,0,"Raise Revenant");ok(!canPlay(s,t),"Summon Aura can't pay for a Tactic");ok(canPlay(s,r),"Summon Aura pays for a Summon card");
   play(s,r);ok(revs(s).length===1&&!s.p[0].t.sAura,"spent on Raise Revenant")}
 /* Mourn */
@@ -114,10 +115,11 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
 {const s=game();rev(s,3);revs(s).forEach(r=>r.ex=false);revs(s)[2].ex=true;const tg=s.p[1].heroes[0];const hp0=E.hp(s,tg),def0=E.defn(s,tg);const a=E.actorFor(s,0);
   play(s,hand(s,0,"Army of Darkness"),{targets:[tg.uid]});ok(E.hp(s,tg)===hp0-Math.max(0,2-def0),"band attack with the 2 ready Revenants ("+(hp0-E.hp(s,tg))+")");ok(revs(s).every(r=>r.ex),"all exhausted");ok(!a.ex,"casting Hero not exhausted")}
 {const s=game();rev(s,2);const ol=s.p[1].lib.length;play(s,hand(s,0,"Dead March"),{targets:["P1"]});ok(s.p[1].lib.length===ol-2,"Dead March: opponent Mills X")}
-{const s=game();rev(s,3);const au=s.p[0].aura;play(s,hand(s,0,"Devastating Ritual"),{x:2});ok(revs(s).length===1&&s.p[0].aura===au+2,"Devastating Ritual: sacrifice 2, gain 2")}
-{const s=game();rev(s,1);const au=s.p[0].aura;play(s,hand(s,0,"Devastating Ritual"),{x:5});ok(revs(s).length===0&&s.p[0].aura===au+1,"X is capped at the Revenants sacrificed")}
-{const s=game();rev(s,1);const h0=s.p[0].hand.length;const c=hand(s,0,"Corpse Harvest");play(s,c);ok(revs(s).length===0&&s.p[0].hand.length===h0+2,"Corpse Harvest")}
-{const s=game();rev(s,3);const c=hand(s,0,"From Darkness");ok(!canPlay(s,c),"From Darkness needs 4");rev(s,1);const a=E.actorFor(s,0);play(s,c);const ab=s.p[0].bf.find(o=>o.name==="Abomination");
+{const s=game();rev(s,3);revs(s)[0].ex=false;const keep=revs(s)[0];const au=s.p[0].aura;ok(E.need(s,0,{type:"play",uid:"x",x:2}).length===0,"(no card)");const dr=hand(s,0,"Devastating Ritual");ok(E.need(s,0,{type:"play",uid:dr.uid,x:2}).length===2,"Devastating Ritual: X picks = X slots");
+  play(s,dr,{x:2,targets:revs(s).slice(1).map(r=>r.uid)});ok(revs(s).length===1&&revs(s)[0]===keep&&s.p[0].aura===au+2,"Devastating Ritual: sacrifices the 2 you picked, gain 2")}
+{const s=game();rev(s,1);const dr=hand(s,0,"Devastating Ritual");ok(!E.act(s,0,{type:"play",uid:dr.uid,x:5,targets:[revs(s)[0].uid]}).ok,"X can't be more than your Revenants")}
+{const s=game();rev(s,1);const h0=s.p[0].hand.length;const c=hand(s,0,"Corpse Harvest");play(s,c,{targets:[revs(s)[0].uid]});ok(revs(s).length===0&&s.p[0].hand.length===h0+2,"Corpse Harvest")}
+{const s=game();rev(s,3);const c=hand(s,0,"From Darkness");ok(!canPlay(s,c),"From Darkness needs 4");rev(s,1);const a=E.actorFor(s,0);play(s,c,{targets:revs(s).map(r=>r.uid)});const ab=s.p[0].bf.find(o=>o.name==="Abomination");
   ok(ab&&ab.str===5&&E.hp(s,ab)===5&&!ab.ex&&ab.stealth&&!ab.imp,"Abomination 5/5, ready, Stealth, not Impervious");ok(revs(s).length===0,"4 sacrificed");ok(!a.ex,"Hero not exhausted");
   ok(!E.candidates(s,1,{k:"enemy"},{}).includes(ab.uid)&&E.candidates(s,1,{k:"enemy"},{attack:true}).includes(ab.uid),"Stealth: can't be targeted by cards, can be attacked")}
 {const s=game();rev(s,1);inv(s,0,"Ossuary");ok(E.str(s,revs(s)[0])===1,"Ossuary off below 25");for(let i=0;i<25;i++)disc(s,0,"Potion");ok(E.str(s,revs(s)[0])===2,"Ossuary: +1 STR at 25")}

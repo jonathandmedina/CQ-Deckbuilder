@@ -417,7 +417,8 @@ function cardHTML(c,o={}){
   if(o.flipped&&c.up&&c.face!=="up")c=upFace(c);
   const tag=o.button?"button":"article";
   const attrs=o.button?` type="button" data-act="${o.button}" data-id="${esc(c.id)}"`:o.pool?` data-act="inc" data-pool="${esc(c.id)}" data-id="${esc(c.id)}"`:"";
-  if(hasArt(c))return artCardHTML(c,o,tag,attrs);
+  /* art cards are never a <button>: Safari (iPad, and Chrome on iPad) sizes the art frame inside a button to 0 wide, so the cards vanished (Nov 12, 2026) */
+  if(hasArt(c))return artCardHTML(c,o,o.button?"div":tag,o.button?` role="button" tabindex="0" data-act="${o.button}" data-id="${esc(c.id)}"`:attrs);
   return`<${tag} class="card${o.picked?" picked":""}${c.kind==="token"?" token":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}"${attrs}>
   <div class="c-head"><span class="c-name">${esc(c.name)}${c.face==="up"?` <span class="upstar" title="${c.backOf?"Made by the Recipe":"Upgraded side"}">★</span>`:""}</span>${hasGem(c)&&!(c.backOf&&c.cost==="")?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
@@ -517,7 +518,10 @@ function filterSort(list,f){
   return l.sort(s);
 }
 function gridWithGroups(list,f,tile){
-  if(!list.length)return`<div class="empty">No cards match these filters.</div>`;
+  if(!list.length){/* say which filters are on, and offer to clear them (a saved Type or search could hide every card) */
+    const on=[f.q&&f.q.trim()?`search “${esc(f.q.trim())}”`:"",f.type&&f.type!=="all"&&f.type!=="Hero"?`type ${esc(f.type)}`:"",f.cls&&f.cls!=="all"&&f.type!=="Hero"?`class ${esc(f.cls)}`:""].filter(Boolean);
+    const sc=f===S.cat?"cat":f===S.b?"b":"";
+    return`<div class="empty">No cards match these filters${on.length?` (${on.join(", ")})`:""}.${sc&&on.length?` <button type="button" class="btn sm" data-act="clear-filters" data-scope="${sc}">Clear filters</button>`:""}</div>`}
   if(f.sort!=="class")return list.map(tile).join("");
   let out="",last=null;
   const gk=c=>c.set==="trials"&&c.kind==="token"?"Trials module · "+(c.tkind==="Boss Card"?"Boss cards":c.tkind==="Boss"?"Bosses":"Spawns"):(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
@@ -560,7 +564,7 @@ function render(){
   else v.innerHTML=viewDecks();
 }
 function viewCatalog(){
-  const f=S.cat;
+  const f=S.cat;{const ty=["all","Hero","Token",...visTypes(),...(trialsOn()?["Trials"]:[])];if(!ty.includes(f.type))f.type="all";if(f.cls!=="all"&&![...visClasses(),"Generic"].includes(f.cls))f.cls="all";if(typeof f.q!=="string")f.q=""}
   const all=[...HEROES,...CARDS,...TOKENS];
   const list=filterSort(all,f);
   return`<div class="bhead"><h1>Cards</h1><a href="#build" class="btn primary go newdeck build-go">Build a Deck</a></div>
@@ -613,6 +617,7 @@ function viewBuild(){
   const pcls=partyClasses(d);
   const f=S.b;
   if(f.cls!=="all"&&f.cls!=="Generic"&&!pcls.includes(f.cls))f.cls="all";
+  if(f.type!=="all"&&!visTypes().includes(f.type))f.type="all";
   const pool=filterSort(CARDS.filter(c=>allowed(c,d)),f);
   const total=deckTotal(d);
   return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button></div>${stepsHTML()}
@@ -1273,6 +1278,8 @@ function flipTile(el){const card=el.closest(".card");const c=card&&BYID.get(card
   ["c-head","c-type","c-rules","c-foot"].forEach(k=>{const a=card.querySelector(":scope > ."+k),b=n.querySelector(":scope > ."+k);if(a&&b)a.innerHTML=b.innerHTML});
   card.classList.toggle("upside");card.querySelector("[data-flip]")?.focus()}
 document.addEventListener("click",e=>{const f=e.target.closest("[data-flip]");if(!f)return;e.preventDefault();e.stopPropagation();flipTile(f)},true);
+/* div cards with role="button" (art cards you pick): Enter or Space clicks them like a button */
+document.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const t=e.target;if(!t.matches||!t.matches('.card[role="button"][data-act]'))return;e.preventDefault();t.click()});
 document.addEventListener("keydown",e=>{const f=e.target.closest&&e.target.closest("[data-flip]");if(!f||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();flipTile(f)},true);
 document.addEventListener("click",async e=>{
   const b=e.target.closest("[data-act]");if(!b||b.tagName==="SELECT"||b.tagName==="INPUT")return;
@@ -1288,6 +1295,7 @@ document.addEventListener("click",async e=>{
   if(a==="cat-cls"){S.cat.cls=v;store.set("cq.cat",S.cat);render()}
   else if(a==="hero-cls"){S.b.heroCls=v;render()}
   else if(a==="b-cls"){S.b.cls=v;render()}
+  else if(a==="clear-filters"){const f=b.dataset.scope==="cat"?S.cat:S.b;f.q="";f.type="all";f.cls="all";if(f===S.cat)store.set("cq.cat",S.cat);render()}
   else if(a==="inspect"){const c=BYID.get(id);if(c){inspect(c);zoomNav(b,"inspect")}}
   else if(a==="art-vote"){artVote(b)}
   else if(a==="edit-profile"){if(window.CQProf)CQProf.openSetup(false)}

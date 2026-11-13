@@ -721,14 +721,15 @@ E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
     if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes).map(sp=>mk(sp,{actor:act,card:d}))}
   if(a.type==="play"||a.type==="comboPlay"||a.type==="playStalled"){const c=findCardAnywhere(s,pid,a.uid);if(!c)return[];const d=DB[c.id];const sc=SC()[d.name];
     const act=a.type==="comboPlay"?(s.pend[0]?comboActor(s,s.pend[0],a.uid):null):actor;
-    if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes).map(sp=>mk(sp,{actor:act,card:d}))}
+    if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes,a.x).map(sp=>mk(sp,{actor:act,card:d}))}
   if(a.type==="ability"){const ab=HS()[actor.name][a.idx];return(ab.t||[]).map(sp=>mk(sp,{actor}))}
   if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];return(isc.act?specsFor(isc.act,a.modes):[]).map(sp=>mk(sp,{actor,item:o}))}
   if(a.type==="eqAct"){const f=find(s,a.uid);const x=f&&(root.CQ_EQACT||{})[f.o.name];return x?(x.t||[]).map(sp=>mk(sp,{actor,item:f.o})):[]}
   if(a.type==="soul"){if(a.ch===2||a.ch===5)return[mk({k:"ally",label:"ally"})];if(a.ch===3)return[mk({k:"any",label:"damage target"})];return[]}
   if(a.type==="inn")return[];
   return[]};
-function specsFor(sc,modes){let t=(sc.t||[]).slice();if(sc.modes&&modes)modes.forEach(i=>{const m=sc.modes.opts[i];if(m&&m.t)t=t.concat(m.t)});return t}
+/* sc.tx(x): target slots that depend on X (Set 2: one "Revenant to sacrifice" slot per Revenant for Devastating Ritual) */
+function specsFor(sc,modes,x){let t=(sc.tx?sc.tx(x||0):(sc.t||[])).slice();if(sc.modes&&modes)modes.forEach(i=>{const m=sc.modes.opts[i];if(m&&m.t)t=t.concat(m.t)});return t}
 E.specsFor=specsFor;
 function labelFor(k){return({any:"any target",enemy:"enemy",ally:"ally",hero:"Hero",enemyHero:"enemy Hero",allyHero:"your Hero",summon:"summon",enemySummon:"enemy summon",allySummon:"your summon",item:"item",equip:"equipment",anyEquip:"equipment",enemyEquip:"enemy equipment",allyEquip:"your equipment",ench:"enchantment",pillar:"Pillar",allyPillar:"your Pillar",nonHero:"non-Hero object",player:"player",enemyPlayer:"opponent",deadAlly:"dead Hero",deadAny:"dead Hero",meditating:"Meditating Hero",allyHeroOther:"another of your Heroes",anyOther:"another target"})[k]||k}
 
@@ -942,7 +943,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(sc&&sc.payCost)withSrc(s,d.name,()=>sc.payCost(mkCtx(s,pid,actor,d,c,a.targets||[],{x})));
   let targets=a.targets||[];
   /* Confused: targets are random among all legal */
-  if(actor&&confused(actor)&&sc){const specs=specsFor(sc,a.modes);targets=specs.map((sp,i)=>{if(targets[i]==null)return null;const cs=candidates(s,pid,Object.assign({},sp,{k:sp.k.replace(/^(enemy|ally)/,"").replace(/^$/,"any").replace(/^Hero$/,"hero").replace(/^Summon$/,"summon")}),{actor,card:d});return cs.length?cs[ri(s,cs.length)]:targets[i]});log(s,`${actor.name} is Confused: targets are chosen at random.`)}
+  if(actor&&confused(actor)&&sc){const specs=specsFor(sc,a.modes,x);targets=specs.map((sp,i)=>{if(targets[i]==null)return null;const cs=candidates(s,pid,Object.assign({},sp,{k:sp.k.replace(/^(enemy|ally)/,"").replace(/^$/,"any").replace(/^Hero$/,"hero").replace(/^Summon$/,"summon")}),{actor,card:d});return cs.length?cs[ri(s,cs.length)]:targets[i]});log(s,`${actor.name} is Confused: targets are chosen at random.`)}
   if(d.sup!=="Hidden")log(s,`${actor?actor.name:pl.name} plays ${d.name}${o.combo?" (Combo)":o.free?" (free)":""}${cost?` for ${cost} Aura`:""}${targets.filter(Boolean).length?" → "+targets.filter(Boolean).map(t=>{const r=resolveTarget(s,t);return r?r.name:"?"}).join(", "):""}.`,pid);
   if(d.sup!=="Hidden"){s.prevCard=s.lastCard;s.lastCard={id:c.id,pid,targets,modes:a.modes,x,round:s.round,type:d.type}}
   if(d.type==="Song")pl.t.songs=(pl.t.songs||0)+1;

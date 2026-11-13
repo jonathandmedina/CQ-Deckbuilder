@@ -127,3 +127,4 @@ a[aria-disabled="true"]{cursor:default}
   .nav-panel .online-pill{align-self:flex-start}
   .nav-panel .discord-btn{align-self:flex-start;margin:0}
 }
+.noart{object-fit:contain!important;image-rendering:pixelated;padding:18%;box-sizing:border-box;opacity:.85}

@@ -326,7 +326,23 @@ const RAW_CARDS=[
 [2, "Into the Trees", "0", "Hidden", "Item", "Trap", "Ranger", "3{A}: When an enemy attacks or targets a friendly Hero, you may cancel that action.", 1],
 [2, "Arrow of Devastation", "0", "", "Item", "Arrow", "Ranger", "4{A}: Deal 5 damage to target enemy. Piercing 3.", 2],
 [2, "Arrow of Craftsmanship", "0", "", "Item", "Arrow", "Ranger", "This can't be targeted.\n1{A}: Deal 2 damage to target enemy.\nUpgrade X Gold: This Arrow deals +X more damage.", 2],
-[2, "Hand of the Protector", "0", "Hidden", "Tactic", "", "Druid", "2{A}: Target ally gains Defense equal to its Health Points until Dusk. You may exhaust a ready summon you control instead of a Hero to reveal this.", 1]];
+[2, "Hand of the Protector", "0", "Hidden", "Tactic", "", "Druid", "2{A}: Target ally gains Defense equal to its Health Points until Dusk. You may exhaust a ready summon you control instead of a Hero to reveal this.", 1],
+/* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
+[2, "Copper Ingot", "1", "", "Item", "Metal", "Generic", "Exile: Gain 1 Aura.", 1],
+[2, "Iron Ingot", "1", "", "Item", "Metal", "Generic", "Exile: Target ally gains +2 Defense until Dusk.", 1],
+[2, "Silver Ingot", "2", "", "Item", "Metal", "Generic", "Exile: Deal 3 damage to target summon.", 1],
+[2, "Platinum Ingot", "2", "", "Item", "Metal", "Generic", "Exile: Gain 3 Gold.", 1],
+[2, "Mithril Ingot", "3", "", "Item", "Metal", "Generic", "Exile: Draw 2 cards.", 1],
+[2, "Clockwork Pair", "1", "", "Recipe", "", "Artificer", "Craft: any two Metals. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Iron Guardians", "2", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and Silver Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Pocket Watch Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Gold Bar, Platinum Ingot and Rose Quartz. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Reclamation Kit Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Silver Ingot. (Play this only if that ingredient is in your inventory. Sacrifice it, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Blast Charge Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and Copper Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Gearwork Hammer Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and any Metal. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Silver Edge Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Silver Ingot and Iron Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[1, "Mithril Blade Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: Mithril Ingot and Platinum Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Quicksilver", "2", "", "Item", "Material", "Artificer", "This can be used as any ingredient.", 1],
+[1, "Warded Cloak Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: any Cloak, Platinum Ingot and Potion. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1]];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],
 ["Arnett Lifebinder", "Cleric", "1", "1", "1", "16", "1{A}, Exhaust: Heal another target for 2 HP.\n{L3} 2{A}, Exhaust: Heal another target for 5 HP.", 3],
@@ -383,6 +399,12 @@ const RAW_HEROES=[
 ["Rootfolk Elder", "Druid", "0", "1", "1", "16", "Exhaust: The next summon that enters this turn has Barkborn. (It gains DEF equal to its HP this turn.)\n{L3} Exhaust: All summons that enter this turn have Barkborn.", 1],
 ["Wild Shifter", "Druid", "0", "0", "2", "16", "Exhaust: Ready a summon you control.\n{L3} Exhaust: Ready up to two summons you control.", 3],
 ["Rousing Bandleader", "Bard", "1", "1", "1", "16", "Heroes you control have Banding.\n{L3} Heroes you control get +1 STR while banding.", 1],
+/* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
+["Artificer A", "Artificer", "0", "0", "2", "14", "Exhaust: Look at the top 3 cards of your library. You may put a Metal from among them into an empty inventory slot. Put the rest on the bottom of your library.", 1],
+["Artificer B", "Artificer", "0", "0", "2", "14", "Constructs made by your Recipes enter with +1 Strength and +1 Health Points.", 1],
+["Artificer C", "Artificer", "0", "0", "2", "14", "Once each turn, when this Hero Crafts, one of the ingredients may be any item in your inventory.", 1],
+["Artificer D", "Artificer", "0", "0", "2", "14", "", 1],
+["Artificer E", "Artificer", "0", "0", "2", "14", "", 1]
 ];
 const RAW_EQUIP=[
 ["Antler Crown", "", "Armor", "Druid", "The first Summon card the equipped Hero plays each turn costs 1 less Aura.", "3", "Head", "0", "0", 2],
@@ -437,6 +459,11 @@ const RAW_EQUIP=[
 ["Shimmering Cloak", "", "Armor", "Cleric", "When you equip this, the equipped Hero gains +X DEF this turn, where X is the amount of HP you have healed this turn.", "3", "Chest", "0", "0", 2],
 ["Multi Bow", "", "Weapon", "Ranger", "Destroy any number of Arrows in your inventory: The next Arrow you activate deals +3 damage for each Arrow destroyed this way.", "3", "Two-Handed", "0", "0", 3],
 ["Heavy Bow", "", "Weapon", "Ranger", "Arrows the equipped Hero activates deal double damage. Whenever this Hero becomes exhausted, put a Fatigue counter on it.", "4", "Two-Handed", "0", "0", 2],
+/* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
+["Tinker's Goggles", "", "Tool", "Artificer", "Once each turn, when the equipped Hero Crafts, one of the ingredients may be any Metal.", "2", "Head", "0", "0", 1],
+["Toolbelt", "", "Tool", "Artificer", "Recipes the equipped Hero plays cost 1 less Aura.", "2", "Accessory", "0", "0", 1],
+["Bellows", "", "Tool", "Artificer", "Whenever the equipped Hero Crafts, draw a card.", "2", "One-Handed", "0", "0", 1],
+["Scavenger's Tongs", "", "Tool", "Artificer", "Once each turn, when the equipped Hero Crafts, one of the ingredients may come from your discard pile instead of your inventory.", "2", "One-Handed", "0", "0", 1]
 ];
 const RAW_TOKENS=[
 ["Dagger", "Equipment", "Weapon", "Rogue", "1", "0", "", "0", "One-Handed", "Equipped Hero gains +1 STR.", "Armed; Blademaster's Choice", 1],
@@ -460,9 +487,11 @@ const RAW_TOKENS=[
 ["Greater Elemental", "Summon", "Elemental", "Druid", "5", "", "1", "0", "", "", "Greater Elemental", 1],
 ["Eliazar", "Summon", "Soldier", "Paladin", "3", "", "5", "0", "", "", "Sword of Eliazar", 3],
 ["Spell Damage Pillar", "Pillar", "", "Mage", "", "", "", "0", "", "Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves.", "Boost Ritual; Volt Jab; Lightning Lance; Lightning Rod; Ritual of Power; Splitting Ritual; Doubling Ritual", 2],
-["Pain Pillar", "Pillar", "", "Warlock", "", "", "", "0", "", "At Dusk, target loses X HP, where X is the number of Pain Pillars you control.", "Dark Insight; Ritual of Pain; Splitting Ritual; Doubling Ritual", 1]
+["Pain Pillar", "Pillar", "", "Warlock", "", "", "", "0", "", "At Dusk, target loses X HP, where X is the number of Pain Pillars you control.", "Dark Insight; Ritual of Pain; Splitting Ritual; Doubling Ritual", 1],
+/* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
+["Construct", "Summon", "Construct", "Artificer", "2 or 3", "", "2 or 3", "0", "", "Made by Recipes: 2/2 (Clockwork Pair) or 3/3 (Iron Guardians).", "Clockwork Pair; Iron Guardians", 1]
 ];
-const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]]};
+const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]], "Clockwork Pair": [["Construct", 2]], "Iron Guardians": [["Construct", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
 const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness","Sphere of Resistance":"Sphere of Hindrance","Battle Horn":"Xakro's War Horn"};
@@ -471,7 +500,7 @@ const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf
    Decks that contain one are flagged as not legal; they don't appear in the card list, deck builder or prints. */
 /* Set 2: hidden playtest set. Card, Hero or token names listed here only show on the site for admins and players given Set 2 access on the Admin page.
    Note: this file is public, so anyone reading the code can still see these cards. */
-const SET2_CARDS=[];
+const SET2_CARDS=["Copper Ingot", "Iron Ingot", "Silver Ingot", "Platinum Ingot", "Mithril Ingot", "Clockwork Pair", "Iron Guardians", "Pocket Watch Recipe", "Reclamation Kit Recipe", "Blast Charge Recipe", "Gearwork Hammer Recipe", "Silver Edge Recipe", "Mithril Blade Recipe", "Quicksilver", "Warded Cloak Recipe", "Artificer A", "Artificer B", "Artificer C", "Artificer D", "Artificer E", "Tinker's Goggles", "Toolbelt", "Bellows", "Scavenger's Tongs", "Construct"];
 const DEPRECATED_CARDS=[
 [2, "Fortify", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: The next attack deals no damage.", 1],
 [2, "Pull Together", "X", "", "Tactic", "", "Paladin", "Your party gains +X DEF this turn. Exhaust this Hero.", 2],
@@ -533,5 +562,13 @@ const EQUIP_UPGRADES={
 "Staff of Doom": [6, "Whenever the equipped Hero plays a Spell, target Hero loses HP equal to that Spell's Aura cost.", 0, 0],
 "Cloak of Hate": [5, "Equipped Hero gains +2 DEF. Whenever it becomes exhausted, deal 2 Dark damage to any target.", 0, 2],
 "Bark of the Protector": [5, "Equipped Hero gains +1 Defense, plus +1 Defense for each summon you control.", 0, 1],
-"The Reaper Cleaver": [7, "Equipped Hero gains +4 Strength. Whenever this Hero deals 7 or more damage to a Hero, ready it.", 4, 0]
+"The Reaper Cleaver": [7, "Equipped Hero gains +4 Strength. Whenever this Hero deals 7 or more damage to a Hero, ready it.", 4, 0],
+"Tinker's Goggles": [4, "Once each turn, when the equipped Hero Crafts, one of the ingredients may be any item.", 0, 0],
+"Toolbelt": [5, "Recipes the equipped Hero plays cost 1 less Aura and don't exhaust it.", 0, 0],
+"Bellows": [4, "Whenever the equipped Hero Crafts, draw a card and gain 1 Aura.", 0, 0],
+"Scavenger's Tongs": [4, "Once each turn, when the equipped Hero Crafts, one of the ingredients may come from any discard pile instead of your inventory.", 0, 0]
 };
+
+/* Set 2 Artificer Recipes (two-sided cards, "Set Two Rules Supplement"): front = the deck card (ingredients, Aura cost), back = what Crafting it makes.
+   ing: ingredients from your inventory ({name} = that card, {any:"Metal"} = any card with the Metal subtype, {any:"Cloak"} = any equipment with Cloak in its name). */
+const RECIPES={"Clockwork Pair": {"ing": [{"any": "Metal"}, {"any": "Metal"}], "back": {"name": "Clockwork Pair", "type": "Summon", "sub": "", "region": "", "cost": "", "pstr": 0, "pdef": 0, "rules": "Summon two 2/2 Constructs. Then put this card into your discard pile."}}, "Iron Guardians": {"ing": [{"name": "Iron Ingot"}, {"name": "Silver Ingot"}], "back": {"name": "Iron Guardians", "type": "Summon", "sub": "", "region": "", "cost": "", "pstr": 0, "pdef": 0, "rules": "Summon two 3/3 Constructs. Then put this card into your discard pile."}}, "Pocket Watch Recipe": {"ing": [{"name": "Gold Bar"}, {"name": "Platinum Ingot"}, {"name": "Rose Quartz"}], "back": {"name": "Pocket Watch", "type": "Item", "sub": "", "region": "", "cost": "", "pstr": 0, "pdef": 0, "rules": "Exhaust a ready Hero in your party: Activate this only when an opponent plays a card. Stall that card. (Set it aside with 2 stall counters on it. Each time that player takes an action, remove a stall counter. When the last one is removed, they may play the card without paying its Aura cost.)"}}, "Reclamation Kit Recipe": {"ing": [{"name": "Silver Ingot"}], "back": {"name": "Reclamation Kit", "type": "Item", "sub": "", "region": "", "cost": "", "pstr": 0, "pdef": 0, "rules": "Sacrifice this: Return a Metal card from your discard pile to an empty inventory slot."}}, "Blast Charge Recipe": {"ing": [{"name": "Iron Ingot"}, {"name": "Copper Ingot"}], "back": {"name": "Blast Charge", "type": "Item", "sub": "", "region": "", "cost": "", "pstr": 0, "pdef": 0, "rules": "Sacrifice this, Exhaust this Hero: Deal 3 damage to target enemy."}}, "Gearwork Hammer Recipe": {"ing": [{"name": "Iron Ingot"}, {"any": "Metal"}], "back": {"name": "Gearwork Hammer", "type": "Equipment", "sub": "Weapon", "region": "Two-Handed", "cost": "2", "pstr": 3, "pdef": 0, "rules": "Equipped Hero gains +3 Strength."}}, "Silver Edge Recipe": {"ing": [{"name": "Silver Ingot"}, {"name": "Iron Ingot"}], "back": {"name": "Silver Edge", "type": "Equipment", "sub": "Weapon", "region": "One-Handed", "cost": "2", "pstr": 2, "pdef": 0, "rules": "Equipped Hero gains +2 Strength. It deals double damage to summons."}}, "Mithril Blade Recipe": {"ing": [{"name": "Mithril Ingot"}, {"name": "Platinum Ingot"}], "back": {"name": "Mithril Blade", "type": "Equipment", "sub": "Weapon", "region": "One-Handed", "cost": "3", "pstr": 4, "pdef": 0, "rules": "Equipped Hero gains +4 Strength. Its attacks have Piercing 2. (They ignore 2 Defense.)"}}, "Warded Cloak Recipe": {"ing": [{"any": "Cloak"}, {"name": "Platinum Ingot"}, {"name": "Potion"}], "back": {"name": "Warded Cloak", "type": "Equipment", "sub": "Accessory", "region": "Accessory", "cost": "3", "pstr": 0, "pdef": 0, "rules": "The equipped Hero can't be the target of spells or abilities your opponents control.\nThis is made with 3 protection counters on it. Whenever a Hero in your party would be dealt damage, prevent that damage and remove a protection counter from this instead."}}};

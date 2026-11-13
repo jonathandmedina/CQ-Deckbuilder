@@ -910,7 +910,7 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;arrSync(s)
       ${auraBarHTML(s,pl)}<span class="res gold" title="Gold: earned at Dusk, spent in Town"><i class="coin" aria-hidden="true"></i> <b>${pl.gold}</b> Gold</span>
       ${mine?"":turnCounts(s,pid).join("")}${s.passed[pid]&&s.phase==="battle"?'<span class="res">Passed</span>':""}
       ${pc?`<button class="btn sm" data-pa="pick" data-u="P${pid}" style="outline:3px solid var(--warn)">Target ${esc(pl.name)}'s party</button>`:""}
-      <span class="pl-piles">${pl.echo.length?`<button class="res" data-pa="echo" data-p="${pid}" title="Cards waiting to be played again at the next Dawn">Echo <b>${pl.echo.length}</b></button>`:""}<span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
+      <span class="pl-piles">${(pl.stall||[]).length?`<span class="res" title="Stalled by a Pocket Watch: ${esc(pl.stall.map(c=>E.DB[c.id].name+(c.n>0?` (${c.n} stall counter${c.n>1?"s":""})`:" (ready to play free)")).join(", "))}">Stalled <b>${pl.stall.length}</b></span>`:""}${pl.echo.length?`<button class="res" data-pa="echo" data-p="${pid}" title="Cards waiting to be played again at the next Dawn">Echo <b>${pl.echo.length}</b></button>`:""}<span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
       <button class="res" data-pa="disc" data-p="${pid}">Discard <b>${pl.disc.length}</b></button>${pl.exile.length?`<button class="res" data-pa="exile" data-p="${pid}">Exile <b>${pl.exile.length}</b></button>`:""}</span></div>
     <div class="pl-row"><span class="lbl">Battlefield</span>${bf}</div>
     <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div>${zacts}</div></div>
@@ -972,6 +972,7 @@ function statB(v,base){return`<b class="${v>base?"up":v<base?"dn":""}">${v}</b>`
 function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB[h.id];const tags=[];
   if(h.dead)tags.push(`<span class="tg bad">${h.surr?"Surrendered":"Dead"}</span>`);
   if(h.ex&&!h.dead)tags.push('<span class="tg">Exhausted</span>');
+  {const w=Object.values(h.eq||{}).find(e=>e&&e.name==="Warded Cloak");if(w&&!h.dead)tags.push(`<span class="tg good" title="Warded Cloak: damage to a Hero in your party is prevented and a protection counter is removed instead">Warded ${w.prot||0}</span>`)}
   if(h.med)tags.push(`<span class="tg good">Meditating${h.keepMed?"":" (wakes)"}</span>`);
   if(h.plus)tags.push(`<span class="tg good">${h.plus} meditation</span>`);
   if(h.guard+h.eqGuard)tags.push(`<span class="tg good">Guard ${h.guard+h.eqGuard}</span>`);
@@ -1033,7 +1034,7 @@ function heroCardHTML(s,h,d,st,extra,soul,hacts){
   return`<div class="ph-card hk-card${h.dead?" down":""}${flipNow?" anim":""}"><div class="ph-inner"${flipNow?` style="${flipNow}"`:""}>
     <div class="ph-face">
       <div class="hk-nb"><img class="hk-ci" src="${ico}" alt="${esc(h.cls)}"><span class="hk-nm${d.name.length>17?" xl":d.name.length>13?" l":""}">${esc(d.name)}</span>${h.dead?"":aura}</div>
-      <div class="hk-art"><img src="${src}" alt="${esc(d.name)}" width="207" height="167" decoding="async">${cardOf(h.id)?zoomHTML(cardOf(h.id)):""}${extra?`<div class="hk-tags">${extra}</div>`:""}${hacts||""}</div>
+      <div class="hk-art"><img src="${src}" onerror="this.onerror=null;this.src='${ico}';this.classList.add('noart')" alt="${esc(d.name)}" width="207" height="167" decoding="async">${cardOf(h.id)?zoomHTML(cardOf(h.id)):""}${extra?`<div class="hk-tags">${extra}</div>`:""}${hacts||""}</div>
       <div class="hk-st">${h.dead?"":num("str","STR")+num("hp","HP")+num("def","DEF")}<span class="hk-ab" tabindex="0" aria-label="Ability: ${esc(rulesPlainSafe(d.rules))}">Ability<span class="hk-tip" role="tooltip"><span class="hk-tt">${esc(d.name)} <small>${esc(h.cls)} Hero</small></span>${rules}</span></span></div>
       ${pop}
     </div>
@@ -1065,7 +1066,8 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
     acts=`${sl.opt?'<button class="btn" data-pa="skip">Skip</button>':""}<button class="btn" data-pa="cancel">Cancel</button>`}
   else if(pr&&pr.pid===me){
     if(pr.type==="window"){const tr=pr.trig;const w=tr.kind==="party10"?"Your party has now taken 10 or more damage this turn":tr.kind==="attack"?`${esc(nameOf(tr.attacker))} attacks ${esc(nameOf(tr.target))}`:`${esc(s.p[tr.pid].name)} plays ${esc(tr.name||"a card")}${(tr.targets||[]).length?" targeting "+tr.targets.map(nameOf).map(esc).join(", "):""}`;
-      prompt=`⚡ ${w}. Reveal a Hidden card?`;acts=opts.filter(o=>o.type==="reveal").map((o,i,all)=>{const f=E.find(s,o.uid);const many=all.filter(x=>x.uid===o.uid).length>1;return`<button class="btn go" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="Exhaust ${esc(nameOf(o.hero))} to reveal it">Reveal ${esc(E.DB[f.o.id].name)}${many?` (exhaust ${esc(nameOf(o.hero))})`:""}</button>`}).join("")+'<button class="btn" data-pa="do" data-a=\'{"type":"decline"}\'>Don\'t reveal</button>'}
+      const stl=opts.filter(o=>o.type==="stall");
+      prompt=`⚡ ${w}. ${opts.some(o=>o.type==="reveal")?"Reveal a Hidden card?":"Respond?"}`;acts=stl.map(o=>`<button class="btn go" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="Set the card aside with 2 stall counters">Stall it with the Pocket Watch (exhaust ${esc(nameOf(o.hero))})</button>`).join("")+opts.filter(o=>o.type==="reveal").map((o,i,all)=>{const f=E.find(s,o.uid);const many=all.filter(x=>x.uid===o.uid).length>1;return`<button class="btn go" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="Exhaust ${esc(nameOf(o.hero))} to reveal it">Reveal ${esc(E.DB[f.o.id].name)}${many?` (exhaust ${esc(nameOf(o.hero))})`:""}</button>`}).join("")+`<button class="btn" data-pa="do" data-a='{"type":"decline"}'>${stl.length?"Don't respond":"Don't reveal"}</button>`}
     else if(pr.type==="manual")prompt=`✋ Resolve by hand: ${esc(pr.title)}`;
     else if(pr.type==="combo")prompt=pr.title?esc(pr.title):"Combo! Play a Combo card without using an action?";
     else if(pr.type==="ask")prompt=esc(pr.title||"Choose");
@@ -1143,6 +1145,7 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   opts.filter(o=>o.type==="useFree").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Use ${f.o.name} (no action)`))});
   if(opts.some(o=>o.type==="multiBow"))out.push('<button class="btn" data-pa="multi">Multi Bow: destroy Arrows</button>');
   opts.filter(o=>o.type==="eqAct").forEach(o=>{const f=E.find(s,o.uid);const x=(window.CQ_EQACT||{})[f.o.name];out.push(`<button class="btn" data-pa="eqact" data-u="${o.uid}">${esc(f.o.name)}: ${esc(x?x.label:"use")}</button>`)});
+  opts.filter(o=>o.type==="playStalled").forEach(o=>{const c=(s.p[me].stall||[]).find(x=>x.uid===o.uid);if(c)out.push(`<button class="btn go" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="Its stall counters are gone: play it without paying its Aura cost">Play ${esc(E.DB[c.id].name)} (Stalled, free)</button>`)});
   opts.filter(o=>o.type==="play"&&s.p[me].exile.some(x=>x.uid===o.uid)).forEach(o=>{const c=s.p[me].exile.find(x=>x.uid===o.uid);out.push(`<button class="btn go" data-pa="play" data-u="${o.uid}">Play ${esc(E.DB[c.id].name)} (Call of Nature)</button>`)});
   const lv=opts.filter(o=>o.type==="level");const LV={str:"STR",def:"DEF",aura:"AURA"};
   if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));

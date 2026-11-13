@@ -7,17 +7,19 @@ const SKIN=["clean","retro"].includes(document.documentElement.dataset.skin)?doc
    All images are blank templates from the "CQ - Tactics Frame (Digital Client)" export: the site draws the name, type line, region, upgrade cost, numbers and rules. */
 const artKey=n=>String(n).replace(/[^A-Za-z0-9]+/g,"_").replace(/^_+|_+$/g,"");
 const CARD_ART={hero:new Set(["Arcane_Scholar", "Arnett_Lifebinder", "Battle_Minstrel", "Beast_Tracker", "Blessed_Champion", "Bloodhowl", "Dark_Channeler", "Dark_Fang", "Dawn_Priest", "Demon_Pactist", "Divine_Knight", "Diviner_Mage", "Dr_Vonugutt", "Dum_Dum", "Echo_Performer", "Ember_Mage", "Essence_Reaper", "Forest_Scout", "Fury_Titan", "Grandmaster_Reece", "Harmony_Sage", "Hawkeye", "Hexcaster", "Holy_Guardian", "Inspiration_Herald", "King_of_Curses", "Lightbringer", "Monastery_Stalwart", "Night_Stalker", "Precision_Fighter", "Radiant_Oracle", "Radiant_Sentinel", "Rage_Brute", "Rootbinder", "Rootfolk_Elder", "Rousing_Bandleader", "Sage_Monk", "Sanctifier", "Savage_Raider", "Shadow_Ranger", "Skullcrusher", "Songweaver", "Storm_Caller", "Sun_Paladin", "Thorncaller", "Trainee_Vincent", "Valdo_Sticky_Fingers", "Venom_Dancer", "Verdant_Sage", "Veteran_Bowman", "Void_Binder", "Warden_of_the_Woods", "Whisper_Knife", "Wild_Archer", "Wild_Shifter"]),card:new Set(["Acceleration_Agent", "All_Play", "Almandine", "Amnesia_Puzzle_Box", "Antidote", "Arcane_Study", "Armed", "Arrested_Development", "Arrow_of_Hope", "Arrow_of_Persuasion", "Ascend", "Attack_Reversal", "Aura_Crystal", "Aura_Leech", "Aurawing", "Awakened_Fist", "Awestruck", "Balanced_Choice", "Ballad_of_Blades", "Battered", "Battle_Horn", "Xakro_s_War_Horn", "Bear_Trap", "Beast", "Beat_Down", "Bewilder", "Bind", "Blademaster_s_Choice", "Block_Progress", "Blockade", "Blood_Aura", "Blood_Frenzy", "Blood_Offering", "Bloodthirst", "Blunt_Force", "Blunt_Point_Force", "Boost_Ritual", "Brain_Rot", "Breath", "Broken_Blade", "Bruised", "Brute_s_Banner", "Bullseye", "Burden", "Call_of_Nature", "Camouflage", "Campfire", "Cancel", "Captain_s_Banner", "Carry_Radiance", "Chain_Lightning", "Chains_of_Darkness", "Charged_Barrage", "Choices", "Come_Together", "Conscript", "Coordinated_Attack", "Crescendo", "Curse_of_Exhaustion", "Cut_Off", "Dark_Arts", "Dark_Insight", "Dark_Jab", "Dark_Lance", "Dazzling_Melody", "Death_by_a_Thousand_Cuts", "Deep_Contemplation", "Defend_Prayer", "Delevel", "Disarm", "Disenchant", "Disorient", "Dissipate", "Distract", "Divine_Judgment", "Divine_Smite", "Doubling_Ritual", "Drawwing", "Dual_Shot", "Dynamite", "Elk", "Elk_of_the_Woods", "Embolden", "Energizing_Ale", "Energy_Stone", "Enfeeble", "Entangling_Roots", "Envenom", "Evolve", "Exile", "Extra_Protection", "Burgle", "Fade_the_Fury", "False_Cure", "Farewell", "Finisher", "Flame_Bolt", "Flame_Jab", "Flame_Lance", "Flame_Wave", "Flick_Dagger", "Flurry_of_Blows", "Focus", "Fog_of_Darkness", "Fortify", "Frailty", "Frog_in_the_Throat", "Frost_Spike", "Frostbite", "Full_Draw", "Full_Heal", "Gathering_Tree", "Glimpse_the_Future", "Gold_Bar", "Grapple", "Hack_and_Slash", "Hail", "Hand_to_Hand_Combat", "Harmonic_Flask", "Healer_s_Choice", "Healing_Beam", "Healing_Blast", "Healing_Relic", "Healing_Touch", "Heat_Wave", "Heavy_Beast", "Hero_s_Choice", "Horn", "Horn_Crystal", "Humble", "Ice_Bath", "Ice_Jab", "Ice_Lance", "Ice_Ray", "Inspiration", "Instrument_Bag", "Inversion_Stone", "Jab", "Larceny", "Level_Shot", "Level_Up", "Levitate", "Life_Boost", "Light_Blast", "Light_Helix", "Lightning_Bolt", "Lightning_Lance", "Lightning_Rod", "Line_It_Up", "Look_Ahead", "Lose_Control", "Lotus_Jab", "Lullaby", "Lunge", "Magic_Sink", "Mark_of_Doom", "Mass_Populate", "Mead_Offering", "Medical_Visit", "Meditate", "Memory_Loss", "Mind_Rend", "Mirrored_Chant", "Miscalculation", "Mocking_Doll", "Narrow_Escape", "Naturalize", "Nature_s_Choice", "Night_Terror", "Noble_Choice", "Noble_Promotion", "Null_Stone", "On_the_Job_Training", "Opening_Act", "Out_of_the_Woods", "Overdose", "Palm_Strike", "Peace", "Petal_Shrine", "Petty_Theft", "Phoenix_Down", "Pillage_the_Dead", "Pitfall", "Platinum_Bar", "Poison_Dart", "Populate", "Potion", "Power_Thrust", "Power_Vacuum", "Precognition", "Primal_Energy", "Protect", "Pull_Together", "Pummel", "Pump", "Purify", "Quick_Change", "Quickdraw", "Radiant_Strike", "Rally_the_Troops", "Rapacious_Encore", "Rapid_Shot", "Redirect", "Refire", "Refrain", "Reload", "Resourceful_Maneuver", "Resurrection", "Retribution", "Return_to_the_Earth", "Revitalize", "Righteous_Rage", "Rising_Dragon", "Ritual_of_Fang", "Ritual_of_Pain", "Ritual_of_Power", "Rose_Quartz", "Roundhouse", "Rousing_Chorus", "Run_It_Back", "Sanctuary", "Scrap_Metal", "Search_for_Knowledge", "Second_Chances", "Second_Wind", "Self_Sacrifice", "Serrated_Arrow", "Shadow_Strike", "Shatter", "Shield_Bash", "Silver_Bar", "Siphon_Life", "Sleep", "Sleeping_Potion", "Slow_Down", "Smash_and_Grab", "Smash_to_Smithereens", "Smoke_Bomb", "Smoke_Trail_Arrow", "Snare", "Snuff_Out", "Solo_Act", "Song_Book", "Song_of_Healing", "Sonic_Recall", "Spark", "Sphere_of_Hindrance", "Spike_Pit", "Split_Kick", "Splitting_Ritual", "Spore_Calling", "Spotters", "Spread_the_Sickness", "Stampede", "Standing_Ovation", "Step_In", "Storm_of_Insight", "Strong_Stance", "Stunner", "Sure_Fire_Choice", "Surprise_Attack", "Synchronous_Strike", "Take_a_Stand", "Tempo_Change", "The_Forbidden_Tuner", "The_Monolith", "Timely_Heals", "To_the_Armory", "Tome_of_Gim", "Tooth", "Tooth_Crystal", "Tooth_or_Horn", "Topaz", "Toxic_Cloud", "Tri_Shot", "Trophy_Rack", "Unburden", "Understanding", "Unity_of_the_Herd", "Unstoppable", "Vandalize", "Vanish", "Vial_of_Venom", "Vigil", "Volt_Jab", "War_Chant", "Wave_of_Life", "Weaken", "Weakening_Dirge", "Well_Trained", "Shield_Wall", "Withdrawal_Ailments", "Wolves", "Die_Swinging", "Blood_Price", "Warrior_s_Pyre", "Marching_Cadence", "Duet", "Call_and_Response", "Rebuke", "Bulwark_Prayer", "Ley_Grove", "Bloom", "Heartwood_Seed", "Reclaim", "Barkskin_Totem", "Shelter_from_the_Storm", "Bark_Blessing", "Rootfolk", "Great_Rootfolk", "Call_to_Companions", "Lesser_Elemental", "Greater_Elemental", "Tangle_Rod", "Caltrops", "Into_the_Trees", "Arrow_of_Devastation", "Arrow_of_Craftsmanship"]),equip:new Set(["Antler_Crown", "Apprentice_s_Wand", "Arm_Guard_of_Riverstead", "Boots_of_Riverstead", "Breastplate_of_Bravery", "Bronze_Chest_Plate", "Celestial_Harp", "Chalice_of_Life", "Chest_Plate_of_Riverstead", "Cloak_of_Protection", "Dagger_of_Riverstead", "Drums_of_War", "Feather_Blade", "Gauntlets_of_Growth", "Great_Axe", "Greaves_of_Light", "Hammer_of_Ruin", "Helm_of_Aura", "Helm_of_Protection", "Iron_Hand_Wraps", "Jun_Lao_s_Headband", "Knight_s_Sword", "Leg_Armor_of_Riverstead", "Long_Dagger", "Long_Sword", "Longbow", "Mace_of_Dawn", "Mystic_Quiver", "Poison_Tipped_Dagger", "Ring_of_Power", "Ring_of_Radiance", "Ring_of_Riverstead", "Ring_of_Vocation", "Ritual_Athame", "Sacred_Vestments", "Shadow_Cloak", "Staff_of_Doom", "Cloak_of_Hate", "Shillelagh", "Silver_Fiddle", "Sword_of_Eliazar", "Sword_of_Riverstead", "Thief_s_Dagger", "Tower_Shield", "Unpiercing_Chestplate", "Vambrace_of_Light", "War_Lute", "Shimmering_Cloak", "Multi_Bow", "Heavy_Bow"])};
-const ART_VER="5";
+const ART_VER="6";
 /* Blank frames (Component.Studio "CQ - Blank ... Frame (Digital Client)" exports): one per frame type per class, art window left empty.
    A card with no finished art yet still renders as a card image in the Card Art theme, using its class's blank frame. */
-const BLANK_ART={hero:new Set(["Artificer","Barbarian","Bard","Blacksmith","Cleric","Druid","Mage","Monk","Necromancer","Paladin","Ranger","Rogue","Warlock"]),card:new Set(["Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Paladin","Ranger","Rogue","Warlock"]),equip:new Set(["Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Paladin","Ranger","Rogue","Warlock"])};
+const BLANK_ART={hero:new Set(["Artificer","Barbarian","Bard","Blacksmith","Cleric","Druid","Mage","Monk","Necromancer","Paladin","Ranger","Rogue","Warlock"]),card:new Set(["Artificer","Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Necromancer","Paladin","Ranger","Rogue","Warlock"]),equip:new Set(["Artificer","Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Necromancer","Paladin","Ranger","Rogue","Warlock"])};
+/* classes with a Legendary blank frame (gem above the title bar): <kind>-<Class>-Legendary-<side>.webp */
+const BLANK_LEG=new Set(["Artificer","Necromancer"]);
 const ownArt=c=>!!CARD_ART[c.kind]&&CARD_ART[c.kind].has(artKey(c.name));
 const blankArt=c=>!ownArt(c)&&!!BLANK_ART[c.kind]&&BLANK_ART[c.kind].has(c.cls);
 /* Update 30: the party is 3 fixed slots (Lead, Center, Closer). In the builder d.heroes may hold null for an empty slot so the others keep their place. */
 const HN=d=>d&&d.heroes?d.heroes.filter(Boolean).length:0;
 const hcompact=a=>(a||[]).filter(Boolean);
 const hasArt=c=>SKIN==="art"&&(ownArt(c)||blankArt(c));
-const CLASS_COLOR_CLEAN={Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
+const CLASS_COLOR_CLEAN={Artificer:"#507B7F",Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
 const CLASS_TEXT_CLEAN={Cleric:"#231A00",Monk:"#2A1500"};
 /* retro colors are sampled from the class icons */
 const CLASS_COLOR_RETRO={Barbarian:"#BE1029",Bard:"#A9327C",Cleric:"#CAAF65",Druid:"#A8622F",Mage:"#0271B9",Monk:"#51A5C5",Paladin:"#DE8600",Ranger:"#567428",Rogue:"#4B6170",Warlock:"#4D1791",Generic:"#6D6F80",Artificer:"#507B7F",Blacksmith:"#673839",Necromancer:"#466E6B"};
@@ -37,15 +39,25 @@ const CARDS=[
 /* Weapon upgrades (update 19): one fixed upgrade per weapon, flipped to its upgraded side at the Blacksmith. c.up = {cost, rules, pstr, pdef} */
 {const UPG=(typeof EQUIP_UPGRADES!=="undefined")?EQUIP_UPGRADES:{};CARDS.forEach(c=>{const u=c.kind==="equip"&&UPG[c.name];if(u)c.up={cost:+u[0],rules:u[1],pstr:+u[2]||0,pdef:+u[3]||0}})}
 /* the upgraded side of a weapon, shaped like a normal card (used by the flip view and Print & Play) */
-function upFace(c){return Object.assign({},c,{id:c.id+"#up",face:"up",rules:c.up.rules,pstr:c.up.pstr,pdef:c.up.pdef})}
+/* Set 2 Recipes (RECIPES in cards-data.js): two-sided cards. c.up.recipe holds the back: what Crafting the Recipe makes. The flip view and Print & Play show it like an upgraded side. */
+{const RC=(typeof RECIPES!=="undefined")?RECIPES:{};CARDS.forEach(c=>{const r=c.type==="Recipe"&&RC[c.name];if(r)c.up=Object.assign({recipe:true,ing:r.ing},r.back,{cost:r.back.cost,pstr:+r.back.pstr||0,pdef:+r.back.pdef||0})})}
+const isRecipe=c=>!!(c&&c.up&&c.up.recipe);
+function upFace(c){if(isRecipe(c)){const b=c.up;return Object.assign({},c,{id:c.id+"#up",face:"up",name:b.name,type:b.type,sub:b.type==="Equipment"?[b.sub,b.region].filter(Boolean).join(" · "):b.sub,region:b.region,cost:b.type==="Summon"?"":b.cost,rules:b.rules,pstr:b.pstr,pdef:b.pdef,sup:c.sup,backOf:c.name})}
+  return Object.assign({},c,{id:c.id+"#up",face:"up",rules:c.up.rules,pstr:c.up.pstr,pdef:c.up.pdef})}
 const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?" · "+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],ver:r[11]||1,sup:""}));
 const TOKEN_BY_NAME=new Map(TOKENS.map(t=>[t.name,t]));
 const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
 /* Set 2 (hidden playtest set): cards named in SET2_CARDS (cards-data.js) only show for admins and players an admin gave Set 2 access (Admin page). */
 const SET2=new Set(typeof SET2_CARDS!=="undefined"?SET2_CARDS:[]);
 [...HEROES,...CARDS,...TOKENS].forEach(c=>{if(SET2.has(c.name))c.set=2});
+const SET2_CLASSES=["Artificer"];
+const set2On=()=>!!(S.access&&S.access.set2);
+const visClasses=()=>set2On()?[...CLASSES,...SET2_CLASSES]:CLASSES;
+const visTypes=()=>set2On()?[...TYPES,"Recipe"]:TYPES;
 const canSee=c=>!c||(c.set!==2||!!(S.access&&S.access.set2))&&(c.set!=="trials"||!!(S.access&&S.access.trials));
 const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
+/* Set 2 Recipes: what each Recipe makes is looked up by its own name (the Play tab shows made items and weapons by it); never listed as a deck card */
+CARDS.filter(isRecipe).forEach(c=>{const f=upFace(c);const m=Object.assign({},f,{id:c.up.name,face:"",up:null,kind:c.up.type==="Equipment"?"equip":"card",set:c.set,backOf:c.name});if(!BYID.has(m.id))BYID.set(m.id,m)});
 /* Trials module (co-op boss Trials, trials-data.js). Stricter than Set 2: these objects only exist in CARDS, TOKENS and BYID while the
    signed-in player has Trials access (admins, or the Trials box in Admin > Users). Without access, Trials names are masked everywhere. */
 const TRIALS_SET=new Set(typeof TRIALS_NAMES!=="undefined"?TRIALS_NAMES:[]);
@@ -57,7 +69,7 @@ const TRIALS_OBJS=typeof TRIALS_LOOT==="undefined"?[]:[
   ...TRIALS_SPAWNS.map(r=>({id:"t:"+r[0],kind:"token",tkind:"Summon",name:r[0],type:"Token",sub:`Spawn · ${r[1]}`,cls:"Trials",sup:"",cost:"",str:r[2],def:r[3],hp:r[4],rules:r[5],ver:r[6]||1,set:"trials"}))];
 const trialsOn=()=>!!(S.access&&S.access.trials);
 /* a card name or id the viewer may not see (a Trials card without Trials access) */
-const trialsHidden=id=>{const k=String(id||"").replace(/^t:/,"");return TRIALS_SET.has(k)&&!trialsOn()};
+const trialsHidden=id=>{const k=String(id||"").replace(/^[th]:/,"");return(TRIALS_SET.has(k)&&!trialsOn())||(SET2.has(k)&&!set2On())};
 const hiddenLabel=id=>trialsHidden(id)?"A card you don't have access to":id;
 /* a deck row from someone else (Best Decks, Community, profiles): hidden when it uses a card the viewer can't see */
 const showRow=r=>!Object.keys((r&&r.cards)||{}).some(trialsHidden);
@@ -79,7 +91,7 @@ function tokenStatLine(c){if(c.tkind==="Summon")return c.str+"/"+c.hp;if(c.tkind
 const sortName=n=>n.replace(/^"|"$/g,"").toLowerCase();
 const costNum=c=>c.cost==="X"?99:(c.cost===""?-1:+c.cost);
 const maxCopies=c=>c.sup==="Legendary"?1:3;
-const clsOrder=c=>c==="Generic"?99:CLASSES.indexOf(c);
+const clsOrder=c=>c==="Generic"?99:CLASSES.includes(c)?CLASSES.indexOf(c):CLASSES.length+Math.max(0,SET2_CLASSES.indexOf(c));
 const DECK_SIZE=50;
 /* tokens a deck can make: one entry per token, count = what every copy of every source makes */
 function tokensFor(d){
@@ -260,7 +272,7 @@ function setSession(session){
 /* Admin and Set 2 access (Supabase RPC my_access; see "Admin Panel SQL" in the project). Signed out or no SQL yet = no access. */
 async function loadAccess(){const uid=S.uid;let a={admin:false,set2:false,trials:false};
   try{const{data,error}=await SB.rpc("my_access");if(!error&&data)a={admin:!!data.admin,set2:!!(data.set2||data.admin),trials:!!(data.trials||data.admin)}}catch(e){}
-  if(uid!==S.uid)return;S.access=a;syncTrials();showAdminLink();if(["catalog","build","admin","rules","quickstart","trials-rules","best","community","decks"].includes(S.view))render()}
+  if(uid!==S.uid)return;S.access=a;syncTrials();showAdminLink();if(["catalog","build","admin","rules","quickstart","trials-rules","best","community","decks","changelog","leaderboard","player"].includes(S.view))render()}
 function showAdminLink(){const l=document.getElementById("adminTab");if(l)l.hidden=!(S.access&&S.access.admin)}
 async function loadDecks(){
   /* own decks only (the profiles update adds a public-read policy, so filter by user); is_private may not exist before the Profiles SQL runs */
@@ -396,6 +408,9 @@ function footHTML(c){
     return c.tkind==="Equipment"?[esc(c.region),"+"+esc(c.str)+" STR","Token"].join(" · "):"Pillar token"}
   if(c.kind==="equip"){const b=[esc(c.region)];if(c.pstr)b.push("+"+c.pstr+" STR");if(c.pdef)b.push("+"+c.pdef+" DEF");if(c.face==="up")b.push(`<b class="upcost">Upgraded · ${c.up.cost} Gold</b>`);
     return b.join(" · ")+(c.up?`<span class="flip" role="button" tabindex="0" data-flip title="${c.face==="up"?"Flip back to the normal side":`Flip to see the upgrade (${c.up.cost} Gold at the Blacksmith)`}" aria-label="${c.face==="up"?"Show normal side":"Show upgraded side"}">⟳</span>`:"")}
+  if(c.backOf&&!c.up&&c.kind!=="equip")return`<b class="upcost">Made by ${esc(c.backOf)}</b>`;
+  if(isRecipe(c)){const b=c.up;const made=c.face==="up"?[b.type==="Equipment"?esc(b.region):"",b.pstr?"+"+b.pstr+" STR":"",b.pdef?"+"+b.pdef+" DEF":"",`<b class="upcost">Made by ${esc(c.backOf||"")}</b>`].filter(Boolean).join(" · "):(c.sup==="Legendary"?"1 copy per deck":"Up to 3 copies")+" · Recipe";
+    return made+flipHTML(c)}
   return c.sup==="Legendary"?"1 copy per deck":"Up to 3 copies";
 }
 function cardHTML(c,o={}){
@@ -404,7 +419,7 @@ function cardHTML(c,o={}){
   const attrs=o.button?` type="button" data-act="${o.button}" data-id="${esc(c.id)}"`:o.pool?` data-act="inc" data-pool="${esc(c.id)}" data-id="${esc(c.id)}"`:"";
   if(hasArt(c))return artCardHTML(c,o,tag,attrs);
   return`<${tag} class="card${o.picked?" picked":""}${c.kind==="token"?" token":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}"${attrs}>
-  <div class="c-head"><span class="c-name">${esc(c.name)}${c.face==="up"?` <span class="upstar" title="Upgraded side">★</span>`:""}</span>${hasGem(c)?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
+  <div class="c-head"><span class="c-name">${esc(c.name)}${c.face==="up"?` <span class="upstar" title="${c.backOf?"Made by the Recipe":"Upgraded side"}">★</span>`:""}</span>${hasGem(c)&&!(c.backOf&&c.cost==="")?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
   <div class="c-rules">${rulesHTML(c.rules||"")}</div>
   <div class="c-foot">${footHTML(c)}${o.nozoom?"":zoomHTML(c)}</div>
@@ -413,8 +428,8 @@ function cardHTML(c,o={}){
 </${tag}>`;
 }
 /* Card Art theme tile: the card image itself; upgraded equipment shows its back (upgraded) side */
-function flipHTML(c){return c.up?`<span class="flip" role="button" tabindex="0" data-flip title="${c.face==="up"?"Flip back to the normal side":`Flip to see the upgrade (${c.up.cost} Gold at the Blacksmith)`}" aria-label="${c.face==="up"?"Show normal side":"Show upgraded side"}">⟳</span>`:""}
-function artSrc(c){const side=c.face==="up"?"up":"face";return blankArt(c)?`${ICON_BASE}art/blank/${c.kind}-${c.cls}-${side}.webp?v=${ART_VER}`:`${ICON_BASE}art/${c.kind}/${artKey(c.name)}-${side}.webp?v=${ART_VER}`}
+function flipHTML(c){if(isRecipe(c))return`<span class="flip" role="button" tabindex="0" data-flip title="${c.face==="up"?"Flip back to the Recipe":`Flip to see what it makes: ${esc(c.up.name)}`}" aria-label="${c.face==="up"?"Show the Recipe side":"Show what it makes"}">⟳</span>`;return c.up?`<span class="flip" role="button" tabindex="0" data-flip title="${c.face==="up"?"Flip back to the normal side":`Flip to see the upgrade (${c.up.cost} Gold at the Blacksmith)`}" aria-label="${c.face==="up"?"Show normal side":"Show upgraded side"}">⟳</span>`:""}
+function artSrc(c){const side=c.face==="up"?"up":"face";if(blankArt(c)){/* a Recipe's made side uses the frame of what it makes; tactic blanks have no upgraded side */const bk=c.backOf&&c.type==="Equipment"?"equip":c.kind,bs=c.backOf||bk!=="equip"?"face":side;return `${ICON_BASE}art/blank/${bk}-${c.cls}${c.sup==="Legendary"&&bk!=="hero"&&BLANK_LEG.has(c.cls)?"-Legendary":""}-${bs}.webp?v=${ART_VER}`}return `${ICON_BASE}art/${c.kind}/${artKey(c.name)}-${side}.webp?v=${ART_VER}`}
 function artAlt(c){return`${c.name}${c.face==="up"?" (upgraded)":""}: ${String(c.rules||"").replace(/\{A\}/g," Aura")}`}
 /* Card Image Template (Card Art theme): the image is a blank Component.Studio export; rules text and numbers are laid over it.
    Positions are in px of the 825x1125 export (bleed included); the image is cropped 37px each side, so the overlay box is 751x1051.
@@ -549,10 +564,10 @@ function viewCatalog(){
   const list=filterSort(all,f);
   return`<div class="bhead"><h1>Cards</h1><a href="#build" class="btn primary go newdeck build-go">Build a Deck</a></div>
   <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.filter(canSee).length} Heroes, ${CARDS.filter(canSee).length} deck cards, ${TOKENS.filter(canSee).length} tokens.${SET2.size&&S.access&&S.access.set2?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===2).length} Set 2 cards (hidden playtest set).`:""}${trialsOn()&&TRIALS_OBJS.length?` Includes ${TRIALS_OBJS.length} Trials module cards (hidden; pick Trials module under Type).`:""}</p>
-  <div class="bar">${classChips(f.cls,"cat-cls",[...CLASSES,"Generic"])}</div>
+  <div class="bar">${classChips(f.cls,"cat-cls",[...visClasses(),"Generic"])}</div>
   <div class="bar">
     <label class="field" for="cat-q">Search <input type="search" id="cat-q" data-act="cat-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
-    <label class="field" for="cat-type">Type ${selectHTML("cat-type","cat-type",f.type,[["all","All"],["Hero","Heroes"],...TYPES.map(t=>[t,t]),["Token","Tokens"],...(trialsOn()?[["Trials","Trials module"]]:[])])}</label>
+    <label class="field" for="cat-type">Type ${selectHTML("cat-type","cat-type",f.type,[["all","All"],["Hero","Heroes"],...visTypes().map(t=>[t,t]),["Token","Tokens"],...(trialsOn()?[["Trials","Trials module"]]:[])])}</label>
     <label class="field" for="cat-sort">Sort by ${selectHTML("cat-sort","cat-sort",f.sort,SORTS)}</label>
     <span class="count">${list.length} shown</span>
   </div>
@@ -566,7 +581,7 @@ function heroDigitalHTML(h,slot){
   const sq=(f,l,t)=>`<span class="dh-sq dh-${f}" title="${t} ${esc(h[f])}"><b>${esc(h[f])}</b><i>${l}</i></span>`;
   return`<div class="dh-card">${slot?`<span class="dh-slot">${esc(slot)}</span>`:""}
     <div class="dh-nb"><img class="dh-ci" src="${ico}" alt="${esc(h.cls)}"><span class="dh-nm${h.name.length>17?" xl":h.name.length>13?" l":""}">${esc(h.name)}</span><span class="dh-au" title="Aura ${esc(h.aura)}">${esc(h.aura)}</span></div>
-    <div class="dh-art"><img src="${src}" alt="${esc(h.name)}" width="207" height="167" loading="lazy" decoding="async">${zoomHTML(h)}</div>
+    <div class="dh-art"><img src="${src}" onerror="this.onerror=null;this.src='${ico}';this.classList.add('noart')" alt="${esc(h.name)}" width="207" height="167" loading="lazy" decoding="async">${zoomHTML(h)}</div>
     <div class="dh-st">${sq("str","STR","Strength")}${sq("hp","HP","Health Points")}${sq("def","DEF","Defense")}<span class="dh-ab" tabindex="0">Ability<span class="dh-tip" role="tooltip"><span class="dh-tt">${esc(h.name)} <small>${esc(h.cls)} Hero</small></span>${h.rules?artRulesHTML(h.rules):"<p>No ability.</p>"}</span></span></div>
   </div>`}
 function partySlots(d){
@@ -588,7 +603,7 @@ function viewBuild(){
     return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button></div>${stepsHTML()}
     <h2 class="party-h">Choose your party.</h2><p class="lede">Pick three Heroes for your party, in order. Then pick from their specific class cards or generic cards to build your strategy.</p>
     ${partySlots(d)}
-    <div class="bar">${classChips(S.b.heroCls,"hero-cls",CLASSES)}</div>
+    <div class="bar">${classChips(S.b.heroCls,"hero-cls",visClasses())}</div>
     <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${HN(d)===3?"":"disabled"}>Continue to cards →</button>
       <span class="count">${HN(d)}/3 Heroes chosen</span>
       ${HN(d)||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
@@ -606,7 +621,7 @@ function viewBuild(){
       <div class="bar">${classChips(f.cls,"b-cls",[...pcls.sort((a,b)=>clsOrder(a)-clsOrder(b)),"Generic"])}</div>
       <div class="bar">
         <label class="field" for="b-q">Search <input type="search" id="b-q" data-act="b-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
-        <label class="field" for="b-type">Type ${selectHTML("b-type","b-type",f.type,[["all","All"],...TYPES.map(t=>[t,t])])}</label>
+        <label class="field" for="b-type">Type ${selectHTML("b-type","b-type",f.type,[["all","All"],...visTypes().map(t=>[t,t])])}</label>
         <label class="field" for="b-sort">Sort by ${selectHTML("b-sort","b-sort",f.sort,SORTS)}</label>
         <button type="button" class="btn sm" data-act="to-heroes">Change Heroes</button>
       </div>
@@ -1014,7 +1029,7 @@ function drawCard(ctx,c,W,H){
     st.forEach(([k,v],i)=>{const bx=ix+22*s+i*(bw+14*s),by=footY+18*s,bh=footH-40*s;ctx.strokeStyle=col;ctx.lineWidth=4*s;rr(ctx,bx,by,bw,bh,12*s);ctx.stroke();
       ctx.textAlign="center";ctx.fillStyle="#1C232E";ctx.font=`800 ${50*s}px ${F_DISP}`;ctx.fillText(String(v),bx+bw/2,by+bh*0.55);ctx.font=`700 ${22*s}px ${F_BODY}`;ctx.fillStyle="#5A6474";ctx.fillText(k,bx+bw/2,by+bh-14*s);ctx.textAlign="left"});
   }else{
-    let ft=c.kind==="token"?(c.tkind==="Equipment"?[c.region,"+"+c.str+" STR","Token"].join("  ·  "):"Pillar token"):c.kind==="equip"?[c.region,c.pstr?"+"+c.pstr+" STR":"",c.pdef?"+"+c.pdef+" DEF":"",c.face==="up"?"UPGRADED ("+c.up.cost+" Gold)":(c.up?"Upgrade: "+c.up.cost+" Gold":"")].filter(Boolean).join("  ·  "):(c.sup==="Legendary"?"Legendary · 1 per deck":"");
+    let ft=c.kind==="token"?(c.tkind==="Equipment"?[c.region,"+"+c.str+" STR","Token"].join("  ·  "):"Pillar token"):c.kind==="equip"?[c.region,c.pstr?"+"+c.pstr+" STR":"",c.pdef?"+"+c.pdef+" DEF":"",c.face==="up"?"UPGRADED ("+c.up.cost+" Gold)":(c.up?"Upgrade: "+c.up.cost+" Gold":"")].filter(Boolean).join("  ·  "):isRecipe(c)?(c.face==="up"?[c.up.type==="Equipment"?c.up.region:"",c.pstr?"+"+c.pstr+" STR":"",c.pdef?"+"+c.pdef+" DEF":"","MADE BY "+String(c.backOf||"").toUpperCase()].filter(Boolean).join("  ·  "):(c.sup==="Legendary"?"Legendary · ":"")+"Recipe · sleeve the made side behind it"):(c.sup==="Legendary"?"Legendary · 1 per deck":"");
     ctx.font=`700 ${30*s}px ${F_BODY}`;ctx.fillStyle="#4C5563";ctx.fillText(ft,ix+22*s,footY+50*s);
   }
   ctx.font=`700 ${20*s}px ${F_DISP}`;ctx.fillStyle=tcol;ctx.globalAlpha=.85;ctx.textAlign="center";ctx.fillText("CRYSTAL QUEST",W/2,H-6*s);

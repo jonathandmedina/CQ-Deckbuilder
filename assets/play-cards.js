@@ -576,4 +576,33 @@ OPS.equipFree=(s,pid,pr,picks)=>{const pl=s.p[pid];const h=E.heroByUid(s,pr.hero
   if(i>=0){o=E.eqObjFromCard(s,pid,pl.hand.splice(i,1)[0])}else{i=pl.inv.findIndex(x=>x.uid===u);if(i>=0)o=pl.inv.splice(i,1)[0]}
   if(o){E.log(s,`${h.name} equips ${o.name} for free.`,pid);E.equipTo(s,h,o)}})};
 OPS.fromDisc=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(c=>c.uid===u);if(i>=0){const c=pl.disc.splice(i,1)[0];pl.hand.push(c);E.log(s,`${pl.name} returns ${E.DB[c.id].name} to hand.`,pid)}})};
+
+/* ===== Set 2: Artificer (Set Two Rules Supplement) ===== */
+/* Metals: generic items; each has its own use (Exile). Artificers also use them as ingredients. */
+def("Copper Ingot",item(0,[],c=>{c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{exile:true}));
+def("Iron Ingot",item(0,[AL],c=>{if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 Defense until Dusk.`)}},{exile:true}));
+def("Silver Ingot",item(0,[SUM],c=>D(c,c.t[0],3),{exile:true}));
+def("Platinum Ingot",item(0,[],c=>{c.me.gold+=3;log(c,`${c.me.name} gains 3 Gold.`)},{exile:true}));
+def("Mithril Ingot",item(0,[],c=>draw(c,2),{exile:true}));
+/* Quicksilver: no effect of its own; Craft can use it as any ingredient (E.craftPlan) */
+S["Quicksilver"]={};
+/* Recipes: the ingredients were paid when the card was played (E.payCraft). Resolving flips it: Constructs enter play (the Recipe goes to the discard pile);
+   a made item or weapon goes into your inventory. "Exhaust this Hero" unless an upgraded Toolbelt is equipped. */
+const recipe=n=>def(n,{run(c){const keep=E.flipRecipe(c.s,c.pid,c.inst);
+  if(c.actor&&!c.actor.dead){if(E.hasUp(c.s,c.actor,"Toolbelt"))log(c,`Upgraded Toolbelt: ${c.actor.name} isn't exhausted.`);else exMe(c)}
+  return keep?"stay":undefined}});
+Object.keys(E.RECIPES||{}).forEach(recipe);
+/* made items */
+def("Blast Charge",item(0,[EN],c=>D(c,c.t[0],3),{sac:true,ex:true}));
+def("Reclamation Kit",item(0,[],c=>{const ms=c.me.disc.filter(x=>(E.DB[x.id]||{}).sub==="Metal");if(!ms.length){log(c,"Reclamation Kit: no Metal in your discard pile.");return}
+  E.pushChoose(c.s,c.pid,{title:"Reclamation Kit: return a Metal to an empty inventory slot",cards:ms.map(x=>x.uid),min:1,max:1,op:"discToInv"})},{sac:true,can:(s,pid)=>s.p[pid].disc.some(x=>(E.DB[x.id]||{}).sub==="Metal")}));
+OPS.discToInv=OPS.discToInv||((s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i<0)return;if(pl.inv.length>=E.slots(s,pid)){E.log(s,"There's no empty inventory slot.",pid);return}
+  const x=pl.disc.splice(i,1)[0];pl.inv.push(E.invObj(s,pid,x));E.log(s,`${E.DB[x.id].name} returns to ${pl.name}'s inventory.`,pid)})});
+S["Pocket Watch"]={}; /* answered from the response window (E.canStall) */
+/* Heroes */
+hab("Artificer A",[{label:"Look at the top 3 (a Metal to inventory)",can:(s,pid)=>s.p[pid].lib.length>0,run(c){const top=c.me.lib.slice(-3);
+  const room=c.me.inv.length<E.slots(c.s,c.pid);const ms=top.filter(x=>(E.DB[x.id]||{}).sub==="Metal");
+  log(c,`Artificer A: ${c.me.name} looks at the top ${top.length} card${top.length===1?"":"s"} of their library.`);
+  if(ms.length&&room)E.pushChoose(c.s,c.pid,{title:"Artificer A: put a Metal from among them into an empty inventory slot? The rest go on the bottom of your library.",cards:ms.map(x=>x.uid),min:0,max:1,op:"reload",look:top.map(x=>x.uid)});
+  else{log(c,ms.length?"Artificer A: there's a Metal, but the inventory is full.":"Artificer A: no Metal among them.");OPS.reload(c.s,c.pid,{look:top.map(x=>x.uid)},[])}}}]);
 })(typeof window!=="undefined"?window:globalThis);

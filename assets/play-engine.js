@@ -16,6 +16,11 @@ const _RC=typeof RAW_CARDS!=="undefined"?RAW_CARDS:root.RAW_CARDS,_RE=typeof RAW
 (_RH||[]).forEach(r=>{DB["h:"+r[0]]={id:"h:"+r[0],name:r[0],cls:r[1],str:num(r[2]),def:num(r[3]),aura:num(r[4]),hp:num(r[5]),rules:r[6],type:"Hero",kind:"hero"}});
 {const RN=typeof CARD_RENAMES!=="undefined"?CARD_RENAMES:(root.CARD_RENAMES||{});for(const o in RN){if(DB[RN[o]]&&!DB[o])DB[o]=DB[RN[o]];if(DB["h:"+RN[o]]&&!DB["h:"+o])DB["h:"+o]=DB["h:"+RN[o]]}}
 (_RT||[]).forEach(r=>{TOK[r[0]]={name:r[0],tkind:r[1],sub:r[2],cls:r[3],str:num(r[4]),def:num(r[5]),hp:num(r[6]),cost:num(r[7]),region:r[8],rules:r[9]}});
+/* Set 2 Artificer (Set Two Rules Supplement): two-sided Recipe cards. DB[recipe].recipe = {ing, back}. What a Recipe makes gets its own DB entry
+   (id = the made card's name, made = the Recipe's id). Made items and weapons are for the whole party (Generic class); when one leaves play, the Recipe card goes to the discard pile. */
+const RCP=typeof RECIPES!=="undefined"?RECIPES:(root.RECIPES||{});E.RECIPES=RCP;
+for(const n in RCP){const r=RCP[n],b=r.back;if(DB[n])DB[n].recipe=r;
+  if(b.type!=="Summon"&&!DB[b.name])DB[b.name]={id:b.name,name:b.name,cost:b.cost,sup:"",type:b.type,sub:b.type==="Equipment"?b.sub:"",cls:"Generic",rules:b.rules,kind:b.type==="Equipment"?"equip":"card",region:b.region,pstr:num(b.pstr),pdef:num(b.pdef),made:n}}
 const CLASSES=["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock"];E.CLASSES=CLASSES;
 const STATUS=["burn","poison","wound","confuse","stun"];E.STATUS=STATUS;
 E.STATUS_NAME={burn:"Burned",poison:"Poisoned",wound:"Wounded",confuse:"Confused",stun:"Stunned"};
@@ -313,12 +318,14 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(tgt.kind==="hero"){const tp=P(s,tgt.owner);if(tp.fl.preventNext&&(o.card||o.combat)&&ctrl(s,src||tgt)!==tgt.owner){tp.fl.preventNext=false;log(s,`Smoke Trail Arrow prevents the damage to ${tgt.name}.`);stat(s,"prev",tgt.owner,"Smoke Trail Arrow",amt);return 0}
     let g=tgt.guard;const ga=Math.min(g,a);tgt.guard-=ga;a-=ga;const ge=Math.min(tgt.eqGuard,a);tgt.eqGuard-=ge;a-=ge;
     if(ga>0)creditGuard(s,tgt,ga);if(ge>0){const ge1=eqList(tgt).find(e=>/Guard 1/.test(def(e).rules||""));stat(s,"prev",tgt.owner,ge1?ge1.name:"Equipment Guard",ge)}}
+  if(src&&src.kind==="hero"&&tgt.kind==="summon"&&hasEqN(src,"Silver Edge"))a*=2; /* Set 2 Silver Edge: double damage to summons */
   let d=defOf(s,tgt);let pierce=o.pierce||0;
   if(tgt.kind==="hero"&&hasEqN(tgt,"Unpiercing Chestplate"))pierce=0;
   if(o.ignoreDef)d=0;else d=Math.max(0,d-pierce);
   let dealt=Math.max(0,a-d);
   /* Piercing punches through: at least X of the damage always gets through, however much DEF the target has (Nov 12, 2026) */
   if(pierce>0&&!o.ignoreDef)dealt=Math.max(dealt,Math.min(pierce,a));
+  if(dealt>0){const w=wardFor(s,tgt);if(w){w.prot--;log(s,`Warded Cloak prevents ${dealt} damage to ${tgt.name} (${w.prot} protection counter${w.prot===1?"":"s"} left).`);stat(s,"prev",tgt.owner,"Warded Cloak",dealt);dealt=0;a=0}}
   tgt.dmg=(tgt.dmg||0)+dealt;
   if(!o.ignoreDef&&a>dealt)creditDef(s,tgt,a-dealt);
   if(dealt>0){s.dmgTo=s.dmgTo||null;if(s.dmgTo){const sd=ctrl(s,tgt);s.dmgTo[sd]=(s.dmgTo[sd]||0)+dealt}}
@@ -398,7 +405,7 @@ function die(s,h){const pl=P(s,h.owner);h.fl.dyingDone=false;pl.t.died=(pl.t.die
   if(heroIs(h,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre"){x.ctr=x.ctr||{};if(true){x.ctr.fury=(x.ctr.fury||0)+1;log(s,`Warrior's Pyre gets a Fury counter (${x.ctr.fury}).`,h.owner)}}});
   s.p.forEach((_,i)=>overflow(s,i));
 }
-function toDisc(s,o){const owner=o.owner;if(o.tok)return;const pl=P(s,owner);pl.disc.push({uid:o.uid,id:o.id,owner})}
+function toDisc(s,o){const owner=o.owner;if(o.tok)return;const pl=P(s,owner);pl.disc.push({uid:o.uid,id:(DB[o.id]&&DB[o.id].made)||o.id,owner})}
 function toInv(s,pid,o){const pl=P(s,pid);pl.inv.push(o);overflow(s,pid)}
 E.toInv=toInv;
 /* a discard-pile entry is only {uid,id,owner}; rebuild a full inventory object before it goes back to inventory (fixes Refire showing "undefined") */
@@ -423,7 +430,7 @@ function destroyObj(s,o,exile){const f=find(s,o.uid);if(!f)return;const pl=P(s,f
     return}
   if(o.tok||o.kind==="pillar"||o.kind==="doll")return;
   if(o.under&&o.under.length){o.under.forEach(c=>P(s,c.owner).disc.push(c));o.under=[]}
-  const ow=P(s,o.owner);if(exile)ow.exile.push({uid:o.uid,id:o.id,owner:o.owner});else toDisc(s,o)}
+  const ow=P(s,o.owner);if(exile)ow.exile.push({uid:o.uid,id:(DB[o.id]&&DB[o.id].made)||o.id,owner:o.owner});else toDisc(s,o)}
 E.destroyObj=destroyObj;
 function checkWin(s){if(s.over)return;const dead=s.p.map(pl=>pl.heroes.every(h=>h.dead));
   if(dead[0]||dead[1]){s.over=true;s.winner=dead[0]&&dead[1]?-1:(dead[0]?1:0);s.pend=[];s.cur=null;s.qatk=null;
@@ -486,6 +493,7 @@ function cardCost(s,pid,actor,d,x){let c=d.cost==="X"?(x||0):num(d.cost);const p
   if(actor&&actor.kind==="hero"&&eqList(actor).some(e=>e.name==="Ring of Vocation"&&e.x&&e.x.cls===d.cls&&isUp(s,e)))c-=1;
   if(d.type==="Summon"&&actor&&hasEqN(actor,"Antler Crown")&&actor.fl.antler!==s.round)c-=1;
   if(d.sub==="Combo"&&pl.fl.petalDisc)c-=1;
+  if(d.type==="Recipe"&&actor&&hasEqN(actor,"Toolbelt"))c-=1; /* Set 2 Toolbelt */
   if(actor&&actor.kind==="hero")c+=burden(actor);
   if(d.cls!=="Warlock"){s.p.forEach(p2=>{c+=invCount(p2,"Sphere of Hindrance")})}
   return Math.max(0,c)}
@@ -527,6 +535,7 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
     if((o.kind==="hero"||o.kind==="summon")&&isEnemy(o)&&stealth(s,o)&&!o.dead&&viaCard)return false; /* update 29: Stealth summons too */
     if(!viaCard&&o.kind==="hero"&&isEnemy(o)&&modHas(o,"noAttack"))return false; /* Levitate: can't be attacked this turn */ /* Stealth: can't be targeted by enemy cards or abilities, but can be attacked */
     if(viaCard&&cardProof(s,o,isEnemy(o)))return false;
+    if(viaCard&&o.kind==="hero"&&isEnemy(o)&&(!ctx.card||ctx.card.type==="Spell")&&hasEqN(o,"Warded Cloak"))return false; /* Set 2 Warded Cloak: not by your opponents' spells or abilities */
     if(viaCard&&o.kind==="hero"&&isEnemy(o)&&ctx.card&&ctx.card.type==="Spell"&&hasUpN(s,o,"Helm of Protection"))return false; /* update 26: upgraded Helm of Protection */
     if(viaCard&&o.kind==="card"&&/can't be targeted/i.test(def(o).rules||"")&&def(o).type==="Item")return false; /* Arrow of Craftsmanship */
     if(spec.f&&!spec.f(s,o,ctx))return false;return true});
@@ -563,6 +572,7 @@ function canPlayCard(s,pid,actor,c,free){const d=DB[c.id];if(!d||!actor)return f
   if(d.kind==="equip"){const e={cls:d.cls,id:d.id};if(!canUseEq(s,actor,Object.assign({},d,{id:d.id})))return false}
   const sc=SC()[d.name];
   if(sc&&sc.can&&d.sup!=="Hidden"&&!sc.can(s,pid,actor))return false;
+  if(d.type==="Recipe"&&!craftPlan(s,pid,actor,d))return false; /* Set 2 Craft: the ingredients must be there */
   if(free)return true;
   const minX=0;return cardCost(s,pid,actor,d,minX)<=P(s,pid).aura}
 E.canPlayCard=canPlayCard;
@@ -604,6 +614,8 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
     const seen=new Set();
     pl.hand.forEach(c=>{const d=DB[c.id];if(seen.has(c.id))return;
       if(canPlayCard(s,pid,a,c)){seen.add(c.id);out.push({type:"play",uid:c.uid})}});
+    /* Set 2 Stall: a Stalled card with no stall counters left can be played without paying its Aura cost */
+    (pl.stall||[]).forEach(c=>{if(!(c.n>0)&&canPlayCard(s,pid,a,c,true))out.push({type:"playStalled",uid:c.uid})});
     /* Call of Nature: a Summon card exiled this turn can be played */
     (pl.t.nature||[]).forEach(u=>{const c=pl.exile.find(x=>x.uid===u);if(c&&canPlayCard(s,pid,a,c))out.push({type:"play",uid:u})});
     if(!a.fl.noAttack&&!(chained(a)&&pl.aura<1))out.push({type:"attack",att:a.uid});
@@ -636,7 +648,8 @@ function itemCost(s,pid,a,o){if(s.bonus&&s.bonus.free&&s.bonus.pid===pid&&a&&s.b
 E.abilityCost=abilityCost;E.itemCost=itemCost;
 function promptOptions(s,pid,pr){
   if(pr.type==="window"){const out=[{type:"decline"}];
-    P(s,pid).inv.forEach(o=>{if(o.fd&&canReveal(s,pid,o,pr))revealHeroes(s,pid,o,pr).forEach(h=>out.push({type:"reveal",uid:o.uid,hero:h.uid}))});return out}
+    P(s,pid).inv.forEach(o=>{if(o.fd&&canReveal(s,pid,o,pr))revealHeroes(s,pid,o,pr).forEach(h=>out.push({type:"reveal",uid:o.uid,hero:h.uid}))});
+    if(canStall(s,pid,pr.trig)){const w=watchFor(s,pid);living(P(s,pid)).filter(h=>!h.ex).forEach(h=>out.push({type:"stall",uid:w.uid,hero:h.uid}))}return out}
   if(pr.type==="combo"){const out=[{type:"decline"}];pr.cands.forEach(u=>{const c=findCardAnywhere(s,pid,u);if(c){const a=comboActor(s,pr,u);if(a&&!a.dead&&canPlayCards(a)&&(pr.free||cardCost(s,pid,a,DB[c.id])<=P(s,pid).aura))out.push({type:"comboPlay",uid:u})}});return out}
   if(pr.type==="ask")return pr.opts.map((_,i)=>({type:"ask",i}));
   if(pr.type==="scry")return[{type:"scry"}];
@@ -645,7 +658,7 @@ function promptOptions(s,pid,pr){
   if(pr.type==="mode")return pr.opts.map((_,i)=>({type:"pick",i}));
   return[]}
 function heroByUid(s,uid){const f=find(s,uid);return f&&f.o.kind==="hero"?f.o:null}
-function findCardAnywhere(s,pid,uid){const pl=P(s,pid);return pl.hand.find(c=>c.uid===uid)||pl.lib.find(c=>c.uid===uid)||((pl.t.nature||[]).includes(uid)?pl.exile.find(c=>c.uid===uid):null)||pl.disc.find(c=>c.uid===uid)}
+function findCardAnywhere(s,pid,uid){const pl=P(s,pid);return pl.hand.find(c=>c.uid===uid)||(pl.stall||[]).find(c=>c.uid===uid)||pl.lib.find(c=>c.uid===uid)||((pl.t.nature||[]).includes(uid)?pl.exile.find(c=>c.uid===uid):null)||pl.disc.find(c=>c.uid===uid)}
 /* combo-style prompts: Come Together picks a Hero per revealed card (update 23) */
 function comboActor(s,pr,uid){return heroByUid(s,(pr.actors&&pr.actors[uid])||pr.actor)}
 E.comboActor=comboActor;
@@ -666,7 +679,7 @@ function canReveal(s,pid,o,pr){if(pr.noHidden)return false;const d=def(o);if(d.s
   if(!revealHero(s,pid,o,pr))return false;if(hiddenCost(s,pid,o)>P(s,pid).aura)return false;
   const h=hiddenScript(o);if(!h)return!["dying","afterDmg","dusk"].includes(pr.trig.kind);return[].concat(h.when).includes(pr.trig.kind)&&(!h.ok||h.ok(s,pid,pr.trig))}
 E.canReveal=canReveal;
-function windowFor(s,pid,trig){if(trig.noHidden)return false;const pl=P(s,pid);return pl.inv.some(o=>o.fd&&canReveal(s,pid,o,{trig}))}
+function windowFor(s,pid,trig){if(trig.noHidden)return false;const pl=P(s,pid);return pl.inv.some(o=>o.fd&&canReveal(s,pid,o,{trig}))||canStall(s,pid,trig)}
 
 /* ---------- need(): target slots for an action ---------- */
 E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
@@ -677,7 +690,7 @@ E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
   if(a.type==="useFree"){const f=find(s,a.uid);if(!f)return[];const isc=SC()[f.o.name];return specsFor(isc.act,a.modes).map(sp=>mk(sp,{actor:null,item:f.o}))}
   if(a.type==="fixPlay"){const c=pl.hand.find(x=>x.uid===a.uid);if(!c)return[];const d=DB[c.id];const sc=SC()[d.name];const act=fixHero(s,pid,a);
     if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes).map(sp=>mk(sp,{actor:act,card:d}))}
-  if(a.type==="play"||a.type==="comboPlay"){const c=findCardAnywhere(s,pid,a.uid);if(!c)return[];const d=DB[c.id];const sc=SC()[d.name];
+  if(a.type==="play"||a.type==="comboPlay"||a.type==="playStalled"){const c=findCardAnywhere(s,pid,a.uid);if(!c)return[];const d=DB[c.id];const sc=SC()[d.name];
     const act=a.type==="comboPlay"?(s.pend[0]?comboActor(s,s.pend[0],a.uid):null):actor;
     if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes).map(sp=>mk(sp,{actor:act,card:d}))}
   if(a.type==="ability"){const ab=HS()[actor.name][a.idx];return(ab.t||[]).map(sp=>mk(sp,{actor}))}
@@ -707,7 +720,7 @@ E.act=function(s,pid,a){CUR_S=s;
   if(a.type==="giveAction"&&!(s.phase==="battle"&&(pid===0||pid===1)&&(s.pend.length?(s.pend[0].type==="manual"&&s.pend[0].pid===pid):s.prio===pid)))return{ok:false,err:"You can give an action on your priority or from your resolve-by-hand panel."};
   /* targets */
   const slots=E.need(s,pid,a);const tg=a.targets||[];
-  if(["play","comboPlay","attack","ability","use","soul"].includes(a.type)){
+  if(["play","comboPlay","playStalled","attack","ability","use","soul"].includes(a.type)){
     for(let i=0;i<slots.length;i++){const t=tg[i];if(t==null){if(slots[i].opt||!slots[i].cands.length)continue;return{ok:false,err:`Choose ${slots[i].label}.`}}
       if(!slots[i].cands.includes(t))return{ok:false,err:`Invalid target for ${slots[i].label}.`};
       if(slots[i].distinct&&tg.slice(0,i).includes(t))return{ok:false,err:"Choose different targets."}}
@@ -747,6 +760,8 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"pass":log(s,`${pl.name} passes.`,pid);s.passed[pid]=true;endBonus(s);advance(s,pid);return;
   case"decline":{const pr=s.pend.shift();if(pr.type==="window")closeWindow(s,pr);else if(pr.type==="combo")log(s,"Combo: no card played.",pid);return}
   case"reveal":{const pr=s.pend[0];const o=find(s,a.uid).o;doReveal(s,pid,o,pr,a.hero);return}
+  case"stall":{const pr=s.pend[0];const h=heroByUid(s,a.hero);if(!pr||pr.type!=="window"||!h)return;h.ex=true;s.pend.shift();const c=pr.cont.card;const op=P(s,pr.trig.pid);
+    op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2}]);log(s,`${pl.name} uses the Pocket Watch, exhausting ${h.name}: ${DB[c.id].name} is Stalled with 2 stall counters (its Aura isn't refunded).`,pid);return}
   case"comboPlay":{const pr=s.pend.shift();const actor=comboActor(s,pr,a.uid);const c0=findCardAnywhere(s,pid,a.uid);const d0=c0&&DB[c0.id];
     playCard(s,pid,actor,a.uid,a,{combo:!pr.free&&!pr.pay,free:!!pr.free,fromLib:!pr.fromDisc,fromDisc:!!pr.fromDisc});
     /* Rapacious Encore: deal damage equal to the replayed Song's Aura cost, Piercing (ignores all DEF) */
@@ -776,7 +791,9 @@ function doAct(s,pid,a){const pl=P(s,pid);
   /* battle actions */
   s.cur={pid,type:a.type};const actor=actorFor(s,pid);s.dmgTo=[0,0];pl.t.acts=(pl.t.acts||0)+1;
   if(actor&&a.type!=="soul"&&!((a.type==="attack"||a.type==="band")&&a.att!==actor.uid))pl.t.lastActor=actor.uid;
+  stallTick(s,pid);
   if(a.type==="play"){playCard(s,pid,actor,a.uid,a,{});return}
+  if(a.type==="playStalled"){log(s,`${pl.name} plays a Stalled card.`,pid);playCard(s,pid,actor,a.uid,a,{free:true,fromStall:true});return}
   if(a.type==="attack"){startAttack(s,pid,a.att,a.targets[0],{});return}
   if(a.type==="band"){const all=bandMembers(s,pid);let mem=(a.members||all.map(o=>o.uid)).filter(u=>u!==a.att&&all.some(o=>o.uid===u));
     if(!mem.length){startAttack(s,pid,a.att,a.targets[0],{});return}
@@ -794,6 +811,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
     if((def(o).sub==="Arrow"&&!(s.bonus&&s.bonus.rapid&&s.bonus.uid===actor.uid))||isc.act.ex)actor.ex=true;
     log(s,`${actor.name} activates ${o.name}.`,pid);
     if(isc.act.exile||def(o).sub==="Arrow"){pl.inv.splice(pl.inv.indexOf(o),1);if(isc.act.exile)pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});else pl.disc.push({uid:o.uid,id:o.id,owner:o.owner})}
+    else if(isc.act.sac){pl.inv.splice(pl.inv.indexOf(o),1);log(s,`${pl.name} sacrifices ${o.name}.`,pid);toDisc(s,o)}
     const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:c,cls:def(o).cls,type:"Item",name:o.name};
     queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],modes:a.modes||[],arrow:def(o).sub==="Arrow",refire:!!(s.bonus&&s.bonus.pid===pid&&s.bonus.refire&&def(o).sub==="Arrow")},trig);return}
   if(a.type==="equipInv"){const o=find(s,a.uid).o;pay(s,pid,actor,eqCost(s,actor,o));pl.inv.splice(pl.inv.indexOf(o),1);equipTo(s,actor,o);return}
@@ -811,6 +829,63 @@ function levelUp(s,h,stat,announce){if(h.lvl>=6)return;if(arrested(h)){log(s,`${
   if(h.ench.some(e=>e.name==="Memory Loss")){const pl=P(s,h.owner);if(pl.hand.length){const x=pl.hand.splice(ri(s,pl.hand.length),1)[0];pl.disc.push(x);log(s,`Memory Loss: ${pl.name} discards ${DB[x.id].name}.`)}}}
 E.levelUp=levelUp;
 
+/* ---------- Set 2: Artificer (Craft, Stall, protection counters, Constructs) ----------
+   Craft (Set Two Rules Supplement): play a Recipe only if its ingredients are in your inventory. Pay its Aura cost, sacrifice the ingredients, then flip it.
+   Ingredient spec: {name} = that card, {any:"Metal"} = any card with the Metal subtype, {any:"Cloak"} = any equipment with Cloak in its name.
+   Wildcards (each covers one ingredient): Quicksilver (any ingredient; it's used up), Artificer C (once each turn: any item in your inventory),
+   Tinker's Goggles (once each turn: any Metal; upgraded: any item), Scavenger's Tongs (once each turn: one ingredient from your discard pile; upgraded: any discard pile).
+   The engine picks the cheapest way to pay (cards from a discard pile first, then exact matches, then wildcards, Quicksilver last) and logs what it used. */
+function ingMatch(spec,d){if(!d)return false;if(spec.name)return d.name===spec.name;if(spec.any==="Metal")return d.sub==="Metal";if(spec.any==="Cloak")return d.kind==="equip"&&/Cloak/.test(d.name);return false}
+function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl=P(s,pid);
+  const inv=pl.inv.filter(o=>!o.fd&&!o.tok&&o.id&&DB[o.id]&&(o.kind==="card"||o.kind==="equip"));
+  const val=o=>num(def(o).cost)+(o.kind==="equip"?1:0);
+  const subs=[];/* one-shot wildcards available to this Hero */
+  if(actor&&actor.name==="Artificer C"&&actor.fl.craftC!==s.round)subs.push({k:"anyItem",src:"Artificer C",flag:"craftC"});
+  if(actor&&hasEqN(actor,"Tinker's Goggles")&&actor.fl.craftG!==s.round)subs.push({k:hasUpN(s,actor,"Tinker's Goggles")?"anyItem":"anyMetal",src:"Tinker's Goggles",flag:"craftG"});
+  if(actor&&hasEqN(actor,"Scavenger's Tongs")&&actor.fl.craftT!==s.round)subs.push({k:"disc",any:hasUpN(s,actor,"Scavenger's Tongs"),src:"Scavenger's Tongs",flag:"craftT"});
+  const ings=r.ing;let best=null;
+  function go(i,used,subUsed,cost,plan){if(best&&cost>=best.cost)return;if(i===ings.length){best={cost,plan:plan.slice(),subs:subUsed.slice()};return}
+    const sp=ings[i];
+    /* exact match from inventory */
+    inv.forEach(o=>{if(used.includes(o.uid))return;if(ingMatch(sp,def(o))&&o.name!=="Quicksilver"){plan.push({o,zone:"inv",how:"exact"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o),plan);plan.pop()}});
+    /* Quicksilver: any ingredient */
+    inv.forEach(o=>{if(used.includes(o.uid)||o.name!=="Quicksilver")return;plan.push({o,zone:"inv",how:"Quicksilver"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o)+0.5,plan);plan.pop()});
+    subs.forEach((w,wi)=>{if(subUsed.includes(wi))return;
+      if(w.k==="disc"){const piles=w.any?s.p.map((p2,i2)=>i2):[pid];piles.forEach(pp=>{P(s,pp).disc.forEach(c=>{if(used.includes(c.uid)||!ingMatch(sp,DB[c.id]))return;plan.push({c,pile:pp,zone:"disc",how:w.src});go(i+1,used.concat([c.uid]),subUsed.concat([wi]),cost-0.25,plan);plan.pop()})});return}
+      inv.forEach(o=>{if(used.includes(o.uid))return;const dd=def(o);const ok=w.k==="anyItem"?true:dd.sub==="Metal";if(!ok||ingMatch(sp,dd))return;plan.push({o,zone:"inv",how:w.src});go(i+1,used.concat([o.uid]),subUsed.concat([wi]),cost+val(o)+0.25,plan);plan.pop()})})}
+  go(0,[],[],0,[]);if(!best)return null;best.subs=best.subs.map(i=>subs[i]);return best}
+E.craftPlan=craftPlan;
+/* pay a Recipe's ingredients (called when the Recipe is played, after its Aura cost) */
+function payCraft(s,pid,actor,d){const plan=craftPlan(s,pid,actor,d);if(!plan)return false;const pl=P(s,pid);const names=[];
+  plan.subs.forEach(w=>{if(actor)actor.fl[w.flag]=s.round});
+  plan.plan.forEach(p=>{if(p.zone==="inv"){const i=pl.inv.indexOf(p.o);if(i>=0)pl.inv.splice(i,1);toDisc(s,p.o);names.push(p.o.name+(p.how==="exact"?"":` (${p.how})`))}
+    else{const dp=P(s,p.pile);const i=dp.disc.indexOf(p.c);if(i>=0)dp.disc.splice(i,1);dp.exile.push(p.c);names.push(`${DB[p.c.id].name} from ${p.pile===pid?"your":dp.name+"'s"} discard pile (${p.how})`)}});
+  log(s,`Craft: ${pl.name} sacrifices ${names.join(", ")}.`,pid);
+  /* Bellows: whenever the equipped Hero Crafts, draw a card (upgraded: and gain 1 Aura) */
+  if(actor&&hasEqN(actor,"Bellows")){eqList(actor).filter(e=>e.name==="Bellows").forEach(e=>{log(s,`Bellows: ${actor.name} Crafts, draw a card${isUp(s,e)?" and gain 1 Aura":""}.`,pid);draw(s,pid,1);if(isUp(s,e))pl.aura+=1})}
+  return true}
+E.payCraft=payCraft;
+/* the Recipe flips: a summon Recipe summons its Constructs (then goes to the discard pile); an item or weapon goes into your inventory as the made card */
+function makeConstruct(s,pid,n){const o=makeSummon(s,pid,"Construct",false);o.str=n;o.hp=n;
+  if(living(P(s,pid)).some(h=>h.name==="Artificer B")){o.str+=1;o.hp+=1;log(s,`Artificer B: the Construct enters with +1 Strength and +1 Health Points (${o.str}/${o.hp}).`,pid)}return o}
+E.makeConstruct=makeConstruct;
+function flipRecipe(s,pid,card){const d=DB[card.id];const b=d.recipe.back;const pl=P(s,pid);
+  log(s,`${pl.name} flips ${d.name}: ${b.name}.`,pid);
+  if(b.type==="Summon"){const m=/Summon (two|three|a|one) (\d+)\/(\d+)/.exec(b.rules)||[];const k={a:1,one:1,two:2,three:3}[m[1]]||2;const n=+m[2]||2;for(let i=0;i<k;i++)makeConstruct(s,pid,n);return false}
+  const md=DB[b.name];let o;
+  if(md.kind==="equip")o={uid:card.uid,kind:"equip",id:b.name,name:b.name,cls:"Generic",region:md.region,pstr:md.pstr,pdef:md.pdef,cost:num(md.cost),owner:card.owner,tok:false,x:null};
+  else o={uid:card.uid,id:b.name,owner:card.owner,kind:"card",fd:false,name:b.name,ctr:{}};
+  if(b.name==="Warded Cloak"){o.prot=3;log(s,"Warded Cloak is made with 3 protection counters.",pid)}
+  toInv(s,pid,o);return true}
+E.flipRecipe=flipRecipe;
+/* Warded Cloak (protection counters): whenever a Hero in your party would be dealt damage, prevent it and remove a counter instead */
+function wardFor(s,tgt){if(!tgt||tgt.kind!=="hero")return null;const pl=P(s,tgt.owner);for(const h of pl.heroes){if(h.dead)continue;const w=eqList(h).find(e=>e.name==="Warded Cloak"&&(e.prot||0)>0);if(w)return w}return null}
+/* Pocket Watch (Stall): set the played card aside with 2 stall counters; each action its owner takes removes one; then they may play it without paying its Aura cost */
+function watchFor(s,pid){const pl=P(s,pid);return pl.inv.find(o=>!o.fd&&o.name==="Pocket Watch")}
+function canStall(s,pid,trig){return!!(trig&&trig.kind==="card"&&trig.card&&!trig.ability&&!trig.item&&trig.pid!==pid&&watchFor(s,pid)&&living(P(s,pid)).some(h=>!h.ex))}
+E.canStall=canStall;
+function stallTick(s,pid){const pl=P(s,pid);(pl.stall||[]).forEach(c=>{if(c.n>0){c.n--;log(s,c.n?`Stall: ${DB[c.id].name} has ${c.n} stall counter${c.n>1?"s":""} left.`:`Stall: the last counter comes off ${DB[c.id].name}. ${pl.name} may play it without paying its Aura cost.`,pid)}})}
+
 /* ---------- card play ---------- */
 function mkCtx(s,pid,actor,d,inst,targets,extra){const c=Object.assign({s,pid,me:P(s,pid),op:P(s,opp(pid)),actor,def:d,inst,t:(targets||[]).map(t=>t==null?null:resolveTarget(s,t)),tu:targets||[],E},extra||{});return c}
 E.mkCtx=mkCtx;
@@ -819,12 +894,14 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(!c&&(o.combo||o.fromLib)){c=pl.lib.find(x=>x.uid===uid);fromLib=true;zone=pl.lib}
   if(!c&&(pl.t.nature||[]).includes(uid)){c=pl.exile.find(x=>x.uid===uid);zone=pl.exile;if(c)pl.t.nature=pl.t.nature.filter(u=>u!==uid)}
   if(!c&&o.fromDisc){c=pl.disc.find(x=>x.uid===uid);zone=pl.disc}
+  if(!c&&o.fromStall){c=(pl.stall||[]).find(x=>x.uid===uid&&!(x.n>0));zone=pl.stall}
   if(!c)return;const fromHand=zone===pl.hand;const d=DB[c.id];const sc=SC()[d.name];
   const x=(d.cost==="X"||(sc&&sc.x))?Math.max(0,Math.min(a.x|0,99)):0;
   const cost=o.free?0:cardCost(s,pid,actor,d,x);
   if(cost>pl.aura){log(s,`Not enough Aura for ${d.name}.`,pid);return}
+  if(d.type==="Recipe"&&!payCraft(s,pid,actor,d)){log(s,`${d.name}: the ingredients aren't there.`,pid);return}
   pay(s,pid,actor,cost);consumeCostFlags(s,pid,actor,d);if(actor)burdenFat(s,actor);
-  zone.splice(zone.indexOf(c),1);
+  zone.splice(zone.indexOf(c),1);if(o.fromStall)c={uid:c.uid,id:c.id,owner:c.owner};
   pl.t.cards=(pl.t.cards||0)+1;
   let targets=a.targets||[];
   /* Confused: targets are random among all legal */
@@ -1000,7 +1077,7 @@ function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);let tgt=resolve
   if(mods.stepIn&&mods.stepIn.from===cont.tgt){const p=find(s,mods.stepIn.to);if(p&&!p.o.dead){log(s,`${p.o.name} steps in and takes the attack.`);tgt=p.o}}
   let str=(o.band?bandTotal(s,att,o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o).filter(m=>!m.dead),tgt):dmgStr(s,att,tgt))+(mods.str||0)+(o.str||0);
   if(att.kind==="hero"&&att.name==="Skullcrusher"&&att.attacks===2)str+=3;
-  let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0)+(att.kind==="hero"?eqList(att).filter(e=>isUp(s,e)&&(e.name==="Sword of Riverstead"||e.name==="Long Dagger"||e.name==="Shadow Cloak")).length:0);
+  let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0)+(att.kind==="hero"&&hasEqN(att,"Mithril Blade")?2:0)+(att.kind==="hero"?eqList(att).filter(e=>isUp(s,e)&&(e.name==="Sword of Riverstead"||e.name==="Long Dagger"||e.name==="Shadow Cloak")).length:0);
   const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att));
   let dealt=0;
   if(mods.noDamage){log(s,`The attack deals no damage.`)}

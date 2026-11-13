@@ -96,17 +96,31 @@ function cardsTab(){const d=L();const list=filtered();const by={};list.forEach(r
 function siteTab(){return`<p class="lede cl-lede">Changes to the Deck Forge site, the rules and the Play client. Newest first.</p>`+L().site.map(e=>`<section class="cl-upd cl-site"><h2>${E(e.title)} <small>${E(e.date)}${e.ver?` · v=${E(e.ver)}`:""}</small></h2>
   <ul>${e.items.map(([a,t])=>`<li><span class="cl-area a-${a.replace(/\s+/g,"").toLowerCase()}">${E(a)}</span> ${E(t)}</li>`).join("")}</ul></section>`).join("")}
 
+/* Set 2 tab: only for accounts with Set 2 access (admins, or the Set 2 box in Admin > Users) */
+const s2on=()=>typeof S!=="undefined"&&!!(S.access&&S.access.set2);
+const S2=()=>(L().set2)||{updates:[],cards:[],site:[]};
+function set2Tab(){const d=S2(),cols=L().cols;const rs=d.cards.map(r=>{const o={};cols.forEach((c,i)=>o[c]=r[i]);return o});const by={};rs.forEach(r=>(by[r.u]=by[r.u]||[]).push(r));
+  return`<p class="lede cl-lede">Set 2 is in closed playtesting. Only accounts with Set 2 access see these entries. Rules: the Set Two Rules Supplement.</p>`+
+  d.site.map(e=>`<section class="cl-upd cl-site"><h2>${E(e.title)} <small>${E(e.date)}${e.ver?` · v=${E(e.ver)}`:""}</small></h2>
+  <ul>${e.items.map(([a,t])=>`<li><span class="cl-area a-${a.replace(/\s+/g,"").toLowerCase()}">${E(a)}</span> ${E(t)}</li>`).join("")}</ul></section>`).join("")+
+  d.updates.filter(u=>by[u.id]).map(u=>`<section class="cl-upd"><h2>${E(u.title)} <small>${E(u.date)}</small></h2>
+    <div class="tblwrap"><table class="cl-t"><thead><tr><th>Card</th><th>Version</th><th>Old</th><th>New</th><th>Reason</th></tr></thead><tbody>
+    ${by[u.id].map(r=>`<tr><td class="cl-n"><span class="cl-cls" style="--cc:${typeof cc==="function"?cc(r.cls):"#777"};--ci:${typeof ci==="function"?ci(r.cls):"none"}"><i class="dot"></i></span><b>${E(r.n)}</b><span class="cl-meta">${E(r.k)}${r.cls?" · "+E(r.cls):""}</span><span class="cl-tag t-${r.tag.toLowerCase()}">${TAGS[r.tag]}</span></td>
+      <td class="cl-v">${E(r.v)||"—"}</td><td class="cl-o" data-h="Old">${cell(r.ch,"o")}</td><td class="cl-nw" data-h="New">${cell(r.ch,"n")}</td><td class="cl-r" data-h="Reason">${r.r?E(r.r):'<span class="cl-none">—</span>'}</td></tr>`).join("")}
+    </tbody></table></div></section>`).join("")}
+const body=()=>st.tab==="set2"&&s2on()?set2Tab():st.tab==="site"?siteTab():cardsTab();
 function view(){return`<h1>Changelog</h1><p class="lede">Every card change since the first version of the cards, and every update to this site.</p>
   <div class="chips cl-tabs" role="tablist">
     <button type="button" class="chip" role="tab" data-cl="tab" data-v="cards" aria-selected="${st.tab==="cards"}" aria-pressed="${st.tab==="cards"}">Cards Change Log</button>
     <button type="button" class="chip" role="tab" data-cl="tab" data-v="site" aria-selected="${st.tab==="site"}" aria-pressed="${st.tab==="site"}">Website Log</button>
-  </div><div id="cl-body">${st.tab==="cards"?cardsTab():siteTab()}</div>`}
+    ${s2on()?`<button type="button" class="chip" role="tab" data-cl="tab" data-v="set2" aria-selected="${st.tab==="set2"}" aria-pressed="${st.tab==="set2"}">Set 2</button>`:""}
+  </div><div id="cl-body">${body()}</div>`}
 
 let root=null;
 function mount(el){root=el;el.innerHTML=view()}
 function rerenderBody(keepFocus){const b=document.getElementById("cl-body");if(!b)return;
   const a=document.activeElement,k=a&&a.dataset&&a.dataset.cl,pos=a&&a.selectionStart;
-  b.innerHTML=st.tab==="cards"?cardsTab():siteTab();
+  b.innerHTML=body();
   if(keepFocus&&k){const n=b.querySelector(`[data-cl="${k}"]`);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}}
 document.addEventListener("click",e=>{const t=e.target.closest('[data-cl="tab"]');if(!t)return;st.tab=t.dataset.v;save();if(root)mount(root)});
 document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||t.dataset.cl!=="q")return;st.q=t.value;rerenderBody(true)});

@@ -55,7 +55,22 @@ function shuffle(s,a){for(let i=a.length-1;i>0;i--){const j=ri(s,i+1);[a[i],a[j]
 E.rnd=rnd;E.ri=ri;E.shuffle=shuffle;
 const nid=s=>"o"+(++s.nx);
 const P=(s,pid)=>s.p[pid];
-const opp=pid=>1-pid;E.opp=opp;
+const opp=pid=>1-pid;E.opp=opp;/* 1-on-1 only (UI helpers); the engine uses oppOf(s,pid), which knows about Trials teams */
+/* ---------- Trials teams (co-op boss module) ----------
+   In a Trials game s.p[0..P-1] are the player parties and s.p[P] is the boss side (s.trials.boss = P). Every party's opponent is the boss side;
+   every party is an ally of every other party. In a 1-on-1 game these helpers reduce exactly to the old 1-pid / pid===other logic. */
+E.hooks={afterSweep:null,onSummonDies:null,setup:null};
+const isBoss=(s,pid)=>!!(s&&s.trials&&pid===s.trials.boss);E.isBoss=isBoss;
+const wiped=(s,pid)=>{const pl=s.p[pid];return!!pl&&pl.heroes.length>0&&pl.heroes.every(h=>h.dead)};E.wiped=wiped;
+/* party indexes in initiative order starting at s.init (1-on-1: [init, other]) */
+function parties(s){if(!s.trials)return[s.init,1-s.init];const n=s.trials.parties,out=[];for(let i=0;i<n;i++)out.push((s.init+i)%n);return out}
+E.parties=parties;
+/* a party's opponent is the boss side; the boss side's "opponent" is the first party in initiative order that isn't wiped */
+function oppOf(s,pid){if(!s||!s.trials)return 1-pid;if(pid!==s.trials.boss)return s.trials.boss;const o=parties(s);const f=o.find(p=>!wiped(s,p));return f==null?o[0]:f}
+E.oppOf=oppOf;
+function sameTeam(s,a,b){if(!s||!s.trials||a==null||b==null)return a===b;return(a===s.trials.boss)===(b===s.trials.boss)}
+E.sameTeam=sameTeam;
+const allPassed=s=>parties(s).every(p=>s.passed[p]);
 function log(s,m,pid){s.logN=(s.logN||0)+1;s.log.push({n:s.logN,r:s.round,m,p:pid==null?-1:pid});if(s.log.length>4000)s.log.splice(0,s.log.length-4000)}
 E.log=log;
 const def=o=>DB[o.id]||TOK[o.name]||{};E.def=def;
@@ -63,7 +78,7 @@ const def=o=>DB[o.id]||TOK[o.name]||{};E.def=def;
 /* ---------- new game ---------- */
 function mkHero(s,pid,id){const d=DB[id];return{uid:nid(s),kind:"hero",id,name:d.name,cls:d.cls,owner:pid,base:{str:d.str,def:d.def,aura:d.aura,hp:d.hp},dmg:0,lvl:0,bon:{str:0,def:0,aura:0},ex:false,dead:false,surr:false,med:false,keepMed:true,plus:0,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},eq:{Head:null,Chest:null,Arms:null,Legs:null,Feet:null,Accessory:null,H1:null,H2:null},ench:[],mods:[],guard:0,eqGuard:0,stepped:false,leveled:false,attacks:0,fl:{}}}
 function mkCard(s,pid,id){return{uid:nid(s),id,owner:pid}}
-E.newGame=function(cfg){
+E.newGame=function(cfg){if(cfg.trials)return newTrial(cfg);
   const s={v:1,nx:0,rng:(cfg.seed>>>0)||((Math.random()*2**31)|0),round:0,phase:"mull",init:0,pos:0,prio:0,acted:[false,false],passed:[false,false],
     p:[],pend:[],cur:null,qatk:null,bonus:null,town:null,over:false,winner:null,log:[],seq:0,dawnDone:[false,false],lastCard:null,
     stats:{dmg:[{},{}],prev:[{},{}],heal:[{},{}],start:[[],[]]}};
@@ -80,6 +95,33 @@ E.newGame=function(cfg){
   log(s,"Each player drew 4 cards. Keep your hand or mulligan once.");
   return s;
 };
+/* Trials (Plan B+C): cfg.trials = {trial, parties:[deck | {name, ai, deck}], loot?}. 2 to 4 parties of 2 Heroes; the boss side is added last
+   and set up by E.hooks.setup (play-trials.js). Without the hook, a plain boss Hero (25 Health Points per party) is used so the engine can be tested alone. */
+function newTrial(cfg){const tc=cfg.trials;const list=(tc.parties||[]).map((x,i)=>x&&x.deck?x:{name:i?`Helper ${i}`:"You",ai:i>0,deck:x});const n=list.length;
+  if(n<2||n>4)throw new Error("A Trial needs 2 to 4 parties.");
+  const side=()=>Array.from({length:n+1},()=>({}));
+  const s={v:1,nx:0,rng:(cfg.seed>>>0)||((Math.random()*2**31)|0),round:0,phase:"mull",init:0,pos:0,prio:0,acted:Array(n+1).fill(false),passed:Array(n+1).fill(false),
+    p:[],pend:[],cur:null,qatk:null,bonus:null,town:null,over:false,winner:null,log:[],seq:0,dawnDone:Array(n+1).fill(false),lastCard:null,
+    stats:{dmg:side(),prev:side(),heal:side(),start:Array.from({length:n+1},()=>[])},trials:{trial:tc.trial||1,boss:n,parties:n,swAct:false}};
+  list.forEach((pc,pid)=>{const pl=newSide(s,pid,pc.name||(pid?`Helper ${pid}`:"You"),!!pc.ai,pc.deck.heroes.map(h=>mkHero(s,pid,h)),pc.deck.name||"");
+    for(const[id,q]of Object.entries(pc.deck.cards))if(DB[id])for(let i=0;i<q;i++)pl.lib.push(mkCard(s,pid,id));s.p.push(pl)});
+  const boss=newSide(s,n,"Boss",true,[],"");boss.boss=true;boss.mullDone=true;s.p.push(boss);
+  s.p.forEach((pl,pid)=>{if(isBoss(s,pid))return;shuffle(s,pl.lib);for(let i=0;i<4;i++)draw(s,pid,1,true)});
+  /* Task 9: a party's loot card goes into its opening hand (after the opening draw, before mulligans; it isn't part of the 50) */
+  const loot=tc.loot||{};for(const k in loot){const pid=+k;const id=loot[k];if(s.p[pid]&&!isBoss(s,pid)&&DB[id]){const c=mkCard(s,pid,id);s.p[pid].hand.push(c);s.p[pid].loot=c.uid;log(s,`${s.p[pid].name} starts with loot: ${DB[id].name}.`,pid)}}
+  if(E.hooks.setup)E.hooks.setup(s);else{const h=mkBossHero(s,"Boss",25*n,0);boss.heroes.push(h)}
+  boss.name=(boss.heroes[0]&&boss.heroes[0].name)||"Boss";
+  s.stats.start.forEach((_,i)=>{s.stats.start[i]=s.p[i].heroes.map(h=>h.name)});
+  /* initiative: each party rolls a die, highest starts (reroll ties among the highest) */
+  let pool=list.map((_,i)=>i),rolls;do{rolls=pool.map(()=>1+ri(s,6));const hi=Math.max(...rolls);if(rolls.filter(r=>r===hi).length===1){s.init=pool[rolls.indexOf(hi)];break}pool=pool.filter((_,i)=>rolls[i]===hi)}while(true);
+  log(s,`Trial ${s.trials.trial}: ${n} parties against ${boss.name}. ${s.p[s.init].name} starts with initiative.`);
+  log(s,"Each party drew 4 cards. Keep your hand or mulligan once.");
+  return s}
+function newSide(s,pid,name,ai,heroes,deckName){return{name,ai,heroes,hand:[],lib:[],disc:[],exile:[],inv:[],bf:[],aura:0,gold:0,echo:[],pm:{},fl:{},t:{},mullDone:false,mulled:false,deckName}}
+/* a boss Hero: a Hero on the boss side with no deck entry (DB gets a stub so lookups work) */
+function mkBossHero(s,name,hp,defn,str){const id="boss:"+name;if(!DB[id])DB[id]={id,name,cls:"Boss",str:str||0,def:defn||0,aura:0,hp,rules:"",type:"Hero",kind:"hero",boss:true};
+  const h=mkHero(s,s.trials.boss,id);h.base.hp=hp;h.base.def=defn||0;h.base.str=str||0;h.boss=true;return h}
+E.mkBossHero=mkBossHero;
 E.validateDeck=function(d){
   const out=[];if(!d||!d.heroes||d.heroes.length!==3)out.push("Needs 3 Heroes.");
   let t=0;for(const[id,q]of Object.entries(d.cards||{})){if(!DB[id])out.push(`Unknown card ${id}`);else if(DB[id].dep)out.push(`${id} is deprecated (removed from play).`);t+=q}
@@ -143,7 +185,7 @@ function strOf(s,o,vs){
     if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2;
     if(heroIs(o,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre")v+=(x.ctr&&x.ctr.fury)||0});
     o.ench.forEach(e=>{if(e.name==="Weaken")v-=1});
-    const op=P(s,opp(o.owner));if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
+    const op=P(s,oppOf(s,o.owner));if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
     if(op)v-=(op.pm.enemyStr||0);
     if(vs){if(o.name==="Venom Dancer"&&vs.st&&vs.st.poison>0)v+=3;
 }
@@ -152,7 +194,7 @@ function strOf(s,o,vs){
   if(o.kind==="summon"){const pl=P(s,o.ctrl);let v=o.str+modSum(o,"str")+invCount(pl,"Tooth Crystal")+(pl.pm.sstr||0);
     /* Set 2 Ossuary: while your discard pile has 25 or more cards, your Revenants have +1 STR */if(o.name==="Revenant"&&pl.disc.length>=25)v+=invCount(pl,"Ossuary");
     if(/Soldier/.test(o.sub||o.name))v+=invCount(pl,"Captain's Banner")+(pl.pm.soldier||0);
-    const op=P(s,opp(o.ctrl));if(op)v-=(op.pm.enemyStr||0);if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
+    const op=P(s,oppOf(s,o.ctrl));if(op)v-=(op.pm.enemyStr||0);if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
     return Math.max(0,v)}
   return 0}
 E.str=strOf;E.defn=defOf;
@@ -195,8 +237,11 @@ E.mill=mill;
 function markMilled(s,pid,c){const pl=P(s,pid);pl.t.milled=(pl.t.milled||[]).concat([c.uid])}
 E.markMilled=markMilled;
 /* Drawing from an empty library loses the game (rule change, Nov 2026) */
-function deckOut(s,pid){if(s.over)return;const pl=P(s,pid);s.over=true;s.winner=opp(pid);s.deckedOut=pid;s.pend=[];s.cur=null;s.qatk=null;
-  log(s,`${pl.name} must draw from an empty library and loses the game.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`)}
+function deckOut(s,pid){if(s.over)return;const pl=P(s,pid);
+  /* Trials: a party that must draw from an empty library is wiped out (its Heroes die); the Trial goes on */
+  if(s.trials){if(isBoss(s,pid))return;log(s,`${pl.name} must draw from an empty library and is wiped out.`,pid);pl.decked=true;pl.heroes.forEach(h=>{if(!h.dead)die(s,h)});checkDeaths(s);return}
+  s.over=true;s.winner=oppOf(s,pid);s.deckedOut=pid;s.pend=[];s.cur=null;s.qatk=null;
+  log(s,`${pl.name} must draw from an empty library and loses the game.`,pid);log(s,`🏆 ${P(s,oppOf(s,pid)).name} wins!`)}
 function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
   for(let i=0;i<n;i++){if(!pl.lib.length){deckOut(s,pid);break}
     pl.hand.push(pl.lib.pop());got++;
@@ -207,7 +252,7 @@ function addStatus(s,o,k,n){if(!o||o.dead||!o.st)return;o.st[k]=(o.st[k]||0)+(n|
 E.addStatus=addStatus;
 /* ---------- game stats: damage dealt, damage prevented and healing done, credited to the card / ability / attack ---------- */
 let CUR_SRC=null;let CUR_S=null;/* update 23: state of the action being resolved (Embolden needs it inside addMod) *//* name of the card, item, ability or Hidden card currently resolving */
-function stat(s,k,side,name,n){if(!(n>0)||side==null||side<0||!name)return;if(!s.stats)s.stats={dmg:[{},{}],prev:[{},{}],heal:[{},{}],start:[[],[]]};const t=s.stats[k][side];t[name]=(t[name]||0)+n}
+function stat(s,k,side,name,n){if(!(n>0)||side==null||side<0||!name)return;if(!s.stats)s.stats={dmg:[{},{}],prev:[{},{}],heal:[{},{}],start:[[],[]]};const t=s.stats[k][side]||(s.stats[k][side]={});t[name]=(t[name]||0)+n}
 function sideOf(s,o){if(!o)return null;if(o.kind==="hero")return o.owner;if(o.ctrl!=null)return o.ctrl;if(o.owner!=null)return o.owner;return null}
 E.stat=stat;
 /* runs a card / ability script with its name as the stats source; Guard it grants is remembered so later absorbs credit it */
@@ -265,7 +310,7 @@ E.endBonus=endBonus;
 /* end-of-game summary: rounds, lineups (start / final order, level, died), top 5 damage, top 5 prevention, top healer per side */
 E.gameStats=function(s){const st=s.stats||{dmg:[{},{}],prev:[{},{}],heal:[{},{}],start:[[],[]]};
   const top=(o,n)=>Object.entries(o||{}).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([name,v])=>({name,v}));
-  const both=k=>[0,1].map(i=>top(st[k][i],99).map(x=>Object.assign({side:i},x))).flat().sort((a,b)=>b.v-a.v).slice(0,5);
+  const both=k=>s.p.map((_,i)=>i).map(i=>top(st[k][i],99).map(x=>Object.assign({side:i},x))).flat().sort((a,b)=>b.v-a.v).slice(0,5);
   return{rounds:s.round,winner:s.winner,conceded:s.conceded,
     sides:s.p.map((pl,i)=>({name:pl.name,start:st.start[i]||[],final:pl.heroes.map(h=>({name:h.name,lvl:h.lvl,dead:!!h.dead})),
       dmg:top(st.dmg[i],5),prev:top(st.prev[i],5),healer:top(st.heal[i],1)[0]||null,
@@ -289,7 +334,7 @@ if(CUR_SRC&&!m.src)m=Object.assign({src:CUR_SRC},m);o.mods.push(Object.assign({u
 E.addMod=addMod;
 function pay(s,pid,actor,amt){const pl=P(s,pid);pl.aura-=amt;if(amt<=0||!actor||actor.kind!=="hero")return;
   if(actor.ench.some(e=>e.name==="Blood Aura"))loseHp(s,actor,2,"Blood Aura");
-  const op=P(s,opp(pid));if(invHas(op,"The Monolith"))loseHp(s,actor,amt,"The Monolith")}
+  const op=P(s,oppOf(s,pid));if(invHas(op,"The Monolith"))loseHp(s,actor,amt,"The Monolith")}
 E.pay=pay;
 /* " (13/16 HP)" after a life total changes */
 function hpTag(s,o){if(!o||(o.kind!=="hero"&&o.kind!=="summon"))return"";const m=maxHp(s,o);return` (${Math.max(0,m-(o.dmg||0))}/${m} HP)`}
@@ -301,7 +346,7 @@ function heal(s,healer,o,n,pid){
   if(healer&&healer.kind==="hero"&&hasEqN(healer,"Sacred Vestments"))n+=1;
   const src=pid!=null?pid:(healer&&healer.kind==="hero"?healer.owner:(healer&&healer.ctrl!=null?healer.ctrl:null));
   const oc=ctrl(s,o);
-  if(src!=null&&oc!==src&&invHas(P(s,src),"Inversion Stone")){log(s,`Inversion Stone turns the heal on ${o.name} into ${n} Light damage.`);damage(s,{name:"Inversion Stone"},o,n,{card:true,type:"Light",noTrig:true});return 0}
+  if(src!=null&&!sameTeam(s,oc,src)&&invHas(P(s,src),"Inversion Stone")){log(s,`Inversion Stone turns the heal on ${o.name} into ${n} Light damage.`);damage(s,{name:"Inversion Stone"},o,n,{card:true,type:"Light",noTrig:true});return 0}
   if(o.fl&&o.fl.falseCure===s.round){o.fl.falseCure=null;log(s,`False Cure: the heal on ${o.name} becomes HP loss.`);loseHp(s,o,n,"False Cure");return 0}
   const h=Math.min(n,o.dmg||0);o.dmg-=h;if(h>0)log(s,`${o.name} heals ${h} HP.${hpTag(s,o)}`);
   if(h>0&&src!=null){const sp=P(s,src);sp.t.healed=(sp.t.healed||0)+h;stat(s,"heal",src,CUR_SRC||(healer&&healer.name)||"Heal",h)}
@@ -311,7 +356,7 @@ function heal(s,healer,o,n,pid){
     if(lb){const t=bestDamageTarget(s,src,h,{type:"Light"});if(t){s._lb=true;try{damage(s,lb,t,h,{type:"Light",card:true,noTrig:true,srcName:"Lightbringer"})}finally{s._lb=false}}else log(s,"Lightbringer: no enemy it can hurt.",src)}}
   return h}
 /* picks the enemy the damage hurts most (skips targets Guard/DEF would block, Stealth, Cloak); prefers kills */
-function bestDamageTarget(s,pid,n,o){o=o||{};const op=P(s,opp(pid));let best=null,bv=0;
+function bestDamageTarget(s,pid,n,o){o=o||{};const op=P(s,oppOf(s,pid));let best=null,bv=0;
   [...living(op),...op.bf.filter(x=>x.kind==="summon")].forEach(t=>{if(stealth(s,t)||cardProof(s,t))return;
     const g=t.kind==="hero"?t.guard+t.eqGuard:0;const a0=Math.max(0,n-g),pc=o.pierce||0;let eff=Math.max(0,a0-(o.ignoreDef?0:Math.max(0,defOf(s,t)-pc)));if(pc>0)eff=Math.max(eff,Math.min(pc,a0));const hp=hpOf(s,t);
     const v=eff<=0?0:Math.min(eff,hp)+(eff>=hp?50:0)+(t.kind==="hero"?5:0)-hp*0.01;if(v>bv){bv=v;best=t}});
@@ -323,7 +368,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(tgt.imp){log(s,`${tgt.name} can't be dealt damage (Impervious).`);return 0} /* Set 2 Impervious */
   if(tgt.kind==="hero"&&tgt.fl.noDmgRound===s.round&&!o.status){log(s,`${tgt.name} takes no damage (prevented).`);stat(s,"prev",tgt.owner,tgt.fl.noDmgBy||"Damage prevention",amt);return 0}
   let a=Math.max(0,amt);
-  if(tgt.kind==="hero"){const tp=P(s,tgt.owner);if(tp.fl.preventNext&&(o.card||o.combat)&&ctrl(s,src||tgt)!==tgt.owner){tp.fl.preventNext=false;log(s,`Smoke Trail Arrow prevents the damage to ${tgt.name}.`);stat(s,"prev",tgt.owner,"Smoke Trail Arrow",amt);return 0}
+  if(tgt.kind==="hero"){const tp=P(s,tgt.owner);if(tp.fl.preventNext&&(o.card||o.combat)&&!sameTeam(s,ctrl(s,src||tgt),tgt.owner)){tp.fl.preventNext=false;log(s,`Smoke Trail Arrow prevents the damage to ${tgt.name}.`);stat(s,"prev",tgt.owner,"Smoke Trail Arrow",amt);return 0}
     let g=tgt.guard;const ga=Math.min(g,a);tgt.guard-=ga;a-=ga;const ge=Math.min(tgt.eqGuard,a);tgt.eqGuard-=ge;a-=ge;
     if(ga>0)creditGuard(s,tgt,ga);if(ge>0){const ge1=eqList(tgt).find(e=>/Guard 1/.test(def(e).rules||""));stat(s,"prev",tgt.owner,ge1?ge1.name:"Equipment Guard",ge)}}
   if(src&&src.kind==="hero"&&tgt.kind==="summon"&&hasEqN(src,"Silver Edge"))a*=2; /* Set 2 Silver Edge: double damage to summons */
@@ -338,8 +383,8 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(!o.ignoreDef&&a>dealt)creditDef(s,tgt,a-dealt);
   if(dealt>0){s.dmgTo=s.dmgTo||null;if(s.dmgTo){const sd=ctrl(s,tgt);s.dmgTo[sd]=(s.dmgTo[sd]||0)+dealt}}
   /* Scrap Metal: this Hero's damage to an enemy Hero destroys a piece of its equipment */
-  if(dealt>0&&src&&src.kind==="hero"&&src.fl&&src.fl.scrapRound===s.round&&tgt.kind==="hero"&&ctrl(s,tgt)!==src.owner){const eq=eqList(tgt);if(eq.length)ask(s,src.owner,`Scrap Metal: destroy one of ${tgt.name}'s equipment`,eq.map(e=>({label:e.name,v:e.uid})),"destroyEq",{by:src.uid,name:"Scrap Metal"})}
-  if(dealt>0){let side=sideOf(s,src);if(side==null)side=opp(ctrl(s,tgt));
+  if(dealt>0&&src&&src.kind==="hero"&&src.fl&&src.fl.scrapRound===s.round&&tgt.kind==="hero"&&!sameTeam(s,ctrl(s,tgt),src.owner)){const eq=eqList(tgt);if(eq.length)ask(s,src.owner,`Scrap Metal: destroy one of ${tgt.name}'s equipment`,eq.map(e=>({label:e.name,v:e.uid})),"destroyEq",{by:src.uid,name:"Scrap Metal"})}
+  if(dealt>0){let side=sideOf(s,src);if(side==null)side=oppOf(s,ctrl(s,tgt));
     const nm=o.srcName||(o.combat&&src?(o.band?"Band attack":src.name+" (attack)"):(CUR_SRC||(src&&src.name)));if(!o.status)stat(s,"dmg",side,nm,dealt)}
   const tn=tgt.name+(tgt.kind==="summon"?" (summon)":"");
   log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before DEF)`:""}.${dealt>0?hpTag(s,tgt):""}`);
@@ -372,7 +417,7 @@ function stealGold(s,pid,from,n,why){if(from==null||from===pid)return 0;const fp
 E.stealGold=stealGold;
 /* update 23 Tip: gain 1 Gold, only once per round (Undeniable Performance: it comes out of an opposing party's Gold) */
 function tip(s,pid,why){const pl=P(s,pid);if(pl.fl.tipRound===s.round){log(s,`${why||"Tip"}: ${pl.name} already got a Tip this round.`,pid);return 0}pl.fl.tipRound=s.round;
-  if(pl.fl.tipFromRound===s.round){const g=stealGold(s,pid,opp(pid),1,(why||"Tip")+" (Undeniable Performance)");if(!g)log(s,`${why||"Tip"}: the opposing party has no Gold to tip.`,pid);return g}
+  if(pl.fl.tipFromRound===s.round){const g=stealGold(s,pid,oppOf(s,pid),1,(why||"Tip")+" (Undeniable Performance)");if(!g)log(s,`${why||"Tip"}: the opposing party has no Gold to tip.`,pid);return g}
   pl.gold+=1;log(s,`${why||"Tip"}: ${pl.name} gains 1 Gold (now ${pl.gold}).`,pid);return 1}
 E.tip=tip;
 function removeStatus(s,o,n){let r=0;for(let i=0;i<n;i++){const k=STATUS.find(k=>o.st[k]>0);if(!k)break;o.st[k]--;r++}if(r)log(s,`${o.name}: ${r} status counter${r>1?"s":""} removed.`);return r}
@@ -394,10 +439,10 @@ function checkDeaths(s){s.p.forEach(pl=>pl.heroes.forEach(h=>{if(h.med&&!h.ex&&!
   checkWin(s)}
 E.checkDeaths=checkDeaths;
 /* "would die" Hidden cards (Die Swinging, Self Sacrifice for the owner; then Pillage the Dead for the opponent) */
-function dyingWindow(s,h){if(h.fl.dyingDone||s.over)return false;h.fl.dyingDone=true;
+function dyingWindow(s,h){if(h.fl.dyingDone||s.over||isBoss(s,h.owner))return false;h.fl.dyingDone=true;
   const tr={kind:"dying",hero:h.uid,pid:h.owner};
   if(windowFor(s,h.owner,tr)){s.pend.unshift({type:"window",pid:h.owner,trig:tr,cont:{k:"dying",hero:h.uid,stage:1},mods:{}});log(s,`${h.name} is about to die. ${P(s,h.owner).name} may respond with a Hidden card…`);return true}
-  if(windowFor(s,opp(h.owner),tr)){s.pend.unshift({type:"window",pid:opp(h.owner),trig:tr,cont:{k:"dying",hero:h.uid,stage:2},mods:{}});log(s,`${h.name} is about to die. ${P(s,opp(h.owner)).name} may respond with a Hidden card…`);return true}
+  if(windowFor(s,oppOf(s,h.owner),tr)){s.pend.unshift({type:"window",pid:oppOf(s,h.owner),trig:tr,cont:{k:"dying",hero:h.uid,stage:2},mods:{}});log(s,`${h.name} is about to die. ${P(s,oppOf(s,h.owner)).name} may respond with a Hidden card…`);return true}
   return false}
 function die(s,h){const pl=P(s,h.owner);h.fl.dyingDone=false;pl.t.died=(pl.t.died||[]).concat([h.uid]);
   h.dead=true;h.dmg=maxHp(s,h);h.ex=false;h.med=false;h.plus=0;h.mods=[];h.guard=0;h.gsrc=[];h.eqGuard=0;STATUS.forEach(k=>h.st[k]=0);
@@ -434,6 +479,7 @@ function destroyObj(s,o,exile,why){const f=find(s,o.uid);if(!f)return;const pl=P
   /* UI event: the Play tab shows a "destroyed" pop-up for each of these */
   if(!exile&&why!=="sac"){s.fxN=(s.fxN||0)+1;s.fx=(s.fx||[]).concat([{n:s.fxN,k:"destroy",id:o.id||null,name:o.name,kind:o.kind,pid:f.pid}]).slice(-12)}
   if(o.kind==="summon"){const c=o.ctrl;
+    if(s.trials&&E.hooks.onSummonDies)E.hooks.onSummonDies(s,o);
     if(o.name==="Aurawing Familiar"){P(s,c).aura+=1;log(s,`${P(s,c).name} gains 1 Aura.`)}
     if(o.name==="Drawwing Familiar")draw(s,c,1);
     /* Set 2 Cursed Urn: whenever a Revenant you control dies (sacrifice included), create a Remains token in an empty inventory slot */
@@ -448,7 +494,11 @@ E.destroyObj=destroyObj;
 /* Set 2: sacrifice a summon you control (not "destroy", so Impervious doesn't stop it) */
 E.sacrifice=(s,o)=>destroyObj(s,o,false,"sac");
 const revenants=(s,pid)=>P(s,pid).bf.filter(o=>o.kind==="summon"&&o.name==="Revenant");E.revenants=revenants;
-function checkWin(s){if(s.over)return;const dead=s.p.map(pl=>pl.heroes.every(h=>h.dead));
+function checkWin(s){if(s.over)return;
+  /* Trials: the players win when the boss Hero dies (at once, even mid-resolution); they lose only when every party is wiped out */
+  if(s.trials){const b=s.trials.boss;const bossDead=wiped(s,b);const allWiped=parties(s).every(p=>wiped(s,p));
+    if(bossDead||allWiped){s.over=true;s.winner=bossDead?0:b;s.pend=[];s.cur=null;s.qatk=null;s.bonus=null;log(s,bossDead?`🏆 ${P(s,b).name} is defeated! The parties win Trial ${s.trials.trial}.`:`Every party is wiped out. ${P(s,b).name} wins.`)}return}
+  const dead=s.p.map(pl=>pl.heroes.every(h=>h.dead));
   if(dead[0]||dead[1]){s.over=true;s.winner=dead[0]&&dead[1]?-1:(dead[0]?1:0);s.pend=[];s.cur=null;s.qatk=null;
     log(s,s.winner<0?"Both parties fall. The game is a draw.":`🏆 ${s.p[s.winner].name} wins!`);}}
 
@@ -461,7 +511,7 @@ function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};con
   {const pl=P(s,pid);const n=(/Barkborn/.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
    if(n>0){addMod(o,{def:n*o.hp});log(s,`${name} has Barkborn${n>1?" ×"+n:""}: +${n*o.hp} DEF this turn.`,pid)}}
   /* Set 2 Jorkev, the Pillager (was Necromancer B): whenever a Revenant enters under your control, you may choose a player; that player Mills 1 (one trigger per Revenant) */
-  if(name==="Revenant")living(P(s,pid)).filter(h=>h.name==="Jorkev, the Pillager").forEach(()=>ask(s,pid,"Jorkev, the Pillager: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,opp(pid)).name} Mills 1`,v:opp(pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Jorkev, the Pillager"}));
+  if(name==="Revenant")living(P(s,pid)).filter(h=>h.name==="Jorkev, the Pillager").forEach(()=>ask(s,pid,"Jorkev, the Pillager: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,oppOf(s,pid)).name} Mills 1`,v:oppOf(s,pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Jorkev, the Pillager"}));
   return o}
 ASK.millOne=(s,pid,pr,v)=>{if(v==null)return;mill(s,v,1)};
 function makePillar(s,pid,name){const o={uid:nid(s),kind:"pillar",name,ctrl:pid,owner:pid,tok:true};P(s,pid).bf.push(o);log(s,`${P(s,pid).name} conjures a ${name}.`,pid);return o}
@@ -536,8 +586,8 @@ function consumeCostFlags(s,pid,actor,d){const pl=P(s,pid);
    item equip enemyEquip allyEquip ench pillar allyPillar nonHero player enemyPlayer deadAlly meditating allyHeroOther anyOther */
 function inPlayTargets(s){const out=[];s.p.forEach((pl,pid)=>{pl.heroes.forEach(h=>{if(!h.dead)out.push(h)});pl.bf.forEach(o=>{if(o.kind==="summon")out.push(o)});pl.inv.forEach(o=>{if(o.kind==="doll")out.push(o)})});return out}
 function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let list=[];const k=spec.k;
-  const isEnemy=o=>ctrl(s,o)!==pid;
-  if(k==="player"||k==="enemyPlayer"||k==="allyPlayer"){return[0,1].filter(p=>k==="player"||(k==="enemyPlayer"?p!==pid:p===pid)).map(p=>"P"+p)}
+  const isEnemy=o=>!sameTeam(s,ctrl(s,o),pid);
+  if(k==="player"||k==="enemyPlayer"||k==="allyPlayer"){return s.p.map((_,i)=>i).filter(p=>k==="enemyPlayer"?!sameTeam(s,p,pid):true).filter(p=>k==="player"||(k==="enemyPlayer"?p!==pid:p===pid)).map(p=>"P"+p)}
   if(["any","enemy","ally","hero","enemyHero","allyHero","summon","enemySummon","allySummon","allyHeroOther","anyOther","meditating"].includes(k)){
     list=inPlayTargets(s).filter(o=>{
       if(k.includes("Hero")||k==="hero"||k==="meditating"){if(o.kind!=="hero")return false}
@@ -566,7 +616,7 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
     if(viaCard&&o.kind==="card"&&/can't be targeted/i.test(def(o).rules||"")&&def(o).type==="Item")return false; /* Arrow of Craftsmanship */
     if(spec.f&&!spec.f(s,o,ctx))return false;return true});
   /* Dazzling Melody: enemies must target the taunting Hero with attacks, cards and abilities (when it is a legal choice) */
-  const op=P(s,opp(pid));const taunt=op.heroes.find(h=>!h.dead&&h.fl.tauntRound===s.round);
+  const op=P(s,oppOf(s,pid));const taunt=op.heroes.find(h=>!h.dead&&h.fl.tauntRound===s.round);
   if(taunt&&list.some(o=>o.uid===taunt.uid)&&list.some(o=>isEnemy(o)))list=list.filter(o=>!isEnemy(o)||o.uid===taunt.uid);
   /* Breastplate of Bravery (update 26: base and upgrade): opposing attacks must target the equipped Hero (attacks only) */
   if(!viaCard){const bb=op.heroes.find(h=>!h.dead&&hasEqN(h,"Breastplate of Bravery"));if(bb&&list.some(o=>o.uid===bb.uid))list=list.filter(o=>!isEnemy(o)||o.uid===bb.uid)}
@@ -672,7 +722,7 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
   pl.heroes.forEach(h=>{if(h.dead&&!h.surr)SOULS.forEach((_,i)=>out.push({type:"soul",hero:h.uid,ch:i}))});
   out.push({type:"pass"});
   return out}
-function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,opp(pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0):0)}
+function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,oppOf(s,pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0):0)}
 function itemCost(s,pid,a,o){if(s.bonus&&s.bonus.free&&s.bonus.pid===pid&&a&&s.bonus.uid===a.uid&&def(o).sub==="Arrow")return 0;const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);return c+(a?burden(a):0)}
 E.abilityCost=abilityCost;E.itemCost=itemCost;
 function promptOptions(s,pid,pr){
@@ -708,7 +758,7 @@ function canReveal(s,pid,o,pr){if(pr.noHidden)return false;const d=def(o);if(d.s
   if(!revealHero(s,pid,o,pr))return false;if(hiddenCost(s,pid,o)>P(s,pid).aura)return false;
   const h=hiddenScript(o);if(!h)return!["dying","afterDmg","dusk"].includes(pr.trig.kind);return[].concat(h.when).includes(pr.trig.kind)&&(!h.ok||h.ok(s,pid,pr.trig))}
 E.canReveal=canReveal;
-function windowFor(s,pid,trig){if(trig.noHidden)return false;const pl=P(s,pid);return pl.inv.some(o=>o.fd&&canReveal(s,pid,o,{trig}))||canStall(s,pid,trig)}
+function windowFor(s,pid,trig){if(trig.noHidden||isBoss(s,pid))return false;const pl=P(s,pid);return pl.inv.some(o=>o.fd&&canReveal(s,pid,o,{trig}))||canStall(s,pid,trig)}
 
 /* ---------- need(): target slots for an action ---------- */
 E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
@@ -737,8 +787,10 @@ function labelFor(k){return({any:"any target",enemy:"enemy",ally:"ally",hero:"He
 function same(a,b){if(a.type!==b.type)return false;for(const k of["uid","att","stat","idx","hero","ch","i","n","x"])if(a[k]!==undefined&&a[k]!==b[k])return false;return true}
 E.act=function(s,pid,a){CUR_S=s;
   if(s.over)return{ok:false,err:"The game is over."};
-  if(a.type==="concede"){if(pid!==0&&pid!==1)return{ok:false,err:"Not a player."};s.seq++;s.over=true;s.winner=opp(pid);s.conceded=pid;s.pend=[];s.cur=null;s.qatk=null;
-    log(s,`${P(s,pid).name} concedes.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`);return{ok:true}}
+  if(a.type==="concede"&&s.trials){if(pid!==0)return{ok:false,err:"Only your party can concede a Trial."};s.seq++;s.over=true;s.winner=s.trials.boss;s.conceded=pid;s.pend=[];s.cur=null;s.qatk=null;
+    log(s,`${P(s,pid).name} concedes. The Trial is lost.`,pid);return{ok:true}}
+  if(a.type==="concede"){if(pid!==0&&pid!==1)return{ok:false,err:"Not a player."};s.seq++;s.over=true;s.winner=oppOf(s,pid);s.conceded=pid;s.pend=[];s.cur=null;s.qatk=null;
+    log(s,`${P(s,pid).name} concedes.`,pid);log(s,`🏆 ${P(s,oppOf(s,pid)).name} wins!`);return{ok:true}}
   const opts=E.options(s,pid);
   if(a.type==="play"&&P(s,pid).disc.some(c=>c.uid===a.uid)&&!opts.some(o=>o.type==="play"&&o.uid===a.uid))return{ok:false,err:"You can't play that card from your discard pile now."};
   if(a.type==="play"){const ok=opts.some(o=>o.type==="play"&&findCardAnywhere(s,pid,o.uid)&&findCardAnywhere(s,pid,o.uid).id===(findCardAnywhere(s,pid,a.uid)||{}).id);if(!ok)return{ok:false,err:"You can't play that card now."}}
@@ -748,6 +800,7 @@ E.act=function(s,pid,a){CUR_S=s;
   if(a.type==="scry"&&!(s.pend[0]&&s.pend[0].type==="scry"&&s.pend[0].pid===pid))return{ok:false,err:"No scry open."};
   if(a.type==="choose"&&!(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].pid===pid))return{ok:false,err:"Nothing to choose."};
   if(a.type==="wake"){const wh=heroByUid(s,a.hero);if(!wh||wh.owner!==pid||!wh.med)return{ok:false,err:"That Hero isn't Meditating."}}
+  if(a.type==="giveAction"&&s.trials)return{ok:false,err:"There's no opponent to give an action to in a Trial."};
   if(a.type==="giveAction"&&!(s.phase==="battle"&&(pid===0||pid===1)&&(s.pend.length?(s.pend[0].type==="manual"&&s.pend[0].pid===pid):s.prio===pid)))return{ok:false,err:"You can give an action on your priority or from your resolve-by-hand panel."};
   /* targets */
   const slots=E.need(s,pid,a);const tg=a.targets||[];
@@ -806,8 +859,8 @@ function doAct(s,pid,a){const pl=P(s,pid);
   /* Rules fix: play a card from hand for free (no Aura, no class or ready limits); the chosen Hero plays it. Doesn't use an action. */
   case"fixPlay":{const h=fixHero(s,pid,a);const c=pl.hand.find(x=>x.uid===a.uid);if(!c)return;log(s,`✋ ${pl.name} plays ${DB[c.id].name} for free by rules fix${h?` (${h.name})`:""}.`,pid);
     playCard(s,pid,h,a.uid,a,{free:true});checkDeaths(s);return}
-  case"manDone":{const pr=s.pend.shift();log(s,pr&&pr.given?`${pl.name} is done; control returns to ${P(s,opp(pid)).name}.`:`${pl.name} finishes resolving by hand.`,pid);return}
-  case"giveAction":{const op=opp(pid);s.pend.unshift({type:"manual",pid:op,title:`${pl.name} gave you an action`,text:"Resolve anything that needs your hands (a card you control, a choice, a by-hand effect). This does not use an action. Press Done to hand control back.",given:true});
+  case"manDone":{const pr=s.pend.shift();log(s,pr&&pr.given?`${pl.name} is done; control returns to ${P(s,oppOf(s,pid)).name}.`:`${pl.name} finishes resolving by hand.`,pid);return}
+  case"giveAction":{const op=oppOf(s,pid);s.pend.unshift({type:"manual",pid:op,title:`${pl.name} gave you an action`,text:"Resolve anything that needs your hands (a card you control, a choice, a by-hand effect). This does not use an action. Press Done to hand control back.",given:true});
     log(s,`✋ ${pl.name} gives ${P(s,op).name} an action to resolve by hand.`,pid);return}
   case"skipBonus":{const b=s.bonus;if(b&&b.queue&&b.queue.length){const nx=b.queue.shift();b.uid=nx;b.n=1;log(s,`${pl.name} skips that Ranger.`,pid);return}
     log(s,`${pl.name} doesn't use the extra action.`,pid);endBonus(s);s.cur={pid,type:"skip"};return}
@@ -821,7 +874,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
     log(s,`${pl.name} activates ${o.name}${c?` (${c} Aura)`:""} (no action used).`,pid);
     withSrc(s,o.name,()=>isc.act.run(mkCtx(s,pid,null,DB[o.id],o,a.targets||[],{modes:a.modes||[]})));checkDeaths(s);return}
   /* battle actions */
-  s.cur={pid,type:a.type};const actor=actorFor(s,pid);s.dmgTo=[0,0];pl.t.acts=(pl.t.acts||0)+1;
+  s.cur={pid,type:a.type};const actor=actorFor(s,pid);s.dmgTo=[0,0];pl.t.acts=(pl.t.acts||0)+1;if(s.trials)s.trials.swAct=true;
   if(actor&&a.type!=="soul"&&!((a.type==="attack"||a.type==="band")&&a.att!==actor.uid))pl.t.lastActor=actor.uid;
   stallTick(s,pid);
   if(a.type==="play"){const fd=!pl.hand.some(c=>c.uid===a.uid)&&pl.disc.some(c=>c.uid===a.uid);if(fd)log(s,`${pl.name} plays a card from their discard pile (Exhume).`,pid);playCard(s,pid,actor,a.uid,a,fd?{fromDisc:true}:{});return}
@@ -921,7 +974,7 @@ E.canStall=canStall;
 function stallTick(s,pid){const pl=P(s,pid);(pl.stall||[]).forEach(c=>{if(c.n>0){c.n--;log(s,c.n?`Stall: ${DB[c.id].name} has ${c.n} stall counter${c.n>1?"s":""} left.`:`Stall: the last counter comes off ${DB[c.id].name}. ${pl.name} may play it without paying its Aura cost.`,pid)}})}
 
 /* ---------- card play ---------- */
-function mkCtx(s,pid,actor,d,inst,targets,extra){const c=Object.assign({s,pid,me:P(s,pid),op:P(s,opp(pid)),actor,def:d,inst,t:(targets||[]).map(t=>t==null?null:resolveTarget(s,t)),tu:targets||[],E},extra||{});return c}
+function mkCtx(s,pid,actor,d,inst,targets,extra){const c=Object.assign({s,pid,me:P(s,pid),op:P(s,oppOf(s,pid)),actor,def:d,inst,t:(targets||[]).map(t=>t==null?null:resolveTarget(s,t)),tu:targets||[],E},extra||{});return c}
 E.mkCtx=mkCtx;
 function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   let c=pl.hand.find(x=>x.uid===uid);let fromLib=false,zone=pl.hand;
@@ -973,7 +1026,7 @@ function countCombo(s,pid,actor,d){if(!d||d.sub!=="Combo")return;const pl=P(s,pi
 E.countCombo=countCombo;
 E.combosThisTurn=(s,pid)=>P(s,pid).t.combos||0;
 /* opens a Hidden-card window for the opponent if one can respond, else resolves now */
-function queueResolve(s,pid,cont,trig){const op=opp(pid);trig.pid=pid;
+function queueResolve(s,pid,cont,trig){const op=oppOf(s,pid);trig.pid=pid;
   if(!trig.noHidden&&windowFor(s,op,trig)){s.pend.unshift({type:"window",pid:op,trig,cont,mods:{}});log(s,`${P(s,op).name} may respond with a Hidden card…`);return}
   resolveCont(s,pid,cont,{})}
 function closeWindow(s,pr){const m=pr.mods||{};if(m.retarget&&pr.cont&&pr.cont.targets){pr.cont.targets[m.retarget.i]=m.retarget.uid}resolveCont(s,pr.trig.pid,pr.cont,m)}
@@ -1000,7 +1053,7 @@ function resolveCont(s,pid,cont,mods){
   if(cont.k==="attack"){resolveAttack(s,pid,cont,mods);return}
   if(cont.k==="dying"){const f=find(s,cont.hero);const h=f&&f.o;if(!h||h.dead)return;
     if(hpOf(s,h)>0){h.fl.dyingDone=false;return}
-    if(cont.stage===1){const tr={kind:"dying",hero:h.uid,pid:h.owner};if(windowFor(s,opp(h.owner),tr)){s.pend.unshift({type:"window",pid:opp(h.owner),trig:tr,cont:{k:"dying",hero:h.uid,stage:2},mods:{}});log(s,`${P(s,opp(h.owner)).name} may respond with a Hidden card…`);return}}
+    if(cont.stage===1){const tr={kind:"dying",hero:h.uid,pid:h.owner};if(windowFor(s,oppOf(s,h.owner),tr)){s.pend.unshift({type:"window",pid:oppOf(s,h.owner),trig:tr,cont:{k:"dying",hero:h.uid,stage:2},mods:{}});log(s,`${P(s,oppOf(s,h.owner)).name} may respond with a Hidden card…`);return}}
     die(s,h);checkDeaths(s);return}
   const actor=cont.actor?heroByUid(s,cont.actor):null;
   if(cont.k==="ability"){const ab=HS()[actor.name][cont.idx];withSrc(s,`${actor.name}: ${ab.label||"ability"}`,()=>ab.run(mkCtx(s,pid,actor,DB[actor.id],null,cont.targets,{mods})));checkDeaths(s);return}
@@ -1178,11 +1231,11 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
   case"doll":E.makeDoll(s,pid);break;
   case"destroy":if(t&&t.kind!=="hero"&&t.kind!=="player"){log(s,`${who}:`,pid);destroyObj(s,t,!!a.neg)}break;
   case"discard":{const c=pl.hand.find(c=>c.uid===a.card);if(c){pl.hand.splice(pl.hand.indexOf(c),1);pl.disc.push(c);log(s,`${who} discards ${DB[c.id].name}.`,pid)}break}
-  case"mill":{const who=a.name==="Opponent"?opp(pid):pid;log(s,`✋ ${pl.name} (by hand):`,pid);mill(s,who,n);break}
+  case"mill":{const who=a.name==="Opponent"?oppOf(s,pid):pid;log(s,`✋ ${pl.name} (by hand):`,pid);mill(s,who,n);break}
   case"equipfree":{if(!t||t.kind!=="hero"||t.dead||t.owner!==pid)break;let i=pl.hand.findIndex(c=>c.uid===a.card),o=null;
     if(i>=0&&DB[pl.hand[i].id]&&DB[pl.hand[i].id].kind==="equip")o=eqObjFromCard(s,pid,pl.hand.splice(i,1)[0]);else{i=pl.inv.findIndex(x=>x.uid===a.card&&x.kind==="equip");if(i>=0)o=pl.inv.splice(i,1)[0]}
     if(o){log(s,`✋ ${pl.name} equips ${o.name} to ${t.name} for free${canUseEq(s,t,o)?"":" (normally not allowed for this Hero)"}.`,pid);equipTo(s,t,o)}break}
-  case"revealtop":{const who=a.name==="Opponent"?opp(pid):pid;const lp=P(s,who);const top=lp.lib.slice(-Math.max(1,n)).reverse();const pr=s.pend[0];
+  case"revealtop":{const who=a.name==="Opponent"?oppOf(s,pid):pid;const lp=P(s,who);const top=lp.lib.slice(-Math.max(1,n)).reverse();const pr=s.pend[0];
     log(s,`✋ ${pl.name} reveals the top ${top.length} of ${lp.name}'s library: ${top.map(c=>DB[c.id].name).join(", ")||"(empty)"}.`,pid);
     if(pr&&pr.type==="manual"){pr.revTop={pid:who,uids:top.map(c=>c.uid)};pr.revealed=(pr.revealed||[]).concat(top.map(c=>({name:DB[c.id].name,text:DB[c.id].rules||""})))}break}
   case"revmove":{const pr=s.pend[0];if(!pr||!pr.revTop)break;const lp=P(s,pr.revTop.pid);const i=lp.lib.findIndex(c=>c.uid===a.card);if(i<0)break;const c=lp.lib.splice(i,1)[0];const nm=DB[c.id].name;
@@ -1207,7 +1260,7 @@ function manualOp(s,pid,a){const pl=P(s,pid);const t=a.target?resolveTarget(s,a.
   checkDeaths(s)}
 
 /* ---------- auto targets for passive triggers ---------- */
-function autoTarget(s,pid,kind){const me=P(s,pid),op=P(s,opp(pid));
+function autoTarget(s,pid,kind){const me=P(s,pid),op=P(s,oppOf(s,pid));
   if(kind==="enemy"){const c=living(op).filter(h=>!stealth(s,h));if(!c.length)return op.bf.find(o=>o.kind==="summon"&&!stealth(s,o))||null;return c.sort((a,b)=>hpOf(s,a)-hpOf(s,b))[0]}
   if(kind==="healAlly"){const c=living(me).filter(h=>h.dmg>0);return c.sort((a,b)=>b.dmg-a.dmg)[0]||null}
   if(kind==="statusAlly"){return living(me).find(h=>STATUS.some(k=>h.st[k]>0))||null}
@@ -1219,13 +1272,15 @@ E.autoTarget=autoTarget;
 /* Cloak of Hate (update 21): whenever its Hero becomes exhausted (ready -> exhausted), deal 2 Dark damage to any target */
 function cloakCheck(s){s.p.forEach((pl,pid)=>pl.heroes.forEach(h=>{const was=!!h.fl.exSeen;h.fl.exSeen=!!(h.ex&&!h.dead);
   /* Set 2 Grave Caller's Wand: whenever the equipped Hero exhausts, target player Mills 1 */
-  if(h.ex&&!was&&!h.dead)eqList(h).filter(e=>e.name==="Grave Caller's Wand").forEach(()=>ask(s,pid,`Grave Caller's Wand: ${h.name} exhausted. Target player Mills 1`,[{label:`${P(s,opp(pid)).name} Mills 1`,v:opp(pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid}],"millOne",{name:"Grave Caller's Wand"}));
+  if(h.ex&&!was&&!h.dead)eqList(h).filter(e=>e.name==="Grave Caller's Wand").forEach(()=>ask(s,pid,`Grave Caller's Wand: ${h.name} exhausted. Target player Mills 1`,[{label:`${P(s,oppOf(s,pid)).name} Mills 1`,v:oppOf(s,pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid}],"millOne",{name:"Grave Caller's Wand"}));
   if(h.ex&&!was&&!h.dead&&hasEqN(h,"Cloak of Hate")){const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);
     eqList(h).filter(e=>e.name==="Cloak of Hate").forEach(()=>ask(s,pid,`Cloak of Hate: ${h.name} is exhausted, deal 2 Dark damage to any target`,targetOpts(s,pid,ts,2).concat([{label:"No damage",v:null}]),"dmgTo",{n:2,name:"Cloak of Hate",type:"Dark",src:h.uid}))}}))}
 function settle(s){let guard=0;
   while(!s.over&&guard++<200){
     if(s.phase==="battle")cloakCheck(s);
     if(s.pend.length){
+      /* Trials: the boss side has no player, hand or Hidden cards, so nothing ever waits on it */
+      if(s.trials&&s.pend[0].pid===s.trials.boss){const pr=s.pend.shift();if(pr.type==="window")closeWindow(s,pr);continue}
       /* Nov 12, 2026: once a Hidden card (such as Redirect) has been revealed in a response window and has finished resolving,
          the window closes on its own unless that player can still reveal another Hidden card; it no longer asks "Don't reveal" afterwards */
       if(s.pend[0].type==="window"&&s.pend[0].revealed&&!promptOptions(s,s.pend[0].pid,s.pend[0]).some(o=>o.type==="reveal")){const pr=s.pend.shift();closeWindow(s,pr);continue}
@@ -1233,11 +1288,11 @@ function settle(s){let guard=0;
       if(s.pend[0].type==="attackGo"){const pr=s.pend.shift();const f=find(s,pr.cont.att);if(f&&!f.o.dead)queueResolve(s,pr.pid,pr.cont,pr.trig);continue}
       if(s.pend[0].type==="bottomRest"){const pr=s.pend.shift();const pl=P(s,pr.pid);let n=0;pr.uids.forEach(u=>{const i=pl.lib.findIndex(c=>c.uid===u);if(i>=0){pl.lib.unshift(pl.lib.splice(i,1)[0]);n++}});if(n)log(s,`${pl.name} puts ${n} revealed card${n>1?"s":""} on the bottom of their library.`,pr.pid);continue}
       /* AI-free auto answers handled by controller */return}
-    if(s.trig10&&s.trig10.length){const v=s.trig10.shift();const trig={kind:"party10",pid:opp(v)};if(windowFor(s,v,trig)){s.pend.unshift({type:"window",pid:v,trig,cont:{k:"none"},mods:{}});log(s,`${P(s,v).name}'s party has taken 10 damage this turn and may respond with a Hidden card…`)}continue}
+    if(s.trig10&&s.trig10.length){const v=s.trig10.shift();const trig={kind:"party10",pid:oppOf(s,v)};if(windowFor(s,v,trig)){s.pend.unshift({type:"window",pid:v,trig,cont:{k:"none"},mods:{}});log(s,`${P(s,v).name}'s party has taken 10 damage this turn and may respond with a Hidden card…`)}continue}
     if(s.qatk){const q=s.qatk;s.qatk=null;const f=find(s,q.att);const t=resolveTarget(s,q.tgt);if(f&&t&&!t.dead&&!f.o.dead){startAttack(s,q.pid,q.att,q.tgt,q.o||{});continue}}
     if(s.cur){const pid=s.cur.pid;
       /* Rapacious Encore: after an enemy action deals damage to your side */
-      if(s.dmgTo&&!s.cur.encore&&s.phase==="battle"){const d=opp(pid);const n=s.dmgTo[d]||0;s.dmgTo=null;
+      if(s.dmgTo&&!s.cur.encore&&s.phase==="battle"){const d=oppOf(s,pid);const n=s.dmgTo[d]||0;s.dmgTo=null;
         if(n>0){const tr={kind:"afterDmg",pid,amount:n,noHidden:false};if(windowFor(s,d,tr)){s.cur.encore=true;s.pend.unshift({type:"window",pid:d,trig:tr,cont:{k:"none"},mods:{}});log(s,`${P(s,d).name} may respond with a Hidden card…`);continue}}}
       s.cur=null;if(s.phase==="battle"){
         if(s.bonus&&s.bonus.pid===pid){s.bonus.n--;
@@ -1248,20 +1303,25 @@ function settle(s){let guard=0;
     if(s.phase==="dawn"&&s.dawnDone.every(Boolean)){startBattle(s);continue}
     if(s.phase==="battle"){const pid=s.prio;
       if(!s.passed[pid]&&!hasRealOption(s,pid)){log(s,`${P(s,pid).name} has no actions left and passes.`,pid);s.passed[pid]=true;advance(s,pid);continue}
-      if(s.passed[0]&&s.passed[1]){doDusk(s);continue}
+      if(allPassed(s)){if(sweepEnd(s)){if(s.over)return;continue}doDusk(s);continue}
       return}
     return}
   checkWin(s)}
 E.settle=settle;
 function hasRealOption(s,pid){return battleOptions(s,pid).some(o=>!["pass","manualAbility","clear","soul"].includes(o.type))||battleOptions(s,pid).some(o=>o.type==="soul")}
-function advance(s,pid){s.acted[pid]=true;if(s.passed[0]&&s.passed[1])return;
-  const o=opp(pid);
-  if(!s.passed[o]&&!s.acted[o]){s.prio=o;return}
-  /* both acted (or other passed): next position */
-  /* Lead → Center → Closer → Last (only when a ready Hero has stepped back) → Lead */
-  const anyBack=s.p.some(pl=>pl.heroes.some(h=>!h.dead&&!h.ex&&h.fl.stepped===s.round));
-  s.pos=s.pos===2?(anyBack?3:0):s.pos===3?0:s.pos+1;s.acted=[false,false];
-  s.prio=!s.passed[s.init]?s.init:opp(s.init)}
+function advance(s,pid){s.acted[pid]=true;if(allPassed(s))return;
+  /* next party in initiative order that hasn't acted or passed this sweep */
+  const order=parties(s);const nx=order.find(p=>!s.passed[p]&&!s.acted[p]);
+  if(nx!=null){s.prio=nx;return}
+  /* everyone acted (or passed): next position */
+  /* Lead → Center → Closer → Last (only when a ready Hero has stepped back) → Lead. Trials parties have 2 Heroes: Lead → Closer → Last */
+  const anyBack=s.p.some(pl=>pl.heroes.some(h=>!h.dead&&!h.ex&&h.fl.stepped===s.round));const lastPos=s.trials?1:2;
+  s.pos=s.pos===lastPos?(anyBack?3:0):s.pos===3?0:s.pos+1;s.acted=s.p.map(()=>false);
+  s.prio=order.find(p=>!s.passed[p]);
+  sweepEnd(s)}
+/* Trials: after a sweep in which any party acted, the boss flips (E.hooks.afterSweep). Returns true if the hook ran. */
+function sweepEnd(s){if(!s.trials||!s.trials.swAct||s.over)return false;s.trials.swAct=false;if(E.hooks.afterSweep)E.hooks.afterSweep(s);checkDeaths(s);return true}
+E.sweepEnd=sweepEnd;
 function startRound(s){s.round++;s.phase="dawn";log(s,`— Round ${s.round}: Dawn —`);doDawn(s)}
 function doDawn(s){
   s.p.forEach((pl,pid)=>{
@@ -1283,7 +1343,7 @@ function doDawn(s){
       STATUS.forEach(k=>{if(o.st[k]>0)o.st[k]--})})});
   checkDeaths(s);if(s.over)return;
   /* At Dawn effects (active player first) */
-  [s.init,opp(s.init)].forEach(pid=>{const pl=P(s,pid);
+  parties(s).forEach(pid=>{const pl=P(s,pid);
     if(invHas(pl,"Soul Lantern")){const n=invCount(pl,"Soul Lantern");pl.aura+=n;log(s,`Soul Lantern: ${pl.name} gains ${n} Aura.`,pid)} /* Set 2 */
     if(invHas(pl,"Aura Crystal")){pl.aura+=invCount(pl,"Aura Crystal");log(s,`Aura Crystal: ${pl.name} gains 1 Aura.`,pid)}
     if(invHas(pl,"Ley Grove")){const g=Math.floor(pl.bf.filter(o=>o.kind==="summon").length/2)*invCount(pl,"Ley Grove");if(g){pl.aura+=g;log(s,`Ley Grove: ${pl.name} gains ${g} Aura.`,pid)}}
@@ -1302,16 +1362,16 @@ function doDawn(s){
       resolveCont(s,pid,{k:"card",actor:actor.uid,card:e.card,targets,modes:e.modes,x:e.x,echo:true},{})});
   });
   checkDeaths(s);if(s.over)return;
-  s.p.forEach((pl,pid)=>draw(s,pid,1));
+  s.p.forEach((pl,pid)=>{if(!isBoss(s,pid)&&!(s.trials&&wiped(s,pid)))draw(s,pid,1)});
   s.dawnDone=s.p.map((pl,pid)=>!(pl.inv.some(o=>!o.fd&&def(o).sub==="Gemstone")));
   if(s.dawnDone.every(Boolean)&&!s.pend.length)startBattle(s)}
-function startBattle(s){s.phase="battle";s.pos=0;s.acted=[false,false];s.passed=[false,false];s.bonus=null;s.prio=s.init;
+function startBattle(s){s.phase="battle";s.pos=0;s.acted=s.p.map(()=>false);s.passed=s.p.map((_,i)=>isBoss(s,i));s.bonus=null;s.prio=s.init;if(s.trials)s.trials.swAct=false;
   log(s,`— Battle Phase (${s.p[s.init].name} has initiative) —`)}
 E.startBattle=startBattle;
 function doDusk(s){
   /* "At Dusk" choices first, while Aura is still in the pool: Second Chances (Hidden), Tome of Gim */
   if(!s.duskAsked){s.duskAsked=true;let any=false;
-    [opp(s.init),s.init].forEach(pid=>{const pl=P(s,pid);
+    parties(s).reverse().forEach(pid=>{const pl=P(s,pid);
       pl.inv.filter(o=>!o.fd&&o.name==="Tome of Gim").forEach(o=>{if(pl.hand.length){pushChoose(s,pid,{title:"Tome of Gim: you may put a card from your hand under it",cards:pl.hand.map(c=>c.uid),min:0,max:1,op:"tomePut",tome:o.uid});any=true}});
       const tr={kind:"dusk",pid};if(windowFor(s,pid,tr)){s.pend.unshift({type:"window",pid,trig:tr,cont:{k:"none"},mods:{}});log(s,`${pl.name} may respond with a Hidden card at Dusk…`);any=true}});
     if(any)return}
@@ -1319,31 +1379,33 @@ function doDusk(s){
   s.phase="dusk";log(s,`— Dusk —`);
   /* Heavy Bow: a Hero that became exhausted this round gets a Fatigue counter */
   s.p.forEach((pl,pid)=>living(pl).forEach(h=>{if(h.ex&&!h.fat&&!h.fl.fatRested&&hasEqN(h,"Heavy Bow")){if(hasUpN(s,h,"Heavy Bow")&&pl.aura>=1){pl.aura-=1;log(s,`Upgraded Heavy Bow: ${pl.name} pays 1 Aura so ${h.name} doesn't get a Fatigue counter.`,pid);return}h.fat=1;log(s,`Heavy Bow: ${h.name} gets a Fatigue counter (it won't ready at the next Dawn).`,pid)}}));
-  [s.init,opp(s.init)].forEach(pid=>{const pl=P(s,pid);
+  parties(s).forEach(pid=>{const pl=P(s,pid);
     const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;
     if(pp){const t=autoTarget(s,pid,"enemy");if(t&&t.kind==="hero")loseHp(s,t,pp,"Pain Pillar")}
     pl.heroes.forEach(h=>{if(h.dead)return;
       h.ench.forEach(e=>{if(e.name==="Mark of Doom")loseHp(s,h,1,"Mark of Doom")});
-      if(h.fl.chargedRound===s.round&&!h.dead){if(!(h.fl.chargedHit===s.round)){log(s,`Charged Barrage: ${h.name} strikes every enemy.`,pid);const st=strOf(s,h);P(s,opp(pid)).heroes.filter(x=>!x.dead).concat(P(s,opp(pid)).bf.filter(o=>o.kind==="summon")).forEach(t=>damage(s,h,t,st,{card:true}))}}
+      if(h.fl.chargedRound===s.round&&!h.dead){if(!(h.fl.chargedHit===s.round)){log(s,`Charged Barrage: ${h.name} strikes every enemy.`,pid);const st=strOf(s,h);P(s,oppOf(s,pid)).heroes.filter(x=>!x.dead).concat(P(s,oppOf(s,pid)).bf.filter(o=>o.kind==="summon")).forEach(t=>damage(s,h,t,st,{card:true}))}}
       if(h.fl.standRound===s.round&&!h.dead){log(s,`Take a Stand: ${h.name} dies at Dusk.`,pid);h.dmg=maxHp(s,h);}});
   });
   checkDeaths(s);if(s.over)return;
-  let nextInit=opp(s.init);
-  s.p.forEach((pl,pid)=>{if(pl.fl.promoRound===s.round)nextInit=pid});
+  /* initiative passes to the next party (Trials: the next party clockwise that isn't wiped out; the boss never has it) */
+  let nextInit=s.trials?(parties(s).slice(1).find(p=>!wiped(s,p))??s.init):oppOf(s,s.init);
+  s.p.forEach((pl,pid)=>{if(pl.fl.promoRound===s.round&&!isBoss(s,pid))nextInit=pid});
   s.p.forEach((pl,pid)=>{
     const clean=o=>{o.mods=(o.mods||[]).filter(m=>!(m.until==="dusk"||(typeof m.until==="number"&&m.until<=s.round)))};
     pl.heroes.forEach(h=>{if(h.fl.frogName){h.name=h.fl.frogName;h.fl.frogName=null}h.fl.dyingDone=false;clean(h);h.guard=0;h.gsrc=[];});
     pl.bf.forEach(clean);
     pl.pm={};pl.t={};pl.fl.mageNext=pl.fl.mageAll=pl.fl.trapNext=pl.fl.trapAll=pl.fl.songDisc=false;pl.fl.arrowNext=null;pl.fl.rapidPierce=false;pl.fl.preventNext=false;
     if(pl.aura>0)log(s,`${pl.name} loses ${pl.aura} unspent Aura.`,pid);pl.aura=0;
-    const g=living(pl).length;pl.gold+=g;log(s,`${pl.name} collects ${g} Gold (now ${pl.gold}).`,pid);
+    if(isBoss(s,pid))return;const g=living(pl).length;pl.gold+=g;log(s,`${pl.name} collects ${g} Gold (now ${pl.gold}).`,pid);
     pl.heroes.forEach(h=>{if(h.fl.h2h&&!h.dead){(h.fl.h2h||[]).forEach(e=>{const idx=pl.inv.findIndex(o=>o.uid===e);if(idx>=0){const o=pl.inv.splice(idx,1)[0];equipTo(s,h,o)}})}h.fl.h2h=null});
   });
   s.pillage=null;s.trig10=null;
   s.init=nextInit;log(s,`Initiative passes to ${s.p[s.init].name}.`);
-  s.phase="town";s.town={order:[s.init,opp(s.init)],i:0};log(s,`— Town —`);
+  /* Town: each party visits in initiative order; a wiped-out party sits out */
+  s.phase="town";s.town={order:parties(s).filter(p=>!(s.trials&&wiped(s,p))),i:0};log(s,`— Town —`);
   /* maximum hand size: discard down to 5 */
-  [opp(s.init),s.init].forEach(pid=>{const pl=P(s,pid);const k=pl.hand.length-E.HAND_MAX;if(k>0){log(s,`${pl.name} has ${pl.hand.length} cards in hand and discards down to ${E.HAND_MAX}.`,pid);pushChoose(s,pid,{title:`Maximum hand size is ${E.HAND_MAX}: discard ${k} card${k>1?"s":""}`,cards:pl.hand.map(c=>c.uid),from:"hand",min:k,max:k,op:"discard"})}})}
+  parties(s).reverse().forEach(pid=>{const pl=P(s,pid);const k=pl.hand.length-E.HAND_MAX;if(k>0){log(s,`${pl.name} has ${pl.hand.length} cards in hand and discards down to ${E.HAND_MAX}.`,pid);pushChoose(s,pid,{title:`Maximum hand size is ${E.HAND_MAX}: discard ${k} card${k>1?"s":""}`,cards:pl.hand.map(c=>c.uid),from:"hand",min:k,max:k,op:"discard"})}})}
 
 /* ---------- views ---------- */
 E.publicCard=c=>DB[c.id];

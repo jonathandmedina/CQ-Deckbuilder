@@ -751,7 +751,10 @@ function fitPlay(root){const g=root&&root.querySelector(".pl-game");if(!g||typeo
   set(best);U.fitW=best;
   try{if(typeof fitArt==="function")fitArt(hand||root)}catch(e){}}
 let fitT=null;addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(()=>{U.fitW=0;const r=ROOT();if(r)fitPlay(r)},120)});
-function render(){const root=ROOT();if(!root)return;injectCSS();
+/* Trials loot (Rockbreaker Maul and friends) joins the engine's card database only for accounts with Trials access (admins always) */
+const trialsAccess=()=>{try{return typeof trialsOn==="function"&&trialsOn()}catch(e){return false}};
+function regLoot(){if(trialsAccess()&&typeof TRIALS_LOOT!=="undefined"&&E.addEquipRows)E.addEquipRows(TRIALS_LOOT,typeof TRIALS_LOOT_UPGRADES!=="undefined"?TRIALS_LOOT_UPGRADES:{})}
+function render(){const root=ROOT();if(!root)return;injectCSS();regLoot();
   if(U.mode==="lobby"){MUS.sync(false);if(window.CQPop)CQPop.clear();root.innerHTML=lobbyHTML();try{window.CQTablet&&CQTablet.after()}catch(e){}return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
   const s=view();if(!s){root.innerHTML=roomHTML();return}

@@ -66,7 +66,7 @@ def("Twin Bolt",{t:[t("any","first target"),t("any","second target",null,{distin
 def("Storm of Insight",{run(c){let tot=0;living(c.op).forEach(e=>tot+=D(c,e,3,{type:"Lightning"}));exMe(c);if(tot)scry(c,tot)}});
 def("Heat Wave",{t:[ANY],run(c){st(c,c.t[0],"burn")}});
 def("Ice Ray",{t:[ANY],run(c){st(c,c.t[0],"stun")}});
-def("Sleep",{t:[HERO],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
+def("Sleep",{t:[HERO],run(c){if(c.t[0])E.exhaust(c.s,c.pid,c.t[0])}});
 def("Arcane Study",{run(c){draw(c,1);scry(c,2)}});
 def("Boost Ritual",{run(c){pillar(c,"Spell Damage Pillar");exMe(c)}});
 def("Ritual of Power",{run(c){pillar(c,"Spell Damage Pillar",3);exMe(c)}});
@@ -87,7 +87,7 @@ def("Ritual of Pain",{run(c){pillar(c,"Pain Pillar");exMe(c)}});
 def("Dark Insight",{run(c){draw(c,1);pillar(c,"Pain Pillar");exMe(c)}});
 def("Splitting Ritual",{t:[t("allyPillar","your Pillar")],run(c){const p=c.t[0];if(!p)return;destroy(c,p);pillar(c,p.name,2);exMe(c)}});
 def("Doubling Ritual",{run(c){const ps=c.me.bf.filter(o=>o.kind==="pillar");ps.forEach(p=>destroy(c,p));ps.forEach(p=>pillar(c,p.name,2));exMe(c)}});
-def("Curse of Exhaustion",{t:[t("player","target party")],run(c){const p=c.t[0];if(p)living(c.s.p[p.pid]).forEach(h=>h.ex=true);log(c,`${p?p.name:"?"}'s party is exhausted.`);exMe(c)}});
+def("Curse of Exhaustion",{t:[t("player","target party")],run(c){const p=c.t[0];if(p)living(c.s.p[p.pid]).forEach(h=>{if(!E.cantExhaust(c.s,h,c.pid))h.ex=true});log(c,`${p?p.name:"?"}'s party is exhausted.`);exMe(c)}});
 def("Power Vacuum",{t:[t("enemyPlayer","target party")],run(c){const pl=c.op;const r=Math.min(pl.aura,c.x||0);pl.aura-=r;log(c,`${pl.name} loses ${r} Aura.`);exMe(c)}});
 def("Bewilder",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Bewilder: you may discard one card from their hand",cards:c.op.hand.map(x=>x.uid),min:0,max:1,op:"opDiscard",target:E.oppOf(c.s,c.pid)})}});
 def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic, Spell or Song",cards:c.op.hand.filter(x=>/Tactic|Spell|Song/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:E.oppOf(c.s,c.pid)})}});
@@ -139,7 +139,7 @@ def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:2})}});
 def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:4})}});
 /* Blood Frenzy v2: losing 3 HP is an additional cost (Ritual Athame sees it); +3 STR until Dusk */
 def("Blood Frenzy",{t:[cls("Barbarian")],run(c){const b=c.t[0];if(!b)return;E.costHp(c.s,c.pid,b,3,"Blood Frenzy cost");if(!b.dead){buff(b,{str:3});log(c,`${b.name} gains +3 STR until Dusk.`)}}});
-def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buff(c.actor,{str:1});const h=c.t[0];if(c.actor.lvl>=3&&h&&dfn(c,h)<str(c,c.actor)){h.ex=true;log(c,`${h.name} is exhausted.`)}}});
+def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buff(c.actor,{str:1});const h=c.t[0];if(c.actor.lvl>=3&&h&&dfn(c,h)<str(c,c.actor))E.exhaust(c.s,c.pid,h)}});
 def("Battered",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
 /* Nov 12, 2026: double this Hero's Strength (was Strength times the number of Barbarians) */
 def("Pummel",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0])*2);exMe(c)}});
@@ -159,7 +159,7 @@ def("Surprise Attack",{t:[ANY],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]),{ignoreD
 def("Toxic Cloud",{run(c){enemies(c).forEach(e=>st(c,e,"poison",1))}}); /* update 18 */
 def("Acceleration Agent",{t:[ANY],run(c){const o=c.t[0];if(o&&o.st){o.st.poison*=3;log(c,`${o.name} now has ${o.st.poison} Poison counters.`)}}});
 def("Spread the Sickness",{t:[ANY],run(c){const o=c.t[0];if(o&&o.st){o.st.poison*=2;log(c,`${o.name} now has ${o.st.poison} Poison counters.`)}}});
-def("Overdose",{t:[t("any","Poisoned target",(s,o)=>o.st&&o.st.poison>0)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
+def("Overdose",{t:[t("any","Poisoned target",(s,o)=>o.st&&o.st.poison>0)],run(c){if(c.t[0])E.exhaust(c.s,c.pid,c.t[0])}});
 def("Envenom",{run(c){c.me.pm.poisonous=1;log(c,"Rogues gain Poisonous 1 this turn.")}});
 def("Vanish",{t:[cls("Rogue")],run(c){buff(c.t[0],{stealth:1})}});
 def("Armed",{t:[cls("Rogue")],run(c){const h=c.t[0];if(!h)return;E.equipTo(c.s,h,E.makeEqToken(c.s,c.pid,"Dagger"))}});
@@ -209,7 +209,7 @@ song("Crescendo",Object.assign({t:[ANY]},{modes:{n:1,opts:[{label:"Deal 3 damage
 /* update 23: the opponent tips you 1 Gold out of their Gold (counts as your Tip for the round) */
 song("Dazzling Melody",{t:[t("enemyPlayer","target opponent")],run(c){const pl=c.me;if(pl.fl.tipRound===c.s.round){log(c,"Dazzling Melody: you already got a Tip this round.");return}pl.fl.tipRound=c.s.round;
   const g=E.stealGold(c.s,c.pid,E.oppOf(c.s,c.pid),1,"Dazzling Melody (Tip)");if(!g)log(c,"Dazzling Melody: the opponent has no Gold to tip.")}});
-song("Lullaby",{t:[t("any","target with 0 or less STR",(s,o)=>E.str(s,o)<=0)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
+song("Lullaby",{t:[t("any","target with 0 or less STR",(s,o)=>E.str(s,o)<=0)],run(c){if(c.t[0])E.exhaust(c.s,c.pid,c.t[0])}});
 song("Peace",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{zeroStr:1});log(c,`${c.t[0].name}'s Strength becomes 0 until Dusk.`)}if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
 /* update 23: Harmonize X (other ready Heroes): draw X+1 cards and gain X+1 Aura */
 song("Rousing Chorus",{x:{label:"Harmonize X: how many other ready Heroes to exhaust",max:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length,free:true},run(c){
@@ -351,7 +351,7 @@ def("Platinum Bar",item(2,[],c=>draw(c,1)));
 def("Gold Bar",item(3,[],c=>{c.me.pm.def=(c.me.pm.def||0)+1;log(c,"Your party gains +1 DEF this turn.")}));
 def("Silver Bar",item(3,[],c=>{c.me.pm.str=(c.me.pm.str||0)+1;log(c,"Your party gains +1 STR this turn.")}));
 def("Dynamite",item(3,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
-def("Sleeping Potion",item(2,[HERO],c=>{if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}},{exile:true,ex:true}));
+def("Sleeping Potion",item(2,[HERO],c=>{if(c.t[0])E.exhaust(c.s,c.pid,c.t[0])},{exile:true,ex:true}));
 def("Amnesia Puzzle Box",item(0,[t("player","target player")],c=>{const p=c.s.p[c.t[0].pid];p.lib.push(...p.disc.splice(0));E.shuffle(c.s,p.lib);log(c,`${p.name} shuffles their discard pile into their library.`)},{exile:true}));
 def("Energy Stone",item(0,[t("allySummon","first ready summon to exhaust",(s,o)=>!o.ex),t("allySummon","second ready summon to exhaust",(s,o)=>!o.ex,{distinct:true})],c=>{const ss=c.t.filter(o=>o&&!o.ex);if(ss.length<2){log(c,"Energy Stone needs two ready summons.");return}ss.slice(0,2).forEach(o=>{o.ex=true;log(c,`${o.name} is exhausted.`)});c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{anyClass:true,can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=2}));
 def("Song Book",item(1,[],c=>{c.inst.exh=true;E.pushChoose(c.s,c.pid,{title:"Song Book: choose a Song",cards:c.me.lib.filter(x=>E.DB[x.id].type==="Song").map(x=>x.uid),min:1,max:1,op:"tutor"})},{can:(s,pid,a,o)=>!o.exh}));

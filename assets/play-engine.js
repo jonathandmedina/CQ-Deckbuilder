@@ -25,6 +25,10 @@ for(const n in RCP){const r=RCP[n],b=r.back;if(DB[n])DB[n].recipe=r;
 if(TOK["Remains"]&&!DB["Remains"])DB["Remains"]={id:"Remains",name:"Remains",cost:"0",sup:"",type:"Item",sub:"Token",cls:"Generic",rules:TOK["Remains"].rules,kind:"card",tok:true};
 const CLASSES=["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock"];E.CLASSES=CLASSES;
 const STATUS=["burn","poison","wound","confuse","stun"];E.STATUS=STATUS;
+E.cantStun=(s,h)=>!!h&&h.kind==="hero"&&eqList(h).some(e=>e.name==="Crag Helm"); /* Trials loot: Crag Helm, can't be Stunned */
+/* exhaust o because of pid's card or ability; Stampede Boots stops enemy cards and abilities (Trials loot) */
+E.cantExhaust=(s,o,pid)=>!!o&&o.kind==="hero"&&(pid==null||!sameTeam(s,pid,o.owner))&&eqList(o).some(e=>e.name==="Stampede Boots");
+E.exhaust=function(s,pid,o,why){if(!o||o.dead)return false;if(E.cantExhaust(s,o,pid)){log(s,`${o.name} can't be exhausted by enemy cards or abilities (Stampede Boots).`);return false}o.ex=true;log(s,`${o.name} is exhausted${why?` (${why})`:""}.`);return true};
 E.STATUS_NAME={burn:"Burned",poison:"Poisoned",wound:"Wounded",confuse:"Confused",stun:"Stunned"};
 const POS=["Lead","Center","Closer"];E.POS=POS;
 E.INN_HEAL=3;E.INN_COST=5;E.SHOP_COST=4;E.CHURCH_COST=10;E.CHURCH_HP=5;E.HAND_MAX=5;
@@ -32,6 +36,9 @@ E.INN_HEAL=3;E.INN_COST=5;E.SHOP_COST=4;E.CHURCH_COST=10;E.CHURCH_HP=5;E.HAND_MA
 /* Weapon upgrades (update 19): one fixed upgrade per weapon from EQUIP_UPGRADES (cards-data.js): [cost, rules, +STR, +DEF]. Upgrading flips the weapon: its upgraded text and stats replace the normal side. */
 const UPGD=typeof EQUIP_UPGRADES!=="undefined"?EQUIP_UPGRADES:(root.EQUIP_UPGRADES||{});
 for(const n in UPGD){if(DB[n]){const u=UPGD[n];DB[n].up={cost:+u[0],rules:u[1],pstr:num(u[2]),pdef:num(u[3])}}}
+/* Trials loot (and any later equipment set): register rows shaped like RAW_EQUIP plus their EQUIP_UPGRADES-shaped upgrades. Safe to call twice. */
+E.addEquipRows=function(rows,ups){(rows||[]).forEach(r=>{if(!DB[r[0]])DB[r[0]]={id:r[0],name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:num(r[7]),pdef:num(r[8]),kind:"equip"}});
+  for(const n in(ups||{})){if(DB[n]&&!DB[n].up){const u=ups[n];DB[n].up={cost:+u[0],rules:u[1],pstr:num(u[2]),pdef:num(u[3])}}}};
 const isUp=(s,e)=>!!(e&&e.uid&&s.upg&&s.upg[e.uid]!=null);
 const hasUpN=(s,h,n)=>eqList(h).some(e=>e.name===n&&isUp(s,e));
 E.isUp=isUp;E.hasUp=hasUpN;
@@ -441,7 +448,10 @@ E.medWake=medWake;
 E.meditate=(s,h)=>{if(!h||h.dead)return;h.ex=true;h.med=true;h.keepMed=true;log(s,`${h.name} is Meditating.`,h.owner)};
 function checkDeaths(s){s.p.forEach(pl=>pl.heroes.forEach(h=>{if(h.med&&!h.ex&&!h.dead)medWake(s,h)}));let again=true;while(again){again=false;
   for(let pid=0;pid<s.p.length;pid++){const pl=s.p[pid];
-    for(const h of pl.heroes)if(!h.dead&&hpOf(s,h)<=0){if(dyingWindow(s,h))continue;die(s,h);again=true}
+    for(const h of pl.heroes)if(!h.dead&&hpOf(s,h)<=0){
+      /* Trials loot: Stoneplate Mantle, the first time each game the equipped Hero would die, it stays at 1 Health Point */
+      const mt=eqList(h).find(e=>e.name==="Stoneplate Mantle"&&!e.mantleUsed);if(mt){mt.mantleUsed=true;h.dmg=maxHp(s,h)-1;log(s,`Stoneplate Mantle: ${h.name} stays at 1 Health Point.`,pid);continue}
+      if(dyingWindow(s,h))continue;die(s,h);again=true}
     for(const o of pl.bf.slice())if(o.kind==="summon"&&hpOf(s,o)<=0){if(pl.t.shelter){o.dmg=maxHp(s,o)-1;log(s,`${o.name} can't be destroyed this turn (Shelter from the Storm); it stays at 1 HP.`,pid);continue}destroyObj(s,o);again=true}
     for(const o of pl.inv.slice())if(o.kind==="doll"&&hpOf(s,o)<=0){destroyObj(s,o);again=true}}}
   checkWin(s)}
@@ -488,6 +498,8 @@ function destroyObj(s,o,exile,why){const f=find(s,o.uid);if(!f)return;const pl=P
   if(!exile&&why!=="sac"){s.fxN=(s.fxN||0)+1;s.fx=(s.fx||[]).concat([{n:s.fxN,k:"destroy",id:o.id||null,name:o.name,kind:o.kind,pid:f.pid}]).slice(-12)}
   if(o.kind==="summon"){const c=o.ctrl;
     if(s.trials&&E.hooks.onSummonDies)E.hooks.onSummonDies(s,o);
+    /* Trials loot: Heart of the Mountain, once per turn when an enemy summon dies, gain 1 Aura (upgraded: and heal the equipped Hero 1) */
+    if(!exile)s.p.forEach((hp2,hpid)=>{if(sameTeam(s,hpid,c))return;living(hp2).forEach(h=>eqList(h).forEach(e=>{if(e.name!=="Heart of the Mountain"||e.heartRound===s.round)return;e.heartRound=s.round;hp2.aura+=1;log(s,`Heart of the Mountain: ${hp2.name} gains 1 Aura.`,hpid);if(isUp(s,e))heal(s,h,h,1,hpid)}))});
     if(o.name==="Aurawing Familiar"){P(s,c).aura+=1;log(s,`${P(s,c).name} gains 1 Aura.`)}
     if(o.name==="Drawwing Familiar")draw(s,c,1);
     /* Set 2 Cursed Urn: whenever a Revenant you control dies (sacrifice included), create a Remains token in an empty inventory slot */
@@ -1178,7 +1190,11 @@ function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);let tgt=resolve
   if(mods.stepIn&&mods.stepIn.from===cont.tgt){const p=find(s,mods.stepIn.to);if(p&&!p.o.dead){log(s,`${p.o.name} steps in and takes the attack.`);tgt=p.o}}
   let str=(o.band?bandTotal(s,att,o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o).filter(m=>!m.dead),tgt):dmgStr(s,att,tgt))+(mods.str||0)+(o.str||0);
   if(att.kind==="hero"&&att.name==="Skullcrusher"&&att.attacks===2)str+=3;
+  /* Trials loot: Mammoth Tusk, +2 damage to summons (per copy) */
+  if(att.kind==="hero"&&tgt.kind==="summon")str+=2*eqList(att).filter(e=>e.name==="Mammoth Tusk").length;
   let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0)+(att.kind==="hero"&&hasEqN(att,"Mithril Blade")?2:0)+(att.kind==="hero"?eqList(att).filter(e=>isUp(s,e)&&(e.name==="Sword of Riverstead"||e.name==="Long Dagger"||e.name==="Shadow Cloak")).length:0);
+  /* Trials loot: Rockbreaker Maul, Piercing 2 against a target with 3 or more Defense */
+  if(att.kind==="hero"&&hasEqN(att,"Rockbreaker Maul")&&defOf(s,tgt)>=3)pierce+=2;
   const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att));
   let dealt=0;
   if(mods.noDamage){log(s,`The attack deals no damage.`)}
@@ -1190,7 +1206,7 @@ function postAttack(s,pid,cont,dealt){const f=find(s,cont.att);const o=cont.o||{
   if(!att)return;
   if(o.after==="readyIfKill"&&tgt&&tgt.dead){att.ex=false;log(s,`${att.name} readies.`,pid)}
   if(o.after==="levelIfDmg"&&dealt>0&&att.kind==="hero"){levelUp(s,att,"str")}
-  if(o.after==="exhaustTarget"&&tgt&&!tgt.dead){tgt.ex=true;log(s,`${tgt.name} is exhausted.`)}
+  if(o.after==="exhaustTarget"&&tgt&&!tgt.dead)E.exhaust(s,pid,tgt);
   if(att.kind==="hero"){
     if(att.fl.runBackRound===s.round&&!att.fl.runBackUsed){att.fl.runBackUsed=true;att.ex=false;log(s,`Run It Back: ${att.name} readies.`,pid)}
     if(att.fl.twiceRound===s.round&&!att.fl.twiceUsed){att.fl.twiceUsed=true;att.ex=false;log(s,`${att.name} may attack again.`,pid)}

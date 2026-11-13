@@ -90,7 +90,7 @@ function resolveCard(s,card){const st=s.trials;const h=bossHero(s);const row=car
   E.log(s,`🂠 ${h.name} flips ${card}${names.length?" → "+names.join(", "):""}.`);
   E.withSrc(s,card,()=>{
     if(card==="Stone Skin"){st.skin=num(/\+(\d+) Defense/i,eff,2);syncDef(s);E.log(s,`${h.name} gets +${st.skin} Defense until its next flip (Defense ${E.defn(s,h)}).`);return}
-    if(card==="Tremor"){tg.forEach(t=>{if(T.cantExhaust&&T.cantExhaust(s,t)){E.log(s,`${t.name} can't be exhausted by enemy cards (Stampede Boots).`);return}t.ex=true;E.log(s,`${t.name} is exhausted.`)});return}
+    if(card==="Tremor"){tg.forEach(t=>{E.exhaust(s,s.trials.boss,t,"Tremor")});return}
     if(!Array.isArray(tg)){(tg.summonVs||[]).forEach(p=>spawnVs(s,p));return}
     tg.forEach(t=>{if(!s.over&&!t.dead&&n>0)E.damage(s,h,t,n,{card:true,srcName:card})})})}
 T.resolveCard=resolveCard;

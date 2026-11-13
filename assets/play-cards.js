@@ -609,7 +609,7 @@ hab("Artificer A",[{label:"Look at the top 3 (a Metal to inventory)",can:(s,pid)
 /* ===== Set 2: Necromancer (Set Two Rules Supplement) =====
    Revenant: 1/1 summon token with Impervious (engine: damage and destroy do nothing; HP loss, sacrifice and exile work). Cards that summon one say "Exhaust this Hero".
    Mourn (engine cardCost), Exhume (engine battle options: play from your discard pile a card milled this turn), Mill (E.mill marks the cards for Exhume).
-   "If you played this card from your discard pile" = c.fromDisc (any play from the discard pile: Exhume, Necromancer A, Funeral Procession, Gravedigger's Medallion). */
+   "If you played this card from your discard pile" = c.fromDisc (any play from the discard pile: Exhume, Gravecaller, Funeral Procession, Gravedigger's Medallion). */
 const REV=t("allySummon","your Revenant",(s,o)=>o.name==="Revenant");
 const revs=c=>E.revenants(c.s,c.pid);
 const raise=(c,n)=>{for(let i=0;i<n;i++)summon(c,"Revenant")};
@@ -678,12 +678,15 @@ def("Grave Caller's Wand",{enter(c){raise(c,1);if(c.actor&&!c.actor.dead){c.acto
 def("Gravedigger's Medallion",{enter(c){discPlay(c,c.actor,"Gravedigger's Medallion")},onUpgrade(c){discPlay(c,c.actor,"Upgraded Gravedigger's Medallion")}});
 S["Dagger of the Dead"]={}; /* engine strOf */
 /* Heroes */
-hab("Necromancer A",[{label:"Play a Summon from your discard pile",can:(s,pid,a)=>s.p[pid].disc.some(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(s,pid,a,x)),
+hab("Gravecaller",[{label:"Play a Summon from your discard pile",can:(s,pid,a)=>s.p[pid].disc.some(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(s,pid,a,x)),
   run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(c.s,c.pid,c.actor,x));if(!l.length){log(c,"No Summon card to play.");return}
-  c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:l.map(x=>x.uid),pay:true,fromDisc:true,title:"Necromancer A: you may play a Summon card from your discard pile, paying its Aura cost"})}}]);
-hab("Necromancer C",[{label:"Exhaust a Revenant: +1 STR, exile a card from a discard pile",ex:false,t:[t("allySummon","ready Revenant to exhaust",(s,o)=>o.name==="Revenant"&&!o.ex)],
-  can:(s,pid,a)=>E.revenants(s,pid).some(o=>!o.ex)&&(a.lvl>=3||a.fl.necroC!==s.round),
-  run(c){const r=c.t[0];if(!r||r.ex)return;r.ex=true;c.actor.fl.necroC=c.s.round;buff(c.actor,{str:1});log(c,`${r.name} is exhausted; ${c.actor.name} gains +1 Strength this turn.`);
-    const all=[...c.op.disc,...c.me.disc];if(all.length)E.pushChoose(c.s,c.pid,{title:"Necromancer C: you may exile a card from a discard pile",cards:all.map(x=>x.uid),min:0,max:1,op:"exileDisc"})}}]);
-OPS.exileDisc=(s,pid,pr,picks)=>{picks.forEach(u=>{for(const pl of s.p){const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.exile.push(x);E.log(s,`Necromancer C exiles ${E.DB[x.id].name} from ${pl.name}'s discard pile.`,pid);return}}})};
+  c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:l.map(x=>x.uid),pay:true,fromDisc:true,title:"Gravecaller: you may play a Summon card from your discard pile, paying its Aura cost"})}}]);
+/* Filth Scavenger (v2, Nov 13 2026): exhausting a ready Revenant AND exiling a card from a discard pile are both costs; it can't be activated unless a discard pile has a card */
+hab("Filth Scavenger",[{label:"Exhaust a Revenant and exile a card from a discard pile: +1 STR",ex:false,t:[t("allySummon","ready Revenant to exhaust",(s,o)=>o.name==="Revenant"&&!o.ex)],
+  can:(s,pid,a)=>E.revenants(s,pid).some(o=>!o.ex)&&(a.lvl>=3||a.fl.necroC!==s.round)&&s.p.some(p=>p.disc.length>0),
+  run(c){const r=c.t[0];if(!r||r.ex)return;const all=[...c.op.disc,...c.me.disc];if(!all.length){log(c,"No card in a discard pile to exile.");return}
+    r.ex=true;c.actor.fl.necroC=c.s.round;log(c,`${r.name} is exhausted.`);
+    E.pushChoose(c.s,c.pid,{title:"Filth Scavenger: exile a card from a discard pile",cards:all.map(x=>x.uid),min:1,max:1,op:"exileDisc",by:c.actor.uid});
+    buff(c.actor,{str:1});log(c,`${c.actor.name} gains +1 Strength this turn.`)}}]);
+OPS.exileDisc=(s,pid,pr,picks)=>{picks.forEach(u=>{for(const pl of s.p){const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.exile.push(x);E.log(s,`Filth Scavenger exiles ${E.DB[x.id].name} from ${pl.name}'s discard pile.`,pid);return}}})};
 })(typeof window!=="undefined"?window:globalThis);

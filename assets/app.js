@@ -965,7 +965,9 @@ function parseDeck(txt){
     if(line.startsWith("#")){d.name=line.replace(/^#+\s*/,"")||d.name;continue}
     if(/^tokens?\s*:/i.test(line))continue;
     const hm=line.match(/^heroes?\s*:\s*(.*)$/i);
-    if(hm){for(const n of hm[1].split(",")){if(!n.trim())continue;const h=find(n,HEROES);if(h&&HN(d)<3&&!d.heroes.includes(h.id)){const e=d.heroes.indexOf(null);if(e>=0)d.heroes[e]=h.id;else d.heroes.push(h.id)}else if(!h)miss.push(n.trim())}continue}
+    if(hm){/* Hero names can contain a comma ("Jorkev, the Pillager"): rejoin a part with the next one when that makes a Hero name */
+      const parts=hm[1].split(","),names=[];for(let i=0;i<parts.length;i++){let n=parts[i];if(!find(n,HEROES)&&i+1<parts.length&&find(n+","+parts[i+1],HEROES)){n=n+","+parts[i+1];i++}names.push(n)}
+      for(const n of names){if(!n.trim())continue;const h=find(n,HEROES);if(h&&HN(d)<3&&!d.heroes.includes(h.id)){const e=d.heroes.indexOf(null);if(e>=0)d.heroes[e]=h.id;else d.heroes.push(h.id)}else if(!h)miss.push(n.trim())}continue}
     const m=line.match(/^(\d+)\s*x?\s+(.+)$/i);const q=m?+m[1]:1,n=m?m[2]:line;
     const c=find(n,CARDS);if(c)d.cards[c.id]=(d.cards[c.id]||0)+q;else miss.push(n)}
   return{d,miss};

@@ -164,6 +164,12 @@ html[data-skin="art"] .pl-over-why{color:#d8c3a0}
 .pick-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
 .pick-list .pk{border:0;background:none;padding:0;text-align:left;position:relative}
 .pick-list .pk.on .card{outline:3px solid var(--ok);outline-offset:-1px}
+.pick-list .pl-exh{position:relative;cursor:pointer;border-radius:12px;animation:plExh 1.6s ease-in-out infinite;box-shadow:0 0 0 3px #7fe0c8,0 0 18px 4px rgba(127,224,200,.75)}
+.pick-list .pl-exh:focus-visible{outline:3px solid #ffc100;outline-offset:3px}
+.pick-list .pl-exh .card{margin:0}
+.pl-exh-tag{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);white-space:nowrap;font:700 .78rem/1 var(--body);padding:5px 10px;border-radius:999px;background:#466E6B;color:#eafff8;border:2px solid #7fe0c8;box-shadow:0 4px 10px rgba(0,0,0,.5)}
+@keyframes plExh{0%,100%{box-shadow:0 0 0 3px #7fe0c8,0 0 12px 2px rgba(127,224,200,.55)}50%{box-shadow:0 0 0 3px #b5fff0,0 0 26px 8px rgba(127,224,200,.9)}}
+@media (prefers-reduced-motion:reduce){.pick-list .pl-exh{animation:none}}
 .pick-list .pk .badge{position:absolute;top:50px;right:8px;background:var(--ink);color:var(--surface);font-size:.7rem;font-weight:700;border-radius:999px;padding:1px 8px}
 .pl-note{font-size:.8rem;color:var(--muted)}
 .pl-legend{font-size:.78rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 12px}
@@ -668,11 +674,18 @@ function gameFx(s){if(U.fxFor!==U.gameKey){U.fxFor=U.gameKey;U.fxSeen=(s.fx&&s.f
     const ks=soundKeys(lines);
     let ov=s.over&&s.winner!=null&&s.winner!==U.me;ks.slice(0,5).forEach((k,i)=>SND.play(k==="win"&&ov?"lose":k,i*0.16));
     try{opPops(s,lines)}catch(e){console.warn(e)}}
+    try{exhumePops(s)}catch(e){console.warn(e)}
   /* chime when the action shifts to the other player (or a new phase starts) */
   const tk=turnKey(s);if(tk!==U.lastTurn){U.lastTurn=tk;SND.play("chime",lines.length?0.5:0)}}
 /* Update 30: opponent action pop-ups. Each opponent "starter" line (plays, activates, attacks, summons, equips, Town) opens a pop-up;
    the lines after it, up to the next starter, give its target(s) and a one-line result. Your own actions never pop up. */
 const POP_START=/^(?:⚔ )?(.+?) (plays|activates|attacks|uses its ability|summons|conjures|creates|equips|visits the Shop|stays at the Inn|pays the Church|upgrades) ?(.*?)(?: \(|\.| for |: |$)/;
+/* Exhume (Nov 13, 2026): an Exhume card of yours moved from your library to your discard pile pops up, since you can play it from there this turn */
+const isExhume=d=>!!d&&/(^|\n)Exhume\./.test(d.rules||"");
+function exhumeOk(s,pid,c){const pl=s.p[pid];return !!c&&(pl.t.milled||[]).includes(c.uid)&&isExhume(E.DB[c.id])&&pl.disc.some(x=>x.uid===c.uid)}
+function exhumePops(s){if(!window.CQPop||U.me==null||!s)return;const key=U.gameKey||"g";if(exhumePops.key!==key){exhumePops.key=key;exhumePops.seen=new Set()}
+  const pl=s.p[U.me];(pl.t.milled||[]).forEach(u=>{if(exhumePops.seen.has(u))return;exhumePops.seen.add(u);const c=pl.disc.find(x=>x.uid===u);if(!c||!isExhume(E.DB[c.id]))return;
+    CQPop.push({who:"You · Exhume",cardId:c.id,verb:"",name:E.DB[c.id].name,dest:"your discard pile",sub:"Exhume: you can play it from your discard pile this turn, paying its costs. Open your discard pile and tap it, or use its Play button.",actorU:null,targetU:[]})})}
 function opPops(s,lines){if(!window.CQPop||U.me==null)return;
   /* Nov 12, 2026: the Song Opening Act puts into a hand pops up for both players */
   lines.forEach(l=>{const m=/^Opening Act: (.+) puts (.+) into their hand\.$/.exec(String(l.m));if(!m)return;const c=byName(m[2]);
@@ -1239,7 +1252,10 @@ function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f
     ${o.kind==="hero"&&o.ench.length?`<p class="pl-note">Enchantments: ${o.ench.map(e=>esc(e.name)).join(", ")}</p>`:""}
     <div class="actions">${acts.join("")}<button class="btn" data-pa="close">Close</button></div>`)}
 function showPile(pid,z){const s=view();const pl=s.p[pid];const list=z==="echo"?pl.echo.map(e=>e.card||{}):pl[z];
-  modal(`<h2>${esc(pl.name)} · ${z==="disc"?"Discard pile":z==="echo"?"Echo":"Exile"} (${list.length})</h2>${z==="echo"?'<p class="pl-note">These cards are played again at the next Dawn, for free.</p>':""}<div class="pick-list">${list.slice().reverse().map(c=>c.id?cardHTML(cardOf(c.id)):"").join("")||'<p class="pl-note">Empty.</p>'}</div><div class="actions"><button class="btn" data-pa="close">Close</button></div>`,{wide:true})}
+  const mine=z==="disc"&&pid===U.me&&U.mode==="game";const ex=mine?list.filter(c=>exhumeOk(s,pid,c)):[];
+  const one=c=>{if(!c.id)return"";if(!ex.includes(c))return cardHTML(cardOf(c.id));
+    return`<div class="pl-exh" role="button" tabindex="0" data-pa="exhcard" data-u="${c.uid}" title="Exhume: tap to play it from your discard pile">${cardHTML(cardOf(c.id),{nozoom:1})}<span class="pl-exh-tag">Exhume · tap to play</span></div>`};
+  modal(`<h2>${esc(pl.name)} · ${z==="disc"?"Discard pile":z==="echo"?"Echo":"Exile"} (${list.length})</h2>${z==="echo"?'<p class="pl-note">These cards are played again at the next Dawn, for free.</p>':""}${ex.length?`<p class="pl-note">Glowing cards have Exhume: they were milled this turn, so you can play them from here, paying their costs.</p>`:""}<div class="pick-list">${list.slice().reverse().filter(c=>ex.includes(c)).concat(list.slice().reverse().filter(c=>!ex.includes(c))).map(one).join("")||'<p class="pl-note">Empty.</p>'}</div><div class="actions"><button class="btn" data-pa="close">Close</button></div>`,{wide:true})}
 
 /* ---------- starting an action (modes, X, targets) ---------- */
 function begin(a){const s=view();
@@ -1342,6 +1358,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     const why=ok?"":whyNot(s,c);
     modal(`${cardHTML(cardOf(c.id),{nozoom:1})}<p class="pl-note">${E.isScripted(d.name)||d.kind==="equip"?"Resolves automatically.":"Resolves by hand: after you pay, a panel opens to apply the effect."}</p>${why?`<p class="note warn">${esc(why)}</p>`:""}
       <div class="actions">${ok?`<button class="btn primary go" data-pa="play" data-u="${c.uid}">Play${d.sup==="Hidden"?" face down":d.type==="Item"?" to inventory":""} (${E.cardCost(s,U.me,E.actorFor(s,U.me),d,0)}${d.cost==="X"?"+X":""} Aura)</button>`:""}<button class="btn" data-pa="close">Close</button></div>`);return}
+  if(k==="exhcard"){const c=s.p[U.me].disc.find(x=>x.uid===b.dataset.u);if(!c)return;if(U.tgt){toast("Finish choosing targets first, or press Cancel.");return}
+    const o=legal().find(x=>x.type==="play"&&s.p[U.me].disc.some(y=>y.uid===x.uid&&y.id===c.id));const d=E.DB[c.id];const why=o?"":(exhumeOk(s,U.me,c)?(whyNot(s,c)||"You can't play it right now."):"Its Exhume window has closed.");
+    modal(`${cardHTML(cardOf(c.id),{nozoom:1})}<p class="pl-note">Exhume: this card was milled this turn, so you can play it from your discard pile, paying its costs.</p>${why?`<p class="note warn">${esc(why)}</p>`:""}
+      <div class="actions">${o?`<button class="btn primary go" data-pa="play" data-u="${o.uid}">Play from discard pile (${E.cardCost(s,U.me,E.actorFor(s,U.me),d,0)}${d.cost==="X"?"+X":""} Aura)</button>`:""}<button class="btn" data-pa="disc" data-p="${U.me}">Back to discard pile</button><button class="btn" data-pa="close">Close</button></div>`);return}
   if(k==="play"){closeModal();begin({type:"play",uid:b.dataset.u});return}
   if(k==="disc"||k==="exile"||k==="echo"){showPile(+b.dataset.p,k);return}
   if(k==="soul"){const opts=legal().filter(o=>o.type==="soul"&&(!b.dataset.h||o.hero===b.dataset.h));const heroes=[...new Set(opts.map(o=>o.hero))];
@@ -1387,7 +1407,7 @@ function whyNot(s,c){const d=E.DB[c.id];const a=E.actorFor(s,U.me);
   if(d.kind==="equip")return`${a.name} can't equip this right now (class or requirement).`;
   return"Its condition isn't met right now."}
 
-document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches('#play-root [role=button][data-pa]')){e.preventDefault();e.target.click()}});
+document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches('#play-root [role=button][data-pa],#pl-modal [role=button][data-pa]')){e.preventDefault();e.target.click()}});
 /* ---------- mount ---------- */
 U._send=a=>send(a);U._begin=a=>begin(a);
 U.mount=function(el){el.innerHTML='<div id="play-root"></div>';render();if(U.vsAI)pumpAI()};

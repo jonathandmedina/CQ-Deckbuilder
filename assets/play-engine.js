@@ -460,8 +460,8 @@ function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};con
   /* Barkborn: gains DEF equal to its HP until Dusk; stacks */
   {const pl=P(s,pid);const n=(/Barkborn/.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
    if(n>0){addMod(o,{def:n*o.hp});log(s,`${name} has Barkborn${n>1?" ×"+n:""}: +${n*o.hp} DEF this turn.`,pid)}}
-  /* Set 2 Necromancer B: whenever a Revenant enters under your control, you may choose a player; that player Mills 1 (one trigger per Revenant) */
-  if(name==="Revenant")living(P(s,pid)).filter(h=>h.name==="Necromancer B").forEach(()=>ask(s,pid,"Necromancer B: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,opp(pid)).name} Mills 1`,v:opp(pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Necromancer B"}));
+  /* Set 2 Jorkev, the Pillager (was Necromancer B): whenever a Revenant enters under your control, you may choose a player; that player Mills 1 (one trigger per Revenant) */
+  if(name==="Revenant")living(P(s,pid)).filter(h=>h.name==="Jorkev, the Pillager").forEach(()=>ask(s,pid,"Jorkev, the Pillager: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,opp(pid)).name} Mills 1`,v:opp(pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Jorkev, the Pillager"}));
   return o}
 ASK.millOne=(s,pid,pr,v)=>{if(v==null)return;mill(s,v,1)};
 function makePillar(s,pid,name){const o={uid:nid(s),kind:"pillar",name,ctrl:pid,owner:pid,tok:true};P(s,pid).bf.push(o);log(s,`${P(s,pid).name} conjures a ${name}.`,pid);return o}

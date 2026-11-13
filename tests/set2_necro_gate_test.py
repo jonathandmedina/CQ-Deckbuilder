@@ -43,7 +43,7 @@ def go(pg, port, h): pg.goto(f"http://127.0.0.1:{port}/index.html{h}"); pg.wait_
 def text(pg): return pg.evaluate("document.body.innerText")
 
 
-NEC = ["Raise Revenant","Cursed Urn","Grave Tide","Consecrate","Retrace the Past","Necromancer A","Grave Caller's Wand","Dagger of the Dead","Revenant","Abomination","Remains","Skeleton Key"]
+NEC = ["Raise Revenant","Cursed Urn","Grave Tide","Consecrate","Retrace the Past","Gravecaller","Grave Caller's Wand","Dagger of the Dead","Revenant","Abomination","Remains","Skeleton Key"]
 def main():
     srv, port = serve(); fails = []; n = 0
     def check(cond, msg):
@@ -58,14 +58,14 @@ def main():
             for nm in NEC:
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(150)
                 check(nm not in text(pg).replace("Search", "").replace(f"“{nm}”", ""), f"[{w}] no access: search shows {nm}")
-            check(pg.evaluate("trialsHidden('Raise Revenant')&&trialsHidden('h:Necromancer C')&&trialsHidden('Consecrate')"), f"[{w}] no access: Necromancer names not masked")
+            check(pg.evaluate("trialsHidden('Raise Revenant')&&trialsHidden('h:Filth Scavenger')&&trialsHidden('Consecrate')"), f"[{w}] no access: Necromancer names not masked")
             go(pg, port, "#build"); check("Necromancer" not in text(pg), f"[{w}] no access: Necromancer in the Deck Builder")
             go(pg, port, "#rules"); pg.wait_for_timeout(500); check("Set 2 Supplement" not in text(pg), f"[{w}] no access: Set 2 Supplement tab")
             go(pg, port, "#set2-rules"); pg.wait_for_timeout(600); tt = text(pg); check("Set Two Rules Supplement" not in tt and "Impervious" not in tt, f"[{w}] no access: #set2-rules shows the Set 2 rules")
             go(pg, port, "#changelog")
             for v in ("cards", "site"):
                 pg.click(f"[data-cl=tab][data-v={v}]"); pg.wait_for_timeout(250)
-                tt = text(pg); check(not any(x in tt for x in ["Raise Revenant","Necromancer A","Set 2: Necromancer"]), f"[{w}] no access: Necromancer entry in changelog {v}")
+                tt = text(pg); check(not any(x in tt for x in ["Raise Revenant","Gravecaller","Set 2: Necromancer"]), f"[{w}] no access: Necromancer entry in changelog {v}")
             check(not errs, f"[{w}] no access errors: {errs[:3]}"); ctx.close()
 
             ctx, pg, errs = page_for(b, port, YES, w)
@@ -73,15 +73,15 @@ def main():
             for nm in ["Raise Revenant","Cursed Urn","Grave Caller's Wand","Consecrate"]:
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(200); check(nm in text(pg), f"[{w}] access: search finds {nm}")
             pg.fill("#cat-q", "")
-            imgs = pg.evaluate("""(()=>{const r={};for(const n of ['Raise Revenant','Cursed Urn','Grave Caller\\'s Wand','Skeleton Key','Consecrate']){const c=BYID.get(n);r[n]=c?artSrc(c).split('/').pop().split('?')[0]:null}r.hero=artSrc(BYID.get('h:Necromancer A')).split('/').pop().split('?')[0];return r})()""")
+            imgs = pg.evaluate("""(()=>{const r={};for(const n of ['Raise Revenant','Cursed Urn','Grave Caller\\'s Wand','Skeleton Key','Consecrate']){const c=BYID.get(n);r[n]=c?artSrc(c).split('/').pop().split('?')[0]:null}r.hero=artSrc(BYID.get('h:Gravecaller')).split('/').pop().split('?')[0];return r})()""")
             check(imgs["Raise Revenant"] == "card-Necromancer-face.webp" and imgs["Cursed Urn"] == "card-Necromancer-Legendary-face.webp" and imgs["Skeleton Key"] == "card-Necromancer-Legendary-face.webp"
                   and imgs["Grave Caller's Wand"] == "equip-Necromancer-face.webp" and imgs["Consecrate"] == "card-Generic-face.webp" and imgs["hero"] == "hero-Necromancer-face.webp", f"[{w}] blank frames: {imgs}")
             broken = pg.evaluate("""(async()=>{const urls=['card-Necromancer-face','card-Necromancer-Legendary-face','equip-Necromancer-face','equip-Necromancer-up','hero-Necromancer-face'].map(x=>'assets/art/blank/'+x+'.webp');let bad=0;for(const u of urls){const r=await fetch(u);if(!r.ok)bad++}return bad})()""")
             check(broken == 0, f"[{w}] Necromancer frame files missing: {broken}")
-            plain = pg.evaluate("""(()=>{let n=0;['Bone Wall','Dagger of the Dead','Consecrate','Ossuary','Gravedigger\\'s Medallion','Necromancer C','Mourner\\'s Offering'].forEach(nm=>{const c=BYID.get(nm)||BYID.get('h:'+nm);if(!c)return;const d=document.createElement('div');d.innerHTML=cardHTML(c);
+            plain = pg.evaluate("""(()=>{let n=0;['Bone Wall','Dagger of the Dead','Consecrate','Ossuary','Gravedigger\\'s Medallion','Filth Scavenger','Mourner\\'s Offering'].forEach(nm=>{const c=BYID.get(nm)||BYID.get('h:'+nm);if(!c)return;const d=document.createElement('div');d.innerHTML=cardHTML(c);
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Point|\\bAura\\b/.test(txt.replace(/<[^>]+>/g,'')))n++})});return n})()""")
             check(plain == 0, f"[{w}] stat words left plain on Necromancer cards: {plain}")
-            go(pg, port, "#build"); check("Necromancer A" in text(pg), f"[{w}] access: Necromancer Heroes in the Deck Builder")
+            go(pg, port, "#build"); check("Gravecaller" in text(pg), f"[{w}] access: Necromancer Heroes in the Deck Builder")
             go(pg, port, "#rules"); pg.wait_for_timeout(500); check("Set 2 Supplement" in text(pg), f"[{w}] access: Set 2 Supplement tab")
             go(pg, port, "#set2-rules"); pg.wait_for_timeout(800); tt = text(pg)
             check(all(x in tt for x in ["Set Two Rules Supplement","Impervious","Exhume","Mourn","Craft","Revenant","Remains"]), f"[{w}] Set 2 Supplement page content")
@@ -91,7 +91,7 @@ def main():
             pg.click("[data-cl=tab][data-v=cards]"); pg.wait_for_timeout(250); check("Raise Revenant" not in text(pg), f"[{w}] Necromancer stays out of the main Cards Change Log")
             go(pg, port, "#play")
             pg.evaluate("""(()=>{const E=CQE;const deck=(h,c)=>({name:'T',heroes:h.map(x=>'h:'+x),cards:c});const fill={Potion:3,'Raise Revenant':3,'Reawaken':3,'Restless Dead':3,'Bone Wall':3,'Grave Tide':3,'Corpse Harvest':3,'Dig the Grave':3,'Dead March':3,Consecrate:3,'Grim Divination':3,'Robbed Grave':3,'Bone Spur':3,'Restless Echo':3,'Grave Whispers':3,'Ossuary':3,'Rise from the Grave':3};
-              const s=E.newGame({seed:9,players:[{name:'You',deck:deck(['Necromancer A','Necromancer B','Necromancer C'],fill)},{name:'AI',ai:true,deck:deck(['Divine Knight','Arcane Scholar','Shadow Ranger'],{Potion:3,Precognition:3,Humble:3,Vandalize:3,Disarm:3,Naturalize:3,Shatter:3,Antidote:3,'Smoke Bomb':3,Revitalize:3,Dynamite:3,'Gold Bar':3,'Platinum Bar':3,'Silver Bar':3,'Rose Quartz':3,Topaz:3,Almandine:3})}]});
+              const s=E.newGame({seed:9,players:[{name:'You',deck:deck(['Gravecaller','Jorkev, the Pillager','Filth Scavenger'],fill)},{name:'AI',ai:true,deck:deck(['Divine Knight','Arcane Scholar','Shadow Ranger'],{Potion:3,Precognition:3,Humble:3,Vandalize:3,Disarm:3,Naturalize:3,Shatter:3,Antidote:3,'Smoke Bomb':3,Revitalize:3,Dynamite:3,'Gold Bar':3,'Platinum Bar':3,'Silver Bar':3,'Rose Quartz':3,Topaz:3,Almandine:3})}]});
               E.act(s,0,{type:'keep'});E.act(s,1,{type:'keep'});E.act(s,0,{type:'dawnDone'});E.act(s,1,{type:'dawnDone'});s.prio=0;s.p[0].aura=6;
               E.makeSummon(s,0,'Revenant');E.makeSummon(s,0,'Revenant');s.pend=[];s.p[0].inv.push({uid:'rm1',id:'Remains',kind:'card',fd:false,name:'Remains',owner:0,tok:true,ctr:{}});s.p[0].t.sAura=1;
               const rw={uid:'rw1',id:'Reawaken',owner:0};s.p[0].disc.push(rw);s.p[0].t.milled=['rw1'];

@@ -75,7 +75,7 @@ T.afterSweep=function(s){const st=s.trials;if(s.over)return;const h=bossHero(s);
   if(st.rage>=st.rageAt){st.skin=0;const ts=heroList(s).map(x=>x.h);E.log(s,`💢 ${h.name} does Raging Stampede: ${st.stampede} damage to every player Hero.`);
     st.lastFlip={kind:"stampede",card:"Raging Stampede",targets:ts.map(t=>t.name)};ev(s,st.lastFlip);
     ts.forEach(t=>{if(!s.over&&!t.dead)E.withSrc(s,"Raging Stampede",()=>E.damage(s,h,t,st.stampede,{card:true,srcName:"Raging Stampede"}))});
-    st.rage=0;st.winded=true;syncDef(s);E.log(s,`${h.name} is Winded (0 Defense until its next flip).`)}
+    st.rage=0;st.winded=true;st.stampedes=(st.stampedes||0)+1;syncDef(s);E.log(s,`${h.name} is Winded (0 Defense until its next flip).`)}
   else{st.skin=0;st.winded=false;
     if(!st.deck.length){st.deck=st.disc.splice(0);E.shuffle(s,st.deck);E.log(s,`${h.name} shuffles its boss deck.`)}
     const card=st.deck.pop();st.disc.push(card);syncDef(s);resolveCard(s,card)}
@@ -113,6 +113,18 @@ T.bossState=function(s){const st=s.trials;if(!st)return null;const h=bossHero(s)
   return{name:h&&h.name,hp:h?E.hp(s,h):0,max:h?E.maxHp(s,h):0,def:h?E.defn(s,h):0,plates:st.plates,platesMax:st.parties*(+bossRow(st.trial)[4]||0),rage:st.rage,rageAt:st.rageAt,winded:st.winded,skin:st.skin,
     deck:st.deck.length,disc:st.disc.length,lastFlip:st.lastFlip,spawns:E.parties(s).map(p=>({pid:p,list:spawnsVs(s,p).map(o=>({uid:o.uid,name:o.name,hp:E.hp(s,o),max:E.maxHp(s,o)}))}))}};
 T.lootPool=trial=>LOOT.map(r=>r[0]);
+/* built-in helper parties: each splits a starter deck to 2 of its Heroes, keeps that starter's cards for those classes plus Generic,
+   raises them to 3 copies (Legendaries stay at 1), then tops up to 50 from the two classes' card pools (cheapest first) */
+const PICKS=[[0,1],[0,1],[0,2],[0,2],[0,2]];
+T.partyFromStarter=function(st,list,pick){const DB=E.DB;const hs=pick.map(i=>"h:"+st.heroes[i]).filter(h=>DB[h]);const cls=hs.map(h=>DB[h].cls);
+  const okc=d=>d&&!d.dep&&(d.kind==="card"||d.kind==="equip")&&(d.cls==="Generic"||cls.includes(d.cls))&&!LOOT.some(r=>r[0]===d.name);
+  const cards={};let n=0;const add=(id,q)=>{cards[id]=(cards[id]||0)+q;n+=q};
+  for(const id in list){if(okc(DB[id]))add(id,list[id])}
+  const max=id=>DB[id].sup==="Legendary"?1:3;const cost=id=>parseInt(DB[id].cost,10)||0;
+  Object.keys(cards).sort((a,b)=>cost(a)-cost(b)||a.localeCompare(b)).forEach(id=>{while(n<50&&cards[id]<max(id))add(id,1)});
+  if(n<50){Object.keys(DB).filter(id=>okc(DB[id])&&DB[id].cls!=="Generic"&&DB[id].sup!=="Legendary"&&DB[id].sup!=="Hidden"&&!cards[id]&&E.isScripted(DB[id].name)).sort((a,b)=>cost(a)-cost(b)||a.localeCompare(b)).forEach(id=>{while(n<50&&(cards[id]||0)<max(id))add(id,1)})}
+  return{id:"tstarter:"+st.name,name:st.name.replace(/ \(starter\)$/,"")+" party (Trials)",heroes:hs,cards,trials:true}};
+T.trialsStarters=(ST,SL)=>ST.map((st,i)=>T.partyFromStarter(st,SL[i],PICKS[i]||[0,1]));
 
 E.hooks.onDamage=(s,src,tgt,n,side)=>{if(tgt&&tgt.boss)T.noteDamage(s,side,n)};
 E.hooks.setup=T.setup;E.hooks.afterSweep=T.afterSweep;E.hooks.onSummonDies=T.onSummonDies;

@@ -411,6 +411,8 @@ const STARTER_LISTS=[
  {"Pump":3,"Blunt Force":3,"Great Axe":2,"Bloodthirst":3,"Battered":3,"Unstoppable":3,"Blockade":3,"Bronze Chest Plate":2,"Tower Shield":2,"Power Thrust":3,"Rally the Troops":2,"Healing Beam":3,"Mace of Dawn":2,"Light Blast":3,"Healing Touch":3,"Long Sword":2,"Potion":3,"Inspiration":3,"Pummel":2}];
 function starterDeck(i){const st=STARTERS[i];return{id:"starter:"+i,name:st.name,heroes:st.heroes.map(n=>"h:"+n),cards:Object.assign({},STARTER_LISTS[i])}}
 U.starterDeck=starterDeck;
+/* Trials: five built-in 2-Hero helper parties, each a split of a starter deck (play-trials.js builds them) */
+U.TRIALS_STARTERS=window.CQT&&CQT.trialsStarters?CQT.trialsStarters(STARTERS,STARTER_LISTS):[];
 function deckChoices(){const out=[];
   const mine=((AS()&&S.decks)||[]).filter(d=>(d.heroes||[]).filter(Boolean).length===3);mine.forEach(d=>{const bad=E.validateDeck(d);out.push({id:d.id,name:d.name+(bad.length?" (not legal: "+bad[0]+")":""),ok:!bad.length,deck:d})});
   if(AS()&&S.deck&&S.deck.heroes.length===3&&!mine.some(d=>d.id===S.deck.id)){const bad=E.validateDeck(S.deck);out.push({id:"draft",name:"Current draft: "+(S.deck.name||"Untitled")+(bad.length?" (not legal)":""),ok:!bad.length,deck:S.deck})}

@@ -5,9 +5,18 @@ const E=root.CQE;const AI={};root.CQAI=AI;
 /* clone without the game log (the log can be long and the AI never reads it) */
 function lightClone(s){const l=s.log;s.log=[];try{return E.clone(s)}finally{s.log=l}}
 const W={alive:22,hp:1,str:1.6,def:1.2,aura:2.4,lvl:1.4,guard:.6,sum:3,sumStr:2.2,sumHp:.5,pillar:3,inv:1.2,hand:.4,gold:.12,aura0:0,tmpStr:.8,status:1.1,stun:2};
-AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e4;
+/* Trials (team play): every party is on your side, the boss side is the opponent. Extra Trials terms (weights are judgment calls, tuned in Plan D):
+   - TW.spawn: each living spawn is worth this much to the boss while it still has Stone Plates (killing one lowers its Defense for everyone)
+   - TW.winded: each boss Health Point counts 1 + TW.winded while it is Winded (0 Defense), so damage then is worth more
+   - TW.bossStatus: each Poison/Burn/Wound counter on the boss Hero is worth this much to the players (it gets past Defense every Dawn)
+   - TW.bossHp: each boss Health Point counts this much (the boss is one big Hero, so its Health Points are the win condition)
+   - TW.ally: weight of allied parties relative to your own (healing and readying allies is valued; harming them never is) */
+const TW={spawn:5,winded:.6,bossStatus:1.5,bossHp:1.3,ally:.9};AI.TW=TW;
+AI.evaluate=function(s,pid){if(s.over){if(s.trials){const win=s.winner===0;return E.sameTeam(s,pid,s.trials.boss)?(win?-1e4:1e4):(win?1e4:-1e4)}return s.winner===pid?1e4:s.winner<0?0:-1e4}
   let sc=0;s.p.forEach((pl,p)=>{let v=0;
+    const bossSide=!!(s.trials&&E.isBoss(s,p));
     pl.heroes.forEach(h=>{if(h.dead){v+=h.surr?0:1;return}const st=E.heroStats(s,h);
+      if(bossSide&&h.boss){const tr=s.trials;v+=W.alive+st.hp*TW.bossHp*(1+(tr.winded?TW.winded:0))+W.def*Math.min(st.def,8)-TW.bossStatus*(h.st.burn+h.st.poison+h.st.wound);return}
       /* temporary STR only matters while the Hero can still attack this turn */
       const tmp=(h.mods||[]).reduce((n,m)=>n+(m.until==="dusk"&&m.str>0?m.str:0),0)+(pl.pm.str||0);
       const tv=s.phase==="battle"&&!h.ex?W.tmpStr*tmp:0;
@@ -15,10 +24,11 @@ AI.evaluate=function(s,pid){if(s.over)return s.winner===pid?1e4:s.winner<0?0:-1e
       if(h.fat&&!h.fl.fatRested)v-=2.5;v-=W.status*(h.st.burn+h.st.poison+h.st.wound+h.st.confuse)+W.stun*h.st.stun;
       if(s.phase==="battle"&&E.noAttack(s,h))v+=1.5;
       v+=E.eqList(h).length*.6+h.ench.reduce((n,e)=>n+((E.DB[e.id]||{}).sub==="Curse"?-1.5:(e.owner===p?1:-1.5)),0)});
+    if(bossSide&&s.trials.plates>0)v+=TW.spawn*pl.bf.filter(o=>o.spawn).length;
     pl.bf.forEach(o=>{if(o.kind==="summon"){const hp=E.hp(s,o),mx=Math.max(1,E.maxHp(s,o));v+=(W.sum+W.sumStr*E.str(s,o))*(0.6+0.4*Math.min(1,hp/mx))+W.sumHp*hp+(s.phase==="battle"?0.5*Math.min(E.defn(s,o),hp):0)}else v+=W.pillar});
     v+=pl.inv.reduce((n,o)=>n+(o.kind==="card"&&!o.fd&&(E.DB[o.id]||{}).sub==="Arrow"?(pl.heroes.some(h=>!h.dead&&h.cls==="Ranger")?1.1:.2):o.fd?1.4:W.inv),0)+W.hand*Math.min(pl.hand.length,5)+(pl.fl&&pl.fl.multi?0.7*pl.fl.multi:0)+pl.inv.reduce((n,o)=>n+(s.upg&&s.upg[o.uid]?0.8*s.upg[o.uid]:0),0)+W.gold*Math.min(pl.gold,12)+W.aura0*pl.aura;
     if(s.phase==="battle"&&(pl.t.nextBark||pl.t.allBark||pl.t.shelter)){const sm=pl.hand.some(c=>(E.DB[c.id]||{}).type==="Summon");v+=(sm?2*((pl.t.nextBark||0)+(pl.t.allBark||0)):0)+(pl.t.shelter?1:0)}
-    sc+=p===pid?v:-1.15*v});
+    sc+=p===pid?v:E.sameTeam(s,p,pid)?TW.ally*v:-1.15*v});
   return sc};
 /* answer prompts in simulations without search */
 function quick(s,pid,pr){

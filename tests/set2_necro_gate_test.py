@@ -75,7 +75,7 @@ def main():
             pg.fill("#cat-q", "")
             imgs = pg.evaluate("""(()=>{const r={};for(const n of ['Raise Revenant','Cursed Urn','Grave Caller\\'s Wand','Skeleton Key','Consecrate']){const c=BYID.get(n);r[n]=c?artSrc(c).split('/').pop().split('?')[0]:null}r.hero=artSrc(BYID.get('h:Gravecaller')).split('/').pop().split('?')[0];return r})()""")
             check(imgs["Raise Revenant"] == "card-Necromancer-face.webp" and imgs["Cursed Urn"] == "card-Necromancer-Legendary-face.webp" and imgs["Skeleton Key"] == "card-Necromancer-Legendary-face.webp"
-                  and imgs["Grave Caller's Wand"] == "equip-Necromancer-face.webp" and imgs["Consecrate"] == "card-Generic-face.webp" and imgs["hero"] == "hero-Necromancer-face.webp", f"[{w}] blank frames: {imgs}")
+                  and imgs["Grave Caller's Wand"] == "equip-Necromancer-face.webp" and imgs["Consecrate"] == "card-Generic-face.webp" and imgs["hero"] == "Gravecaller-face.webp", f"[{w}] blank frames: {imgs}")
             broken = pg.evaluate("""(async()=>{const urls=['card-Necromancer-face','card-Necromancer-Legendary-face','equip-Necromancer-face','equip-Necromancer-up','hero-Necromancer-face'].map(x=>'assets/art/blank/'+x+'.webp');let bad=0;for(const u of urls){const r=await fetch(u);if(!r.ok)bad++}return bad})()""")
             check(broken == 0, f"[{w}] Necromancer frame files missing: {broken}")
             plain = pg.evaluate("""(()=>{let n=0;['Bone Wall','Dagger of the Dead','Consecrate','Ossuary','Gravedigger\\'s Medallion','Filth Scavenger','Mourner\\'s Offering'].forEach(nm=>{const c=BYID.get(nm)||BYID.get('h:'+nm);if(!c)return;const d=document.createElement('div');d.innerHTML=cardHTML(c);

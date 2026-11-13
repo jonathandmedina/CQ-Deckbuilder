@@ -21,6 +21,8 @@ const _RC=typeof RAW_CARDS!=="undefined"?RAW_CARDS:root.RAW_CARDS,_RE=typeof RAW
 const RCP=typeof RECIPES!=="undefined"?RECIPES:(root.RECIPES||{});E.RECIPES=RCP;
 for(const n in RCP){const r=RCP[n],b=r.back;if(DB[n])DB[n].recipe=r;
   if(b.type!=="Summon"&&!DB[b.name])DB[b.name]={id:b.name,name:b.name,cost:b.cost,sup:"",type:b.type,sub:b.type==="Equipment"?b.sub:"",cls:"Generic",rules:b.rules,kind:b.type==="Equipment"?"equip":"card",region:b.region,pstr:num(b.pstr),pdef:num(b.pdef),made:n}}
+/* Set 2 Necromancer: the Remains item token gets a DB entry (tok) so inventory code that reads DB[o.id] works */
+if(TOK["Remains"]&&!DB["Remains"])DB["Remains"]={id:"Remains",name:"Remains",cost:"0",sup:"",type:"Item",sub:"Token",cls:"Generic",rules:TOK["Remains"].rules,kind:"card",tok:true};
 const CLASSES=["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock"];E.CLASSES=CLASSES;
 const STATUS=["burn","poison","wound","confuse","stun"];E.STATUS=STATUS;
 E.STATUS_NAME={burn:"Burned",poison:"Poisoned",wound:"Wounded",confuse:"Confused",stun:"Stunned"};
@@ -134,6 +136,7 @@ function strOf(s,o,vs){
     let v=b+o.bon.str+modSum(o,"str")+(pl.pm.str||0);
     eqList(o).forEach(e=>v+=e.pstr||0);
     if(heroIs(o,"Barbarian"))v+=trophies(pl);
+    /* Set 2 Dagger of the Dead: +2 STR (upgraded +3) while you control a Revenant */if(pl.bf.some(x=>x.kind==="summon"&&x.name==="Revenant"))eqList(o).forEach(e=>{if(e.name==="Dagger of the Dead")v+=isUp(s,e)?3:2});
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
     /* update 26: Level 3 Radiant Sentinel gets +5 instead when 5+ of its DEF comes from equipment */if(o.name==="Radiant Sentinel"){const eqd=eqList(o).reduce((n,e)=>n+(e.pdef||0),0);if(o.lvl>=3&&eqd>=5)v+=5;else if(defOf(s,o)>=5)v+=2}
@@ -147,6 +150,7 @@ function strOf(s,o,vs){
     (o.mods||[]).forEach(m=>{if(m.mulStr&&(m.until==null||m.until>=s.round))v*=m.mulStr});
     if(modHas(o,"zeroStr"))v=0;return Math.max(0,v)}
   if(o.kind==="summon"){const pl=P(s,o.ctrl);let v=o.str+modSum(o,"str")+invCount(pl,"Tooth Crystal")+(pl.pm.sstr||0);
+    /* Set 2 Ossuary: while your discard pile has 25 or more cards, your Revenants have +1 STR */if(o.name==="Revenant"&&pl.disc.length>=25)v+=invCount(pl,"Ossuary");
     if(/Soldier/.test(o.sub||o.name))v+=invCount(pl,"Captain's Banner")+(pl.pm.soldier||0);
     const op=P(s,opp(o.ctrl));if(op)v-=(op.pm.enemyStr||0);if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
     return Math.max(0,v)}
@@ -184,9 +188,12 @@ E.guardEq=guardEq;E.hasEq=hasEqN;E.living=living;E.invHas=invHas;E.invCount=invC
 
 /* ---------- basic operations ---------- */
 /* Mill X: move the top X cards of a library to its owner's discard pile (no reshuffle) */
-function mill(s,pid,n){const pl=P(s,pid);const out=[];for(let i=0;i<n&&pl.lib.length;i++){const c=pl.lib.pop();pl.disc.push(c);out.push(DB[c.id]?DB[c.id].name:"a card")}
+function mill(s,pid,n){const pl=P(s,pid);const out=[];for(let i=0;i<n&&pl.lib.length;i++){const c=pl.lib.pop();pl.disc.push(c);markMilled(s,pid,c);out.push(DB[c.id]?DB[c.id].name:"a card")}
   log(s,out.length?`${pl.name} mills ${out.length}: ${out.join(", ")}.`:`${pl.name} has no cards to mill.`,pid);return out.length}
 E.mill=mill;
+/* Set 2 Exhume: remember cards moved from a library to its discard pile this turn (cleared at Dusk with pl.t) */
+function markMilled(s,pid,c){const pl=P(s,pid);pl.t.milled=(pl.t.milled||[]).concat([c.uid])}
+E.markMilled=markMilled;
 /* Drawing from an empty library loses the game (rule change, Nov 2026) */
 function deckOut(s,pid){if(s.over)return;const pl=P(s,pid);s.over=true;s.winner=opp(pid);s.deckedOut=pid;s.pend=[];s.cur=null;s.qatk=null;
   log(s,`${pl.name} must draw from an empty library and loses the game.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`)}
@@ -313,6 +320,7 @@ E.bestDamageTarget=bestDamageTarget;
 E.heal=heal;
 /* damage: o={combat,spell,pierce,ignoreDef,card,actor,type,noTrig} returns damage dealt */
 function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
+  if(tgt.imp){log(s,`${tgt.name} can't be dealt damage (Impervious).`);return 0} /* Set 2 Impervious */
   if(tgt.kind==="hero"&&tgt.fl.noDmgRound===s.round&&!o.status){log(s,`${tgt.name} takes no damage (prevented).`);stat(s,"prev",tgt.owner,tgt.fl.noDmgBy||"Damage prevention",amt);return 0}
   let a=Math.max(0,amt);
   if(tgt.kind==="hero"){const tp=P(s,tgt.owner);if(tp.fl.preventNext&&(o.card||o.combat)&&ctrl(s,src||tgt)!==tgt.owner){tp.fl.preventNext=false;log(s,`Smoke Trail Arrow prevents the damage to ${tgt.name}.`);stat(s,"prev",tgt.owner,"Smoke Trail Arrow",amt);return 0}
@@ -414,36 +422,48 @@ E.invObj=invObj;
 function overflow(s,pid){const pl=P(s,pid);const cap=E.slots(s,pid);
   while(pl.inv.length>cap){let worst=0,wv=1e9;pl.inv.forEach((o,i)=>{const v=o.tok?-1:(num(def(o).cost)+(o.kind==="equip"?2:0));if(v<wv){wv=v;worst=i}});
     const o=pl.inv.splice(worst,1)[0];log(s,`Inventory full: ${pl.name} discards ${o.fd?"a face-down card":o.name}.`,pid);toDisc(s,o)}}
-function destroyObj(s,o,exile){const f=find(s,o.uid);if(!f)return;const pl=P(s,f.pid);
+function destroyObj(s,o,exile,why){const f=find(s,o.uid);if(!f)return;const pl=P(s,f.pid);
+  /* Set 2 Impervious: destroy effects do nothing; it still dies at 0 HP, and sacrifice and exile work */
+  if(o.imp&&!exile&&why!=="sac"&&hpOf(s,o)>0){log(s,`${o.name} can't be destroyed (Impervious).`);return}
   if(f.zone==="bf"){pl.bf.splice(pl.bf.indexOf(o),1)}
   else if(f.zone==="inv"){pl.inv.splice(pl.inv.indexOf(o),1)}
   else if(f.zone==="eq"){f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;
     if(o.name==="Sword of Eliazar"&&!exile){const m=makeSummon(s,f.pid,"Eliazar");if(isUp(s,o)){m.str+=1;m.hp+=1;log(s,`Upgraded Sword of Eliazar: Eliazar is ${m.str}/${m.hp}.`,f.pid)}}}
   else if(f.zone==="ench"){f.hero.ench.splice(f.hero.ench.indexOf(o),1)}
-  log(s,`${o.name}${o.kind==="summon"?" (summon)":""} is ${exile?"exiled":"destroyed"}.`);
+  log(s,`${o.name}${o.kind==="summon"?" (summon)":""} is ${exile?"exiled":why==="sac"?"sacrificed":"destroyed"}.`);
   /* UI event: the Play tab shows a "destroyed" pop-up for each of these */
-  if(!exile){s.fxN=(s.fxN||0)+1;s.fx=(s.fx||[]).concat([{n:s.fxN,k:"destroy",id:o.id||null,name:o.name,kind:o.kind,pid:f.pid}]).slice(-12)}
+  if(!exile&&why!=="sac"){s.fxN=(s.fxN||0)+1;s.fx=(s.fx||[]).concat([{n:s.fxN,k:"destroy",id:o.id||null,name:o.name,kind:o.kind,pid:f.pid}]).slice(-12)}
   if(o.kind==="summon"){const c=o.ctrl;
     if(o.name==="Aurawing Familiar"){P(s,c).aura+=1;log(s,`${P(s,c).name} gains 1 Aura.`)}
     if(o.name==="Drawwing Familiar")draw(s,c,1);
+    /* Set 2 Cursed Urn: whenever a Revenant you control dies (sacrifice included), create a Remains token in an empty inventory slot */
+    if(o.name==="Revenant"&&!exile){const cp=P(s,c);for(let k=invCount(cp,"Cursed Urn");k>0;k--){if(cp.inv.length>=E.slots(s,c)){log(s,"Cursed Urn: no empty inventory slot for a Remains token.",c);break}
+      cp.inv.push({uid:nid(s),id:"Remains",kind:"card",fd:false,name:"Remains",owner:c,tok:true,ctr:{}});log(s,`Cursed Urn: ${cp.name} creates a Remains token.`,c)}}
     if(o.name==="Spore"){const h=P(s,c).hand;if(h.length){const i=ri(s,h.length);const x=h.splice(i,1)[0];P(s,c).disc.push(x);log(s,`Spore: ${P(s,c).name} discards ${DB[x.id].name}.`)}}
     return}
   if(o.tok||o.kind==="pillar"||o.kind==="doll")return;
   if(o.under&&o.under.length){o.under.forEach(c=>P(s,c.owner).disc.push(c));o.under=[]}
   const ow=P(s,o.owner);if(exile)ow.exile.push({uid:o.uid,id:(DB[o.id]&&DB[o.id].made)||o.id,owner:o.owner});else toDisc(s,o)}
 E.destroyObj=destroyObj;
+/* Set 2: sacrifice a summon you control (not "destroy", so Impervious doesn't stop it) */
+E.sacrifice=(s,o)=>destroyObj(s,o,false,"sac");
+const revenants=(s,pid)=>P(s,pid).bf.filter(o=>o.kind==="summon"&&o.name==="Revenant");E.revenants=revenants;
 function checkWin(s){if(s.over)return;const dead=s.p.map(pl=>pl.heroes.every(h=>h.dead));
   if(dead[0]||dead[1]){s.over=true;s.winner=dead[0]&&dead[1]?-1:(dead[0]?1:0);s.pend=[];s.cur=null;s.qatk=null;
     log(s,s.winner<0?"Both parties fall. The game is a draw.":`🏆 ${s.p[s.winner].name} wins!`);}}
 
 /* ---------- tokens / summons ---------- */
 function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};const o={uid:nid(s),kind:"summon",name,str:t.str,hp:t.hp,sub:t.sub||"",dmg:0,ex:!ready,ctrl:pid,owner:pid,tok:true,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},mods:[],fl:{}};
-  if(/\bStealth\b/.test(t.rules||""))o.stealth=true; /* update 29: summons that enter with Stealth (Woods Beast, Great Rootfolk) */
+  if(/\bStealth\b/.test(t.rules||""))o.stealth=true;
+  if(/^Impervious\b/.test(t.rules||""))o.imp=true; /* Set 2 Revenant */ /* update 29: summons that enter with Stealth (Woods Beast, Great Rootfolk) */
   P(s,pid).bf.push(o);log(s,`${P(s,pid).name} summons ${/^[AEIOU]/.test(name)?"an":"a"} ${name} (${t.str}/${t.hp}).`,pid);
   /* Barkborn: gains DEF equal to its HP until Dusk; stacks */
   {const pl=P(s,pid);const n=(/Barkborn/.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
    if(n>0){addMod(o,{def:n*o.hp});log(s,`${name} has Barkborn${n>1?" ×"+n:""}: +${n*o.hp} DEF this turn.`,pid)}}
+  /* Set 2 Necromancer B: whenever a Revenant enters under your control, you may choose a player; that player Mills 1 (one trigger per Revenant) */
+  if(name==="Revenant")living(P(s,pid)).filter(h=>h.name==="Necromancer B").forEach(()=>ask(s,pid,"Necromancer B: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,opp(pid)).name} Mills 1`,v:opp(pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Necromancer B"}));
   return o}
+ASK.millOne=(s,pid,pr,v)=>{if(v==null)return;mill(s,v,1)};
 function makePillar(s,pid,name){const o={uid:nid(s),kind:"pillar",name,ctrl:pid,owner:pid,tok:true};P(s,pid).bf.push(o);log(s,`${P(s,pid).name} conjures a ${name}.`,pid);return o}
 function makeEqToken(s,pid,name,x){const t=TOK[name];return{uid:nid(s),kind:"equip",id:null,name,cls:t.cls,region:t.region,pstr:t.str,pdef:0,cost:t.cost,owner:pid,tok:true,x:x||null}}
 E.makeSummon=makeSummon;E.makePillar=makePillar;E.makeEqToken=makeEqToken;
@@ -485,7 +505,13 @@ const chained=h=>!!(h&&h.kind==="hero"&&(h.ench||[]).some(e=>e.name==="Chains of
 const confused=h=>!!(h&&((h.st&&h.st.confuse>0)||chained(h)));E.confused=confused;
 
 /* ---------- costs ---------- */
-function cardCost(s,pid,actor,d,x){let c=d.cost==="X"?(x||0):num(d.cost);const pl=P(s,pid);
+/* Set 2 Mourn: if you've surrendered a soul this game, you may play the card without paying its Aura cost */
+const hasMourn=d=>/^Mourn\./.test((d&&d.rules)||"");E.hasMourn=hasMourn;
+const mourning=(s,pid)=>P(s,pid).heroes.some(h=>h.surr);E.mourning=mourning;
+/* Set 2 Remains: Aura that can only be spent on Summon cards (pl.t.sAura, lost at Dusk) */
+function auraFor(s,pid,d){const pl=P(s,pid);return pl.aura+(d&&d.type==="Summon"?(pl.t.sAura||0):0)}
+E.auraFor=auraFor;
+function cardCost(s,pid,actor,d,x){if(hasMourn(d)&&mourning(s,pid))return 0;let c=d.cost==="X"?(x||0):num(d.cost);const pl=P(s,pid);
   if(d.kind==="equip"&&actor&&actor.name==="Blessed Champion")c-=actor.lvl>=3?2:1;
   if(d.cls==="Mage"){if(pl.fl.mageNext)c-=2;if(pl.fl.mageAll)c-=1}
   if(d.sub==="Trap"){if(pl.fl.trapNext)c-=2;if(pl.fl.trapAll)c-=1}
@@ -574,7 +600,7 @@ function canPlayCard(s,pid,actor,c,free){const d=DB[c.id];if(!d||!actor)return f
   if(sc&&sc.can&&d.sup!=="Hidden"&&!sc.can(s,pid,actor))return false;
   if(d.type==="Recipe"&&!craftPlan(s,pid,actor,d))return false; /* Set 2 Craft: the ingredients must be there */
   if(free)return true;
-  const minX=0;return cardCost(s,pid,actor,d,minX)<=P(s,pid).aura}
+  const minX=0;return cardCost(s,pid,actor,d,minX)<=auraFor(s,pid,d)}
 E.canPlayCard=canPlayCard;
 
 /* ---------- options ---------- */
@@ -588,10 +614,11 @@ E.options=function(s,pid){
     out.push({type:"dawnDone"});return out}
   if(s.phase==="town"){if(!s.town||s.town.order[s.town.i]!==pid)return[];const pl=P(s,pid);const out=[];
     const used=s.town.used||{};
-    if(pl.gold>=5&&!used.inn)living(pl).forEach(h=>{if(h.dmg>0)out.push({type:"inn",hero:h.uid})});
-    if(pl.gold>=4&&!used.shop)out.push({type:"shop"});
-    if(pl.gold>=E.CHURCH_COST&&!used.church)pl.heroes.forEach(h=>{if(h.dead&&!h.surr)out.push({type:"church",hero:h.uid})});
-    upgradables(s,pid).forEach(o=>{const u=upgradeCost(o);if(u.x){for(let x=1;x<=pl.gold;x++)out.push({type:"upgrade",uid:o.uid,x})}else if(pl.gold>=u.cost)out.push({type:"upgrade",uid:o.uid})});
+    const fr=!!pl.fl.freeTown;/* Set 2 Skeleton Key */
+    if((fr||pl.gold>=5)&&!used.inn)living(pl).forEach(h=>{if(h.dmg>0)out.push({type:"inn",hero:h.uid})});
+    if((fr||pl.gold>=4)&&!used.shop)out.push({type:"shop"});
+    if((fr||pl.gold>=E.CHURCH_COST)&&!used.church)pl.heroes.forEach(h=>{if(h.dead&&!h.surr)out.push({type:"church",hero:h.uid})});
+    upgradables(s,pid).forEach(o=>{const u=upgradeCost(o);if(u.x){for(let x=1;x<=pl.gold;x++)out.push({type:"upgrade",uid:o.uid,x})}else if(fr||pl.gold>=u.cost)out.push({type:"upgrade",uid:o.uid})});
     out.push({type:"leave"});return out}
   if(s.phase!=="battle"||s.prio!==pid)return[];
   return battleOptions(s,pid)};
@@ -616,6 +643,8 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
       if(canPlayCard(s,pid,a,c)){seen.add(c.id);out.push({type:"play",uid:c.uid})}});
     /* Set 2 Stall: a Stalled card with no stall counters left can be played without paying its Aura cost */
     (pl.stall||[]).forEach(c=>{if(!(c.n>0)&&canPlayCard(s,pid,a,c,true))out.push({type:"playStalled",uid:c.uid})});
+    /* Set 2 Exhume: a card moved from your library to your discard pile this turn can be played from your discard pile (paying its costs) */
+    {const ml=pl.t.milled||[];const sx=new Set();pl.disc.forEach(c=>{const d=DB[c.id];if(!d||!ml.includes(c.uid)||sx.has(c.id)||!/(^|\n)Exhume\./.test(d.rules||""))return;if(canPlayCard(s,pid,a,c)){sx.add(c.id);out.push({type:"play",uid:c.uid})}})}
     /* Call of Nature: a Summon card exiled this turn can be played */
     (pl.t.nature||[]).forEach(u=>{const c=pl.exile.find(x=>x.uid===u);if(c&&canPlayCard(s,pid,a,c))out.push({type:"play",uid:u})});
     if(!a.fl.noAttack&&!(chained(a)&&pl.aura<1))out.push({type:"attack",att:a.uid});
@@ -650,7 +679,7 @@ function promptOptions(s,pid,pr){
   if(pr.type==="window"){const out=[{type:"decline"}];
     P(s,pid).inv.forEach(o=>{if(o.fd&&canReveal(s,pid,o,pr))revealHeroes(s,pid,o,pr).forEach(h=>out.push({type:"reveal",uid:o.uid,hero:h.uid}))});
     if(canStall(s,pid,pr.trig)){const w=watchFor(s,pid);living(P(s,pid)).filter(h=>!h.ex).forEach(h=>out.push({type:"stall",uid:w.uid,hero:h.uid}))}return out}
-  if(pr.type==="combo"){const out=[{type:"decline"}];pr.cands.forEach(u=>{const c=findCardAnywhere(s,pid,u);if(c){const a=comboActor(s,pr,u);if(a&&!a.dead&&canPlayCards(a)&&(pr.free||cardCost(s,pid,a,DB[c.id])<=P(s,pid).aura))out.push({type:"comboPlay",uid:u})}});return out}
+  if(pr.type==="combo"){const out=[{type:"decline"}];pr.cands.forEach(u=>{const c=findCardAnywhere(s,pid,u);if(c){const a=comboActor(s,pr,u);if(a&&!a.dead&&canPlayCards(a)&&(pr.free||cardCost(s,pid,a,DB[c.id])<=auraFor(s,pid,DB[c.id])))out.push({type:"comboPlay",uid:u})}});return out}
   if(pr.type==="ask")return pr.opts.map((_,i)=>({type:"ask",i}));
   if(pr.type==="scry")return[{type:"scry"}];
   if(pr.type==="choose")return[{type:"choose"}];
@@ -710,6 +739,7 @@ E.act=function(s,pid,a){CUR_S=s;
   if(a.type==="concede"){if(pid!==0&&pid!==1)return{ok:false,err:"Not a player."};s.seq++;s.over=true;s.winner=opp(pid);s.conceded=pid;s.pend=[];s.cur=null;s.qatk=null;
     log(s,`${P(s,pid).name} concedes.`,pid);log(s,`🏆 ${P(s,opp(pid)).name} wins!`);return{ok:true}}
   const opts=E.options(s,pid);
+  if(a.type==="play"&&P(s,pid).disc.some(c=>c.uid===a.uid)&&!opts.some(o=>o.type==="play"&&o.uid===a.uid))return{ok:false,err:"You can't play that card from your discard pile now."};
   if(a.type==="play"){const ok=opts.some(o=>o.type==="play"&&findCardAnywhere(s,pid,o.uid)&&findCardAnywhere(s,pid,o.uid).id===(findCardAnywhere(s,pid,a.uid)||{}).id);if(!ok)return{ok:false,err:"You can't play that card now."}}
   else if(!["fix","man","fixPlay","manDone","manCancel","scry","choose","wake","giveAction"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
   if(a.type==="fix"&&!(s.phase==="battle"&&s.prio===pid&&!s.pend.length))return{ok:false,err:"Rules fixes are made on your priority."};
@@ -749,13 +779,14 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"gem":{const o=find(s,a.uid).o;const h=heroByUid(s,a.hero);h.ex=true;pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,`${pl.name} exiles ${o.name}, exhausting ${h.name}.`,pid);SC()[o.name].gem(mkCtx(s,pid,h,DB[o.id],o,[]));return}
   case"wake":{const h=heroByUid(s,a.hero);if(h)h.keepMed=!a.v;return}
   case"dawnDone":s.dawnDone[pid]=true;if(s.dawnDone.every(Boolean))startBattle(s);return;
-  case"inn":{const h=heroByUid(s,a.hero);pl.gold-=5;s.town.used=Object.assign({},s.town.used,{inn:true});log(s,`${pl.name} stays at the Inn (5 Gold).`,pid);heal(s,null,h,E.INN_HEAL);return}
-  case"church":{const h=heroByUid(s,a.hero);pl.gold-=E.CHURCH_COST;s.town.used=Object.assign({},s.town.used,{church:true});h.dead=false;h.dmg=Math.max(0,maxHp(s,h)-E.CHURCH_HP);h.ex=false;log(s,`${pl.name} pays the Church ${E.CHURCH_COST} Gold: ${h.name} is resurrected with ${E.CHURCH_HP} HP.`,pid);return}
-  case"upgrade":{const o=find(s,a.uid).o;const u=upgradeCost(o);const x=u.x?Math.max(1,Math.min(a.x|0,pl.gold)):u.cost;pl.gold-=x;s.upg=s.upg||{};s.upg[o.uid]=u.x?x:1;
+  case"inn":{const h=heroByUid(s,a.hero);pl.gold-=townCost(s,pid,5);s.town.used=Object.assign({},s.town.used,{inn:true});log(s,`${pl.name} stays at the Inn (5 Gold).`,pid);heal(s,null,h,E.INN_HEAL);return}
+  case"church":{const h=heroByUid(s,a.hero);pl.gold-=townCost(s,pid,E.CHURCH_COST);s.town.used=Object.assign({},s.town.used,{church:true});h.dead=false;h.dmg=Math.max(0,maxHp(s,h)-E.CHURCH_HP);h.ex=false;log(s,`${pl.name} pays the Church ${E.CHURCH_COST} Gold: ${h.name} is resurrected with ${E.CHURCH_HP} HP.`,pid);return}
+  case"upgrade":{const o=find(s,a.uid).o;const u=upgradeCost(o);const x=u.x?Math.max(1,Math.min(a.x|0,pl.gold)):u.cost;pl.gold-=u.x?x:townCost(s,pid,x);s.upg=s.upg||{};s.upg[o.uid]=u.x?x:1;
+    {const us=SC()[o.name];if(us&&us.onUpgrade){const f3=find(s,o.uid);const eh=f3&&f3.zone==="eq"?f3.hero:null;s.afterUp=()=>withSrc(s,o.name,()=>us.onUpgrade(mkCtx(s,pid,eh,DB[o.id],o,[])))}}
     if(u.weapon){const up=DB[o.id].up;const had=eqGuardOf(s,o,true);o.pstr=up.pstr;o.pdef=up.pdef;const f2=find(s,o.uid);if(f2&&f2.zone==="eq"&&f2.hero){f2.hero.eqGuard+=Math.max(0,eqGuardOf(s,o)-had)}
-      log(s,`${pl.name} upgrades ${o.name} at the Blacksmith (${x} Gold) and flips it: ${up.rules}`,pid);return}
-    log(s,`${pl.name} upgrades ${o.name} at the Blacksmith (${x} Gold)${u.x?`: +${x} damage`:""}.`,pid);return}
-  case"shop":pl.gold-=4;s.town.used=Object.assign({},s.town.used,{shop:true});log(s,`${pl.name} visits the Shop (4 Gold).`,pid);draw(s,pid,1);return;
+      log(s,`${pl.name} upgrades ${o.name} at the Blacksmith (${x} Gold) and flips it: ${up.rules}`,pid);if(s.afterUp){const f=s.afterUp;s.afterUp=null;f()}return}
+    log(s,`${pl.name} upgrades ${o.name} at the Blacksmith (${x} Gold)${u.x?`: +${x} damage`:""}.`,pid);if(s.afterUp){const f=s.afterUp;s.afterUp=null;f()}return}
+  case"shop":pl.gold-=townCost(s,pid,4);s.town.used=Object.assign({},s.town.used,{shop:true});log(s,`${pl.name} visits the Shop (4 Gold).`,pid);draw(s,pid,1);return;
   case"leave":log(s,`${pl.name} leaves Town.`,pid);s.town.i++;s.town.used={};if(s.town.i>=s.town.order.length){s.town=null;startRound(s)}return;
   case"pass":log(s,`${pl.name} passes.`,pid);s.passed[pid]=true;endBonus(s);advance(s,pid);return;
   case"decline":{const pr=s.pend.shift();if(pr.type==="window")closeWindow(s,pr);else if(pr.type==="combo")log(s,"Combo: no card played.",pid);return}
@@ -763,7 +794,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"stall":{const pr=s.pend[0];const h=heroByUid(s,a.hero);if(!pr||pr.type!=="window"||!h)return;h.ex=true;s.pend.shift();const c=pr.cont.card;const op=P(s,pr.trig.pid);
     op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2}]);log(s,`${pl.name} uses the Pocket Watch, exhausting ${h.name}: ${DB[c.id].name} is Stalled with 2 stall counters (its Aura isn't refunded).`,pid);return}
   case"comboPlay":{const pr=s.pend.shift();const actor=comboActor(s,pr,a.uid);const c0=findCardAnywhere(s,pid,a.uid);const d0=c0&&DB[c0.id];
-    playCard(s,pid,actor,a.uid,a,{combo:!pr.free&&!pr.pay,free:!!pr.free,fromLib:!pr.fromDisc,fromDisc:!!pr.fromDisc});
+    playCard(s,pid,actor,a.uid,a,{combo:!pr.free&&!pr.pay,free:!!pr.free,fromLib:!pr.fromDisc,fromDisc:!!pr.fromDisc,exileAfter:!!pr.exileAfter});
     /* Rapacious Encore: deal damage equal to the replayed Song's Aura cost, Piercing (ignores all DEF) */
     if(pr.encore&&d0){const n=num(d0.cost);const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);if(n>0&&ts.length)ask(s,pid,`Rapacious Encore: deal ${n} damage to any target (Piercing)`,targetOpts(s,pid,ts,n),"dmgTo",{n,name:"Rapacious Encore",pierce:99,src:pr.actor})}
     return}
@@ -792,7 +823,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
   s.cur={pid,type:a.type};const actor=actorFor(s,pid);s.dmgTo=[0,0];pl.t.acts=(pl.t.acts||0)+1;
   if(actor&&a.type!=="soul"&&!((a.type==="attack"||a.type==="band")&&a.att!==actor.uid))pl.t.lastActor=actor.uid;
   stallTick(s,pid);
-  if(a.type==="play"){playCard(s,pid,actor,a.uid,a,{});return}
+  if(a.type==="play"){const fd=!pl.hand.some(c=>c.uid===a.uid)&&pl.disc.some(c=>c.uid===a.uid);if(fd)log(s,`${pl.name} plays a card from their discard pile (Exhume).`,pid);playCard(s,pid,actor,a.uid,a,fd?{fromDisc:true}:{});return}
   if(a.type==="playStalled"){log(s,`${pl.name} plays a Stalled card.`,pid);playCard(s,pid,actor,a.uid,a,{free:true,fromStall:true});return}
   if(a.type==="attack"){startAttack(s,pid,a.att,a.targets[0],{});return}
   if(a.type==="band"){const all=bandMembers(s,pid);let mem=(a.members||all.map(o=>o.uid)).filter(u=>u!==a.att&&all.some(o=>o.uid===u));
@@ -822,6 +853,8 @@ function doAct(s,pid,a){const pl=P(s,pid);
     if(a.ch===0)draw(s,pid,1);else if(a.ch===1)pl.aura+=2;else if(a.ch===2&&t)addMod(t,{str:2});else if(a.ch===3&&t)damage(s,{name:h.name+"'s soul",kind:"soul"},t,2,{card:true});
     else if(a.ch===4)pl.gold+=3;else if(a.ch===5&&t)addMod(t,{def:2});return}
 }
+/* Set 2 Skeleton Key: the next Town action costs no Gold */
+function townCost(s,pid,n){const pl=P(s,pid);if(pl.fl.freeTown){pl.fl.freeTown=false;log(s,`Skeleton Key: this Town action costs no Gold.`,pid);return 0}return n}
 function arrested(h){return(h.ench||[]).some(e=>e.name==="Arrested Development")}
 function levelUp(s,h,stat,announce){if(h.lvl>=6)return;if(arrested(h)){log(s,`${h.name} can't level up (Arrested Development).`,h.owner);return}h.lvl++;log(s,`${h.name} reaches Level ${h.lvl}.`,h.owner);
   if(h.name==="Thorncaller"&&h.lvl===6){const pl=P(s,h.owner);const sm=pl.bf.filter(o=>o.kind==="summon");if(sm.length)log(s,"Thorncaller: each friendly summon is duplicated.",h.owner);sm.forEach(o=>E.copySummon(s,h.owner,o))}
@@ -898,11 +931,15 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(!c)return;const fromHand=zone===pl.hand;const d=DB[c.id];const sc=SC()[d.name];
   const x=(d.cost==="X"||(sc&&sc.x))?Math.max(0,Math.min(a.x|0,99)):0;
   const cost=o.free?0:cardCost(s,pid,actor,d,x);
-  if(cost>pl.aura){log(s,`Not enough Aura for ${d.name}.`,pid);return}
+  if(cost>auraFor(s,pid,d)){log(s,`Not enough Aura for ${d.name}.`,pid);return}
   if(d.type==="Recipe"&&!payCraft(s,pid,actor,d)){log(s,`${d.name}: the ingredients aren't there.`,pid);return}
+  if(d.type==="Summon"&&cost>pl.aura&&pl.t.sAura){const k=Math.min(pl.t.sAura,cost-pl.aura);pl.t.sAura-=k;pl.aura+=k;log(s,`${pl.name} spends ${k} Aura from Remains (Summons only).`,pid)}
   pay(s,pid,actor,cost);consumeCostFlags(s,pid,actor,d);if(actor)burdenFat(s,actor);
+  if(hasMourn(d)&&mourning(s,pid)&&!o.free&&num(d.cost)>0)log(s,`Mourn: ${d.name} is played without paying its Aura cost.`,pid);
   zone.splice(zone.indexOf(c),1);if(o.fromStall)c={uid:c.uid,id:c.id,owner:c.owner};
   pl.t.cards=(pl.t.cards||0)+1;
+  /* Set 2 additional costs ("As an additional cost to play this card, sacrifice ..."): paid now, before the effect */
+  if(sc&&sc.payCost)withSrc(s,d.name,()=>sc.payCost(mkCtx(s,pid,actor,d,c,a.targets||[],{x})));
   let targets=a.targets||[];
   /* Confused: targets are random among all legal */
   if(actor&&confused(actor)&&sc){const specs=specsFor(sc,a.modes);targets=specs.map((sp,i)=>{if(targets[i]==null)return null;const cs=candidates(s,pid,Object.assign({},sp,{k:sp.k.replace(/^(enemy|ally)/,"").replace(/^$/,"any").replace(/^Hero$/,"hero").replace(/^Summon$/,"summon")}),{actor,card:d});return cs.length?cs[ri(s,cs.length)]:targets[i]});log(s,`${actor.name} is Confused: targets are chosen at random.`)}
@@ -911,7 +948,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(d.type==="Song")pl.t.songs=(pl.t.songs||0)+1;
   if(d.sup!=="Hidden")countCombo(s,pid,actor,d);
   /* permanents */
-  if(d.kind==="equip"){equipTo(s,actor,eqObjFromCard(s,pid,c));return}
+  if(d.kind==="equip"){const eo=eqObjFromCard(s,pid,c);equipTo(s,actor,eo);if(sc&&sc.enter)withSrc(s,d.name,()=>sc.enter(mkCtx(s,pid,actor,d,eo,[],{fromDisc:!!o.fromDisc})));return}
   if(d.sup==="Hidden"){pl.inv.push(Object.assign({kind:"card",fd:true,name:d.name},c));log(s,`${actor?actor.name:pl.name} sets a Hidden card face down.`,pid);overflow(s,pid);
     if(sc&&sc.onSet)sc.onSet(mkCtx(s,pid,actor,d,c,[]));return}
   if(d.type==="Item"){const it=Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c);pl.inv.push(it);overflow(s,pid);
@@ -920,7 +957,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   const trig={kind:"card",src:actor,pid,card:d,cardUid:c.uid,targets,cost,cls:d.cls,type:d.type,name:d.name};
   /* update 23 Echo: only a card played from your hand can Echo; Songweaver gives its Songs Echo; Sing Along gives the ally's next Tactic or Song Echo */
   let grant=false;if(actor&&actor.kind==="hero"&&/Tactic|Song/.test(d.type)){if(d.type==="Song"&&actor.name==="Songweaver"&&!actor.dead&&fromHand){/* Nov 12, 2026: first Song from your hand each turn; every one at Level 3 */actor.fl=actor.fl||{};if(actor.lvl>=3||actor.fl.swRound!==s.round){actor.fl.swRound=s.round;grant=true}}if(actor.fl.singRound===s.round){actor.fl.singRound=null;grant=true;log(s,`Sing Along: ${d.name} gains Echo.`,pid)}}
-  queueResolve(s,pid,{k:"card",actor:actor&&actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},targets,modes:a.modes||[],x,combo:!!o.combo,echo:!!o.echo,hand:fromHand,grant},trig);
+  queueResolve(s,pid,{k:"card",actor:actor&&actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},targets,modes:a.modes||[],x,combo:!!o.combo,echo:!!o.echo,hand:fromHand,grant,fromDisc:zone===pl.disc,exileAfter:!!o.exileAfter},trig);
 }
 E.playCard=playCard;
 /* the Hero that plays a rules-fix card: the one chosen on the board, else the acting Hero, else the first living one */
@@ -975,7 +1012,7 @@ function resolveCont(s,pid,cont,mods){
       living(pl).filter(h=>h.name==="Wild Archer"&&h.ex&&(pl.t.arrows===1||(h===actor&&h.lvl>=3))).forEach(h=>{h.ex=false;log(s,`${h.name} readies.`,pid)})}
     checkDeaths(s);return}
   const d=DB[cont.card.id];const sc=SC()[d.name];const pl=P(s,pid);
-  const ctx=mkCtx(s,pid,actor,d,cont.card,cont.targets,{mods,modes:cont.modes,x:cont.x,comboed:cont.combo,echo:!!cont.echo});
+  const ctx=mkCtx(s,pid,actor,d,cont.card,cont.targets,{mods,modes:cont.modes,x:cont.x,comboed:cont.combo,echo:!!cont.echo,fromDisc:!!cont.fromDisc});
   let stays=false;const pend0=s.pend.length;
   /* Spell Damage Pillar (update 16): each gives +2 Spell Damage to your next spell, then is sacrificed after that spell resolves (Pillars the spell conjures itself stay) */
   const pilBefore=d.type==="Spell"?pl.bf.filter(o=>o.name==="Spell Damage Pillar").map(o=>o.uid):[];
@@ -985,6 +1022,7 @@ function resolveCont(s,pid,cont,mods){
   if(d.type==="Enchantment"&&sc){stays=true}
   if(cont.copy){}
   else if(!stays){if((hasEcho(d)||cont.grant)&&cont.hand&&!cont.echo){pl.echo.push({card:cont.card,targets:cont.targets,modes:cont.modes,x:cont.x});log(s,`${d.name} is exiled (Echo): it will be played again at the next Dawn.`,pid)}
+    else if(cont.exileAfter){pl.exile.push(cont.card);log(s,`${d.name} is exiled.`,pid)}
     else pl.disc.push(cont.card)}
   if(!cont.copy){
   /* Lightning Rod: after you play a Mage Spell, you may exhaust a Hero to conjure a Spell Damage Pillar */
@@ -1179,6 +1217,8 @@ E.autoTarget=autoTarget;
 /* ---------- flow ---------- */
 /* Cloak of Hate (update 21): whenever its Hero becomes exhausted (ready -> exhausted), deal 2 Dark damage to any target */
 function cloakCheck(s){s.p.forEach((pl,pid)=>pl.heroes.forEach(h=>{const was=!!h.fl.exSeen;h.fl.exSeen=!!(h.ex&&!h.dead);
+  /* Set 2 Grave Caller's Wand: whenever the equipped Hero exhausts, target player Mills 1 */
+  if(h.ex&&!was&&!h.dead)eqList(h).filter(e=>e.name==="Grave Caller's Wand").forEach(()=>ask(s,pid,`Grave Caller's Wand: ${h.name} exhausted. Target player Mills 1`,[{label:`${P(s,opp(pid)).name} Mills 1`,v:opp(pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid}],"millOne",{name:"Grave Caller's Wand"}));
   if(h.ex&&!was&&!h.dead&&hasEqN(h,"Cloak of Hate")){const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);
     eqList(h).filter(e=>e.name==="Cloak of Hate").forEach(()=>ask(s,pid,`Cloak of Hate: ${h.name} is exhausted, deal 2 Dark damage to any target`,targetOpts(s,pid,ts,2).concat([{label:"No damage",v:null}]),"dmgTo",{n:2,name:"Cloak of Hate",type:"Dark",src:h.uid}))}}))}
 function settle(s){let guard=0;
@@ -1243,6 +1283,7 @@ function doDawn(s){
   checkDeaths(s);if(s.over)return;
   /* At Dawn effects (active player first) */
   [s.init,opp(s.init)].forEach(pid=>{const pl=P(s,pid);
+    if(invHas(pl,"Soul Lantern")){const n=invCount(pl,"Soul Lantern");pl.aura+=n;log(s,`Soul Lantern: ${pl.name} gains ${n} Aura.`,pid)} /* Set 2 */
     if(invHas(pl,"Aura Crystal")){pl.aura+=invCount(pl,"Aura Crystal");log(s,`Aura Crystal: ${pl.name} gains 1 Aura.`,pid)}
     if(invHas(pl,"Ley Grove")){const g=Math.floor(pl.bf.filter(o=>o.kind==="summon").length/2)*invCount(pl,"Ley Grove");if(g){pl.aura+=g;log(s,`Ley Grove: ${pl.name} gains ${g} Aura.`,pid)}}
     {const sp=pl.bf.filter(o=>o.kind==="summon"&&o.name==="Sapling").length;if(sp){pl.aura+=sp;log(s,`Sapling: ${pl.name} gains ${sp} Aura.`,pid)}}

@@ -605,4 +605,82 @@ hab("Artificer A",[{label:"Look at the top 3 (a Metal to inventory)",can:(s,pid)
   log(c,`Artificer A: ${c.me.name} looks at the top ${top.length} card${top.length===1?"":"s"} of their library.`);
   if(ms.length&&room)E.pushChoose(c.s,c.pid,{title:"Artificer A: put a Metal from among them into an empty inventory slot? The rest go on the bottom of your library.",cards:ms.map(x=>x.uid),min:0,max:1,op:"reload",look:top.map(x=>x.uid)});
   else{log(c,ms.length?"Artificer A: there's a Metal, but the inventory is full.":"Artificer A: no Metal among them.");OPS.reload(c.s,c.pid,{look:top.map(x=>x.uid)},[])}}}]);
+
+/* ===== Set 2: Necromancer (Set Two Rules Supplement) =====
+   Revenant: 1/1 summon token with Impervious (engine: damage and destroy do nothing; HP loss, sacrifice and exile work). Cards that summon one say "Exhaust this Hero".
+   Mourn (engine cardCost), Exhume (engine battle options: play from your discard pile a card milled this turn), Mill (E.mill marks the cards for Exhume).
+   "If you played this card from your discard pile" = c.fromDisc (any play from the discard pile: Exhume, Necromancer A, Funeral Procession, Gravedigger's Medallion). */
+const REV=t("allySummon","your Revenant",(s,o)=>o.name==="Revenant");
+const revs=c=>E.revenants(c.s,c.pid);
+const raise=(c,n)=>{for(let i=0;i<n;i++)summon(c,"Revenant")};
+/* sacrifice n Revenants as a cost (exhausted ones first) */
+const sacRevs=(c,n)=>{const l=revs(c).slice().sort((a,b)=>(b.ex?1:0)-(a.ex?1:0)).slice(0,n);if(l.length)log(c,`${c.me.name} sacrifices ${l.length} Revenant${l.length>1?"s":""} (additional cost).`);l.forEach(o=>E.sacrifice(c.s,o));return l.length};
+const needRevs=n=>(s,pid)=>E.revenants(s,pid).length>=n;
+const millMark=(c,pid,cards)=>{const pl=c.s.p[pid];cards.forEach(x=>{const i=pl.lib.indexOf(x);if(i>=0){pl.lib.splice(i,1);pl.disc.push(x);E.markMilled(c.s,pid,x)}})};
+def("Raise Revenant",{run(c){raise(c,1);exMe(c)}});
+def("Restless Dead",{run(c){raise(c,2);exMe(c)}});
+def("Grave Whispers",{run(c){draw(c,1);raise(c,1);exMe(c)}});
+def("Rise from the Grave",{run(c){raise(c,c.fromDisc?3:2);if(c.fromDisc)log(c,"Played from the discard pile: three Revenants.");exMe(c)}});
+def("Grave Tide",{can:needRevs(3),payCost:c=>sacRevs(c,3),run(c){raise(c,5);exMe(c)}});
+def("From Darkness",{can:needRevs(4),payCost:c=>sacRevs(c,4),run(c){const o=summon(c,"Abomination",true);o.stealth=true;log(c,"The Abomination enters with Stealth and ready.")}});
+def("Devastating Ritual",{x:{max:(s,pid)=>E.revenants(s,pid).length,step:1},payCost:c=>{c.me.t.ritualSac=sacRevs(c,c.x||0)},run(c){const n=Math.min(c.x||0,c.me.t.ritualSac||0);c.me.t.ritualSac=0;c.me.aura+=n;log(c,`${c.me.name} gains ${n} Aura.`)}});
+def("Corpse Harvest",{can:needRevs(1),payCost:c=>sacRevs(c,1),run(c){draw(c,2)}});
+def("Bone Wall",{run(c){const n=revs(c).length;if(c.actor&&n){buff(c.actor,{def:n});log(c,`${c.actor.name} gains +${n} Defense this turn.`)}else log(c,"Bone Wall: you control no Revenants.")}});
+def("Army of Darkness",{t:[t("enemy","target enemy")],run(c){const tg=c.t[0];const rd=revs(c).filter(o=>!o.ex&&!(o.st&&o.st.stun));
+  if(!tg||!rd.length){log(c,"Army of Darkness: no ready Revenants.");return}
+  attack(c,rd[0],tg,rd.length>1?{band:rd.slice(1).map(o=>o.uid)}:{})}});
+def("Dead March",{t:[t("enemyPlayer","target opponent")],run(c){const p=c.t[0];const n=revs(c).length;if(!p)return;if(!n){log(c,"Dead March: you control no Revenants.");return}E.mill(c.s,p.pid,n)}});
+def("Dig the Grave",{run(c){const top=c.me.lib.slice(-3);E.mill(c.s,c.pid,3);const sm=top.filter(x=>(E.DB[x.id]||{}).type==="Summon"&&c.me.disc.includes(x));
+  if(sm.length)E.pushChoose(c.s,c.pid,{title:"Dig the Grave: you may put a milled Summon card into your hand",cards:sm.map(x=>x.uid),min:0,max:1,op:"fromDisc"})}});
+def("Restless Echo",{run(c){E.mill(c.s,c.pid,2);if(c.fromDisc){c.me.aura+=1;log(c,`Played from the discard pile: ${c.me.name} gains 1 Aura.`)}}});
+def("Robbed Grave",{run(c){draw(c,c.fromDisc?2:1)}});
+def("Bone Spur",{t:[Object.assign({},REV,{opt:true})],run(c){if(c.fromDisc){revs(c).forEach(o=>buff(o,{str:1}));log(c,"Played from the discard pile: your Revenants gain +1 Strength this turn.");return}
+  const o=c.t[0];if(o){buff(o,{str:1});log(c,`${o.name} gains +1 Strength this turn.`)}}});
+def("Reawaken",{t:[t("allyHero","target Necromancer",(s,o)=>E.heroIs(o,"Necromancer"))],run(c){const h=c.t[0];if(h&&!h.dead){h.ex=false;E.medWake(c.s,h);log(c,`${h.name} readies.`)}}});
+def("Grim Divination",{run(c){const top=c.me.lib.slice(-2).reverse();if(!top.length){log(c,"Grim Divination: the library is empty.");return}
+  log(c,`Grim Divination reveals ${top.map(x=>E.DB[x.id].name).join(" and ")}.`);const op=E.opp(c.pid);
+  E.ask(c.s,op,`Grim Divination (${c.me.name}): choose one`,[{label:`One revealed card of your choice goes to ${c.me.name}'s hand, the other to their discard pile`,v:1},{label:`Both go to ${c.me.name}'s discard pile, then ${c.me.name} draws a card`,v:2}],"grimMode",{owner:c.pid,cards:top.map(x=>x.uid),name:"Grim Divination"})}});
+A.grimMode=(s,pid,pr,v)=>{const o=pr.data.owner;const pl=s.p[o];const cards=pr.data.cards.map(u=>pl.lib.find(x=>x.uid===u)).filter(Boolean);const c={s,pid:o};
+  if(v===2||cards.length<2){if(v===1&&cards.length===1){const x=cards[0];pl.lib.splice(pl.lib.indexOf(x),1);pl.hand.push(x);E.log(s,`Grim Divination: ${E.DB[x.id].name} goes to ${pl.name}'s hand.`,o);return}
+    millMark(c,o,cards);E.log(s,`Grim Divination: ${cards.map(x=>E.DB[x.id].name).join(" and ")} go to ${pl.name}'s discard pile.`,o);E.draw(s,o,1);return}
+  const by=cards.slice().sort((a,b)=>(parseInt(E.DB[a.id].cost,10)||0)-(parseInt(E.DB[b.id].cost,10)||0));
+  E.ask(s,pid,`Grim Divination: which card goes to ${pl.name}'s hand? (the other goes to their discard pile)`,by.map(x=>({label:E.DB[x.id].name,v:x.uid})),"grimPick",{owner:o,cards:pr.data.cards,name:"Grim Divination"})};
+A.grimPick=(s,pid,pr,v)=>{const o=pr.data.owner;const pl=s.p[o];pr.data.cards.forEach(u=>{const x=pl.lib.find(y=>y.uid===u);if(!x)return;
+  if(u===v){pl.lib.splice(pl.lib.indexOf(x),1);pl.hand.push(x);E.log(s,`Grim Divination: ${E.DB[x.id].name} goes to ${pl.name}'s hand.`,o)}
+  else{millMark({s},o,[x]);E.log(s,`Grim Divination: ${E.DB[x.id].name} goes to ${pl.name}'s discard pile.`,o)}})};
+/* Mourn cards (the engine waives the Aura cost once a soul has been surrendered) */
+def("Funeral Procession",{run(c){const sm=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Summon"&&c.actor&&E.canPlayCard(c.s,c.pid,c.actor,x,true));
+  if(!sm.length){log(c,"Funeral Procession: no Summon card in your discard pile that this Hero can play.");return}
+  c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:sm.map(x=>x.uid),free:true,fromDisc:true,exileAfter:true,title:"Funeral Procession: play a Summon card from your discard pile without paying its Aura cost (it's exiled after it resolves)"})}});
+def("Grieving Thoughts",{run(c){draw(c,1);if(c.me.hand.length)E.pushChoose(c.s,c.pid,{title:"Grieving Thoughts: discard a card",cards:c.me.hand.map(x=>x.uid),from:"hand",min:1,max:1,op:"discard"})}});
+def("Mourner's Offering",{run(c){c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)}});
+/* items */
+S["Ossuary"]={}; /* engine strOf */
+S["Cursed Urn"]={}; /* engine destroyObj */
+S["Soul Lantern"]={}; /* engine doDawn */
+def("Skeleton Key",item(0,[],c=>{c.me.fl.freeTown=true;log(c,`Skeleton Key: ${c.me.name}'s next Town action costs no Gold.`)},{exile:true}));
+S["Remains"]={act:{free:true,anyClass:true,cost:0,run(c){const pl=c.me;const o=c.inst;const i=pl.inv.indexOf(o);if(i>=0)pl.inv.splice(i,1);
+  pl.t.sAura=(pl.t.sAura||0)+1;log(c,`${pl.name} sacrifices Remains: +1 Aura, only for Summon cards (${pl.t.sAura} this turn).`)}}};
+/* Generic Set 2 cards */
+def("Consecrate",{run(c){const all=[...c.me.bf,...c.op.bf].filter(o=>o.kind==="summon");if(!all.length){log(c,"Consecrate: there are no summons.");return}all.forEach(o=>E.loseHp(c.s,o,1,"Consecrate"))}});
+def("Retrace the Past",{t:[t("player","target player")],run(c){const p=c.t[0];if(!p)return;const pl=c.s.p[p.pid];
+  if(!pl.disc.length){log(c,`${pl.name}'s discard pile is empty.`);E.draw(c.s,p.pid,1);return}
+  E.pushChoose(c.s,c.pid,{title:`Retrace the Past: shuffle up to 3 cards from ${pl.name}'s discard pile into their library`,cards:pl.disc.map(x=>x.uid),min:0,max:3,op:"retrace",target:p.pid})}});
+OPS.retrace=(s,pid,pr,picks)=>{const pl=s.p[pr.target];const nm=[];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.lib.push(x);nm.push(E.DB[x.id].name)}});
+  if(nm.length){E.shuffle(s,pl.lib);E.log(s,`Retrace the Past: ${nm.join(", ")} shuffled into ${pl.name}'s library.`,pid)}E.draw(s,pr.target,1)};
+/* equipment (enter = played; onUpgrade = upgraded at the Blacksmith) */
+const discPlay=(c,h,title)=>{if(!h||h.dead)return;const l=c.me.disc.filter(x=>E.canPlayCard(c.s,c.pid,h,x,true));if(!l.length){log(c,`${title}: no card in your discard pile that ${h.name} can play.`);return}
+  c.s.pend.unshift({type:"combo",pid:c.pid,actor:h.uid,cands:l.map(x=>x.uid),pay:true,fromDisc:true,title:`${title}: you may play a card from your discard pile, paying its Aura cost`})};
+def("Grave Caller's Wand",{enter(c){raise(c,1);if(c.actor&&!c.actor.dead){c.actor.ex=true;log(c,`${c.actor.name} is exhausted (Grave Caller's Wand).`)}},onUpgrade(c){raise(c,1)}});
+def("Gravedigger's Medallion",{enter(c){discPlay(c,c.actor,"Gravedigger's Medallion")},onUpgrade(c){discPlay(c,c.actor,"Upgraded Gravedigger's Medallion")}});
+S["Dagger of the Dead"]={}; /* engine strOf */
+/* Heroes */
+hab("Necromancer A",[{label:"Play a Summon from your discard pile",can:(s,pid,a)=>s.p[pid].disc.some(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(s,pid,a,x)),
+  run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(c.s,c.pid,c.actor,x));if(!l.length){log(c,"No Summon card to play.");return}
+  c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:l.map(x=>x.uid),pay:true,fromDisc:true,title:"Necromancer A: you may play a Summon card from your discard pile, paying its Aura cost"})}}]);
+hab("Necromancer C",[{label:"Exhaust a Revenant: +1 STR, exile a card from a discard pile",ex:false,t:[t("allySummon","ready Revenant to exhaust",(s,o)=>o.name==="Revenant"&&!o.ex)],
+  can:(s,pid,a)=>E.revenants(s,pid).some(o=>!o.ex)&&(a.lvl>=3||a.fl.necroC!==s.round),
+  run(c){const r=c.t[0];if(!r||r.ex)return;r.ex=true;c.actor.fl.necroC=c.s.round;buff(c.actor,{str:1});log(c,`${r.name} is exhausted; ${c.actor.name} gains +1 Strength this turn.`);
+    const all=[...c.op.disc,...c.me.disc];if(all.length)E.pushChoose(c.s,c.pid,{title:"Necromancer C: you may exile a card from a discard pile",cards:all.map(x=>x.uid),min:0,max:1,op:"exileDisc"})}}]);
+OPS.exileDisc=(s,pid,pr,picks)=>{picks.forEach(u=>{for(const pl of s.p){const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.exile.push(x);E.log(s,`Necromancer C exiles ${E.DB[x.id].name} from ${pl.name}'s discard pile.`,pid);return}}})};
 })(typeof window!=="undefined"?window:globalThis);

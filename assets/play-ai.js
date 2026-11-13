@@ -43,10 +43,10 @@ function settleSim(s,pid,limit){for(let i=0;i<(limit||12)&&s.pend.length&&!s.ove
 /* expand an option into concrete actions with targets */
 function combos(arr,k){if(k===0)return[[]];const out=[];arr.forEach((x,i)=>combos(arr.slice(i+1),k-1).forEach(r=>out.push([x,...r])));return out}
 AI.expand=function(s,pid,o,cap){cap=cap||24;let bases=[o];
-  if(o.type==="play"||o.type==="comboPlay"){const pl=s.p[pid];const c=pl.hand.find(x=>x.uid===o.uid)||pl.lib.find(x=>x.uid===o.uid);if(!c)return[];
+  if(o.type==="play"||o.type==="comboPlay"){const pl=s.p[pid];const c=pl.hand.find(x=>x.uid===o.uid)||pl.lib.find(x=>x.uid===o.uid)||pl.disc.find(x=>x.uid===o.uid)||pl.exile.find(x=>x.uid===o.uid);if(!c)return[];
     const d=E.DB[c.id];const sc=(root.CQ_SCRIPTS||{})[d.name];
     if(sc&&sc.modes){const ms=combos(sc.modes.opts.map((_,i)=>i),Math.min(sc.modes.n,sc.modes.opts.length));bases=ms.map(m=>Object.assign({},o,{modes:m}))}
-    if(d.cost==="X"||(sc&&sc.x)){const xs=[];const max=d.cost==="X"?Math.min(8,pl.aura):(sc.x.max?sc.x.max(s,pid,E.actorFor(s,pid)):6);for(let v=0;v<=max;v+=d.cost==="X"?1:2)xs.push(v);if(d.cost==="X"&&!xs.includes(max))xs.push(max);
+    if(d.cost==="X"||(sc&&sc.x)){const xs=[];const max=d.cost==="X"?Math.min(8,pl.aura):(sc.x.max?sc.x.max(s,pid,E.actorFor(s,pid)):6);for(let v=0;v<=max;v+=d.cost==="X"?1:((sc.x&&sc.x.step)||2))xs.push(v);if(d.cost==="X"&&!xs.includes(max))xs.push(max);
       bases=[].concat(...bases.map(b=>xs.map(x=>Object.assign({},b,{x}))))}}
   if(o.type==="use"){const f=E.find(s,o.uid);const isc=f&&(root.CQ_SCRIPTS||{})[f.o.name];const md=isc&&isc.act&&isc.act.modes;
     if(md){const ms=combos(md.opts.map((_,i)=>i),Math.min(md.n,md.opts.length));bases=ms.map(m=>Object.assign({},o,{modes:m}))}}

@@ -342,7 +342,34 @@ const RAW_CARDS=[
 [2, "Silver Edge Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Silver Ingot and Iron Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
 [1, "Mithril Blade Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: Mithril Ingot and Platinum Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
 [2, "Quicksilver", "2", "", "Item", "Material", "Artificer", "This can be used as any ingredient.", 1],
-[1, "Warded Cloak Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: any Cloak, Platinum Ingot and Potion. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1]];
+[1, "Warded Cloak Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: any Cloak, Platinum Ingot and Potion. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+/* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
+[2, "Raise Revenant", "1", "", "Summon", "", "Necromancer", "Summon a 1/1 Revenant with Impervious. Exhaust this Hero. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)", 1],
+[2, "Bone Wall", "1", "", "Tactic", "", "Necromancer", "This Hero gains +X Defense this turn, where X is the number of Revenants you control.", 1],
+[2, "Army of Darkness", "1", "", "Tactic", "", "Necromancer", "All ready Revenants you control attack target enemy together with Banding. (Their Strength is combined into one attack, and all of them are exhausted.)", 1],
+[2, "Devastating Ritual", "0", "", "Spell", "", "Necromancer", "As an additional cost to play this card, sacrifice X Revenants. Gain X Aura.", 1],
+[2, "From Darkness", "1", "", "Summon", "", "Necromancer", "As an additional cost to play this card, sacrifice 4 Revenants. Summon a 5/5 Abomination. It enters with Stealth. Ready it. (It can't be targeted by enemy cards or abilities, but it can still be attacked.)", 1],
+[1, "Cursed Urn", "2", "Legendary", "Item", "", "Necromancer", "Whenever a Revenant you control dies, create a Remains token in an empty inventory slot. (Remains: Sacrifice this: Gain 1 Aura. Spend it only to play Summon cards.)", 1],
+[2, "Restless Dead", "3", "", "Summon", "", "Necromancer", "Summon two 1/1 Revenants with Impervious. Exhaust this Hero. (They can't be dealt damage or destroyed, but they die if they lose all their Health Points.)", 1],
+[2, "Grave Tide", "5", "", "Summon", "", "Necromancer", "As an additional cost to play this card, sacrifice 3 Revenants. Summon five 1/1 Revenants with Impervious. Exhaust this Hero. (They can't be dealt damage or destroyed, but they die if they lose all their Health Points.)", 1],
+[2, "Grave Whispers", "2", "", "Spell", "", "Necromancer", "Draw a card. Summon a 1/1 Revenant with Impervious. Exhaust this Hero. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)", 1],
+[2, "Corpse Harvest", "1", "", "Tactic", "", "Necromancer", "As an additional cost to play this card, sacrifice a Revenant. Draw 2 cards.", 1],
+[2, "Dig the Grave", "1", "", "Tactic", "", "Necromancer", "Mill 3. You may put a Summon card milled this way into your hand. (Move the top 3 cards of your library to your discard pile.)", 1],
+[2, "Dead March", "2", "", "Spell", "", "Necromancer", "Target opponent Mills X, where X is the number of Revenants you control. (They move the top X cards of their library to their discard pile.)", 1],
+[2, "Ossuary", "2", "", "Item", "", "Necromancer", "While your discard pile has 25 or more cards, Revenants you control have +1 Strength.", 1],
+[2, "Funeral Procession", "3", "", "Tactic", "", "Necromancer", "Mourn. (If you've surrendered a soul this game, you may play this card without paying its Aura cost.)\nPlay a Summon card from your discard pile without paying its Aura cost. Exile that card after it resolves.", 1],
+[2, "Grieving Thoughts", "2", "", "Tactic", "", "Necromancer", "Mourn. (If you've surrendered a soul this game, you may play this card without paying its Aura cost.)\nDraw a card, then discard a card.", 1],
+[2, "Mourner's Offering", "2", "", "Spell", "", "Necromancer", "Mourn. (If you've surrendered a soul this game, you may play this card without paying its Aura cost.)\nGain 2 Aura.", 1],
+[2, "Reawaken", "1", "", "Tactic", "", "Necromancer", "Exhume. (If this card was moved from your library to your discard pile this turn, you may play it from your discard pile.)\nReady target Necromancer.", 1],
+[2, "Grim Divination", "1", "", "Spell", "", "Necromancer", "Reveal the top 2 cards of your library. An opponent chooses one:\n- You put one of the revealed cards of their choice into your hand and the other into your discard pile.\n- You put both into your discard pile and draw a card.", 1],
+[2, "Rise from the Grave", "4", "", "Summon", "", "Necromancer", "Exhume. (If this card was moved from your library to your discard pile this turn, you may play it from your discard pile.)\nSummon two 1/1 Revenants with Impervious. If you played this card from your discard pile, summon three instead. Exhaust this Hero. (They can't be dealt damage or destroyed, but they die if they lose all their Health Points.)", 1],
+[2, "Consecrate", "2", "", "Tactic", "", "Generic", "Each summon loses 1 Health Point.", 1],
+[2, "Retrace the Past", "2", "", "Tactic", "", "Generic", "Choose a player. Shuffle up to 3 cards of your choice from their discard pile into their library. That player draws a card.", 1],
+[2, "Bone Spur", "1", "", "Tactic", "", "Necromancer", "Exhume. (If this card was moved from your library to your discard pile this turn, you may play it from your discard pile.)\nTarget Revenant gains +1 Strength this turn. If you played this card from your discard pile, Revenants you control gain +1 Strength this turn instead.", 1],
+[2, "Robbed Grave", "1", "", "Spell", "", "Necromancer", "Exhume. (If this card was moved from your library to your discard pile this turn, you may play it from your discard pile.)\nDraw a card. If you played this card from your discard pile, draw 2 cards instead.", 1],
+[2, "Restless Echo", "1", "", "Tactic", "", "Necromancer", "Exhume. (If this card was moved from your library to your discard pile this turn, you may play it from your discard pile.)\nMill 2. If you played this card from your discard pile, also gain 1 Aura. (Move the top 2 cards of your library to your discard pile.)", 1],
+[2, "Soul Lantern", "4", "", "Item", "", "Necromancer", "Mourn. (If you've surrendered a soul this game, you may play this card without paying its Aura cost.)\nAt Dawn, gain 1 Aura.", 1],
+[1, "Skeleton Key", "2", "Legendary", "Item", "", "Necromancer", "Exile: Your next Town action costs no Gold.", 1]];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "14", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 1],
 ["Arnett Lifebinder", "Cleric", "1", "1", "1", "16", "1{A}, Exhaust: Heal another target for 2 HP.\n{L3} 2{A}, Exhaust: Heal another target for 5 HP.", 3],
@@ -404,7 +431,13 @@ const RAW_HEROES=[
 ["Artificer B", "Artificer", "0", "0", "2", "14", "Constructs made by your Recipes enter with +1 Strength and +1 Health Points.", 1],
 ["Artificer C", "Artificer", "0", "0", "2", "14", "Once each turn, when this Hero Crafts, one of the ingredients may be any item in your inventory.", 1],
 ["Artificer D", "Artificer", "0", "0", "2", "14", "", 1],
-["Artificer E", "Artificer", "0", "0", "2", "14", "", 1]
+["Artificer E", "Artificer", "0", "0", "2", "14", "", 1],
+/* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
+["Necromancer A", "Necromancer", "0", "1", "1", "16", "Exhaust: You may play a Summon card from your discard pile, paying its Aura cost.", 1],
+["Necromancer B", "Necromancer", "0", "1", "1", "16", "Whenever a Revenant enters play under your control, you may choose a player. That player Mills 1. (They move the top card of their library to their discard pile.)", 1],
+["Necromancer C", "Necromancer", "0", "1", "1", "16", "Exhaust a ready Revenant you control: This Hero gains +1 Strength this turn. You may exile a card from a discard pile. Activate only once each turn.\n{L3} Activate any number of times each turn.", 1],
+["Necromancer D", "Necromancer", "0", "1", "1", "16", "", 1],
+["Necromancer E", "Necromancer", "0", "1", "1", "16", "", 1]
 ];
 const RAW_EQUIP=[
 ["Antler Crown", "", "Armor", "Druid", "The first Summon card the equipped Hero plays each turn costs 1 less Aura.", "3", "Head", "0", "0", 2],
@@ -463,7 +496,11 @@ const RAW_EQUIP=[
 ["Tinker's Goggles", "", "Tool", "Artificer", "Once each turn, when the equipped Hero Crafts, one of the ingredients may be any Metal.", "2", "Head", "0", "0", 1],
 ["Toolbelt", "", "Tool", "Artificer", "Recipes the equipped Hero plays cost 1 less Aura.", "2", "Accessory", "0", "0", 1],
 ["Bellows", "", "Tool", "Artificer", "Whenever the equipped Hero Crafts, draw a card.", "2", "One-Handed", "0", "0", 1],
-["Scavenger's Tongs", "", "Tool", "Artificer", "Once each turn, when the equipped Hero Crafts, one of the ingredients may come from your discard pile instead of your inventory.", "2", "One-Handed", "0", "0", 1]
+["Scavenger's Tongs", "", "Tool", "Artificer", "Once each turn, when the equipped Hero Crafts, one of the ingredients may come from your discard pile instead of your inventory.", "2", "One-Handed", "0", "0", 1],
+/* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
+["Grave Caller's Wand", "", "Weapon", "Necromancer", "When this enters, summon a 1/1 Revenant with Impervious. Exhaust the equipped Hero. When this is upgraded, summon a 1/1 Revenant with Impervious. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)\nWhenever the equipped Hero exhausts, target player Mills 1. (They move the top card of their library to their discard pile.)", "2", "One-Handed", "0", "0", 1],
+["Gravedigger's Medallion", "", "Accessory", "Necromancer", "Equipped Hero gains +1 Defense. When this enters, you may play a card from your discard pile, paying its Aura cost. When this is upgraded, you may play a card from your discard pile, paying its Aura cost.", "3", "Accessory", "0", "1", 1],
+["Dagger of the Dead", "", "Weapon", "Necromancer", "Equipped Hero gains +2 Strength while you control a Revenant.", "1", "One-Handed", "0", "0", 1]
 ];
 const RAW_TOKENS=[
 ["Dagger", "Equipment", "Weapon", "Rogue", "1", "0", "", "0", "One-Handed", "Equipped Hero gains +1 STR.", "Armed; Blademaster's Choice", 1],
@@ -489,9 +526,13 @@ const RAW_TOKENS=[
 ["Spell Damage Pillar", "Pillar", "", "Mage", "", "", "", "0", "", "Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves.", "Boost Ritual; Volt Jab; Lightning Lance; Lightning Rod; Ritual of Power; Splitting Ritual; Doubling Ritual", 2],
 ["Pain Pillar", "Pillar", "", "Warlock", "", "", "", "0", "", "At Dusk, target loses X HP, where X is the number of Pain Pillars you control.", "Dark Insight; Ritual of Pain; Splitting Ritual; Doubling Ritual", 1],
 /* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
-["Construct", "Summon", "Construct", "Artificer", "2 or 3", "", "2 or 3", "0", "", "Made by Recipes: 2/2 (Clockwork Pair) or 3/3 (Iron Guardians).", "Clockwork Pair; Iron Guardians", 1]
+["Construct", "Summon", "Construct", "Artificer", "2 or 3", "", "2 or 3", "0", "", "Made by Recipes: 2/2 (Clockwork Pair) or 3/3 (Iron Guardians).", "Clockwork Pair; Iron Guardians", 1],
+/* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
+["Revenant", "Summon", "Revenant", "Necromancer", "1", "", "1", "0", "", "Impervious. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)", "Raise Revenant; Restless Dead; Grave Tide; Grave Whispers; Rise from the Grave; Grave Caller's Wand", 1],
+["Abomination", "Summon", "Abomination", "Necromancer", "5", "", "5", "0", "", "", "From Darkness", 1],
+["Remains", "Item", "", "Necromancer", "", "", "", "0", "", "Sacrifice this: Gain 1 Aura. Spend it only to play Summon cards.", "Cursed Urn", 1]
 ];
-const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]], "Clockwork Pair": [["Construct", 2]], "Iron Guardians": [["Construct", 2]]};
+const TOKEN_SOURCES={"Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]], "Clockwork Pair": [["Construct", 2]], "Iron Guardians": [["Construct", 2]], "Raise Revenant": [["Revenant", 1]], "Restless Dead": [["Revenant", 2]], "Grave Tide": [["Revenant", 5]], "Grave Whispers": [["Revenant", 1]], "Rise from the Grave": [["Revenant", 3]], "Grave Caller's Wand": [["Revenant", 2]], "From Darkness": [["Abomination", 1]], "Cursed Urn": [["Remains", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
 const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness","Sphere of Resistance":"Sphere of Hindrance","Battle Horn":"Xakro's War Horn"};
@@ -500,7 +541,7 @@ const CARD_RENAMES={"Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf
    Decks that contain one are flagged as not legal; they don't appear in the card list, deck builder or prints. */
 /* Set 2: hidden playtest set. Card, Hero or token names listed here only show on the site for admins and players given Set 2 access on the Admin page.
    Note: this file is public, so anyone reading the code can still see these cards. */
-const SET2_CARDS=["Copper Ingot", "Iron Ingot", "Silver Ingot", "Platinum Ingot", "Mithril Ingot", "Clockwork Pair", "Iron Guardians", "Pocket Watch Recipe", "Reclamation Kit Recipe", "Blast Charge Recipe", "Gearwork Hammer Recipe", "Silver Edge Recipe", "Mithril Blade Recipe", "Quicksilver", "Warded Cloak Recipe", "Artificer A", "Artificer B", "Artificer C", "Artificer D", "Artificer E", "Tinker's Goggles", "Toolbelt", "Bellows", "Scavenger's Tongs", "Construct"];
+const SET2_CARDS=["Copper Ingot", "Iron Ingot", "Silver Ingot", "Platinum Ingot", "Mithril Ingot", "Clockwork Pair", "Iron Guardians", "Pocket Watch Recipe", "Reclamation Kit Recipe", "Blast Charge Recipe", "Gearwork Hammer Recipe", "Silver Edge Recipe", "Mithril Blade Recipe", "Quicksilver", "Warded Cloak Recipe", "Artificer A", "Artificer B", "Artificer C", "Artificer D", "Artificer E", "Tinker's Goggles", "Toolbelt", "Bellows", "Scavenger's Tongs", "Construct", "Raise Revenant", "Bone Wall", "Army of Darkness", "Devastating Ritual", "From Darkness", "Cursed Urn", "Restless Dead", "Grave Tide", "Grave Whispers", "Corpse Harvest", "Dig the Grave", "Dead March", "Ossuary", "Funeral Procession", "Grieving Thoughts", "Mourner's Offering", "Reawaken", "Grim Divination", "Rise from the Grave", "Consecrate", "Retrace the Past", "Bone Spur", "Robbed Grave", "Restless Echo", "Soul Lantern", "Skeleton Key", "Necromancer A", "Necromancer B", "Necromancer C", "Necromancer D", "Necromancer E", "Grave Caller's Wand", "Gravedigger's Medallion", "Dagger of the Dead", "Revenant", "Abomination", "Remains"];
 const DEPRECATED_CARDS=[
 [2, "Fortify", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: The next attack deals no damage.", 1],
 [2, "Pull Together", "X", "", "Tactic", "", "Paladin", "Your party gains +X DEF this turn. Exhaust this Hero.", 2],
@@ -566,7 +607,10 @@ const EQUIP_UPGRADES={
 "Tinker's Goggles": [4, "Once each turn, when the equipped Hero Crafts, one of the ingredients may be any item.", 0, 0],
 "Toolbelt": [5, "Recipes the equipped Hero plays cost 1 less Aura and don't exhaust it.", 0, 0],
 "Bellows": [4, "Whenever the equipped Hero Crafts, draw a card and gain 1 Aura.", 0, 0],
-"Scavenger's Tongs": [4, "Once each turn, when the equipped Hero Crafts, one of the ingredients may come from any discard pile instead of your inventory.", 0, 0]
+"Scavenger's Tongs": [4, "Once each turn, when the equipped Hero Crafts, one of the ingredients may come from any discard pile instead of your inventory.", 0, 0],
+"Grave Caller's Wand": [3, "Whenever the equipped Hero exhausts, target player Mills 1. (They move the top card of their library to their discard pile.)", 0, 0],
+"Gravedigger's Medallion": [4, "Equipped Hero gains +1 Defense.", 0, 1],
+"Dagger of the Dead": [3, "Equipped Hero gains +3 Strength while you control a Revenant.", 0, 0]
 };
 
 /* Set 2 Artificer Recipes (two-sided cards, "Set Two Rules Supplement"): front = the deck card (ingredients, Aura cost), back = what Crafting it makes.

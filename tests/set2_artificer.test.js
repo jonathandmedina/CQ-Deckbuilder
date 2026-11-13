@@ -18,7 +18,7 @@ const canPlay=(s,c)=>opts(s,0).some(o=>o.type==="play"&&o.uid===c.uid);
 function resolve(s){let g=0;while(s.pend.length&&g++<20){const pr=s.pend[0];const a=ctx.CQAI.choose(s,pr.pid);if(!a)break;E.act(s,pr.pid,a)}}
 
 /* data */
-ok(ctx.SET2_CARDS.length===25,"25 Set 2 names");
+ok(ctx.SET2_CARDS.length>=25,"Set 2 names (Artificer and later classes)");
 ok(Object.keys(ctx.RECIPES).length===9,"9 Recipes");
 ok(E.DB["Iron Guardians"].type==="Recipe"&&E.DB["Iron Guardians"].recipe,"Recipe in DB with its ingredients");
 ok(E.DB["Gearwork Hammer"]&&E.DB["Gearwork Hammer"].kind==="equip"&&E.DB["Gearwork Hammer"].made==="Gearwork Hammer Recipe","made weapon in DB");

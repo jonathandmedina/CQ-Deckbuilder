@@ -19,7 +19,7 @@ const blankArt=c=>!ownArt(c)&&!!BLANK_ART[c.kind]&&BLANK_ART[c.kind].has(c.cls);
 const HN=d=>d&&d.heroes?d.heroes.filter(Boolean).length:0;
 const hcompact=a=>(a||[]).filter(Boolean);
 const hasArt=c=>SKIN==="art"&&(ownArt(c)||blankArt(c));
-const CLASS_COLOR_CLEAN={Artificer:"#507B7F",Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
+const CLASS_COLOR_CLEAN={Artificer:"#507B7F",Necromancer:"#466E6B",Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
 const CLASS_TEXT_CLEAN={Cleric:"#231A00",Monk:"#2A1500"};
 /* retro colors are sampled from the class icons */
 const CLASS_COLOR_RETRO={Barbarian:"#BE1029",Bard:"#A9327C",Cleric:"#CAAF65",Druid:"#A8622F",Mage:"#0271B9",Monk:"#51A5C5",Paladin:"#DE8600",Ranger:"#567428",Rogue:"#4B6170",Warlock:"#4D1791",Generic:"#6D6F80",Artificer:"#507B7F",Blacksmith:"#673839",Necromancer:"#466E6B"};
@@ -50,7 +50,7 @@ const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
 /* Set 2 (hidden playtest set): cards named in SET2_CARDS (cards-data.js) only show for admins and players an admin gave Set 2 access (Admin page). */
 const SET2=new Set(typeof SET2_CARDS!=="undefined"?SET2_CARDS:[]);
 [...HEROES,...CARDS,...TOKENS].forEach(c=>{if(SET2.has(c.name))c.set=2});
-const SET2_CLASSES=["Artificer"];
+const SET2_CLASSES=["Artificer","Necromancer"];
 const set2On=()=>!!(S.access&&S.access.set2);
 const visClasses=()=>set2On()?[...CLASSES,...SET2_CLASSES]:CLASSES;
 const visTypes=()=>set2On()?[...TYPES,"Recipe"]:TYPES;
@@ -272,7 +272,7 @@ function setSession(session){
 /* Admin and Set 2 access (Supabase RPC my_access; see "Admin Panel SQL" in the project). Signed out or no SQL yet = no access. */
 async function loadAccess(){const uid=S.uid;let a={admin:false,set2:false,trials:false};
   try{const{data,error}=await SB.rpc("my_access");if(!error&&data)a={admin:!!data.admin,set2:!!(data.set2||data.admin),trials:!!(data.trials||data.admin)}}catch(e){}
-  if(uid!==S.uid)return;S.access=a;syncTrials();showAdminLink();if(["catalog","build","admin","rules","quickstart","trials-rules","best","community","decks","changelog","leaderboard","player"].includes(S.view))render()}
+  if(uid!==S.uid)return;S.access=a;syncTrials();showAdminLink();if(["catalog","build","admin","rules","quickstart","trials-rules","set2-rules","best","community","decks","changelog","leaderboard","player"].includes(S.view))render()}
 function showAdminLink(){const l=document.getElementById("adminTab");if(l)l.hidden=!(S.access&&S.access.admin)}
 async function loadDecks(){
   /* own decks only (the profiles update adds a public-read policy, so filter by user); is_private may not exist before the Profiles SQL runs */
@@ -550,6 +550,7 @@ function render(){
   else if(S.view==="rules"){v.innerHTML=viewRules();if(!S.rules)loadRules()}
   else if(S.view==="quickstart"){v.innerHTML=viewQuick();if(!S.quick)loadQuick()}
   else if(S.view==="trials-rules"){if(trialsOn()){v.innerHTML=viewTrialsRules();if(!S.trules)loadTrialsRules()}else{v.innerHTML=viewRules();if(!S.rules)loadRules()}}
+  else if(S.view==="set2-rules"){if(set2On()){v.innerHTML=viewSet2Rules();if(!S.s2rules)loadSet2Rules()}else{v.innerHTML=viewRules();if(!S.rules)loadRules()}}
   else if(S.view==="play"){if(window.CQPlay)window.CQPlay.mount(v);else v.innerHTML='<p class="lede">Loading the game…</p>'}
   else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
   else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
@@ -1201,7 +1202,7 @@ function mdToHtml(md){
 async function loadRules(){
   try{const r=await fetch("assets/rules.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.rules=mdToHtml(await r.text());S.rulesErr=false}
   catch(e){S.rulesErr=true}
-  if(S.view==="rules"||S.view==="trials-rules")render();
+  if(S.view==="rules"||S.view==="trials-rules"||S.view==="set2-rules")render();
 }
 function viewRules(){
   if(!S.rules)return`${rulesSubtabs("rules")}<h1>Rules</h1><p class="lede">${S.rulesErr?"The rules didn't load. Check your connection and reload the page.":"Loading the rules…"}</p>`;
@@ -1218,7 +1219,19 @@ function viewRules(){
   </div>`;
 }
 /* Rules sub-menu: the full rules and the Quick Start guide (assets/quickstart.md, a separate document) */
-function rulesSubtabs(cur){return`<nav class="subtabs" aria-label="Rules pages"><a href="#rules"${cur==="rules"?' aria-current="page"':""}>Full Rules</a><a href="#quickstart"${cur==="quickstart"?' aria-current="page"':""}>Quick Start</a>${trialsOn()?`<a href="#trials-rules"${cur==="trials-rules"?' aria-current="page"':""}>Trials Supplement</a>`:""}</nav>`}
+function rulesSubtabs(cur){return`<nav class="subtabs" aria-label="Rules pages"><a href="#rules"${cur==="rules"?' aria-current="page"':""}>Full Rules</a><a href="#quickstart"${cur==="quickstart"?' aria-current="page"':""}>Quick Start</a>${trialsOn()?`<a href="#trials-rules"${cur==="trials-rules"?' aria-current="page"':""}>Trials Supplement</a>`:""}${set2On()?`<a href="#set2-rules"${cur==="set2-rules"?' aria-current="page"':""}>Set 2 Supplement</a>`:""}</nav>`}
+/* Set Two Rules Supplement (assets/set2-rules.md): only for players with Set 2 access; everyone else gets the full rules */
+S.s2rules=null;S.s2rulesErr=false;
+async function loadSet2Rules(){
+  try{const r=await fetch("assets/set2-rules.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.s2rules=mdToHtml(await r.text());S.s2rulesErr=false}
+  catch(e){S.s2rulesErr=true}
+  if(S.view==="set2-rules")render();
+}
+function viewSet2Rules(){
+  if(!S.s2rules)return`${rulesSubtabs("set2-rules")}<h1>Set Two Rules Supplement</h1><p class="lede">${S.s2rulesErr?"The Set 2 Supplement didn't load. Check your connection and reload the page.":"Loading…"}</p>`;
+  const R=S.s2rules;
+  return`${rulesSubtabs("set2-rules")}<h1>${R.title||"Set Two Rules Supplement"}</h1>${R.sub.map(x=>`<p class="lede">${x}</p>`).join("")}<article class="rules quick">${R.html}</article>`;
+}
 /* Trials Module Supplement (assets/trials-rules.md): only for players with Trials access; everyone else gets the full rules */
 S.trules=null;S.trulesErr=false;
 async function loadTrialsRules(){
@@ -1367,7 +1380,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.q
   const hm=document.getElementById("handm");if(!hm||document.querySelectorAll(".modal").length>1||e.metaKey||e.ctrlKey||e.altKey||/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
 function route(){const h=location.hash.replace("#","");const pm=/^player\/(.+)$/.exec(h);if(pm){try{S.playerName=decodeURIComponent(pm[1])}catch(e){S.playerName=pm[1]}}
-  S.view=pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","trials-rules","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+  S.view=pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","trials-rules","set2-rules","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

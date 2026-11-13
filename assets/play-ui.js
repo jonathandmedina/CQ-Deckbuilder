@@ -348,6 +348,7 @@ html[data-skin="art"] #play-root .pl-hand .hc{flex-basis:var(--hcw,150px)}
 }
 /* Game Help expandable */
 .pl-help{position:relative}
+#play-root .btn.ab-off{opacity:.55;filter:grayscale(.6);border-style:dashed}
 .pl-help>summary{cursor:pointer;list-style:none;font-size:.85rem;font-weight:700;color:var(--accent);padding:4px 8px;border-radius:8px;user-select:none;text-align:right}
 .pl-help>summary::-webkit-details-marker{display:none}
 .pl-help>summary::after{content:" ▾"}.pl-help[open]>summary::after{content:" ▴"}
@@ -1138,6 +1139,9 @@ function statsText(s){if(!E.gameStats)return"";const g=E.gameStats(s);let t=`\n=
   g.sides.forEach(sd=>{t+=`${sd.name}: start ${sd.start.join(" > ")} | end ${sd.final.map(h=>`${h.name} L${h.lvl}${h.dead?" (died)":""}`).join(" > ")}\n  Damage ${sd.totDmg}, prevented ${sd.totPrev}, healed ${sd.totHeal}${sd.healer?`; top healer ${sd.healer.name} (${sd.healer.v})`:""}\n`});
   t+="Most damage:\n"+g.topDmg.map((x,i)=>`  ${i+1}. ${x.name} (${g.sides[x.side].name}): ${x.v}`).join("\n")+"\nMost damage prevented:\n"+g.topPrev.map((x,i)=>`  ${i+1}. ${x.name} (${g.sides[x.side].name}): ${x.v}`).join("\n")+"\n";return t}
 function lvBtn(o,label,cls){return`<button class="btn ${cls}" data-pa="do" data-a='${esc(JSON.stringify(o))}'><span class="plus" aria-hidden="true">+</span>${esc(label)}</button>`}
+/* an ability that isn't offered right now shows greyed, and tapping it says why (abilities with a why(), Nov 13, 2026) */
+function abWhy(s,opts,a){if(!a||a.owner!==U.me||U.tgt)return[];return(window.CQ_HERO_SCRIPTS[a.name]||[]).map((ab,i)=>{if(!ab||!ab.why||opts.some(o=>o.type==="ability"&&o.idx===i))return"";
+  let w="";try{w=ab.why(s,U.me,a,c=>whyNot(s,c))}catch(e){}return w?`<button class="btn ab-off" data-pa="abwhy" data-w="${esc(w)}" title="${esc(w)}" aria-disabled="true">${esc(ab.label)}</button>`:""}).filter(Boolean)}
 function btn(o,label,cls){return`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(label)}</button>`}
 /* the acting Hero's own buttons (attack, level up, Step Back, abilities, items, equip): also shown under that Hero on the board */
 function heroActs(s,opts,a){const out=[];const me=U.me;if(!a)return out;
@@ -1146,6 +1150,7 @@ function heroActs(s,opts,a){const out=[];const me=U.me;if(!a)return out;
   if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
   opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
   opts.filter(o=>o.type==="ability").forEach(o=>{const ab=window.CQ_HERO_SCRIPTS[a.name][o.idx];const c=E.abilityCost(s,me,a,ab);out.push(btn(o,`${ab.label}${c?` (${c} Aura)`:""}`))});
+  abWhy(s,opts,a).forEach(x=>out.push(x));
   opts.filter(o=>o.type==="eqAct").forEach(o=>{const f=E.find(s,o.uid);const x=(window.CQ_EQACT||{})[f.o.name];out.push(`<button class="btn" data-pa="eqact" data-u="${o.uid}">${esc(f.o.name)}: ${esc(x?x.label:"use")}</button>`)});
   opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
   opts.filter(o=>o.type==="equipInv").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Equip ${f.o.name} (${E.eqCost(s,a,f.o)})`))});
@@ -1165,6 +1170,7 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
   opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
   opts.filter(o=>o.type==="ability").forEach(o=>{const ab=window.CQ_HERO_SCRIPTS[a.name][o.idx];const c=E.abilityCost(s,me,a,ab);out.push(btn(o,`${ab.label}${c?` (${c} Aura)`:""}`))});
+  abWhy(s,opts,a).forEach(x=>out.push(x));
   opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
   opts.filter(o=>o.type==="equipInv").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Equip ${f.o.name} (${E.eqCost(s,a,f.o)})`))});
   opts.filter(o=>o.type==="take").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Take ${f.o.name} from ${f.hero.name} (${E.eqCost(s,a,f.o)})`))});
@@ -1320,6 +1326,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="host"){hostRoom();return}
   if(k==="join"){joinRoom(U.lobby.code);return}
   if(k==="leave"){leaveGame();return}
+  if(k==="abwhy"){toast(b.dataset.w);return}
   if(k==="concede-ask"){if(!U.s||U.s.over)return;modal(`<h2>Concede?</h2><p>Are you sure you want to concede? The game ends and your opponent wins.</p><div class="actions"><button class="btn primary danger" data-pa="concede-yes">Concede</button><button class="btn" data-pa="close">Cancel</button></div>`);return}
   if(k==="concede-yes"){closeModal();if(U.s&&!U.s.over)send({type:"concede"});return}
   if(k==="man-cancel"){modal(`<h2>Cancel?</h2><p>Undo ${esc((U.s&&U.s.undo&&U.s.undo.what)||"this")}? Everything goes back to how it was before it was played.</p><div class="actions"><button class="btn primary danger" data-pa="man-cancel-yes">Undo it</button><button class="btn" data-pa="close">Keep resolving</button></div>`);return}
@@ -1405,6 +1412,7 @@ function whyNot(s,c){const d=E.DB[c.id];const a=E.actorFor(s,U.me);
   const cost=E.cardCost(s,U.me,a,d,0);if(cost>s.p[U.me].aura)return`Costs ${cost} Aura; you have ${s.p[U.me].aura}.`;
   if((d.type==="Item"||d.sup==="Hidden")&&s.p[U.me].inv.length>=E.slots(s,U.me))return"Your inventory is full. Clear a slot first.";
   if(d.kind==="equip")return`${a.name} can't equip this right now (class or requirement).`;
+  {const m=/As an additional cost to play this card, ([^.\n]+)/i.exec(d.rules||"");if(m)return`You can't pay its additional cost right now (${m[1]}).`}
   return"Its condition isn't met right now."}
 
 document.addEventListener("keydown",e=>{if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches('#play-root [role=button][data-pa],#pl-modal [role=button][data-pa]')){e.preventDefault();e.target.click()}});

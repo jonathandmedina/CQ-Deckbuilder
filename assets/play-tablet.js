@@ -58,11 +58,12 @@ async function wakeSync(on){try{if(on&&!wake&&navigator.wakeLock&&document.visib
   else if(!on&&wake){const w=wake;wake=null;await w.release()}}catch(e){wake=null}}
 
 function bar(){let b=document.getElementById("pl-tbar");if(b)return b;b=document.createElement("div");b.id="pl-tbar";b.setAttribute("role","toolbar");b.setAttribute("aria-label","Game controls");
-  b.innerHTML=`<button type="button" data-tb="log"><span class="ic" aria-hidden="true">📜</span>Log</button><button type="button" data-tb="menu"><span class="ic" aria-hidden="true">☰</span>Menu</button><button type="button" data-tb="fs"><span class="ic" aria-hidden="true">⛶</span><span class="lb">Full screen</span></button>`;
+  b.innerHTML=`<button type="button" data-tb="help" aria-haspopup="dialog"><span class="ic" aria-hidden="true">❔</span>Help</button><button type="button" data-tb="log"><span class="ic" aria-hidden="true">📜</span>Log</button><button type="button" data-tb="menu"><span class="ic" aria-hidden="true">☰</span>Menu</button><button type="button" data-tb="fs"><span class="ic" aria-hidden="true">⛶</span><span class="lb">Full screen</span></button>`;
   b.addEventListener("click",e=>{const t=e.target.closest("[data-tb]");if(!t)return;e.stopPropagation();const U=window.CQPlay;const v=t.dataset.tb;
     if(v==="log"&&U){U.logHidden=!U.logHidden;U.render()}
     else if(v==="menu"){const m=document.getElementById("pl-menutab");if(m&&getComputedStyle(m).display!=="none"&&!document.documentElement.classList.contains("pl-portrait"))m.click();else if(document.documentElement.classList.contains("pl-portrait")){const R=document.documentElement;R.classList.toggle("pl-pmenu");const h=document.querySelector("header.top");if(h)R.style.setProperty("--pl-hdrh",h.offsetHeight+"px")}else if(m)m.click()}
     else if(v==="fs")fsToggle();
+    else if(v==="help")helpBox();
     sync()});
   document.body.appendChild(b);return b}
 function fsTab(){let t=document.getElementById("pl-fstab");if(t)return t;t=document.createElement("button");t.type="button";t.id="pl-fstab";t.title="Full screen (Esc to exit)";
@@ -76,6 +77,7 @@ function sync(){const U=window.CQPlay,root=document.documentElement;
   portrait(tab);if(!tab)hidePop();
   const b=document.getElementById("pl-tbar");
   if(tab){const bb=bar();const fsb=bb.querySelector('[data-tb="fs"]');fsb.hidden=!fsAvail();fsb.setAttribute("aria-pressed",String(!!fsEl()));fsb.querySelector(".lb").textContent=fsEl()?"Exit full screen":"Full screen";
+    const hb=bb.querySelector('[data-tb="help"]');hb.hidden=!document.querySelector("#play-root .pl-help-b");hb.setAttribute("aria-expanded",String(!!document.getElementById("pl-helpbox")));
     bb.querySelector('[data-tb="log"]').setAttribute("aria-pressed",String(!!(U&&!U.logHidden)));bb.querySelector('[data-tb="menu"]').setAttribute("aria-pressed",String(root.classList.contains("pl-menu")))}
   else if(b)b.remove();
   /* computers: a small Full screen tab to the left of the Menu tab */
@@ -102,8 +104,24 @@ function lobbySetting(){const host=document.querySelector("#play-root .pl-lobby"
   host.appendChild(sec)}
 document.addEventListener("change",e=>{if(!e.target.matches||!e.target.matches("[data-tabmode]"))return;ls.set(e.target.value);sync()});
 
+/* Game Help on tablets (Nov 13, 2026): the middle bar's Game Help menu moves to a Help button in the toolbar, which opens its own box */
+function helpBox(){const old=document.getElementById("pl-helpbox");if(old){old.remove();sync();return}
+  const src=document.querySelector("#play-root .pl-help-b"),root=document.getElementById("play-root");if(!src||!root)return;
+  const box=document.createElement("div");box.id="pl-helpbox";box.setAttribute("role","dialog");box.setAttribute("aria-label","Game Help");
+  box.innerHTML=`<div class="hb-h"><b>Game Help</b><button type="button" class="hb-x" aria-label="Close">✕</button></div><p class="hb-p">${/giveAction/.test(src.innerHTML)?"Fix something the game got wrong, or hand control to your opponent for a moment.":"Fix something the game got wrong."}</p><div class="hb-b">${src.innerHTML}</div>`;
+  box.addEventListener("click",e=>{if(e.target.closest(".hb-x")){e.stopPropagation();box.remove();sync();return}if(e.target.closest("button"))setTimeout(()=>{box.remove();sync()},0)});
+  root.appendChild(box);sync();const f=box.querySelector(".hb-b button");if(f)f.focus()}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){const b=document.getElementById("pl-helpbox");if(b){b.remove();sync()}}});
 /* ===== Proposal 3: touch controls ===== */
 const css3=`
+html.pl-tablet #play-root .pl-mid .pl-help{display:none!important}
+#pl-helpbox{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 62px);z-index:78;width:min(360px,calc(100vw - 24px));padding:14px 16px 16px;border-radius:14px;background:linear-gradient(#2e2216,#1b130c);border:2px solid #ffc100;box-shadow:0 16px 40px rgba(0,0,0,.7);color:#f3e6cf}
+#pl-helpbox .hb-h{display:flex;align-items:center;justify-content:space-between;gap:10px;font:400 1.5rem/1 "Pirata One",var(--display);color:#ffc100}
+#pl-helpbox .hb-x{all:unset;cursor:pointer;width:40px;height:40px;display:grid;place-items:center;border-radius:10px;font-size:1.2rem;color:#f3e6cf;border:2px solid #8A5E40}
+#pl-helpbox .hb-p{margin:6px 0 12px;color:#d8c3a0;font-size:.95rem}
+#pl-helpbox .hb-b{display:flex;flex-direction:column;gap:10px}
+#pl-helpbox .hb-b .btn{min-height:46px!important;font-size:1.02rem!important;width:100%;justify-content:center}
+html.pl-tablet.pl-portrait #pl-helpbox{top:calc(max(10px,env(safe-area-inset-top,0px)) + 60px);bottom:auto}
 .tz-wrap{position:fixed;inset:0;z-index:140;display:grid;place-items:center;background:rgba(6,4,2,.6);animation:tzIn .15s ease-out both}
 .tz-wrap .tz-card{width:min(420px,calc(68vh*.733),88vw)}.tz-wrap .tz-card .card{width:100%;margin:0}.tz-wrap .card .zoom,.tz-wrap .card .c-ctrl{display:none!important}
 .tz-wrap .tz-hint{position:absolute;bottom:22px;left:0;right:0;text-align:center;color:#f3e6cf;font:600 .95rem/1 var(--body);text-shadow:0 2px 6px #000}

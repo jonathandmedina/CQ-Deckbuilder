@@ -678,11 +678,15 @@ def("Grave Caller's Wand",{enter(c){raise(c,1);if(c.actor&&!c.actor.dead){c.acto
 def("Gravedigger's Medallion",{enter(c){discPlay(c,c.actor,"Gravedigger's Medallion")},onUpgrade(c){discPlay(c,c.actor,"Upgraded Gravedigger's Medallion")}});
 S["Dagger of the Dead"]={}; /* engine strOf */
 /* Heroes */
-hab("Gravecaller",[{label:"Play a Summon from your discard pile",can:(s,pid,a)=>s.p[pid].disc.some(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(s,pid,a,x)),
+hab("Gravecaller",[{label:"Play a Summon from your discard pile",
+  /* shown on a greyed button when the ability isn't offered (Nov 13, 2026) */
+  why:(s,pid,a,wc)=>{const l=s.p[pid].disc.filter(x=>(E.DB[x.id]||{}).type==="Summon");if(!l.length)return"There's no Summon card in your discard pile.";const r=wc(l[l.length-1]);return`None of the Summon cards in your discard pile can be played right now.${r?" "+E.DB[l[l.length-1].id].name+": "+r:""}`},
+  can:(s,pid,a)=>s.p[pid].disc.some(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(s,pid,a,x)),
   run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(c.s,c.pid,c.actor,x));if(!l.length){log(c,"No Summon card to play.");return}
   c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:l.map(x=>x.uid),pay:true,fromDisc:true,title:"Gravecaller: you may play a Summon card from your discard pile, paying its Aura cost"})}}]);
 /* Filth Scavenger (v2, Nov 13 2026): exhausting a ready Revenant AND exiling a card from a discard pile are both costs; it can't be activated unless a discard pile has a card */
-hab("Filth Scavenger",[{label:"Exhaust a Revenant and exile a card from a discard pile: +1 STR",ex:false,t:[t("allySummon","ready Revenant to exhaust",(s,o)=>o.name==="Revenant"&&!o.ex)],
+hab("Filth Scavenger",[{label:"Exhaust a Revenant and exile a card from a discard pile: +1 STR",ex:false,
+  why:(s,pid,a)=>!E.revenants(s,pid).some(o=>!o.ex)?"You need a ready Revenant to exhaust.":!s.p.some(p=>p.disc.length>0)?"Both discard piles are empty, so there's no card to exile.":a.lvl<3&&a.fl.necroC===s.round?"Already used this turn (any number of times at Level 3).":"",t:[t("allySummon","ready Revenant to exhaust",(s,o)=>o.name==="Revenant"&&!o.ex)],
   can:(s,pid,a)=>E.revenants(s,pid).some(o=>!o.ex)&&(a.lvl>=3||a.fl.necroC!==s.round)&&s.p.some(p=>p.disc.length>0),
   run(c){const r=c.t[0];if(!r||r.ex)return;const all=[...c.op.disc,...c.me.disc];if(!all.length){log(c,"No card in a discard pile to exile.");return}
     r.ex=true;c.actor.fl.necroC=c.s.round;log(c,`${r.name} is exhausted.`);

@@ -149,4 +149,15 @@ test("T4 each opponent means the boss side; all parties skips the boss",()=>{con
   const a0=s.p[0].aura,a1=s.p[1].aura;runCard(s,0,"Mead Offering");eq(s.p[0].aura,a0+2);eq(s.p[1].aura,a1+2);eq(boss(s).aura,0);
   const h0=s.p[0].hand.length,h1=s.p[1].hand.length;runCard(s,0,"Toast to the House");eq(s.p[0].hand.length,h0+1);eq(s.p[1].hand.length,h1+1);ok(!s.over)});
 
+/* ---------------- Task 9: loot ---------------- */
+vm.runInContext("CQE.addEquipRows(TRIALS_LOOT,TRIALS_LOOT_UPGRADES)",ctx);
+test("T9 loot reveal: parties + 1 cards from the pool, the same for the same seed, revealed once",()=>{[2,3,4].forEach(n=>{const s=mk(n,90);const r=ctx.CQT.lootReveal(s);eq(r.length,n+1);eq(new Set(r).size,n+1);
+  r.forEach(c=>ok(vm.runInContext("TRIALS_LOOT",ctx).some(x=>x[0]===c)));eq(ctx.CQT.lootReveal(s),r,"cached");eq(ctx.CQT.lootReveal(mk(n,90)),r,"seeded")})});
+test("T9 one loot card per party",()=>{const C=ctx.CQT;const r=["Crag Helm","Mammoth Tusk","Stampede Boots"];eq(C.checkLoot(r,{0:"Crag Helm",1:"Mammoth Tusk"},2),null);
+  ok(C.checkLoot(r,{0:"Crag Helm"},2),"missing");ok(C.checkLoot(r,{0:"Crag Helm",1:"Crag Helm"},2),"duplicate");ok(C.checkLoot(r,{0:"Crag Helm",1:"Stoneplate Mantle"},2),"not revealed")});
+test("T9 loot starts in the right party's opening hand, isn't part of the deck, and survives a mulligan",()=>{const base=mk(2,91);const s=mk(2,91,{loot:{1:"Crag Helm"}});
+  eq(s.p[1].hand.length,5);ok(s.p[1].hand.some(c=>c.id==="Crag Helm"));ok(!s.p[0].hand.some(c=>c.id==="Crag Helm"));
+  eq(s.p[1].lib.length+s.p[1].hand.length,base.p[1].lib.length+base.p[1].hand.length+1);eq(s.p[1].lib.length,base.p[1].lib.length,"deck size unchanged");
+  E.act(s,1,{type:"mull"});ok(s.p[1].hand.some(c=>c.id==="Crag Helm"),"kept through a mulligan");eq(s.p[1].hand.length,5);ok(!s.p[1].lib.some(c=>c.id==="Crag Helm"))});
+
 console.log(`${fail?"FAIL":"PASS"} trials_engine ${pass}/${pass+fail}`);process.exit(fail?1:0);

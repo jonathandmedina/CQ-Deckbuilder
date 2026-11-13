@@ -410,6 +410,7 @@ const TCSS=`/* Trials board (Plan B+C): boss bar, Golems, compact helper parties
 .tr-helpers{display:grid;gap:8px;margin-bottom:8px}.tr-helpers.n2{grid-template-columns:repeat(2,minmax(0,1fr))}.tr-helpers.n3{grid-template-columns:repeat(3,minmax(0,1fr))}
 .tr-helper{min-width:0;overflow:hidden}.tr-helper .pl-zone{zoom:.62}
 .tr-lobby .tr-check{display:flex;gap:8px;align-items:center;margin-top:8px}.pl-ltabs{margin:6px 0 10px}
+.tr-loot-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-bottom:8px}.tr-loot-pick label{display:grid;gap:4px;font-size:.85rem}
 .tr-loot{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:10px 0}.tr-loot .lc{display:grid;gap:6px}.tr-loot select{width:100%}
 @media (max-width:760px){.tr-helpers.n2,.tr-helpers.n3{grid-template-columns:minmax(0,1fr)}.tr-helper .pl-zone{zoom:.8}.tr-hpb{width:110px}.tr-bar{gap:6px 10px;font-size:.84rem}}
 `;
@@ -451,7 +452,7 @@ function startTrial(again){const L=U.lobby.t;const pc=partyChoices();let you=(pc
   if(!you)you=pickAI();
   const helpers=[];for(let i=0;i<Math.max(1,Math.min(3,L.helpers|0));i++){const v=L.h[i]||"ai";const d=v==="ai"?pickAI():((pc.find(c=>c.id===v&&c.ok)||{}).deck||pickAI());helpers.push({name:`Helper ${i+1} · ${String(d.name||"Party").replace(/ party \(Trials\)$/,"")}`,ai:true,deck:d})}
   startTrialWith({you,helpers,watch:!!L.watch},false)}
-function startTrialWith(cfg,again){U.lastTrial=cfg;const run=again?trialRun():null;const loot=run?run.loot:null;
+function startTrialWith(cfg,again){U.lastTrial=cfg;const run=trialRun(); /* a run's loot goes to the same seats (you = party 0, then Helper 1, 2, 3) */const loot=run?run.loot:null;
   clearTimeout(U.aiT);
   U.s=E.newGame({seed:(Math.random()*2**31)|0,trials:{trial:1,parties:[{name:myName(),ai:cfg.watch,deck:cfg.you},...cfg.helpers],loot:loot||undefined}});
   U.meta=null;U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.trialsWatch=cfg.watch;U.net=null;U.mode="game";U.tgt=null;U.man=null;U.overHide=false;U.lootPick=null;U.evFor=null;
@@ -511,7 +512,7 @@ function trialsLobbyHTML(){const L=U.lobby.t;const pc=partyChoices();if(!L.party
     <section class="panel"><h2>Your Trials party</h2>
       ${pc.length?`<label>Party<select data-pa="t-party">${popt(L.party)}</select></label>`:`<p class="pl-note">You don't have a Trials party yet. A Trials party is a deck with 2 Heroes (Lead and Closer) and at least 50 cards.</p><div class="actions"><button type="button" class="btn primary" data-act="new-party">New Trials party</button></div>`}
       <p class="pl-note">Trials parties you save in My Decks appear here.</p>
-      ${run?`<p class="pl-note tr-run">Your run: Trial ${run.trial} cleared. Loot: ${Object.values(run.loot).map(esc).join(", ")}.</p>`:""}
+      ${run?`<p class="pl-note tr-run">Your run: Trial ${run.trial} cleared. Loot in your next opening hands: ${Object.entries(run.loot).map(([p,n])=>(+p?"Helper "+p:"You")+": "+esc(n)).join(", ")}.</p>`:""}
     </section>
     <section class="panel"><h2>Helpers</h2>
       <label>Helper parties<select data-pa="t-helpers">${[1,2,3].map(n=>`<option value="${n}" ${L.helpers===n?"selected":""}>${n} helper${n>1?"s":""} (${n+1} parties)</option>`).join("")}</select></label>
@@ -1250,7 +1251,21 @@ function showBanner(s,lines){const mine=new Set([...s.p[U.me].heroes.map(h=>h.na
   U.banT=setTimeout(()=>{U.banner=null;render()},Math.min(6000,3000+Math.max(0,show.length-2)*500))}
 function bannerHTML(){const b=U.banner;return`<div class="pl-banner" role="status"><div class="bl"><b>${esc(b.opp)} just:</b>${b.lines.map(l=>`<span class="${l.hit?"hit":""}">${esc(l.m)}</span>`).join("")}</div><button class="btn sm" data-pa="banner-x">Dismiss</button></div>`}
 /* end-of-game pop-up: sits over the game layer so Return to Lobby is always on screen (no-scroll layout hides the action bar's overflow) */
-function overHTML(s){if(!s.over||U.overHide||U.tut)return"";const me=U.me;
+/* Trials end screen: a win reveals loot (parties + 1); a loss ends the run */
+function trialsOverHTML(s){const T=window.CQT;const P=s.trials.parties;const win=s.winner===0;
+  if(!win){store2.del("cq.trials.run");return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Trial lost"><div class="pl-over-box"><h2>Your run ended at Trial ${s.trials.trial}</h2>
+    <p class="pl-over-why">${s.conceded!=null?"You conceded.":"Every party was wiped out."} Loot from this run is gone.</p>
+    <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button><button class="btn go" data-pa="rematch">Try again</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
+  const rev=T.lootReveal(s);if(!U.lootPick||U.lootPick.g!==U.gameKey)U.lootPick={g:U.gameKey,p:{},kept:false};const pk=U.lootPick.p;
+  const cards=rev.map(n=>{const c=byName(n);return`<div class="lc">${c?cardHTML(c,{nozoom:false}):`<b>${esc(n)}</b>`}</div>`}).join("");
+  const rows=E.parties(s).slice().sort((a,b)=>a-b).map(p=>`<label>${esc(p===U.me?"You":s.p[p].name)}<select data-pa="t-loot" data-p="${p}"><option value="">Choose loot…</option>${rev.map(n=>`<option value="${esc(n)}" ${pk[p]===n?"selected":""}>${esc(n)}</option>`).join("")}</select></label>`).join("");
+  const err=T.checkLoot(rev,pk,P);
+  return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Trial cleared"><div class="pl-over-box"><h2>🏆 Trial ${s.trials.trial} cleared!</h2>
+    <p class="pl-over-why">Loot: give one card to each party. The extra goes back. Loot starts in that party's opening hand next Trial.</p>
+    <div class="tr-loot">${cards}</div><div class="tr-loot-pick">${rows}</div>
+    ${U.lootPick.kept?`<p class="pl-note">Loot kept for your run.</p>`:err?`<p class="pl-note">${esc(err)}</p>`:""}
+    <div class="pl-over-acts">${U.lootPick.kept?`<button class="btn go" data-pa="trial-again">Play Trial ${s.trials.trial} again with your loot</button>`:`<button class="btn go" data-pa="keep-loot" ${err?"disabled":""}>Keep this loot</button>`}<button class="btn primary" data-pa="leave">Return to Lobby</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
+function overHTML(s){if(!s.over||U.overHide||U.tut)return"";if(s.trials)return trialsOverHTML(s);const me=U.me;
   const head=s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`;
   const why=(s.conceded!=null?(s.conceded===me?"You conceded.":`${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");
   return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${head}</h2>${why?`<p class="pl-over-why">${why.trim()}</p>`:""}${statsHTML(s)}
@@ -1439,7 +1454,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="stat"&&(U.tgt||(s&&s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===U.me))){k="obj"}
   else if(k==="stat"){e.stopPropagation();const u=b.dataset.u,f=b.dataset.f;U.statPop=U.statPop&&U.statPop.u===u&&U.statPop.f===f?null:{u,f};render();return}
   if(U.statPop&&k!=="stat"){U.statPop=null;document.querySelectorAll("#play-root .ph-pop").forEach(x=>x.remove());document.querySelectorAll("#play-root .ph-num.on").forEach(x=>x.classList.remove("on"))}
-  if(k==="t-party"||k==="t-helpers"||k==="t-h"||k==="t-watch"||k==="t-trial")return;
+  if(k==="t-party"||k==="t-helpers"||k==="t-h"||k==="t-watch"||k==="t-trial"||k==="t-loot")return;
+  if(k==="keep-loot"){const s2=U.s;if(!s2||!s2.trials||!U.lootPick)return;const rev=CQT.lootReveal(s2);const err=CQT.checkLoot(rev,U.lootPick.p,s2.trials.parties);if(err){toast(err);return}
+    const loot={};Object.keys(U.lootPick.p).forEach(p=>{loot[p]=U.lootPick.p[p]});store2.set("cq.trials.run",{trial:s2.trials.trial,loot});U.lootPick.kept=true;toast("Loot kept. It starts in each party's opening hand next Trial.");render();return}
   if(k==="ltab"){e.preventDefault();U.lobby.tab=b.dataset.t;render();return}
   if(k==="start-trial"){startTrial();return}
   if(k==="trial-again"){U.s=null;startTrial(true);return}
@@ -1534,6 +1551,7 @@ document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.classList&&t.cla
 function redrawPrompt(){const m=document.getElementById("pl-modal");if(m)delete m.dataset.k;const s=view();if(m)m.remove();modals(s)}
 document.addEventListener("change",e=>{const t=e.target;const k=t.dataset&&t.dataset.pa;if(!k)return;
   if(k==="deck"){U.lobby.deck=t.value}else if(k==="ai"){U.lobby.ai=t.value;U.lobby.aiPicked=true}
+  else if(k==="t-loot"){if(U.lootPick){U.lootPick.p[t.dataset.p]=t.value||undefined;if(!t.value)delete U.lootPick.p[t.dataset.p];render()}}
   else if(k==="t-party"){U.lobby.t.party=t.value}else if(k==="t-helpers"){U.lobby.t.helpers=+t.value||1;render()}else if(k==="t-h"){U.lobby.t.h[+t.dataset.i]=t.value}else if(k==="t-watch"){U.lobby.t.watch=t.checked}
   else if(k==="man-op"){U.man.op=t.value;if(t.value==="move")U.man.n=0;render()}else if(k==="man-k"){U.man.k=t.value}else if(k==="man-name"){U.man.name=t.value}});
 document.addEventListener("input",e=>{const t=e.target;const k=t.dataset&&t.dataset.pa;if(!k)return;

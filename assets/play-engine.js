@@ -850,7 +850,8 @@ function undoLabel(s,pid,a){try{if(a.type==="play"||a.type==="comboPlay"){const 
 function doAct(s,pid,a){const pl=P(s,pid);
   switch(a.type){
   case"keep":pl.mullDone=true;log(s,`${pl.name} keeps their hand.`,pid);if(s.p.every(p=>p.mullDone))startRound(s);return;
-  case"mull":pl.lib.push(...pl.hand.splice(0));shuffle(s,pl.lib);draw(s,pid,4,true);pl.mullDone=true;pl.mulled=true;log(s,`${pl.name} mulligans and draws a new hand of 4.`,pid);if(s.p.every(p=>p.mullDone))startRound(s);return;
+  case"mull":{const keep=pl.loot?pl.hand.filter(c=>c.uid===pl.loot):[];/* Trials loot stays in the opening hand through a mulligan (it isn't part of the deck) */
+    pl.lib.push(...pl.hand.splice(0).filter(c=>!keep.includes(c)));shuffle(s,pl.lib);draw(s,pid,4,true);pl.hand.push(...keep)}pl.mullDone=true;pl.mulled=true;log(s,`${pl.name} mulligans and draws a new hand of 4.`,pid);if(s.p.every(p=>p.mullDone))startRound(s);return;
   case"gem":{const o=find(s,a.uid).o;const h=heroByUid(s,a.hero);h.ex=true;pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,`${pl.name} exiles ${o.name}, exhausting ${h.name}.`,pid);SC()[o.name].gem(mkCtx(s,pid,h,DB[o.id],o,[]));return}
   case"wake":{const h=heroByUid(s,a.hero);if(h)h.keepMed=!a.v;return}
   case"dawnDone":s.dawnDone[pid]=true;if(s.dawnDone.every(Boolean))startBattle(s);return;

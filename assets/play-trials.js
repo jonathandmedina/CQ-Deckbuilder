@@ -113,6 +113,11 @@ T.bossState=function(s){const st=s.trials;if(!st)return null;const h=bossHero(s)
   return{name:h&&h.name,hp:h?E.hp(s,h):0,max:h?E.maxHp(s,h):0,def:h?E.defn(s,h):0,plates:st.plates,platesMax:st.parties*(+bossRow(st.trial)[4]||0),rage:st.rage,rageAt:st.rageAt,winded:st.winded,skin:st.skin,
     deck:st.deck.length,disc:st.disc.length,lastFlip:st.lastFlip,spawns:E.parties(s).map(p=>({pid:p,list:spawnsVs(s,p).map(o=>({uid:o.uid,name:o.name,hp:E.hp(s,o),max:E.maxHp(s,o)}))}))}};
 T.lootPool=trial=>LOOT.map(r=>r[0]);
+/* Loot (supplement section 10): on a win, reveal one loot card per party plus one, from the Trial's pool, with the seeded rng. Revealed once per game. */
+T.lootReveal=function(s,n){const st=s.trials;if(!st)return[];if(st.lootShown)return st.lootShown.slice();const pool=T.lootPool(st.trial).slice();E.shuffle(s,pool);
+  st.lootShown=pool.slice(0,Math.min(pool.length,n==null?st.parties+1:n));return st.lootShown.slice()};
+/* the group gives exactly one revealed card to each party; the extra goes back. picks = {partyIndex: cardName}. Returns an error string or null. */
+T.checkLoot=function(revealed,picks,parties){const used=new Set();for(let p=0;p<parties;p++){const c=picks&&picks[p];if(!c)return"Give a loot card to every party.";if(!revealed.includes(c))return`${c} wasn't revealed.`;if(used.has(c))return"Each party gets a different loot card.";used.add(c)}return null};
 /* built-in helper parties: each splits a starter deck to 2 of its Heroes, keeps that starter's cards for those classes plus Generic,
    raises them to 3 copies (Legendaries stay at 1), then tops up to 50 from the two classes' card pools (cheapest first) */
 const PICKS=[[0,1],[0,1],[0,2],[0,2],[0,2]];

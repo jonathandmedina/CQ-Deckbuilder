@@ -6,7 +6,7 @@
 const E=window.CQE,AI=window.CQAI;
 const AS=()=>typeof S!=="undefined"?S:null;
 const SCR=()=>window.CQ_SCRIPTS||{};
-const U={mode:"lobby",s:null,me:0,vsAI:false,net:null,tgt:null,man:null,manT:null,aiT:null,logOpen:false,lobby:{deck:"",ai:"starter:1",tab:"ai",code:""},busy:false,lastErr:""};
+const U={mode:"lobby",s:null,me:0,vsAI:false,net:null,tgt:null,man:null,manT:null,aiT:null,logOpen:false,lobby:{deck:"",ai:"starter:1",tab:"ai",code:"",t:{party:"",helpers:1,h:["ai","ai","ai"],watch:false}},busy:false,lastErr:""};
 window.CQPlay=U;
 const store2={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const cid=(()=>{let v=store2.get("cq.play.cid",null);if(!v){v="c"+Math.random().toString(36).slice(2,10);store2.set("cq.play.cid",v)}return v})();
@@ -394,7 +394,26 @@ function heroHL(ph){const hand=document.querySelector(".pl-hand");if(!hand)retur
   if(note)note.textContent=act&&act.uid===h.uid?`${h.name} can play ${n} of these now`:act?`${h.name} isn't acting now · only ${act.name} can play cards`:`${h.name} can't play cards right now`}
 ["mouseover","focusin"].forEach(ev=>document.addEventListener(ev,e=>{const ph=e.target.closest&&e.target.closest(".ph[data-u]");if(ph)heroHL(ph)}));
 ["mouseout","focusout"].forEach(ev=>document.addEventListener(ev,e=>{const ph=e.target.closest&&e.target.closest(".ph[data-u]");if(ph&&!(e.relatedTarget&&ph.contains(e.relatedTarget)))heroHL(null)}));
-function injectCSS(){if(document.getElementById("pl-css"))return;const st=document.createElement("style");st.id="pl-css";st.textContent=CSS;document.head.appendChild(st)}
+const TCSS=`/* Trials board (Plan B+C): boss bar, Golems, compact helper parties */
+.tr-boss{border:2px solid #8a3b2a;border-radius:12px;padding:8px 12px;background:linear-gradient(#3a1d16,#22120d);display:grid;gap:6px;margin-bottom:8px}
+.tr-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:.9rem}
+.tr-bname{all:unset;cursor:pointer;font:700 1.05rem/1.2 var(--display,var(--body));color:#f7d9a8;padding:2px 8px;border-radius:8px;border:2px solid transparent}
+.tr-bname.cand{border-color:var(--warn,#FF8A70);box-shadow:0 0 0 3px rgba(255,138,112,.35)}
+.tr-hp{display:inline-flex;align-items:center;gap:6px}.tr-hpb{display:inline-block;width:180px;max-width:38vw;height:12px;border-radius:6px;background:rgba(0,0,0,.45);overflow:hidden;border:1px solid #6d3a2a}
+.tr-hpb i{display:block;height:100%;background:linear-gradient(90deg,#d4402c,#e58b3a)}
+.tr-pips{display:inline-flex;gap:3px;vertical-align:middle}.tr-pips i{width:11px;height:11px;border-radius:50%;border:1px solid #c99566;background:rgba(0,0,0,.4)}
+.tr-pips i.plate.on{background:#9aa6b2;border-color:#dfe7ee}.tr-pips i.rage.on{background:#e0442c;border-color:#ffb199}
+.tr-tag{font-size:.75rem;padding:1px 7px;border-radius:6px;border:1px solid currentColor}.tr-tag.wind{color:#8fd3ff}.tr-tag.skin{color:#d9c38a}.tr-tag.st{color:var(--warn,#FF8A70)}
+.tr-flip{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.82rem;color:var(--muted,#D3BC9F)}
+.tr-golems{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-start}.tr-golems>.lbl,.tr-gcol>.lbl{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#c99566}
+.tr-gcol{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.tr-golem.dim{opacity:.45;filter:saturate(.5)}.tr-golem.dim .ps{cursor:not-allowed}
+.tr-helpers{display:grid;gap:8px;margin-bottom:8px}.tr-helpers.n2{grid-template-columns:repeat(2,minmax(0,1fr))}.tr-helpers.n3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tr-helper{min-width:0;overflow:hidden}.tr-helper .pl-zone{zoom:.62}
+.tr-lobby .tr-check{display:flex;gap:8px;align-items:center;margin-top:8px}.pl-ltabs{margin:6px 0 10px}
+.tr-loot{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:10px 0}.tr-loot .lc{display:grid;gap:6px}.tr-loot select{width:100%}
+@media (max-width:760px){.tr-helpers.n2,.tr-helpers.n3{grid-template-columns:minmax(0,1fr)}.tr-helper .pl-zone{zoom:.8}.tr-hpb{width:110px}.tr-bar{gap:6px 10px;font-size:.84rem}}
+`;
+function injectCSS(){if(document.getElementById("pl-css"))return;const st=document.createElement("style");st.id="pl-css";st.textContent=CSS+TCSS;document.head.appendChild(st)}
 
 /* ---------- decks ---------- */
 const STARTERS=[
@@ -413,6 +432,100 @@ function starterDeck(i){const st=STARTERS[i];return{id:"starter:"+i,name:st.name
 U.starterDeck=starterDeck;
 /* Trials: five built-in 2-Hero helper parties, each a split of a starter deck (play-trials.js builds them) */
 U.TRIALS_STARTERS=window.CQT&&CQT.trialsStarters?CQT.trialsStarters(STARTERS,STARTER_LISTS):[];
+/* ---------- Trials: the co-op boss module (Plan B+C). Only for accounts with Trials access (admins always). ----------
+   One player (party 0) plus 1 to 3 AI helper parties against the boss; or "watch mode", where the AI plays every party.
+   Trials games are saved under cq.play.trials (not cq.play.local) and are never recorded to deck_results. */
+const TKEY="cq.play.trials";
+const nHeroes=d=>((d&&d.heroes)||[]).filter(Boolean).length;
+const isParty=d=>typeof isTrialsDeck==="function"?isTrialsDeck(d):nHeroes(d)===2;
+function partyChoices(){const out=[];const mine=((AS()&&S.decks)||[]).filter(d=>isParty(d)&&nHeroes(d)===2);
+  mine.forEach(d=>{const bad=E.validateDeck(d,{trials:true});out.push({id:d.id,name:d.name+(bad.length?" (not legal: "+bad[0]+")":""),ok:!bad.length,deck:d})});
+  if(AS()&&S.deck&&isParty(S.deck)&&nHeroes(S.deck)===2&&!mine.some(d=>d.id===S.deck.id)){const bad=E.validateDeck(S.deck,{trials:true});out.push({id:"draft",name:"Current draft: "+(S.deck.name||"Untitled")+(bad.length?" (not legal)":""),ok:!bad.length,deck:S.deck})}
+  return out}
+function trialRun(){const r=store2.get("cq.trials.run",null);return r&&r.trial&&r.loot?r:null}
+function startTrial(again){const L=U.lobby.t;const pc=partyChoices();let you=(pc.find(c=>c.id===L.party&&c.ok)||{}).deck;
+  if(again&&U.lastTrial)return startTrialWith(U.lastTrial,true);
+  if(!you&&!L.watch){toast("Choose a legal Trials party (2 Heroes, at least 50 cards).");return}
+  const used=new Set();const ST=U.TRIALS_STARTERS;
+  const pickAI=()=>{const pool=ST.filter(p=>!used.has(p.id));const p=pool.length?pool[(Math.random()*pool.length)|0]:ST[0];used.add(p.id);return p};
+  if(!you)you=pickAI();
+  const helpers=[];for(let i=0;i<Math.max(1,Math.min(3,L.helpers|0));i++){const v=L.h[i]||"ai";const d=v==="ai"?pickAI():((pc.find(c=>c.id===v&&c.ok)||{}).deck||pickAI());helpers.push({name:`Helper ${i+1} · ${String(d.name||"Party").replace(/ party \(Trials\)$/,"")}`,ai:true,deck:d})}
+  startTrialWith({you,helpers,watch:!!L.watch},false)}
+function startTrialWith(cfg,again){U.lastTrial=cfg;const run=again?trialRun():null;const loot=run?run.loot:null;
+  clearTimeout(U.aiT);
+  U.s=E.newGame({seed:(Math.random()*2**31)|0,trials:{trial:1,parties:[{name:myName(),ai:cfg.watch,deck:cfg.you},...cfg.helpers],loot:loot||undefined}});
+  U.meta=null;U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.trialsWatch=cfg.watch;U.net=null;U.mode="game";U.tgt=null;U.man=null;U.overHide=false;U.lootPick=null;U.evFor=null;
+  saveLocal();render();pumpAI()}
+U.startTrial=startTrial;
+/* the AI plays the helpers (and party 0 in watch mode); in a 1-on-1 game it plays side 1 only, exactly as before */
+function aiPids(s){if(!s.trials)return[1];return s.p.map((_,i)=>i).filter(i=>!E.isBoss(s,i)&&(s.p[i].ai||(i===0&&U.trialsWatch)))}
+function nextAI(s){for(const pid of aiPids(s)){const a=AI.choose(s,pid);if(a)return{pid,a}}return null}
+U.stepAI=function(){const s=U.s;if(!s||s.over)return false;const n=nextAI(s);if(!n)return false;const r=E.act(s,n.pid,n.a);
+  if(!r.ok){const f=E.options(s,n.pid).find(o=>["pass","decline","dawnDone","leave","keep","manDone"].includes(o.type));if(f)E.act(s,n.pid,f)}return true};
+function bossPips(n,max,cls,title){let o="";for(let i=0;i<max;i++)o+=`<i class="${cls}${i<n?" on":""}"></i>`;return`<span class="tr-pips" title="${esc(title)}">${o}</span>`}
+function bossHTML(s){const T=window.CQT;const b=T.bossState(s);const st=s.trials;const h=T.bossHero(s);
+  const cands=U.tgt?new Set(U.tgt.slots[U.tgt.i].cands):new Set();
+  const pct=Math.max(0,Math.min(100,b.hp/Math.max(1,b.max)*100));
+  const tags=[b.winded?'<span class="tr-tag wind" title="0 Defense until its next flip">Winded</span>':"",b.skin?`<span class="tr-tag skin" title="+${b.skin} Defense until its next flip">Stone Skin</span>`:"",
+    ...E.STATUS.filter(k=>h.st[k]).map(k=>`<span class="tr-tag st">${E.STATUS_NAME[k]} ${h.st[k]}</span>`)].join("");
+  const left=Math.max(0,b.rageAt-b.rage);
+  const lf=b.lastFlip?(b.lastFlip.kind==="stampede"?`<b>Raging Stampede</b> → every player Hero`:b.lastFlip.kind==="skip"?"skipped (Stunned or exhausted)":`<b>${esc(b.lastFlip.card)}</b>${b.lastFlip.targets.length?" → "+b.lastFlip.targets.map(esc).join(", "):""}`):"none yet";
+  const golems=b.spawns.slice().sort((x,y)=>(y.pid===U.me)-(x.pid===U.me)||x.pid-y.pid).map(g=>{const nm=g.pid===U.me?"You":esc(s.p[g.pid].name.replace(/ · .*$/,""));
+    const list=s.p[st.boss].bf.filter(o=>o.spawn&&o.fl.vs===g.pid).map(o=>{const okT=E.trialsTargetOk(s,U.me,o);const html=summonHTML(s,o,okT?cands:new Set());
+      return okT?`<span class="tr-golem">${html}</span>`:`<span class="tr-golem dim" title="Deal with your own Golem first.">${html}</span>`}).join("");
+    return`<div class="tr-gcol"><span class="lbl">vs ${nm}</span>${list||'<span class="pl-note">—</span>'}</div>`}).join("");
+  return`<section class="tr-boss" aria-label="${esc(b.name)}">
+    <div class="tr-bar"><button type="button" class="tr-bname${cands.has(h.uid)?" cand":""}" data-pa="obj" data-u="${h.uid}" title="${esc(b.name)} (counts as an enemy Hero)">${esc(b.name)}</button>
+      <span class="tr-hp" role="img" aria-label="${b.hp} of ${b.max} Health Points"><span class="tr-hpb"><i style="width:${pct.toFixed(1)}%"></i></span><b>${b.hp}/${b.max}</b> HP</span>
+      <span class="tr-def" title="Defense: 1 per Stone Plate${b.skin?", plus Stone Skin":""}${b.winded?" (Winded: 0)":""}">Defense <b>${b.def}</b> ${bossPips(b.plates,b.platesMax,"plate","Stone Plates: "+b.plates+" of "+b.platesMax)}</span>
+      <span class="tr-rage" title="Raging Stampede at ${b.rageAt} Rage">Rage ${bossPips(b.rage,b.rageAt,"rage","Rage "+b.rage+" of "+b.rageAt)} <small>(${left?left+" to Stampede":"Stampede next flip"})</small></span>${tags}</div>
+    <div class="tr-flip"><span>Boss deck <b>${b.deck}</b></span><span>Last flip: ${lf}</span></div>
+    <div class="tr-golems"><span class="lbl">Golems</span>${golems}</div></section>`}
+function trialsGameHTML(s,opts){const me=U.me;const helpers=E.parties(s).filter(p=>p!==me).sort((a,b)=>a-b);
+  return`<div class="pl-game trials${U.logHidden?" nolog":""}"><button class="btn sm pl-logshow" data-pa="log-toggle" title="Show the game log">Show log</button><div class="pl-board">
+    ${bossHTML(s)}
+    <div class="tr-helpers n${helpers.length}">${helpers.map(p=>`<div class="tr-helper">${zoneHTML(s,p,opts)}</div>`).join("")}</div>
+    ${midHTML(s,opts)}
+    ${zoneHTML(s,me,opts)}
+    ${handHTML(s,opts)}
+  </div><aside class="pl-side">
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions"><button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
+    <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Dimmed Golem = deal with your own first</span></div>
+  </aside></div>`}
+/* boss flips and Raging Stampede pop up like opponent actions, with the boss card shown large */
+function trialsPops(s){if(!s.trials||!window.CQPop)return;const ev=s.trials.events||[];if(U.evFor!==U.gameKey){U.evFor=U.gameKey;U.evSeen=ev.length?ev[ev.length-1].n:0;return}
+  const fresh=ev.filter(e=>e.n>U.evSeen);if(!fresh.length)return;U.evSeen=fresh[fresh.length-1].n;
+  const bn=s.p[s.trials.boss].name;const T=window.CQT;const h=T.bossHero(s);
+  fresh.slice(-3).forEach(e=>{const objs=[];s.p.forEach(pl=>pl.heroes.forEach(x=>objs.push(x)));const tu=(e.targets||[]).map(n=>(objs.find(o=>o.name===n)||{}).uid).filter(Boolean);
+    if(e.kind==="skip"){CQPop.push({who:bn,boss:true,cardId:null,verb:"",name:"skips its flip",dest:"",sub:"It was Stunned or exhausted.",actorU:h&&h.uid,targetU:[]});return}
+    if(e.kind==="stampede"){const c=byName(bn);CQPop.push({who:bn+" · boss ability",boss:true,cardId:c?c.id:null,verb:"does",name:"Raging Stampede",dest:"every player Hero",sub:`${s.trials.stampede} damage to each Hero; it's Winded (0 Defense) until its next flip.`,actorU:h&&h.uid,targetU:tu});return}
+    const c=byName(e.card);const row=(typeof TRIALS_BOSS_CARDS!=="undefined"?TRIALS_BOSS_CARDS:[]).find(r=>r[0]===e.card);
+    CQPop.push({who:bn+" · boss flip",boss:true,cardId:c?c.id:null,verb:"flips",name:e.card,dest:(e.targets||[]).join(", "),sub:row?row[4]:"",actorU:h&&h.uid,targetU:tu})})}
+function trialsLobbyHTML(){const L=U.lobby.t;const pc=partyChoices();if(!L.party||!pc.some(c=>c.id===L.party&&c.ok))L.party=(pc.find(c=>c.ok)||{}).id||"";
+  const res=store2.get(TKEY,null);const run=trialRun();
+  const popt=sel=>pc.map(c=>`<option value="${esc(c.id)}" ${c.id===sel?"selected":""} ${c.ok?"":"disabled"}>${esc(c.name)}</option>`).join("");
+  const hopt=(i)=>`<option value="ai" ${(L.h[i]||"ai")==="ai"?"selected":""}>AI picks a party</option>`+pc.filter(c=>c.ok).map(c=>`<option value="${esc(c.id)}" ${L.h[i]===c.id?"selected":""}>${esc(c.name)}</option>`).join("");
+  return`${res&&res.s&&!res.s.over?`<div class="panel"><b>Trial in progress</b> · Round ${res.s.round} · ${esc(res.s.p[res.s.trials.boss].name)}<div class="actions"><button class="btn primary" data-pa="resume-trial">Resume</button><button class="btn" data-pa="drop-trial">Discard it</button></div></div>`:""}
+  <div class="pl-lobby tr-lobby">
+    <section class="panel"><h2>Your Trials party</h2>
+      ${pc.length?`<label>Party<select data-pa="t-party">${popt(L.party)}</select></label>`:`<p class="pl-note">You don't have a Trials party yet. A Trials party is a deck with 2 Heroes (Lead and Closer) and at least 50 cards.</p><div class="actions"><button type="button" class="btn primary" data-act="new-party">New Trials party</button></div>`}
+      <p class="pl-note">Trials parties you save in My Decks appear here.</p>
+      ${run?`<p class="pl-note tr-run">Your run: Trial ${run.trial} cleared. Loot: ${Object.values(run.loot).map(esc).join(", ")}.</p>`:""}
+    </section>
+    <section class="panel"><h2>Helpers</h2>
+      <label>Helper parties<select data-pa="t-helpers">${[1,2,3].map(n=>`<option value="${n}" ${L.helpers===n?"selected":""}>${n} helper${n>1?"s":""} (${n+1} parties)</option>`).join("")}</select></label>
+      ${Array.from({length:L.helpers},(_,i)=>`<label>Helper ${i+1}<select data-pa="t-h" data-i="${i}">${hopt(i)}</select></label>`).join("")}
+      <label class="tr-check"><input type="checkbox" data-pa="t-watch" ${L.watch?"checked":""}> AI plays every party (watch mode)</label>
+    </section>
+    <section class="panel"><h2>Trial</h2>
+      <label>Trial<select data-pa="t-trial"><option value="1" selected>Trial 1 · Rock Mammoth</option></select></label>
+      <p class="pl-note">The Rock Mammoth: 25 Health Points per party, 1 Stone Plate per party, and a Golem against each party. Break its Golems to break its plates, but every Golem adds Rage.</p>
+      <div class="actions"><button class="btn primary go" data-pa="start-trial">Start Trial</button></div>
+      <p class="pl-note">Trials games aren't recorded to Best Decks or the Leaderboard.</p>
+    </section>
+  </div>`}
+
 function deckChoices(){const out=[];
   const mine=((AS()&&S.decks)||[]).filter(d=>(d.heroes||[]).filter(Boolean).length===3);mine.forEach(d=>{const bad=E.validateDeck(d);out.push({id:d.id,name:d.name+(bad.length?" (not legal: "+bad[0]+")":""),ok:!bad.length,deck:d})});
   if(AS()&&S.deck&&S.deck.heroes.length===3&&!mine.some(d=>d.id===S.deck.id)){const bad=E.validateDeck(S.deck);out.push({id:"draft",name:"Current draft: "+(S.deck.name||"Untitled")+(bad.length?" (not legal)":""),ok:!bad.length,deck:S.deck})}
@@ -421,13 +534,13 @@ function deckChoices(){const out=[];
 function deckById(id){const c=deckChoices().find(d=>d.id===id);return c&&c.ok?c.deck:null}
 
 /* ---------- persistence ---------- */
-function saveLocal(){if(U.tut)return;if(U.vsAI&&U.s)store2.set("cq.play.local",{s:U.s,me:U.me,meta:U.meta||null});if(U.net&&U.net.role==="host"&&U.s)store2.set("cq.play.host",{code:U.net.code,s:U.s,guest:U.net.guest||null,meta:U.meta||null});}
+function saveLocal(){if(U.tut)return;if(U.vsAI&&U.s){if(U.s.trials)store2.set(TKEY,{s:U.s,me:U.me,watch:!!U.trialsWatch,last:U.lastTrial||null});else store2.set("cq.play.local",{s:U.s,me:U.me,meta:U.meta||null})}if(U.net&&U.net.role==="host"&&U.s)store2.set("cq.play.host",{code:U.net.code,s:U.s,guest:U.net.guest||null,meta:U.meta||null});}
 /* ---------- win tracking for Best Decks ---------- */
 const newGid=()=>"g"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 function deckMeta(d){return{name:(d.name||"Untitled deck").replace(/ \(starter\)$/,"").slice(0,80),heroes:d.heroes.slice(0,3),cards:Object.assign({},d.cards)}}
 async function deckKey(d){const txt=d.heroes.slice().sort().join("|")+"#"+Object.entries(d.cards).filter(([,q])=>q>0).sort((a,b)=>a[0]<b[0]?-1:1).map(([k,q])=>k+":"+q).join("|");
   const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(txt));return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32)}
-async function maybeRecord(){const s=U.s,m=U.meta;if(!s||!s.over||!m||!m.gid||m.recorded)return;
+async function maybeRecord(){const s=U.s,m=U.meta;if(!s||s.trials)return; /* Trials results aren't recorded (Plan D adds them) */if(!s.over||!m||!m.gid||m.recorded)return;
   const done=store2.get("cq.play.recorded",[]);if(done.includes(m.gid)){m.recorded=true;return}
   const c=sb();if(!c)return;m.recorded=true;saveLocal();
   const sides=m.mode==="ai"?[0]:[0,1];const rows=[];
@@ -449,7 +562,7 @@ function recStats(s,side){try{const g=E.gameStats(s);const sd=g.sides[side],od=g
 function myName(){return(AS()&&S.me&&S.me.name)||store2.get("cq.play.name","")||"Player"}
 
 /* ---------- game control ---------- */
-function startAI(){const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, at least 50 cards) for yourself.");return}
+function startAI(){U.lastTrial=null;U.trialsWatch=false;const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, at least 50 cards) for yourself.");return}
   if(!da){toast("Choose a deck for the AI.");return}
   U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
   U.meta={gid:newGid(),mode:"ai",t0:Date.now(),lt:Date.now(),act:0,decks:[deckMeta(dm),deckMeta(da)]};
@@ -459,7 +572,7 @@ U.startTutorial=function(dm,da,fix){clearTimeout(U.aiT);
   U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
   if(typeof fix==="function")fix(U.s);
   U.meta=null;U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.net=null;U.mode="game";U.tgt=null;U.man=null;U.overHide=false};
-U.pumpAI=()=>pumpAI();U.render=()=>render();U.leave=()=>leaveGame();
+U.pumpAI=()=>pumpAI();U.render=()=>render();U.leave=()=>leaveGame();U.save=()=>saveLocal();
 function view(){return U.s}
 function send(a){
   if(U.net&&U.net.role==="guest"){U.net.ch.send({type:"broadcast",event:"act",payload:{a,cid}});U.busy=true;U.tgt=null;render();return}
@@ -470,8 +583,8 @@ const IDLE_CAP=180000;
 function tickTime(){const m=U.meta;if(!m||m.recorded)return;const now=Date.now();if(m.lt)m.act=(m.act||0)+Math.min(Math.max(0,now-m.lt),IDLE_CAP);m.lt=now}
 function afterChange(){tickTime();saveLocal();if(U.net&&U.net.role==="host")broadcast();render();pumpAI();if(U.s&&U.s.over&&(U.vsAI||(U.net&&U.net.role==="host")))maybeRecord()}
 function pumpAI(){clearTimeout(U.aiT);if(!U.vsAI||!U.s||U.s.over)return;
-  const a=AI.choose(U.s,1);if(!a)return;
-  U.aiT=setTimeout(()=>{const a2=AI.choose(U.s,1);if(!a2)return;const r=E.act(U.s,1,a2);if(!r.ok){const f=E.options(U.s,1).find(o=>["pass","decline","dawnDone","leave","keep","manDone"].includes(o.type));if(f)E.act(U.s,1,f)}afterChange()},U.fast?0:(U.s.phase==="battle"&&!U.s.pend.length?650:350))}
+  if(!nextAI(U.s))return;
+  U.aiT=setTimeout(()=>{if(!U.s||!U.stepAI())return;afterChange()},U.fast?0:(U.s.phase==="battle"&&!U.s.pend.length?650:350))}
 
 /* ---------- online (Supabase Realtime) ---------- */
 function sb(){return typeof SB!=="undefined"?SB:null}
@@ -506,7 +619,7 @@ async function claimResult(gid){const c=sb(),st=AS();if(!c||!st||!st.uid||!gid||
   for(let i=0;i<6;i++){await new Promise(r=>setTimeout(r,i?4000:2500));try{const{data,error}=await c.rpc("claim_result",{gid});if(error)return;if(data>0){toast("Result saved to your profile.");return}}catch(e){return}}}
 function leaveGame(){U.gameKey=null;clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
   if(U.net&&U.net.role==="guest")store2.del("cq.play.guest");if(U.net&&U.net.role==="host")store2.del("cq.play.host");
-  if(U.vsAI)store2.del("cq.play.local");U.net=null;U.s=null;U.vsAI=false;U.tut=null;U.mode="lobby";U.tgt=null;U.man=null;render()}
+  if(U.vsAI)store2.del(U.s&&U.s.trials?TKEY:"cq.play.local");U.net=null;U.s=null;U.vsAI=false;U.trialsWatch=false;U.tut=null;U.mode="lobby";U.tgt=null;U.man=null;render()}
 
 /* ---------- helpers ---------- */
 const nameOf=u=>{const s=view();if(!s||!u)return"?";if(u[0]==="P")return s.p[+u.slice(1)].name;const f=E.find(s,u);return f?f.o.name:"?"};
@@ -515,7 +628,7 @@ function scriptOfCard(id){const d=E.DB[id];return d?SCR()[d.name]:null}
 function autoTag(id){const d=E.DB[id];if(!d)return"";if(d.kind==="equip")return MANUAL_EQ.has(d.name)?'<span class="auto m">PART BY HAND</span>':'<span class="auto">AUTO</span>';
   return E.isScripted(d.name)?'<span class="auto">AUTO</span>':'<span class="auto m">BY HAND</span>'}
 const MANUAL_EQ=new Set(["Ritual Athame","Shillelagh","Helm of Aura","Ring of Vocation","Gauntlets of Growth"]);
-function legal(){const s=view();if(!s)return[];if(U.net&&U.net.role==="guest"&&U.busy)return[];try{return E.options(s,U.me)}catch(e){return[]}}
+function legal(){const s=view();if(!s)return[];if(s.trials&&U.trialsWatch)return[];if(U.net&&U.net.role==="guest"&&U.busy)return[];try{return E.options(s,U.me)}catch(e){return[]}}
 
 /* ---------- rendering ---------- */
 function mergeLog(s){if(!s)return;if(U.logFor!==U.gameKey){U.logFor=U.gameKey;U.logAll=new Map()}
@@ -678,6 +791,7 @@ function gameFx(s){if(U.fxFor!==U.gameKey){U.fxFor=U.gameKey;U.fxSeen=(s.fx&&s.f
     let ov=s.over&&s.winner!=null&&s.winner!==U.me;ks.slice(0,5).forEach((k,i)=>SND.play(k==="win"&&ov?"lose":k,i*0.16));
     try{opPops(s,lines)}catch(e){console.warn(e)}}
     try{exhumePops(s)}catch(e){console.warn(e)}
+  try{trialsPops(s)}catch(e){console.warn(e)}
   /* chime when the action shifts to the other player (or a new phase starts) */
   const tk=turnKey(s);if(tk!==U.lastTurn){U.lastTurn=tk;SND.play("chime",lines.length?0.5:0)}}
 /* Update 30: opponent action pop-ups. Each opponent "starter" line (plays, activates, attacks, summons, equips, Town) opens a pop-up;
@@ -844,12 +958,16 @@ function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.t
 @keyframes wpIn{to{opacity:1}}@keyframes wpSpin{to{transform:rotate(360deg)}}
 @media (max-width:640px){.tw-grid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.pl-town-box,.wp-spin{animation:none}#pl-waitpop{animation:none;opacity:1}}`;document.head.appendChild(st)}
-function lobbyHTML(){const ch=deckChoices();const resL=store2.get("cq.play.local",null),resH=store2.get("cq.play.host",null),resG=store2.get("cq.play.guest",null);
+function lobbyHTML(){const tOn=trialsAccess();if(!tOn&&U.lobby.tab==="trials")U.lobby.tab="ai";
+  const tabs=tOn?`<nav class="subtabs pl-ltabs" aria-label="Play modes"><a href="#play" data-pa="ltab" data-t="ai"${U.lobby.tab!=="trials"?' aria-current="page"':""}>Play</a><a href="#play" data-pa="ltab" data-t="trials"${U.lobby.tab==="trials"?' aria-current="page"':""}>Trials</a></nav>`:"";
+  if(tOn&&U.lobby.tab==="trials")return`<h1>Play Crystal Quest</h1>${tabs}<p class="lede">Trials: team up with AI helper parties against a boss that runs itself from its own deck. Each party has 2 Heroes. See the Trials rules for how bosses, spawns and loot work.</p>${trialsLobbyHTML()}`;
+  return lobbyHTML1(tabs)}
+function lobbyHTML1(tabs){const ch=deckChoices();const resL=store2.get("cq.play.local",null),resH=store2.get("cq.play.host",null),resG=store2.get("cq.play.guest",null);
   if(!U.lobby.deck||!ch.some(d=>d.id===U.lobby.deck&&d.ok))U.lobby.deck=(ch.find(d=>d.ok)||{}).id||"";
   if(U.lobby.ai===U.lobby.deck&&!U.lobby.aiPicked)U.lobby.ai=U.lobby.deck==="starter:1"?"starter:0":"starter:1";
   const opts=(sel,onlyOk)=>ch.map(d=>`<option value="${esc(d.id)}" ${d.id===sel?"selected":""} ${!d.ok?"disabled":""}>${esc(d.name)}</option>`).join("");
   const online=!!sb();
-  return`<h1>Play Crystal Quest</h1><p class="lede">Play a full game with the rules enforced: phases, priority by position, Aura, attacks, Hidden cards, Town and Gold. Cards marked <b>AUTO</b> resolve themselves; the few marked <b>BY HAND</b> open a panel where you apply the effect.</p>
+  return`<h1>Play Crystal Quest</h1>${tabs||""}<p class="lede">Play a full game with the rules enforced: phases, priority by position, Aura, attacks, Hidden cards, Town and Gold. Cards marked <b>AUTO</b> resolve themselves; the few marked <b>BY HAND</b> open a panel where you apply the effect.</p>
   ${resL&&resL.s&&!resL.s.over?`<div class="panel"><b>Game in progress vs AI</b> · Round ${resL.s.round}<div class="actions"><button class="btn primary" data-pa="resume-local">Resume</button><button class="btn" data-pa="drop-local">Discard it</button></div></div>`:""}
   ${resH&&resH.s&&!resH.s.over?`<div class="panel"><b>Online room ${esc(resH.code)}</b> (you're the host) · Round ${resH.s.round}<div class="actions"><button class="btn primary" data-pa="resume-host">Reopen room</button><button class="btn" data-pa="drop-host">Close it</button></div></div>`:""}
   ${resG&&resG.code?`<div class="panel"><b>Online room ${esc(resG.code)}</b> (joined)<div class="actions"><button class="btn primary" data-pa="resume-guest">Rejoin</button><button class="btn" data-pa="drop-guest">Forget it</button></div></div>`:""}
@@ -880,6 +998,7 @@ function roomHTML(){const n=U.net;if(!n)return"";
   <div class="actions"><button class="btn" data-pa="leave">Cancel</button></div></div>`}
 function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
   if(U.logHidden==null){try{U.logHidden=localStorage.getItem("cq.play.log")==="hide"}catch(e){U.logHidden=false}}
+  if(s.trials)return trialsGameHTML(s,opts);
   return`<div class="pl-game${U.logHidden?" nolog":""}"><button class="btn sm pl-logshow" data-pa="log-toggle" title="Show the game log">Show log</button><div class="pl-board">
     ${zoneHTML(s,op,opts)}
     ${midHTML(s,opts)}
@@ -1012,7 +1131,7 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
   const cls=`ph${h.ex&&!h.dead?" ex":""}${h.dead?" dead":""}${h.surr?" surr":""}${isActor?" actor":""}${cands.has(h.uid)?" cand":""}${U.man&&U.manT===h.uid?" mansel":""}`;
   const hb=isActor&&s.phase==="battle"&&s.prio===U.me&&h.owner===U.me&&!s.pend.length&&!s.over&&!U.tgt&&(opts||[]).length?heroActs(s,opts,h):[];
   const hacts=hb.length?`<div class="pl-acts ph-acts" aria-label="${esc(h.name)}'s actions">${hb.join("")}</div>`:"";
-  const top=`<span class="ph-top"><span>${E.POS[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
+  const top=`<span class="ph-top"><span>${(s.trials?["Lead","Closer"]:E.POS)[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
   const extra=`${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}`;
   if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart hk" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
     ${top}${heroCardHTML(s,h,d,st,extra,soul,"")}
@@ -1109,12 +1228,13 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const oppActing=!s.over&&wait&&!U.busy&&(pr?pr.pid!==me:(s.phase==="battle"&&s.prio!==me)||(s.phase==="town"&&s.town&&s.town.order[s.town.i]!==me));
   const oppInfo=oppActing?oppInfoHTML(s):"";
   const ban=""; /* Update 31: the blue "just did" banner is gone; the action pop-ups and the log cover it */
-  const posm=`<span class="posm" title="Position marker">${[...E.POS,"Last"].map((p,i)=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
+  const posL=s.trials?[[0,"Lead"],[1,"Closer"],[3,"Last"]]:[...E.POS,"Last"].map((p,i)=>[i,p]); /* Trials parties have 2 Heroes: Lead, Closer, Last */
+  const posm=`<span class="posm" title="Position marker">${posL.map(([i,p])=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" title="Turn sound effects on or off" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" title="Turn the music on or off" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
     <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn?helpHTML(fixBtn):""}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
 /* opponent's turn: what they have to work with */
-function oppInfoHTML(s){const op=E.opp(U.me);const pl=s.p[op];const a=s.phase==="battle"&&s.prio===op?E.actorFor(s,op):null;
+function oppInfoHTML(s){const op=s.trials?(s.pend[0]?s.pend[0].pid:s.phase==="town"&&s.town?s.town.order[s.town.i]:s.prio):E.opp(U.me);if(op==null||!s.p[op])return"";const pl=s.p[op];const a=s.phase==="battle"&&s.prio===op?E.actorFor(s,op):null;
   return`<div class="pl-oppinfo">${a?`<span>Acting: <b>${esc(a.name)}</b></span>`:""}<span>Hand <b>${pl.hand.length}</b></span><span>Aura <b>${pl.aura}</b></span><span>Gold <b>${pl.gold}</b></span><span>Library <b>${pl.lib.length}</b></span></div>`}
 /* "What just happened": after the opponent acts, list their log lines (and what hit you), then hand control back */
 function trackBanner(s){const op=E.opp(U.me);if(U.banFor!==U.gameKey){U.banFor=U.gameKey;U.seenN=Math.max(0,...s.log.map(l=>l.n||0));U.banBuf=[];U.banner=null;return}
@@ -1319,13 +1439,20 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="stat"&&(U.tgt||(s&&s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===U.me))){k="obj"}
   else if(k==="stat"){e.stopPropagation();const u=b.dataset.u,f=b.dataset.f;U.statPop=U.statPop&&U.statPop.u===u&&U.statPop.f===f?null:{u,f};render();return}
   if(U.statPop&&k!=="stat"){U.statPop=null;document.querySelectorAll("#play-root .ph-pop").forEach(x=>x.remove());document.querySelectorAll("#play-root .ph-num.on").forEach(x=>x.classList.remove("on"))}
+  if(k==="t-party"||k==="t-helpers"||k==="t-h"||k==="t-watch"||k==="t-trial")return;
+  if(k==="ltab"){e.preventDefault();U.lobby.tab=b.dataset.t;render();return}
+  if(k==="start-trial"){startTrial();return}
+  if(k==="trial-again"){U.s=null;startTrial(true);return}
+  if(k==="trules"){location.hash="trials-rules";return}
+  if(k==="resume-trial"){const r=store2.get(TKEY,null);if(r&&r.s){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.meta=null;U.trialsWatch=!!r.watch;U.lastTrial=r.last||null;U.vsAI=true;U.net=null;U.mode="game";U.evFor=null;render();pumpAI()}return}
+  if(k==="drop-trial"){store2.del(TKEY);render();return}
   if(k==="deck"||k==="ai"||k==="code"||k==="name"||k==="man-op"||k==="man-n"||k==="man-k"||k==="man-name"||k==="man-card")return;
   if(k==="close"){closeModal();return}
   if(k==="hscr"){const he=b.parentElement&&b.parentElement.querySelector(".pl-hand");if(he)he.scrollBy({left:(+b.dataset.d)*Math.max(200,he.clientWidth*0.8),behavior:"smooth"});return}
   if(k==="snd"){SND.toggle();render();return}
   if(k==="mus"){MUS.toggle();render();return}
   if(k==="start-ai"){startAI();return}
-  if(k==="rematch"){U.s=null;U.tut=null;startAI();return}
+  if(k==="rematch"){U.s=null;U.tut=null;if(U.lastTrial){startTrialWith(U.lastTrial,false);return}startAI();return}
   if(k==="over-hide"){U.overHide=true;render();return}
   if(k==="over-show"){U.overHide=false;render();return}
   if(k==="host"){hostRoom();return}
@@ -1407,6 +1534,7 @@ document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.classList&&t.cla
 function redrawPrompt(){const m=document.getElementById("pl-modal");if(m)delete m.dataset.k;const s=view();if(m)m.remove();modals(s)}
 document.addEventListener("change",e=>{const t=e.target;const k=t.dataset&&t.dataset.pa;if(!k)return;
   if(k==="deck"){U.lobby.deck=t.value}else if(k==="ai"){U.lobby.ai=t.value;U.lobby.aiPicked=true}
+  else if(k==="t-party"){U.lobby.t.party=t.value}else if(k==="t-helpers"){U.lobby.t.helpers=+t.value||1;render()}else if(k==="t-h"){U.lobby.t.h[+t.dataset.i]=t.value}else if(k==="t-watch"){U.lobby.t.watch=t.checked}
   else if(k==="man-op"){U.man.op=t.value;if(t.value==="move")U.man.n=0;render()}else if(k==="man-k"){U.man.k=t.value}else if(k==="man-name"){U.man.name=t.value}});
 document.addEventListener("input",e=>{const t=e.target;const k=t.dataset&&t.dataset.pa;if(!k)return;
   if(k==="code")U.lobby.code=t.value.toUpperCase();else if(k==="name")store2.set("cq.play.name",t.value.slice(0,24));else if(k==="man-n"&&U.man)U.man.n=parseInt(t.value,10)||0});

@@ -32,6 +32,7 @@
 @keyframes apIn{from{opacity:0;transform:translateY(-8px)}}
 @keyframes apDrain{to{transform:scaleX(0)}}
 @keyframes apPulse{50%{outline-color:rgba(255,138,112,.25)}}
+.ap-pop.boss{grid-template-columns:150px minmax(0,1fr);border-color:#d4402c;background:rgba(58,22,15,.97)}.ap-pop.boss.new .ap-card,.ap-pop.boss.new .ap-card .card{width:150px}.ap-pop.boss .ap-who{color:#ff9a7a}
 @media (prefers-reduced-motion:reduce){.ap-pop,.ap-bar i,.ap-tgt{animation:none}}`;
   const st=document.createElement("style");st.textContent=css;document.head.appendChild(st);
   let wrap=null,svg=null,items=[],paused=false;
@@ -50,13 +51,13 @@
     document.body.appendChild(svg);addEventListener("resize",()=>{anchor();arrows()});addEventListener("scroll",arrows,true)}
   function arm(i,ms){clearTimeout(i.t);i.at=Date.now();i.left=ms;if(!paused)i.t=setTimeout(()=>drop(i.id),ms)}
   let seq=0;
-  function push(a){ensure();const i={id:++seq,a};items.unshift(i);while(items.length>MAX){const o=items.pop();clearTimeout(o.t)}arm(i,LIFE);draw()}
+  function push(a){ensure();const i={id:++seq,a};items.unshift(i);while(items.length>MAX){const o=items.pop();clearTimeout(o.t)}arm(i,a.boss?LIFE+1500:LIFE);draw()} /* Trials boss flips stay 1.5 s longer */
   function drop(id){const i=items.find(x=>x.id===id);if(!i)return;clearTimeout(i.t);items=items.filter(x=>x!==i);draw()}
   function clear(){items.forEach(i=>clearTimeout(i.t));items=[];draw()}
   function draw(){if(!wrap)return;
     wrap.innerHTML=(items.length>1?`<div class="ap-top"><button type="button" class="ap-all" data-ap="all">Dismiss all (${items.length})</button></div>`:"")+
       items.map((i,k)=>{const a=i.a,dest=a.dest?` → ${esc(a.dest)}`:"",c=a.cardId&&typeof BYID!=="undefined"?BYID.get(a.cardId):null;
-        const thumb=!c?"<span></span>":k?`<img src="${esc(artSrc(c))}" alt="">`:`<div class="ap-card">${cardHTML(c,{nozoom:true})}</div>`;return`<div class="ap-pop ${k?"old":"new"}">${thumb}
+        const thumb=!c?"<span></span>":k?`<img src="${esc(artSrc(c))}" alt="">`:`<div class="ap-card">${cardHTML(c,{nozoom:true})}</div>`;return`<div class="ap-pop ${k?"old":"new"}${a.boss?" boss":""}">${thumb}
         <div style="min-width:0"><div class="ap-who">${esc(a.who||"Opponent")}</div><div class="ap-what">${a.verb?esc(a.verb)+" ":""}<em>${esc(a.name!=null&&a.name!==""?a.name:(c?c.name:""))}</em>${dest}</div>
         ${a.sub?`<div class="ap-sub">${esc(a.sub)}</div>`:""}<div class="ap-row"><span class="ap-bar"><i style="animation-duration:${LIFE}ms"></i></span><button type="button" class="ap-x" data-ap="${i.id}">Dismiss</button></div></div></div>`}).join("");
     wrap.hidden=!items.length;try{if(typeof fitArt==="function")fitArt(wrap)}catch(e){}anchor();arrows()}

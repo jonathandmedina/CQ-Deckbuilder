@@ -21,7 +21,7 @@ function D(c,tg,n,o){o=o||{};if(!tg||tg.kind==="player")return 0;
   if(c.arrowBonus){a+=c.arrowBonus.dmg;if(c.arrowBonus.ignoreDef)o.ignoreDef=true;o.pierce=(o.pierce||0)+c.arrowBonus.pierce;if(c.arrowBonus.mult>1)a*=c.arrowBonus.mult}
   if(c.def&&c.def.sub==="Combo"&&c.me.fl.stunner){c.me.fl.stunner=false;E.addStatus(c.s,tg,"stun",1)}
   const dealt=E.damage(c.s,c.actor||{name:c.def.name},tg,a,Object.assign({card:true},o));
-  if(dealt>0&&c.mods&&c.mods.retaliate&&c.actor&&!c.actor.dead&&E.ctrl(c.s,tg)!==c.pid){log(c,`Retribution: ${c.actor.name} takes ${dealt} damage back.`);E.damage(c.s,{name:"Retribution"},c.actor,dealt,{card:true,noTrig:true,srcName:"Retribution"})}
+  if(dealt>0&&c.mods&&c.mods.retaliate&&c.actor&&!c.actor.dead&&!E.sameTeam(c.s,E.ctrl(c.s,tg),c.pid)){log(c,`Retribution: ${c.actor.name} takes ${dealt} damage back.`);E.damage(c.s,{name:"Retribution"},c.actor,dealt,{card:true,noTrig:true,srcName:"Retribution"})}
   return dealt}
 const heal=(c,tg,n)=>tg?E.heal(c.s,c.actor,tg,n,c.pid):0;
 const st=(c,tg,k,n)=>{if(tg&&tg.st)E.addStatus(c.s,tg,k,n||1)};
@@ -89,8 +89,8 @@ def("Splitting Ritual",{t:[t("allyPillar","your Pillar")],run(c){const p=c.t[0];
 def("Doubling Ritual",{run(c){const ps=c.me.bf.filter(o=>o.kind==="pillar");ps.forEach(p=>destroy(c,p));ps.forEach(p=>pillar(c,p.name,2));exMe(c)}});
 def("Curse of Exhaustion",{t:[t("player","target party")],run(c){const p=c.t[0];if(p)living(c.s.p[p.pid]).forEach(h=>h.ex=true);log(c,`${p?p.name:"?"}'s party is exhausted.`);exMe(c)}});
 def("Power Vacuum",{t:[t("enemyPlayer","target party")],run(c){const pl=c.op;const r=Math.min(pl.aura,c.x||0);pl.aura-=r;log(c,`${pl.name} loses ${r} Aura.`);exMe(c)}});
-def("Bewilder",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Bewilder: you may discard one card from their hand",cards:c.op.hand.map(x=>x.uid),min:0,max:1,op:"opDiscard",target:1-c.pid})}});
-def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic, Spell or Song",cards:c.op.hand.filter(x=>/Tactic|Spell|Song/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:1-c.pid})}});
+def("Bewilder",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Bewilder: you may discard one card from their hand",cards:c.op.hand.map(x=>x.uid),min:0,max:1,op:"opDiscard",target:E.oppOf(c.s,c.pid)})}});
+def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic, Spell or Song",cards:c.op.hand.filter(x=>/Tactic|Spell|Song/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:E.oppOf(c.s,c.pid)})}});
 const curse=(name,tg)=>def(name,{t:[tg||HERO],run(c){const h=c.t[0];if(!h)return"stay";h.ench.push({uid:c.inst.uid,id:c.def.id,name:c.def.name,kind:"card",owner:c.pid,ctrl:c.pid,cardUid:c.inst.uid});log(c,`${c.def.name} is attached to ${h.name}.`);return"stay"}});
 ["Aura Leech","Blood Aura","Burden","Slow Down","Chains of Darkness","Distract","Memory Loss","Weaken","Life Boost","Sanctuary","Arrested Development"].forEach(n=>curse(n));
 /* Nov 12, 2026: Mark of Doom attaches to an enemy Hero only */
@@ -174,7 +174,7 @@ def("Cut Off",{t:[EHERO],run(c){const h=c.t[0];if(!h)return;const pl=c.s.p[h.own
 def("Synchronous Strike",{t:[ANY],run(c){const rs=living(c.me).filter(h=>h.cls==="Rogue");let n=0;rs.forEach(h=>{n+=dstr(c,h);h.ex=true});D(c,c.t[0],n)}});
 def("Larceny",{t:[t("item","enemy item",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner)],run(c){steal(c,c.t[0])}});
 def("Petty Theft",{t:[t("item","enemy Consumable",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner&&(E.DB[o.id]||{}).sub==="Consumable")],run(c){steal(c,c.t[0])}});
-function steal(c,o){if(!o)return;const f=E.find(c.s,o.uid);if(!f||f.zone!=="inv")return;const from=c.s.p[f.pid];from.inv.splice(from.inv.indexOf(o),1);o.ctrl=c.pid;E.toInv(c.s,c.pid,o);log(c,`${c.me.name} gains control of ${o.name}.`)}
+function steal(c,o){if(!o)return;const f=E.find(c.s,o.uid);if(!f||f.zone!=="inv")return;if(E.isBoss(c.s,f.pid)){log(c,`${o.name} can't be taken from the boss.`);return}const from=c.s.p[f.pid];from.inv.splice(from.inv.indexOf(o),1);o.ctrl=c.pid;E.toInv(c.s,c.pid,o);log(c,`${c.me.name} gains control of ${o.name}.`)}
 /* ===== Monk ===== */
 def("Jab",dmgCard(2));def("Lunge",dmgCard(1));def("Roundhouse",dmgCard(3,{pierce:1}));
 def("Ascend",{t:[HERO],run(c){buff(c.t[0],{str:2})}});
@@ -208,7 +208,7 @@ song("Crescendo",Object.assign({t:[ANY]},{modes:{n:1,opts:[{label:"Deal 3 damage
   if(harm)harmonize(c,2,"crescendo");else D(c,c.t[0],3)}}));
 /* update 23: the opponent tips you 1 Gold out of their Gold (counts as your Tip for the round) */
 song("Dazzling Melody",{t:[t("enemyPlayer","target opponent")],run(c){const pl=c.me;if(pl.fl.tipRound===c.s.round){log(c,"Dazzling Melody: you already got a Tip this round.");return}pl.fl.tipRound=c.s.round;
-  const g=E.stealGold(c.s,c.pid,1-c.pid,1,"Dazzling Melody (Tip)");if(!g)log(c,"Dazzling Melody: the opponent has no Gold to tip.")}});
+  const g=E.stealGold(c.s,c.pid,E.oppOf(c.s,c.pid),1,"Dazzling Melody (Tip)");if(!g)log(c,"Dazzling Melody: the opponent has no Gold to tip.")}});
 song("Lullaby",{t:[t("any","target with 0 or less STR",(s,o)=>E.str(s,o)<=0)],run(c){if(c.t[0]){c.t[0].ex=true;log(c,`${c.t[0].name} is exhausted.`)}}});
 song("Peace",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{zeroStr:1});log(c,`${c.t[0].name}'s Strength becomes 0 until Dusk.`)}if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
 /* update 23: Harmonize X (other ready Heroes): draw X+1 cards and gain X+1 Aura */
@@ -230,7 +230,7 @@ OPS.openingAct=(s,pid,pr,picks)=>{const pl=s.p[pid];const top=pr.hold||[];const 
 def("Embolden",{run(c){c.me.fl.emb={round:c.s.round,n:1};log(c,"The next time an ally would gain Strength this turn, it gains double that instead.")}});
 def("Strong Stance",{t:[HERO],run(c){buff(c.t[0],{def:2})}});
 def("Weakening Dirge",{run(c){c.me.pm.enemyStr=(c.me.pm.enemyStr||0)+1;log(c,"Enemies get -1 STR this turn.")}});
-def("Mead Offering",{run(c){c.s.p.forEach(pl=>{pl.aura+=2});log(c,"All parties gain 2 Aura.")}});
+def("Mead Offering",{run(c){c.s.p.forEach((pl,i)=>{if(!E.isBoss(c.s,i))pl.aura+=2});log(c,"All parties gain 2 Aura.")}});
 def("Standing Ovation",{run(c){living(c.me).forEach(h=>h.ex=false);log(c,`${c.me.name}'s Heroes ready.`)}});
 def("Tempo Change",{run(c){c.s.bonus={pid:c.pid,uid:c.actor.uid,n:3};log(c,`${c.actor.name} takes two additional actions.`)}});
 /* ===== Ranger ===== */
@@ -336,7 +336,7 @@ def("Energizing Ale",item(2,[t("ally","another ally",(s,o,x)=>!x||!x.actor||o!==
 def("Meditation Shrine",item(0,[],c=>E.meditate(c.s,c.actor),{ex:true,anyClass:true}));
 def("Fireball Flask",item(2,[AL],c=>{if(c.t[0]){buff(c.t[0],{str:3});log(c,`${c.t[0].name} gets +3 STR this turn.`)}},{exile:true}));
 def("Undeniable Performance",{run(c){c.me.fl.tipFromRound=c.s.round;log(c,"Tips you get this turn come out of an opposing party's Gold.")}});
-song("Toast to the House",{run(c){c.s.p.forEach((pl,i)=>E.draw(c.s,i,1));log(c,"All parties draw a card.");E.tip(c.s,c.pid,"Toast to the House")}});
+song("Toast to the House",{run(c){c.s.p.forEach((pl,i)=>{if(!E.isBoss(c.s,i))E.draw(c.s,i,1)});log(c,"All parties draw a card.");E.tip(c.s,c.pid,"Toast to the House")}});
 song("Sing Along",{t:[AHERO],run(c){if(c.t[0]){c.t[0].fl.singRound=c.s.round;log(c,`${c.t[0].name}'s next Tactic or Song this turn gains Echo.`)}}});
 def("Harmonic Flask",item(2,[],c=>{if((c.modes||[])[0]===1){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}else heal(c,c.actor,2)},{exile:true,modes:{n:1,opts:[{label:"Heal this Hero for 2 HP"},{label:"Remove up to 2 status counters from target Hero",t:[t("hero","Hero to clear (2 status)")]}]}}));
 /* "Choices": choose two of Mill 2 / equip an Equipment from hand or inventory to this Hero for free / return a Song from discard to hand */
@@ -395,7 +395,7 @@ hid("Hand of the Protector",["attack","card","afterDmg","party10","dusk"],null,c
 S["Hand of the Protector"].hidden.summonPay=true;
 E.ASK.handProtector=(s,pid,pr,v)=>{const f=E.find(s,v);if(!f||f.o.dead)return;const n=E.hp(s,f.o);E.addMod(f.o,{def:n});E.log(s,`Hand of the Protector: ${f.o.name} gains +${n} DEF until Dusk.`,pid)};
 /* Burgle (update 18): only while every opposing Hero that isn't dead is exhausted */
-hid("Burgle",["attack","card","afterDmg","party10","dusk"],(s,pid)=>{const op=E.living(s.p[1-pid]);return op.length>0&&op.every(h=>h.ex)&&(s.p[1-pid].gold||0)>0},c=>{E.stealGold(c.s,c.pid,1-c.pid,5,"Burgle")});
+hid("Burgle",["attack","card","afterDmg","party10","dusk"],(s,pid)=>{const o=E.oppOf(s,pid);const op=E.living(s.p[o]);return!E.isBoss(s,o)&&op.length>0&&op.every(h=>h.ex)&&(s.p[o].gold||0)>0},c=>{E.stealGold(c.s,c.pid,E.oppOf(c.s,c.pid),5,"Burgle")});
 hid("Narrow Escape","card",(s,pid,trig)=>trig.card&&trig.cost>=3&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"&&E.heroIs(f.o,"Rogue")}),c=>{c.mods.cancel=true});
 hid("Camouflage","card",(s,pid,trig)=>/Spell|Tactic/.test(trig.type||"")&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"}),c=>{const hs=(c.trig.targets||[]).map(u=>E.find(c.s,u)).filter(f=>f&&f.pid===c.pid&&f.o.kind==="hero");c.mods.prevent=(c.mods.prevent||[]).concat(hs.map(f=>f.o.uid));hs.forEach(f=>E.addMod(f.o,{untarget:1}))});
 hid("Timely Heals",["party10","attack","card"],(s,pid)=>(s.p[pid].t.took||0)>=10,c=>{living(c.me).forEach(h=>E.heal(c.s,c.actor,h,4,c.pid))});
@@ -404,7 +404,7 @@ hid("Timely Heals",["party10","attack","card"],(s,pid)=>(s.p[pid].t.took||0)>=10
 /* ===== Hero abilities ===== */
 const hab=(name,arr)=>{H[name]=arr};
 const enemyItem=max=>t("item",max==null?"enemy item":"enemy item (cost 2 or less)",(s,o,x)=>E.ctrl(s,o)!==x.actor.owner&&(max==null||(o.tok?0:(parseInt((E.DB[o.id]||{}).cost,10)||0))<=max));
-hab("Valdo Sticky Fingers",[{label:"Take an enemy item (cost 2 or less)",can:(s,pid,a)=>a.lvl<3&&s.p[1-pid].inv.some(o=>!o.fd&&(o.kind==="doll"||(o.kind==="card"&&(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2))),t:[enemyItem(2)],run:c=>steal(c,c.t[0])},{label:"Take an enemy item",lvl:3,can:(s,pid)=>s.p[1-pid].inv.some(o=>!o.fd&&(o.kind==="doll"||o.kind==="card")),t:[enemyItem(null)],run:c=>steal(c,c.t[0])}]);
+hab("Valdo Sticky Fingers",[{label:"Take an enemy item (cost 2 or less)",can:(s,pid,a)=>a.lvl<3&&s.p[E.oppOf(s,pid)].inv.some(o=>!o.fd&&(o.kind==="doll"||(o.kind==="card"&&(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2))),t:[enemyItem(2)],run:c=>steal(c,c.t[0])},{label:"Take an enemy item",lvl:3,can:(s,pid)=>s.p[E.oppOf(s,pid)].inv.some(o=>!o.fd&&(o.kind==="doll"||o.kind==="card")),t:[enemyItem(null)],run:c=>steal(c,c.t[0])}]);
 hab("Arcane Scholar",[{label:"Next Mage card costs 2 less",run:c=>{c.me.fl.mageNext=true}},{label:"Mage cards cost 1 less this turn",lvl:3,run:c=>{c.me.fl.mageAll=true}}]);
 hab("Arnett Lifebinder",[{label:"Heal another target 2",cost:1,t:[t("anyOther","another target")],run:c=>heal(c,c.t[0],2)},{label:"Heal another target 5",lvl:3,cost:2,t:[t("anyOther","another target")],run:c=>heal(c,c.t[0],5)}]);
 hab("Battle Minstrel",[{label:"Return a Song from discard to hand",can:(s,pid)=>s.p[pid].disc.some(x=>E.DB[x.id].type==="Song"),run:c=>E.pushChoose(c.s,c.pid,{title:"Return a Song to hand",cards:c.me.disc.filter(x=>E.DB[x.id].type==="Song").map(x=>x.uid),min:1,max:1,op:"fromDisc"})}]);
@@ -640,7 +640,7 @@ def("Bone Spur",{t:[Object.assign({},REV,{opt:true})],run(c){if(c.fromDisc){revs
   const o=c.t[0];if(o){buff(o,{str:1});log(c,`${o.name} gains +1 Strength this turn.`)}}});
 def("Reawaken",{t:[t("allyHero","target Necromancer",(s,o)=>E.heroIs(o,"Necromancer"))],run(c){const h=c.t[0];if(h&&!h.dead){h.ex=false;E.medWake(c.s,h);log(c,`${h.name} readies.`)}}});
 def("Grim Divination",{run(c){const top=c.me.lib.slice(-2).reverse();if(!top.length){log(c,"Grim Divination: the library is empty.");return}
-  log(c,`Grim Divination reveals ${top.map(x=>E.DB[x.id].name).join(" and ")}.`);const op=E.opp(c.pid);
+  log(c,`Grim Divination reveals ${top.map(x=>E.DB[x.id].name).join(" and ")}.`);const op=E.oppOf(c.s,c.pid);
   E.ask(c.s,op,`Grim Divination (${c.me.name}): choose one`,[{label:`One revealed card of your choice goes to ${c.me.name}'s hand, the other to their discard pile`,v:1},{label:`Both go to ${c.me.name}'s discard pile, then ${c.me.name} draws a card`,v:2}],"grimMode",{owner:c.pid,cards:top.map(x=>x.uid),name:"Grim Divination"})}});
 A.grimMode=(s,pid,pr,v)=>{const o=pr.data.owner;const pl=s.p[o];const cards=pr.data.cards.map(u=>pl.lib.find(x=>x.uid===u)).filter(Boolean);const c={s,pid:o};
   if(v===2||cards.length<2){if(v===1&&cards.length===1){const x=cards[0];pl.lib.splice(pl.lib.indexOf(x),1);pl.hand.push(x);E.log(s,`Grim Divination: ${E.DB[x.id].name} goes to ${pl.name}'s hand.`,o);return}

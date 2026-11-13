@@ -125,4 +125,28 @@ test("T3 Review Focus 2: the boss dies at Dawn from status damage -> win, no fli
   ok(s.over,"over");eq(s.winner,0);eq(st(s).events.length,ev0)});
 test("T3 AI-only Trials run to the end with no stall (P=2..4)",()=>{[2,3,4].forEach(n=>{const s=mk(n,70+n);ok(drive(s,30),"no stall P="+n);ok(s.over||s.round>30)})});
 
+/* ---------------- Task 4: Trials card-text rules ---------------- */
+const SC=()=>ctx.CQ_SCRIPTS;
+function runCard(s,pid,name,targets){const a=s.p[pid].heroes.find(h=>!h.dead);return(SC()[name]||SC()['"'+name+'"']).run(E.mkCtx(s,pid,a,E.DB[name],{uid:"x"+name,id:name,owner:pid},targets||[]))}
+test("T4 your spawns first: no attacking or targeting another party's Golem while yours lives; area effects still hit",()=>{const s=mk(2,80);toBattle(s);
+  const mine=golems(s).find(g=>g.fl.vs===0),theirs=golems(s).find(g=>g.fl.vs===1);
+  const en=E.candidates(s,0,{k:"enemy"},{}),atk=E.candidates(s,0,{k:"enemy"},{attack:true});
+  ok(en.includes(mine.uid)&&!en.includes(theirs.uid),"card targets");ok(atk.includes(mine.uid)&&!atk.includes(theirs.uid),"attack targets");ok(en.includes(bossHero(s).uid)&&atk.includes(bossHero(s).uid),"boss always");
+  ok(!E.trialsTargetOk(s,0,theirs));ok(E.trialsTargetOk(s,1,theirs));
+  runCard(s,0,"Hail");ok(theirs.dmg>0,"Hail hits every spawn");
+  E.destroyObj(s,mine);ok(E.candidates(s,0,{k:"enemy"},{}).includes(theirs.uid),"free once your own Golem is gone")});
+test("T4 the boss counts as an enemy Hero",()=>{const s=mk(2,81);toBattle(s);ok(E.candidates(s,0,{k:"enemyHero"},{}).includes(bossHero(s).uid))});
+test("T4 Stun or exhaust on the boss: it skips its next flip",()=>{const s=mk(2,82);toBattle(s);E.addStatus(s,bossHero(s),"stun",1);const d=st(s).deck.length;sweep(s);
+  eq(st(s).deck.length,d,"Stun: no flip");eq(st(s).events.slice(-1)[0].kind,"skip");sweep(s);eq(st(s).deck.length+st(s).disc.length,20);ok(st(s).events.slice(-1)[0].kind!=="skip","only one skip");
+  runCard(s,0,"Sleep",[bossHero(s).uid]);const d2=st(s).deck.length;sweep(s);eq(st(s).events.slice(-1)[0].kind,"skip","exhaust: skip");eq(st(s).deck.length,d2);ok(!bossHero(s).ex)});
+test("T4 the boss can't be stolen from or taken control of",()=>{const s=mk(2,83);toBattle(s);boss(s).gold=9;eq(E.stealGold(s,0,2,5,"Test"),0);eq(s.p[0].gold,0);
+  const it={uid:"bi",id:"Aura Crystal",kind:"card",fd:false,name:"Aura Crystal",owner:2,ctr:{}};boss(s).inv.push(it);
+  const v=ctx.CQ_HERO_SCRIPTS["Valdo Sticky Fingers"];const a=s.p[0].heroes[0];v[0].run(E.mkCtx(s,0,a,E.DB["h:Valdo Sticky Fingers"],null,["bi"]));ok(boss(s).inv.includes(it),"fizzles");ok(s.log.slice(-2).some(l=>/can't be taken from the boss/.test(l.m)))});
+test("T4 Fatigue and Confuse do nothing to the boss",()=>{const s=mk(2,84);toBattle(s);const b=bossHero(s);E.addStatus(s,b,"confuse",2);eq(b.st.confuse,0);
+  b.fat=1;for(let g=0;g<20&&s.phase==="battle";g++)E.act(s,s.prio,{type:"pass"});leaveTown(s);
+  for(let g=0;g<20&&s.phase==="dawn";g++){E.parties(s).forEach(p=>{if(!s.dawnDone[p])E.act(s,p,{type:"dawnDone"})});E.settle(s)}ok(!b.ex,"readied");eq(b.fat,0)});
+test("T4 each opponent means the boss side; all parties skips the boss",()=>{const s=mk(2,85);toBattle(s);const c=E.mkCtx(s,1,null,{},null,[]);ok(c.op===boss(s));
+  const a0=s.p[0].aura,a1=s.p[1].aura;runCard(s,0,"Mead Offering");eq(s.p[0].aura,a0+2);eq(s.p[1].aura,a1+2);eq(boss(s).aura,0);
+  const h0=s.p[0].hand.length,h1=s.p[1].hand.length;runCard(s,0,"Toast to the House");eq(s.p[0].hand.length,h0+1);eq(s.p[1].hand.length,h1+1);ok(!s.over)});
+
 console.log(`${fail?"FAIL":"PASS"} trials_engine ${pass}/${pass+fail}`);process.exit(fail?1:0);

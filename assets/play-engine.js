@@ -71,6 +71,11 @@ E.oppOf=oppOf;
 function sameTeam(s,a,b){if(!s||!s.trials||a==null||b==null)return a===b;return(a===s.trials.boss)===(b===s.trials.boss)}
 E.sameTeam=sameTeam;
 const allPassed=s=>parties(s).every(p=>s.passed[p]);
+/* Trials "your spawns first": while a spawn placed against party pid is alive, pid can't attack or single-target a spawn placed against another party
+   (area effects still hit every spawn; the boss Hero can always be targeted) */
+function trialsTargetOk(s,pid,o){if(!s.trials||!o||!o.spawn||isBoss(s,pid)||o.fl.vs===pid)return true;
+  return!s.p[s.trials.boss].bf.some(x=>x.kind==="summon"&&x.spawn&&x.fl.vs===pid&&!x.dead)}
+E.trialsTargetOk=trialsTargetOk;
 function log(s,m,pid){s.logN=(s.logN||0)+1;s.log.push({n:s.logN,r:s.round,m,p:pid==null?-1:pid});if(s.log.length>4000)s.log.splice(0,s.log.length-4000)}
 E.log=log;
 const def=o=>DB[o.id]||TOK[o.name]||{};E.def=def;
@@ -248,7 +253,9 @@ function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
     if(s.phase==="battle"&&invHas(pl,"Healing Relic")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,{name:"Healing Relic",ctrl:pid},t,1,pid)}}
   if(!quiet&&got)log(s,`${pl.name} draws ${got} card${got===1?"":"s"}.`,pid);return got}
 E.draw=draw;
-function addStatus(s,o,k,n){if(!o||o.dead||!o.st)return;o.st[k]=(o.st[k]||0)+(n||1);log(s,`${o.name} is ${E.STATUS_NAME[k]}${n>1?` (+${n})`:""}.`)}
+function addStatus(s,o,k,n){if(!o||o.dead||!o.st)return;
+  if(o.boss&&k==="confuse"){log(s,`${o.name} can't be Confused (boss).`);return} /* Trials: Confuse does nothing to the boss */
+  if(k==="stun"&&o.kind==="hero"&&E.cantStun&&E.cantStun(s,o)){log(s,`${o.name} can't be Stunned.`);return}o.st[k]=(o.st[k]||0)+(n||1);log(s,`${o.name} is ${E.STATUS_NAME[k]}${n>1?` (+${n})`:""}.`)}
 E.addStatus=addStatus;
 /* ---------- game stats: damage dealt, damage prevented and healing done, credited to the card / ability / attack ---------- */
 let CUR_SRC=null;let CUR_S=null;/* update 23: state of the action being resolved (Embolden needs it inside addMod) *//* name of the card, item, ability or Hidden card currently resolving */
@@ -357,7 +364,7 @@ function heal(s,healer,o,n,pid){
   return h}
 /* picks the enemy the damage hurts most (skips targets Guard/DEF would block, Stealth, Cloak); prefers kills */
 function bestDamageTarget(s,pid,n,o){o=o||{};const op=P(s,oppOf(s,pid));let best=null,bv=0;
-  [...living(op),...op.bf.filter(x=>x.kind==="summon")].forEach(t=>{if(stealth(s,t)||cardProof(s,t))return;
+  [...living(op),...op.bf.filter(x=>x.kind==="summon")].forEach(t=>{if(stealth(s,t)||cardProof(s,t)||!trialsTargetOk(s,pid,t))return;
     const g=t.kind==="hero"?t.guard+t.eqGuard:0;const a0=Math.max(0,n-g),pc=o.pierce||0;let eff=Math.max(0,a0-(o.ignoreDef?0:Math.max(0,defOf(s,t)-pc)));if(pc>0)eff=Math.max(eff,Math.min(pc,a0));const hp=hpOf(s,t);
     const v=eff<=0?0:Math.min(eff,hp)+(eff>=hp?50:0)+(t.kind==="hero"?5:0)-hp*0.01;if(v>bv){bv=v;best=t}});
   return best}
@@ -414,7 +421,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   checkDeaths(s);return dealt}
 E.damage=damage;
 /* Steal X Gold (update 18): the target party loses up to X Gold and you gain that much */
-function stealGold(s,pid,from,n,why){if(from==null||from===pid)return 0;const fp=P(s,from),tp=P(s,pid);const g=Math.max(0,Math.min(n,fp.gold||0));fp.gold-=g;tp.gold+=g;log(s,`${why?why+": ":""}${tp.name} steals ${g} Gold from ${fp.name}.`,pid);return g}
+function stealGold(s,pid,from,n,why){if(from==null||from===pid)return 0;if(isBoss(s,from)){log(s,`${why?why+": ":""}the boss has no Gold to steal.`,pid);return 0}const fp=P(s,from),tp=P(s,pid);const g=Math.max(0,Math.min(n,fp.gold||0));fp.gold-=g;tp.gold+=g;log(s,`${why?why+": ":""}${tp.name} steals ${g} Gold from ${fp.name}.`,pid);return g}
 E.stealGold=stealGold;
 /* update 23 Tip: gain 1 Gold, only once per round (Undeniable Performance: it comes out of an opposing party's Gold) */
 function tip(s,pid,why){const pl=P(s,pid);if(pl.fl.tipRound===s.round){log(s,`${why||"Tip"}: ${pl.name} already got a Tip this round.`,pid);return 0}pl.fl.tipRound=s.round;
@@ -615,6 +622,7 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
     if(viaCard&&o.kind==="hero"&&isEnemy(o)&&(!ctx.card||ctx.card.type==="Spell")&&hasEqN(o,"Warded Cloak"))return false; /* Set 2 Warded Cloak: not by your opponents' spells or abilities */
     if(viaCard&&o.kind==="hero"&&isEnemy(o)&&ctx.card&&ctx.card.type==="Spell"&&hasUpN(s,o,"Helm of Protection"))return false; /* update 26: upgraded Helm of Protection */
     if(viaCard&&o.kind==="card"&&/can't be targeted/i.test(def(o).rules||"")&&def(o).type==="Item")return false; /* Arrow of Craftsmanship */
+    if(s.trials&&!trialsTargetOk(s,pid,o))return false; /* Trials: your spawns first */
     if(spec.f&&!spec.f(s,o,ctx))return false;return true});
   /* Dazzling Melody: enemies must target the taunting Hero with attacks, cards and abilities (when it is a legal choice) */
   const op=P(s,oppOf(s,pid));const taunt=op.heroes.find(h=>!h.dead&&h.fl.tauntRound===s.round);
@@ -1327,6 +1335,7 @@ function startRound(s){s.round++;s.phase="dawn";log(s,`— Round ${s.round}: Daw
 function doDawn(s){
   s.p.forEach((pl,pid)=>{
     pl.heroes.forEach(h=>{if(h.dead)return;
+      if(h.boss&&h.fat){h.fat=0;log(s,`${h.name} shrugs off Fatigue (boss).`,pid)} /* Trials: Fatigue does nothing to the boss */
       if(h.fat){h.fat=0;h.fl.fatRested=true;h.ex=true;log(s,`${h.name} is Fatigued and doesn't ready this Dawn (Fatigue counter removed).`,pid)}
       else if(h.med&&h.keepMed){h.plus++;h.fl.fatRested=false;log(s,`${h.name} keeps Meditating (meditation counter: ${h.plus}).`,pid)}
       else if(h.med){h.plus=(h.plus||0)+1;log(s,`${h.name} gets a meditation counter (${h.plus}) and wakes.`,pid);h.ex=false;h.fl.fatRested=false}/* update 27: counter first, then wake */

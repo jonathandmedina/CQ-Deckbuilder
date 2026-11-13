@@ -59,7 +59,7 @@ const opp=pid=>1-pid;E.opp=opp;/* 1-on-1 only (UI helpers); the engine uses oppO
 /* ---------- Trials teams (co-op boss module) ----------
    In a Trials game s.p[0..P-1] are the player parties and s.p[P] is the boss side (s.trials.boss = P). Every party's opponent is the boss side;
    every party is an ally of every other party. In a 1-on-1 game these helpers reduce exactly to the old 1-pid / pid===other logic. */
-E.hooks={afterSweep:null,onSummonDies:null,setup:null};
+E.hooks={afterSweep:null,onSummonDies:null,setup:null,onDamage:null};
 const isBoss=(s,pid)=>!!(s&&s.trials&&pid===s.trials.boss);E.isBoss=isBoss;
 const wiped=(s,pid)=>{const pl=s.p[pid];return!!pl&&pl.heroes.length>0&&pl.heroes.every(h=>h.dead)};E.wiped=wiped;
 /* party indexes in initiative order starting at s.init (1-on-1: [init, other]) */
@@ -385,7 +385,8 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   /* Scrap Metal: this Hero's damage to an enemy Hero destroys a piece of its equipment */
   if(dealt>0&&src&&src.kind==="hero"&&src.fl&&src.fl.scrapRound===s.round&&tgt.kind==="hero"&&!sameTeam(s,ctrl(s,tgt),src.owner)){const eq=eqList(tgt);if(eq.length)ask(s,src.owner,`Scrap Metal: destroy one of ${tgt.name}'s equipment`,eq.map(e=>({label:e.name,v:e.uid})),"destroyEq",{by:src.uid,name:"Scrap Metal"})}
   if(dealt>0){let side=sideOf(s,src);if(side==null)side=oppOf(s,ctrl(s,tgt));
-    const nm=o.srcName||(o.combat&&src?(o.band?"Band attack":src.name+" (attack)"):(CUR_SRC||(src&&src.name)));if(!o.status)stat(s,"dmg",side,nm,dealt)}
+    const nm=o.srcName||(o.combat&&src?(o.band?"Band attack":src.name+" (attack)"):(CUR_SRC||(src&&src.name)));if(!o.status)stat(s,"dmg",side,nm,dealt);
+    if(s.trials&&E.hooks.onDamage)E.hooks.onDamage(s,src,tgt,dealt,sideOf(s,src))}
   const tn=tgt.name+(tgt.kind==="summon"?" (summon)":"");
   log(s,`${src?src.name:"Effect"} deals ${dealt}${o.type?" "+o.type:""} damage to ${tn}${amt!==dealt?` (${amt} before DEF)`:""}.${dealt>0?hpTag(s,tgt):""}`);
   if(dealt>0&&tgt.kind==="hero"){const tp=P(s,tgt.owner);const before=tp.t.took||0;tp.t.took=before+dealt;if(before<10&&tp.t.took>=10&&s.phase==="battle"){s.trig10=(s.trig10||[]).concat([tgt.owner])}if(tgt.fl.loseCtrlRound===s.round){if(hpOf(s,tgt)<1)tgt.dmg=maxHp(s,tgt)-1;tgt.ex=false}}

@@ -64,4 +64,65 @@ test("T2 a party that decks out is wiped, not a loss",()=>plain(()=>{const s=mk(
 test("T2 conceding (party 0) ends the Trial as a loss",()=>plain(()=>{const s=mk(2,30);toBattle(s);ok(!E.act(s,1,{type:"concede"}).ok);ok(E.act(s,0,{type:"concede"}).ok);ok(s.over);eq(s.winner,2)}));
 test("T2 3 and 4 parties: initiative order, no stall in AI play",()=>plain(()=>{[3,4].forEach(n=>{const s=mk(n,31+n);eq(s.trials.boss,n);toBattle(s);ok(drive(s,3),"no stall at P="+n);ok(s.round>=3||s.over)})}));
 
+/* ---------------- Task 3: boss runtime ---------------- */
+const st=s=>s.trials;
+function setH(h,o){if(o.str!=null)h.base.str=o.str;if(o.def!=null)h.base.def=o.def;if(o.hp!=null)h.base.hp=o.hp;h.dmg=o.dmg||0;h.ex=!!o.ex;h.mods=[];h.bon={str:0,def:0,aura:0}}
+/* every party Hero: Strength 1, Defense 0, 10 Health Points, ready */
+function flat(s){E.parties(s).forEach(p=>s.p[p].heroes.forEach(h=>setH(h,{str:1,def:0,hp:10})))}
+const H=(s,p,i)=>s.p[p].heroes[i];
+const hpOf=h=>E.hp(S0,h);let S0=null;
+function golems(s){return boss(s).bf.filter(o=>o.spawn)}
+function sweep(s){E.hooks.afterSweep(s)}
+test("T3 setup: plates, Rage threshold, one Golem per party, 20-card boss deck",()=>{[2,3,4].forEach(n=>{const s=mk(n,40+n);const b=bossHero(s);
+  eq(b.name,"Rock Mammoth");eq(E.maxHp(s,b),25*n);eq(st(s).plates,n);eq(E.defn(s,b),n);eq(st(s).rageAt,n+1);eq(st(s).deck.length,20);
+  eq(golems(s).map(g=>g.fl.vs).sort(),Array.from({length:n},(_,i)=>i));golems(s).forEach(g=>{eq(E.str(s,g),1);eq(E.defn(s,g),0);eq(E.maxHp(s,g),4)})});
+  eq(mk(2,7).trials.deck,mk(2,7).trials.deck,"same seed, same boss deck");ok(JSON.stringify(mk(2,7).trials.deck)!==JSON.stringify(mk(2,8).trials.deck),"seeded shuffle")});
+test("T3 skipNext: clear it and do nothing else",()=>{const s=mk(2,50);toBattle(s);flat(s);st(s).skipNext=true;const d=st(s).deck.length;sweep(s);
+  ok(!st(s).skipNext);eq(st(s).deck.length,d,"no flip");E.parties(s).forEach(p=>s.p[p].heroes.forEach(h=>eq(h.dmg,0,"no Golem attack")));eq(st(s).events.slice(-1)[0].kind,"skip")});
+test("T3 Raging Stampede at the threshold: 3 damage to every player Hero, Rage 0, Winded, deck untouched",()=>{const s=mk(2,51);toBattle(s);flat(s);
+  golems(s).forEach(g=>E.destroyObj(s,g));st(s).rage=st(s).rageAt;const d=st(s).deck.length;sweep(s);
+  eq(st(s).deck.length,d);eq(st(s).rage,0);ok(st(s).winded);eq(E.defn(s,bossHero(s)),0);
+  E.parties(s).forEach(p=>s.p[p].heroes.forEach(h=>eq(h.dmg,3)));eq(st(s).events.slice(-1)[0].kind,"stampede")});
+test("T3 Winded and Stone Skin end at the next flip",()=>{const s=mk(2,52);toBattle(s);flat(s);golems(s).forEach(g=>E.destroyObj(s,g));
+  st(s).deck.push("Stone Skin");sweep(s);eq(st(s).skin,2);eq(E.defn(s,bossHero(s)),0+2,"plates broken (0) + Stone Skin 2");
+  st(s).deck.push("Tusk Gore");sweep(s);eq(st(s).skin,0);eq(E.defn(s,bossHero(s)),0);
+  st(s).winded=true;E.CQT_sync&&0;ctx.CQT.syncDef(s);eq(E.defn(s,bossHero(s)),0);st(s).plates=2;ctx.CQT.syncDef(s);eq(E.defn(s,bossHero(s)),0,"Winded = 0 Defense");st(s).deck.push("Tusk Gore");sweep(s);ok(!st(s).winded);eq(E.defn(s,bossHero(s)),2)});
+function card(s,name){golems(s).forEach(g=>E.destroyObj(s,g));st(s).deck.push(name);sweep(s)}
+test("T3 Tusk Gore: 4 to the highest Strength (tie: least Defense, then Lead, then initiative order)",()=>{const s=mk(2,53);toBattle(s);flat(s);const [a,b]=E.parties(s);
+  setH(H(s,b,1),{str:5,def:0,hp:10});setH(H(s,a,0),{str:5,def:1,hp:10});card(s,"Tusk Gore");eq(H(s,b,1).dmg,4);eq(H(s,a,0).dmg,0);
+  const s2=mk(2,53);toBattle(s2);flat(s2);const [a2,b2]=E.parties(s2);setH(H(s2,b2,0),{str:3,def:0,hp:10});setH(H(s2,a2,1),{str:3,def:0,hp:10});card(s2,"Tusk Gore");eq(H(s2,b2,0).dmg,4,"same Defense: a Lead beats a Closer before initiative order");eq(H(s2,a2,1).dmg,0);});
+test("T3 Crushing Step 3 to most Health Points; Boulder Toss 3 to fewest",()=>{const s=mk(2,54);toBattle(s);flat(s);const [a,b]=E.parties(s);
+  setH(H(s,b,0),{str:1,def:0,hp:14});card(s,"Crushing Step");eq(H(s,b,0).dmg,3);
+  setH(H(s,a,1),{str:1,def:0,hp:10,dmg:5});card(s,"Boulder Toss");eq(H(s,a,1).dmg,5+3)});
+test("T3 Grudge Stomp: 3 to the Lead of the party that dealt the boss the most damage this round",()=>{const s=mk(2,55);toBattle(s);flat(s);const [a,b]=E.parties(s);
+  E.damage(s,H(s,b,1),bossHero(s),9,{ignoreDef:true});E.damage(s,H(s,a,0),bossHero(s),2,{ignoreDef:true});card(s,"Grudge Stomp");eq(H(s,b,0).dmg,3);eq(H(s,a,0).dmg,0)});
+test("T3 Rockslide: 2 to each Hero of the party with the most total Health Points",()=>{const s=mk(2,56);toBattle(s);flat(s);const [a,b]=E.parties(s);
+  setH(H(s,b,1),{str:1,def:0,hp:12});card(s,"Rockslide");eq(H(s,b,0).dmg,2);eq(H(s,b,1).dmg,2);eq(H(s,a,0).dmg,0)});
+test("T3 Tremor exhausts the highest-Strength ready Hero in each party",()=>{const s=mk(2,57);toBattle(s);flat(s);const [a,b]=E.parties(s);
+  setH(H(s,a,1),{str:4,def:0,hp:10});setH(H(s,b,0),{str:6,def:0,hp:10,ex:true});setH(H(s,b,1),{str:2,def:0,hp:10});card(s,"Tremor");
+  ok(H(s,a,1).ex);ok(!H(s,a,0).ex);ok(H(s,b,1).ex,"the ready one")});
+test("T3 Call the Mountain: a Golem against the party with the fewest; The Mountain Wakes: one against each",()=>{const s=mk(2,58);toBattle(s);flat(s);const [a,b]=E.parties(s);
+  golems(s).filter(g=>g.fl.vs===b).forEach(g=>E.destroyObj(s,g));const pl=st(s).plates;st(s).deck.push("Call the Mountain");sweep(s);
+  eq(golems(s).map(g=>g.fl.vs).sort(),[a,b].sort());eq(st(s).plates,pl,"new Golems never add plates");
+  st(s).deck.push("The Mountain Wakes");sweep(s);eq(golems(s).filter(g=>g.fl.vs===a).length,2);eq(golems(s).filter(g=>g.fl.vs===b).length,2)});
+test("T3 Golems attack the most Health Points in their party, then the next party clockwise when it is wiped",()=>{const s=mk(2,59);toBattle(s);flat(s);
+  setH(H(s,0,1),{str:1,def:0,hp:12});setH(H(s,1,0),{str:1,def:0,hp:12});st(s).skipNext=false;st(s).deck.push("Stone Skin");sweep(s);
+  eq(H(s,0,1).dmg,1);eq(H(s,1,0).dmg,1);eq(H(s,0,0).dmg,0);
+  s.p[1].heroes.forEach(h=>{h.surr=true;E.damage(s,null,h,99,{ignoreDef:true})});ok(E.wiped(s,1));const before=H(s,0,0).dmg+H(s,0,1).dmg;st(s).deck.push("Stone Skin");sweep(s);
+  eq(H(s,0,0).dmg+H(s,0,1).dmg,before+2,"party 1's Golem retargets party 0");eq(H(s,0,0).dmg,1,"tie at 10 Health Points goes to the Lead")});
+test("T3 a Golem dying breaks a plate and adds Rage; plates never go below 0",()=>{const s=mk(2,60);toBattle(s);const g=golems(s);
+  E.damage(s,H(s,0,0),g[0],9,{ignoreDef:true});eq(st(s).plates,1);eq(st(s).rage,1);eq(E.defn(s,bossHero(s)),1);
+  E.destroyObj(s,g[1]);eq(st(s).plates,0);eq(st(s).rage,2);ctx.CQT.spawnVs(s,0);E.destroyObj(s,golems(s)[0]);eq(st(s).plates,0);eq(st(s).rage,3)});
+test("T3 boss damage has the boss Hero as its source; events are recorded",()=>{const s=mk(2,61);toBattle(s);flat(s);card(s,"Crushing Step");
+  ok(s.log.slice(-6).some(l=>/^Rock Mammoth deals 3 damage/.test(l.m)),"source is the boss Hero");const e=st(s).events.slice(-1)[0];eq(e.kind,"flip");eq(e.card,"Crushing Step");eq(e.targets.length,1)});
+test("T3 Review Focus 4: your party passed, a helper still acting -> a flip after every sweep it acts in",()=>{const s=mk(2,62);toBattle(s);const [a,b]=E.parties(s);
+  E.act(s,a,{type:"pass"});const d0=st(s).deck.length+st(s).disc.length*0;const disc0=st(s).disc.length;
+  lvl(s,b);eq(st(s).disc.length+ (st(s).lastFlip&&st(s).lastFlip.kind!=="flip"?1:0),disc0+1,"flip after sweep 1");ok(!s.passed[b]);
+  const r=E.act(s,b,{type:"step"});ok(r.ok,r.err);eq(st(s).disc.length+st(s).events.filter(e=>e.kind!=="flip").length,disc0+2,"flip after sweep 2")});
+test("T3 Review Focus 2: the boss dies at Dawn from status damage -> win, no flip",()=>{const s=mk(2,63);toBattle(s);const b=bossHero(s);b.dmg=E.maxHp(s,b)-1;b.st.poison=2;
+  const ev0=st(s).events.length;for(let g=0;g<20&&s.phase==="battle";g++)E.act(s,s.prio,{type:"pass"});
+  for(let g=0;g<20&&s.phase==="town";g++){if(s.pend.length){const pr=s.pend[0];E.act(s,pr.pid,AI.choose(s,pr.pid));continue}E.act(s,s.town.order[s.town.i],{type:"leave"})}
+  ok(s.over,"over");eq(s.winner,0);eq(st(s).events.length,ev0)});
+test("T3 AI-only Trials run to the end with no stall (P=2..4)",()=>{[2,3,4].forEach(n=>{const s=mk(n,70+n);ok(drive(s,30),"no stall P="+n);ok(s.over||s.round>30)})});
+
 console.log(`${fail?"FAIL":"PASS"} trials_engine ${pass}/${pass+fail}`);process.exit(fail?1:0);

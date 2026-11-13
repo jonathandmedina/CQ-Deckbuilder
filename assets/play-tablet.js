@@ -1,7 +1,7 @@
 /* iPad / tablet support for the Play tab (Nov 12, 2026; iPad proposal parts 1 and 2).
    - Tablet mode: on touch-first screens (iPad), or forced On/Off from the Play lobby. Bigger buttons, a bigger fanned hand,
      one opponent pop-up at a time, and the game log tucked away. Mouse-and-keyboard computers keep today's layout.
-   - Tablet toolbar, bottom right: Log, Menu and Full screen in one row.
+   - Tablet tray: a Controls tab at the bottom right opens Help, Log, Menu, Full screen and the Music / Sound effects controls (Nov 13).
    - Full screen: a button (the toolbar on tablets, a small tab next to Menu on computers). On tablets, starting a game
      goes full screen by itself. Leaving the Play tab exits full screen.
    - The screen is kept awake while a game is in progress, where the browser allows it.
@@ -20,7 +20,19 @@ function fsExit(){try{const p=document.exitFullscreen?document.exitFullscreen():
 function fsToggle(){fsEl()?fsExit():fsEnter()}
 
 const css=`
-#pl-tbar{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:76;display:flex;gap:8px}
+#pl-tbar{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(max(12px,env(safe-area-inset-bottom,0px)) + 58px);z-index:76;display:flex;flex-direction:column;gap:10px;width:min(460px,calc(100vw - 24px));padding:12px;border-radius:14px;background:linear-gradient(#2e2216,#1b130c);border:2px solid #b8743a;box-shadow:0 16px 40px rgba(0,0,0,.7);color:#f3e6cf;animation:trIn .14s ease-out both}
+#pl-tbar[hidden]{display:none}
+#pl-tbar .tb-btns{display:flex;flex-wrap:wrap;gap:8px}
+#pl-tbar .tb-snd{border-top:1px solid rgba(184,116,58,.5);padding-top:8px}
+#pl-tbar .tb-snd .cqv-row{flex-wrap:nowrap;gap:10px;padding:6px 0}
+#pl-tbar .tb-snd .cqv-tog{min-width:178px;min-height:40px}
+#pl-tbar .tb-snd .cqv-tog input{width:24px;height:24px}
+#pl-tbar .tb-snd .cqv-rng{height:34px}
+@keyframes trIn{from{opacity:0;transform:translateY(8px)}}
+#pl-traytab{all:unset;box-sizing:border-box;position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:77;display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:12px 12px 12px 12px;font:600 1rem/1 var(--body);color:#f3e6cf;background:linear-gradient(#3a2a1c,#1b130c);border:2px solid #b8743a;box-shadow:0 6px 18px rgba(0,0,0,.55);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#pl-traytab[aria-expanded="true"]{border-color:#ffc100;color:#ffd98a}
+#pl-traytab .car{font-size:.8rem;transition:transform .15s}#pl-traytab[aria-expanded="true"] .car{transform:rotate(180deg)}
+html.pl-tablet #play-root .pl-mid .pl-snd{display:none!important}
 #pl-tbar button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:7px;min-height:46px;padding:0 16px;border-radius:12px;font:600 1rem/1 var(--body);color:#f3e6cf;background:linear-gradient(#3a2a1c,#1b130c);border:2px solid #b8743a;box-shadow:0 6px 18px rgba(0,0,0,.55);cursor:pointer;-webkit-tap-highlight-color:transparent}
 #pl-tbar button[aria-pressed="true"]{border-color:#ffc100;color:#ffd98a}
 #pl-tbar button:active{transform:translateY(1px);filter:brightness(1.15)}
@@ -50,16 +62,22 @@ html.pl-tablet #play-root .pl-side{bottom:72px!important;height:min(62vh,560px)!
 html.pl-tablet #play-root .pl-side-h .btn{min-height:40px!important}
 html.pl-tablet #tut-coach{bottom:76px!important}
 html.pl-tablet #tut-coach.min{bottom:76px!important}
-@media (prefers-reduced-motion:reduce){#pl-tbar button:active{transform:none}}`;
+@media (prefers-reduced-motion:reduce){#pl-tbar button:active{transform:none}#pl-tbar{animation:none}}`;
 const st=document.createElement("style");st.textContent=css;document.head.appendChild(st);
 
 let wake=null;
 async function wakeSync(on){try{if(on&&!wake&&navigator.wakeLock&&document.visibilityState==="visible"){wake=await navigator.wakeLock.request("screen");wake.addEventListener&&wake.addEventListener("release",()=>{wake=null})}
   else if(!on&&wake){const w=wake;wake=null;await w.release()}}catch(e){wake=null}}
 
-function bar(){let b=document.getElementById("pl-tbar");if(b)return b;b=document.createElement("div");b.id="pl-tbar";b.setAttribute("role","toolbar");b.setAttribute("aria-label","Game controls");
-  b.innerHTML=`<button type="button" data-tb="help" aria-haspopup="dialog"><span class="ic" aria-hidden="true">❔</span>Help</button><button type="button" data-tb="log"><span class="ic" aria-hidden="true">📜</span>Log</button><button type="button" data-tb="menu"><span class="ic" aria-hidden="true">☰</span>Menu</button><button type="button" data-tb="fs"><span class="ic" aria-hidden="true">⛶</span><span class="lb">Full screen</span></button>`;
+/* Nov 13, 2026: the toolbar is a pop-out tray behind a Controls tab at the bottom right, and it holds the Music and Sound effects controls */
+let trayOpen=false;
+function trayTab(){let t=document.getElementById("pl-traytab");if(t)return t;t=document.createElement("button");t.type="button";t.id="pl-traytab";t.setAttribute("aria-controls","pl-tbar");
+  t.innerHTML='<span aria-hidden="true">⚙</span>Controls<span class="car" aria-hidden="true">▲</span>';
+  t.addEventListener("click",e=>{e.stopPropagation();trayOpen=!trayOpen;sync();if(trayOpen){const f=document.querySelector("#pl-tbar button:not([hidden])");if(f)f.focus()}});document.body.appendChild(t);return t}
+function bar(){let b=document.getElementById("pl-tbar");if(b)return b;b=document.createElement("div");b.id="pl-tbar";b.setAttribute("role","group");b.setAttribute("aria-label","Game controls");
+  b.innerHTML=`<div class="tb-btns" role="toolbar" aria-label="Game controls"><button type="button" data-tb="help" aria-haspopup="dialog"><span class="ic" aria-hidden="true">❔</span>Help</button><button type="button" data-tb="log"><span class="ic" aria-hidden="true">📜</span>Log</button><button type="button" data-tb="menu"><span class="ic" aria-hidden="true">☰</span>Menu</button><button type="button" data-tb="fs"><span class="ic" aria-hidden="true">⛶</span><span class="lb">Full screen</span></button></div><div class="tb-snd" aria-label="Sound">${window.CQVol?CQVol.row("music")+CQVol.row("sfx"):""}</div>`;
   b.addEventListener("click",e=>{const t=e.target.closest("[data-tb]");if(!t)return;e.stopPropagation();const U=window.CQPlay;const v=t.dataset.tb;
+    if(v==="log"||v==="menu"||v==="help")trayOpen=false;
     if(v==="log"&&U){U.logHidden=!U.logHidden;U.render()}
     else if(v==="menu"){const m=document.getElementById("pl-menutab");if(m&&getComputedStyle(m).display!=="none"&&!document.documentElement.classList.contains("pl-portrait"))m.click();else if(document.documentElement.classList.contains("pl-portrait")){const R=document.documentElement;R.classList.toggle("pl-pmenu");const h=document.querySelector("header.top");if(h)R.style.setProperty("--pl-hdrh",h.offsetHeight+"px")}else if(m)m.click()}
     else if(v==="fs")fsToggle();
@@ -75,11 +93,11 @@ function sync(){const U=window.CQPlay,root=document.documentElement;
   /* a new game on a tablet starts with the log tucked away */
   if(tab&&U.gameKey&&U.gameKey!==sync.key){sync.key=U.gameKey;const big=innerWidth>=1300;if(U.logHidden===big){U.logHidden=!big;setTimeout(()=>U.render(),0)}}
   portrait(tab);if(!tab)hidePop();
-  const b=document.getElementById("pl-tbar");
-  if(tab){const bb=bar();const fsb=bb.querySelector('[data-tb="fs"]');fsb.hidden=!fsAvail();fsb.setAttribute("aria-pressed",String(!!fsEl()));fsb.querySelector(".lb").textContent=fsEl()?"Exit full screen":"Full screen";
+  const b=document.getElementById("pl-tbar"),tt=document.getElementById("pl-traytab");
+  if(tab){const bb=bar();const tb=trayTab();bb.hidden=!trayOpen;tb.setAttribute("aria-expanded",String(trayOpen));if(window.CQVol)CQVol.refresh();const fsb=bb.querySelector('[data-tb="fs"]');fsb.hidden=!fsAvail();fsb.setAttribute("aria-pressed",String(!!fsEl()));fsb.querySelector(".lb").textContent=fsEl()?"Exit full screen":"Full screen";
     const hb=bb.querySelector('[data-tb="help"]');hb.hidden=!document.querySelector("#play-root .pl-help-b");hb.setAttribute("aria-expanded",String(!!document.getElementById("pl-helpbox")));
     bb.querySelector('[data-tb="log"]').setAttribute("aria-pressed",String(!!(U&&!U.logHidden)));bb.querySelector('[data-tb="menu"]').setAttribute("aria-pressed",String(root.classList.contains("pl-menu")))}
-  else if(b)b.remove();
+  else{if(b)b.remove();if(tt)tt.remove();trayOpen=false}
   /* computers: a small Full screen tab to the left of the Menu tab */
   const ft=fsTab();ft.classList.toggle("ok",inGame&&!tab&&fsAvail());ft.querySelector(".lb").textContent=fsEl()?"Exit full screen":"Full screen";
   const mt=document.getElementById("pl-menutab");if(mt&&inGame&&!tab){const r=mt.getBoundingClientRect();if(r.width)ft.style.right=(innerWidth-r.left+8)+"px"}
@@ -100,7 +118,7 @@ try{coarse.addEventListener("change",sync)}catch(e){}
 function lobbySetting(){const host=document.querySelector("#play-root .pl-lobby");if(!host||host.querySelector(".pl-tabset"))return;const m=ls.get();
   const sec=document.createElement("section");sec.className="panel pl-tabset";
   sec.innerHTML=`<h2>Tablet mode</h2><label>Layout<select data-tabmode>${[["auto","Auto (on for iPad and other touch screens)"],["on","On"],["off","Off"]].map(([v,l])=>`<option value="${v}" ${v===m?"selected":""}>${l}</option>`).join("")}</select></label>
-    <p class="pl-note">Bigger buttons, a bigger hand, and Log, Menu and Full screen together at the bottom right. Games on a tablet open in full screen.${fsAvail()?"":" Full screen isn't available in this browser."} On an iPad, use Share, then Add to Home Screen, to play without Safari's bars.</p>`;
+    <p class="pl-note">Bigger buttons, a bigger hand, and a Controls tab at the bottom right that opens Help, Log, Menu, Full screen, Music and Sound effects. Games on a tablet open in full screen.${fsAvail()?"":" Full screen isn't available in this browser."} On an iPad, use Share, then Add to Home Screen, to play without Safari's bars.</p>`;
   host.appendChild(sec)}
 document.addEventListener("change",e=>{if(!e.target.matches||!e.target.matches("[data-tabmode]"))return;ls.set(e.target.value);sync()});
 
@@ -112,6 +130,8 @@ function helpBox(){const old=document.getElementById("pl-helpbox");if(old){old.r
   box.addEventListener("click",e=>{if(e.target.closest(".hb-x")){e.stopPropagation();box.remove();sync();return}if(e.target.closest("button"))setTimeout(()=>{box.remove();sync()},0)});
   root.appendChild(box);sync();const f=box.querySelector(".hb-b button");if(f)f.focus()}
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){const b=document.getElementById("pl-helpbox");if(b){b.remove();sync()}}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&trayOpen){trayOpen=false;sync();const t=document.getElementById("pl-traytab");if(t)t.focus()}});
+document.addEventListener("pointerdown",e=>{if(!trayOpen||!e.target.closest)return;if(e.target.closest("#pl-tbar,#pl-traytab"))return;trayOpen=false;sync()},true);
 /* ===== Proposal 3: touch controls ===== */
 const css3=`
 html.pl-tablet #play-root .pl-mid .pl-help{display:none!important}
@@ -142,8 +162,10 @@ html.pl-tablet.pl-portrait #play-root .pl-handwrap{position:fixed;left:0;right:0
 html.pl-tablet.pl-portrait #play-root .pl-hand{padding-right:12px!important}
 html.pl-tablet.pl-portrait #play-root .pl-hand .hc{flex-basis:clamp(130px,19vw,170px)!important}
 html.pl-tablet.pl-portrait #play-root .pl-board{padding-bottom:calc(19vw * 1.36 + 40px)}
-html.pl-tablet.pl-portrait #pl-tbar{top:max(10px,env(safe-area-inset-top,0px));bottom:auto}
-html.pl-tablet.pl-portrait.pl-pmenu #pl-tbar{top:calc(var(--pl-hdrh,64px) + 10px)}
+html.pl-tablet.pl-portrait #pl-traytab{top:max(10px,env(safe-area-inset-top,0px));bottom:auto}
+html.pl-tablet.pl-portrait.pl-pmenu #pl-traytab{top:calc(var(--pl-hdrh,64px) + 10px)}
+html.pl-tablet.pl-portrait #pl-tbar{top:calc(max(10px,env(safe-area-inset-top,0px)) + 56px);bottom:auto}
+html.pl-tablet.pl-portrait.pl-pmenu #pl-tbar{top:calc(var(--pl-hdrh,64px) + 66px)}
 html.pl-tablet.pl-portrait #play-root .pl-side{bottom:auto!important;top:68px!important}
 @media (prefers-reduced-motion:reduce){.tz-wrap{animation:none}#pl-rotate .rt-ic{animation:none}}`;
 {const s3=document.createElement("style");s3.textContent=css3;document.head.appendChild(s3)}

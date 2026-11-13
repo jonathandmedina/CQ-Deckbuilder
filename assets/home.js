@@ -22,17 +22,18 @@ function ext(){const a=document.createElement("audio");return a.canPlayType('aud
 function want(){return S.view==="home"&&musicOn()&&!document.hidden}
 function syncMusic(){const song=SCENES[mode].song;
   if(!want()){if(A.el)A.el.pause();return}
-  if(!A.el){A.el=new Audio();A.el.loop=true;A.el.volume=.35;A.el.preload="auto"}
+  if(!A.el){A.el=new Audio();A.el.loop=true;A.el.preload="auto";if(window.CQVol)CQVol.attach(A.el,.35);else A.el.volume=.35}
   if(A.song!==song){A.song=song;A.el.src=`${ICON_BASE}sfx/${song}.${ext()}?v=1`}
   const p=A.el.play();if(p&&p.catch)p.catch(()=>{/* waits for the first click or key press (browser autoplay rules) */})}
 function musicBtn(){const b=document.getElementById("sbMusic");if(!b)return;const on=musicOn();
   b.setAttribute("aria-pressed",String(on));b.innerHTML=`<span aria-hidden="true">${on?"🎵":"🔇"}</span> Music ${on?"on":"off"}`}
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("#sbMusic");if(!b)return;
-  set("cq.music",!musicOn());musicBtn();syncMusic();
+  if(window.CQVol)CQVol.setOn("music",!musicOn());else set("cq.music",!musicOn());musicBtn();syncMusic();
   /* the Play tab reads the same setting; let it re-render its own button */
   if(S.view==="play"&&window.CQPlay&&document.getElementById("view"))window.CQPlay.mount(document.getElementById("view"))});
 ["pointerdown","keydown"].forEach(t=>document.addEventListener(t,()=>{if(want()&&A.el&&A.el.paused)syncMusic();else if(want()&&!A.el)syncMusic()},{capture:true}));
 document.addEventListener("visibilitychange",syncMusic);
+document.addEventListener("cq-vol",e=>{if(e.detail&&e.detail.kind==="music"){musicBtn();syncMusic()}});
 window.addEventListener("hashchange",()=>setTimeout(syncMusic,0));
 
 /* ---------- banner size: from under the menu bar to the bottom bar (the fold) ---------- */

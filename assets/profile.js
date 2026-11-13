@@ -155,7 +155,7 @@ function viewPlayer(){
   <div class="pf-kpis"><div class="pf-kpi"><b>${fmt(Math.round(p.score*100)/100)}</b><span>Playtester score</span></div><div class="pf-kpi"><b>${fmt(p.games)}</b><span>Complete games</span></div>
     <div class="pf-kpi"><b>${p.classes.size}/${CLASSES.length}</b><span>Classes tested</span></div><div class="pf-kpi"><b>${fmt(p.cards.size)}</b><span>Cards tested</span></div>
     <div class="pf-kpi"><b>${p.games?Math.round(100*p.wins/p.games)+"%":"–"}</b><span>Wins</span></div></div>
-  <h2>Class badges</h2><div class="pf-cls">${CLASSES.map(c=>{const g=p.byCls[c]||0,b=badgeLevel(g),nb=BADGES.find(x=>g<x[1]);
+  ${mine&&window.CQVol?CQVol.panel("Sound"):""}<h2>Class badges</h2><div class="pf-cls">${CLASSES.map(c=>{const g=p.byCls[c]||0,b=badgeLevel(g),nb=BADGES.find(x=>g<x[1]);
     return`<div class="pf-cl${b?"":" off"}"><img src="${badgeSrc(c,(b||BADGES[0])[0])}" alt="${c} ${b?b[0]:"badge (locked)"}" width="72" height="72" loading="lazy"><b>${c}${b?" "+b[0]:""}</b><span>${fmt(g)} game${g===1?"":"s"}${nb?` · ${nb[1]-g} to ${nb[0]}`:""}</span></div>`}).join("")}</div>
   <h2>Public decks</h2>${decks===undefined||decks==="loading"?'<p class="pf-note">Loading decks…</p>':decks.err?`<p class="pf-note">Couldn't load decks: ${E(decks.err)}</p>`:!decks.length?'<p class="pf-note">No public decks.</p>':
   `<div class="pf-decks">${decks.map(d=>`<div class="pf-deck"><h3>${E(d.name)}</h3>${deckFacesHTML(d.heroes.map(h=>BYID.get(h)).filter(Boolean))}

@@ -96,7 +96,7 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok((s.p[1].stall||[]).some(x=>x.uid===card.uid&&x.n===2),"the card is set aside with 2 stall counters");ok(s.p[1].aura===aura-1,"its Aura isn't refunded");
   ok(!s.p[1].disc.some(x=>x.uid===card.uid),"the card didn't resolve");
   s.prio=1;s.passed=[false,false];ok(!opts(s,1).some(o=>o.type==="playStalled"),"can't play it yet");
-  E.act(s,1,{type:"step"});s.prio=1;E.act(s,1,opts(s,1).find(o=>o.type==="step")||{type:"pass"});
+  E.act(s,1,{type:"step"});s.p[1].heroes.forEach(x=>x.fl.stepped=null);/* Abide is once per party per round: clear it so a second Abide can be the filler action */s.prio=1;E.act(s,1,opts(s,1).find(o=>o.type==="step")||{type:"pass"});
   const st=s.p[1].stall[0];ok(st.n===0,"each action removes a stall counter ("+st.n+")");s.prio=1;s.passed=[false,false];
   s.p[1].heroes.forEach(x=>{x.ex=false;x.fl.stepped=null});const pso=opts(s,1).find(o=>o.type==="playStalled");ok(pso,"then it can be played");
   s.p[0].heroes.forEach(x=>x.ex=true);const au=s.p[1].aura;const rr=E.act(s,1,Object.assign({},pso));if(!rr.ok)console.log("playStalled:",rr.err,JSON.stringify(pso),JSON.stringify(s.p[1].stall));resolve(s);ok(s.p[1].aura===au,"without paying its Aura cost");ok(!(s.p[1].stall||[]).length,"leaves the Stall zone")}

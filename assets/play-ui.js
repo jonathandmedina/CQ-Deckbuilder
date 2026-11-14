@@ -1078,7 +1078,7 @@ function turnCounts(s,pid){const pl=s.p[pid];const t=pl.t||{};const mine=pid===U
 function heroCounts(s,h){if(h.dead)return[];const out=[];const r=s.round;const pl=s.p[h.owner];
   const combos=h.fl&&h.fl.combosRound===r?h.fl.combos||0:0;
   if(h.name==="Grandmaster Reece"){if(h.lvl>=3){const m=combos%3;out.push(`<span class="tg cnt" title="Every third Combo card he plays this turn: +2 STR">Combo ${m}/3${combos>=3?` · ${combos} total`:""}</span>`)}else out.push(`<span class="tg cnt" title="His third Combo card this turn: +2 STR">Combo ${Math.min(combos,3)}/3${combos>=3?" ✓":""}</span>`)}
-  if(h.fl&&h.fl.stepped===r)out.push('<span class="tg cnt" title="Stepped back: acts after the Closer this round">Acts last</span>');
+  if(h.fl&&h.fl.stepped===r)out.push('<span class="tg cnt" title="Abiding: acts after the Closer this round">Abiding</span>');
   if(h.fat)out.push('<span class="tg cnt must" title="Fatigue counter: this Hero doesn\'t ready at the next Dawn">Fatigued</span>');
   {const fz=E.forcedTarget&&E.forcedTarget(s,h);if(fz)out.push(`<span class="tg cnt must" title="Arrow of Persuasion: its next action must be an attack on ${esc(nameOf(fz))}">Must attack ${esc(nameOf(fz))}</span>`)}
   if(E.hasBanding(s,h))out.push('<span class="tg cnt band" title="Can join a Band attack: add its STR, then it is exhausted">Banding</span>');
@@ -1235,7 +1235,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const oppInfo=oppActing?oppInfoHTML(s):"";
   const ban=""; /* Update 31: the blue "just did" banner is gone; the action pop-ups and the log cover it */
   const posL=s.trials?[[0,"Lead"],[1,"Closer"],[3,"Last"]]:[...E.POS,"Last"].map((p,i)=>[i,p]); /* Trials parties have 2 Heroes: Lead, Closer, Last */
-  const posm=`<span class="posm" title="Position marker">${posL.map(([i,p])=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="Heroes that stepped back act here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
+  const posm=`<span class="posm" title="Position marker">${posL.map(([i,p])=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="An Abiding Hero acts here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" data-volpop="sfx" aria-label="Sound effects on or off (point at it for volume)" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" data-volpop="music" aria-label="Music on or off (point at it for volume)" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
     <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn?helpHTML(fixBtn):""}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
@@ -1288,12 +1288,12 @@ function lvBtn(o,label,cls){return`<button class="btn ${cls}" data-pa="do" data-
 function abWhy(s,opts,a){if(!a||a.owner!==U.me||U.tgt)return[];return(window.CQ_HERO_SCRIPTS[a.name]||[]).map((ab,i)=>{if(!ab||!ab.why||opts.some(o=>o.type==="ability"&&o.idx===i))return"";
   let w="";try{w=ab.why(s,U.me,a,c=>whyNot(s,c))}catch(e){}return w?`<button class="btn ab-off" data-pa="abwhy" data-w="${esc(w)}" title="${esc(w)}" aria-disabled="true">${esc(ab.label)}</button>`:""}).filter(Boolean)}
 function btn(o,label,cls){return`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${esc(label)}</button>`}
-/* the acting Hero's own buttons (attack, level up, Step Back, abilities, items, equip): also shown under that Hero on the board */
+/* the acting Hero's own buttons (attack, level up, Abide, abilities, items, equip): also shown under that Hero on the board */
 function heroActs(s,opts,a){const out=[];const me=U.me;if(!a)return out;
   opts.filter(o=>o.type==="attack"&&o.att===a.uid).forEach(o=>out.push(btn(o,"Attack","atk")));
   const lv=opts.filter(o=>o.type==="level");const LV={str:"STR",def:"DEF",aura:"AURA"};
   if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
-  opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
+  opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Abide")));
   opts.filter(o=>o.type==="ability").forEach(o=>{const ab=window.CQ_HERO_SCRIPTS[a.name][o.idx];const c=E.abilityCost(s,me,a,ab);out.push(btn(o,`${ab.label}${c?` (${c} Aura)`:""}`))});
   abWhy(s,opts,a).forEach(x=>out.push(x));
   opts.filter(o=>o.type==="eqAct").forEach(o=>{const f=E.find(s,o.uid);const x=(window.CQ_EQACT||{})[f.o.name];out.push(`<button class="btn" data-pa="eqact" data-u="${o.uid}">${esc(f.o.name)}: ${esc(x?x.label:"use")}</button>`)});
@@ -1313,7 +1313,7 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   opts.filter(o=>o.type==="play"&&s.p[me].exile.some(x=>x.uid===o.uid)).forEach(o=>{const c=s.p[me].exile.find(x=>x.uid===o.uid);out.push(`<button class="btn go" data-pa="play" data-u="${o.uid}">Play ${esc(E.DB[c.id].name)} (Call of Nature)</button>`)});
   const lv=opts.filter(o=>o.type==="level");const LV={str:"STR",def:"DEF",aura:"AURA"};
   if(lv.length===1&&!lv[0].stat)out.push(lvBtn(lv[0],"Level up","lv"));else lv.forEach(o=>out.push(lvBtn(o,`Level up ${LV[o.stat]}`,"lv lv-"+o.stat)));
-  opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Step Back")));
+  opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Abide")));
   opts.filter(o=>o.type==="ability").forEach(o=>{const ab=window.CQ_HERO_SCRIPTS[a.name][o.idx];const c=E.abilityCost(s,me,a,ab);out.push(btn(o,`${ab.label}${c?` (${c} Aura)`:""}`))});
   abWhy(s,opts,a).forEach(x=>out.push(x));
   opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});

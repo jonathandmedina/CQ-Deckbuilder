@@ -656,7 +656,7 @@ function actorFor(s,pid){const pl=P(s,pid);
   const order=actorOrder(s,pid);const last=pl.t&&pl.t.lastActor;
   return order.find(h=>h.uid!==last)||order[0]||null}
 function actorOrder(s,pid){const pl=P(s,pid);const out=[];const add=h=>{if(h&&!out.includes(h))out.push(h)};
-  /* Step Back: a stepped-back Hero keeps its place but acts last (the "Last" step after the Closer).
+  /* Abide (was Step Back): an Abiding Hero keeps its place but acts last (the "Last" step after the Closer).
      It is skipped at Lead/Center/Closer unless no other Hero of that party is ready. */
   const n=pl.heroes.length,ok=h=>!h.dead&&!h.ex,back=h=>h.fl.stepped===s.round;
   if(s.pos===3){pl.heroes.filter(h=>ok(h)&&back(h)).forEach(add);pl.heroes.filter(ok).forEach(add);return out}
@@ -724,7 +724,7 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
     if(!a.fl.noAttack&&!(chained(a)&&pl.aura<1))out.push({type:"attack",att:a.uid});
     if(a.lvl<6&&a.fl.leveled!==s.round&&a.fl.noLevel!==s.round&&!arrested(a)){const st=(a.lvl+1)%2===0;
       if(st)["str","def","aura"].forEach(k=>out.push({type:"level",stat:k}));else out.push({type:"level"})}
-    if(a.fl.stepped!==s.round)out.push({type:"step"});
+    if(!pl.heroes.some(h=>h.fl.stepped===s.round))out.push({type:"step"}); /* Abide (was Step Back): only one of your Heroes per round */
     const hs=HS()[a.name];
     if(hs&&!a.st.stun&&!nulled(s,a.name))hs.forEach((ab,i)=>{if((!ab.lvl||a.lvl>=ab.lvl)&&(!ab.can||ab.can(s,pid,a))&&abilityCost(s,pid,a,ab)<=pl.aura)out.push({type:"ability",idx:i})});
     /* equipment with a colon ability (Shillelagh, Helm of Aura): uses the Hero's action */
@@ -911,7 +911,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
   if(a.type==="eqAct"){const f=find(s,a.uid);const x=(root.CQ_EQACT||{})[f.o.name];if(x.cost)pay(s,pid,actor,x.cost);burdenFat(s,actor);log(s,`${actor.name} uses ${f.o.name}.`,pid);
     withSrc(s,f.o.name,()=>x.run(mkCtx(s,pid,actor,DB[f.o.id]||{name:f.o.name},f.o,a.targets||[])));checkDeaths(s);return}
   if(a.type==="level"){actor.ex=true;levelUp(s,actor,a.stat,true);draw(s,pid,1);actor.fl.leveled=s.round;return}
-  if(a.type==="step"){actor.fl.stepped=s.round;log(s,`${actor.name} steps back and will act last this round, after the Closer.`,pid);return}
+  if(a.type==="step"){actor.fl.stepped=s.round;log(s,`${actor.name} Abides and will act last this round, after the Closer.`,pid);return}
   if(a.type==="ability"){const ab=HS()[actor.name][a.idx];const c=abilityCost(s,pid,actor,ab);if(ab.ex!==false)actor.ex=true;pay(s,pid,actor,c);burdenFat(s,actor);
     log(s,`${actor.name} uses its ability${ab.label?`: ${ab.label}`:""}.`,pid);
     const trig={kind:"card",ability:true,src:actor,pid,targets:a.targets||[],cost:c,cls:actor.cls,type:"Ability",idx:a.idx};
@@ -1345,7 +1345,7 @@ function advance(s,pid){s.acted[pid]=true;if(allPassed(s))return;
   const order=parties(s);const nx=order.find(p=>!s.passed[p]&&!s.acted[p]);
   if(nx!=null){s.prio=nx;return}
   /* everyone acted (or passed): next position */
-  /* Lead → Center → Closer → Last (only when a ready Hero has stepped back) → Lead. Trials parties have 2 Heroes: Lead → Closer → Last */
+  /* Lead → Center → Closer → Last (only when a ready Hero is Abiding) → Lead. Trials parties have 2 Heroes: Lead → Closer → Last */
   const anyBack=s.p.some(pl=>pl.heroes.some(h=>!h.dead&&!h.ex&&h.fl.stepped===s.round));const lastPos=s.trials?1:2;
   s.pos=s.pos===lastPos?(anyBack?3:0):s.pos===3?0:s.pos+1;s.acted=s.p.map(()=>false);
   s.prio=order.find(p=>!s.passed[p]);
@@ -1444,7 +1444,7 @@ E.publicCard=c=>DB[c.id];
 E.heroStats=(s,h)=>({str:strOf(s,h),def:defOf(s,h),aura:h.kind==="hero"?auraStat(h):0,hp:hpOf(s,h),max:maxHp(s,h)});
 E.labelAction=function(s,pid,a){const pl=P(s,pid);const nm=u=>{const r=resolveTarget(s,u);return r?r.name:"?"};
   switch(a.type){case"play":{const c=findCardAnywhere(s,pid,a.uid);return"Play "+(c?DB[c.id].name:"card")}
-  case"attack":return`${nm(a.att)} attacks`;case"band":return`Band attack led by ${nm(a.att)}`;case"useFree":return"Activate "+nm(a.uid);case"level":return"Level up"+(a.stat?` (+1 ${a.stat.toUpperCase()})`:"");case"step":return"Step Back";
+  case"attack":return`${nm(a.att)} attacks`;case"band":return`Band attack led by ${nm(a.att)}`;case"useFree":return"Activate "+nm(a.uid);case"level":return"Level up"+(a.stat?` (+1 ${a.stat.toUpperCase()})`:"");case"step":return"Abide";
   case"ability":{const a2=actorFor(s,pid);return`${a2.name}: ${HS()[a2.name][a.idx].label}`}
   case"use":return"Activate "+nm(a.uid);case"equipInv":return"Equip "+nm(a.uid);case"take":return"Take "+nm(a.uid);case"clear":return"Clear "+nm(a.uid);
   case"eqAct":return"Use "+nm(a.uid);case"multiBow":return"Multi Bow: destroy Arrows";

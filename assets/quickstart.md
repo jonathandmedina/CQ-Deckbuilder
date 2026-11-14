@@ -57,7 +57,7 @@ When it’s your turn to act, the Hero in the marked position takes **one action
 - **Activate an ability** written as “cost: effect” on a Hero, item or piece of equipment.
 - **Level Up**: exhaust the Hero, raise its level by 1 and draw a card. At Levels 2, 4 and 6 it gains +1 STR, DEF or Aura.
 - **Equip** a piece of equipment by paying its Aura cost.
-- **Step Back** to act last this round.
+- **Abide** to act last this round (one Hero per round).
 
 An **exhausted** Hero (turned sideways) can’t act again until the next Dawn. When you have nothing more to do, say **“I pass.”**
 

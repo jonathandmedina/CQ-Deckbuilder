@@ -15,7 +15,7 @@ In a **Trial**, every player is on the same team against a **boss** that runs it
 
 ## 3. Setting Up
 
-1. Each party places its Heroes in **Lead** and **Closer**. A Hero that Steps Back still acts at Last.
+1. Each party places its Heroes in **Lead** and **Closer**. An Abiding Hero still acts at Last.
 2. Each player shuffles and draws as normal. A player who won loot adds it to their opening hand after drawing, before mulligans (see Loot). Each party rolls a die; the highest roll starts with initiative (reroll ties).
 3. Set the boss’s Health Points and Defense for the number of parties (P). The **Rock Mammoth** has 25 × P Health Points and starts with P Stone Plates.
 4. The boss spawns **one spawn against each party**.

@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 11, 2026 (update 31)*
+*Version: November 14, 2026 (Abide)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -160,7 +160,7 @@ Every card shows a version number (v1, v2, v3…) in its bottom corner. When a c
 
 ### Party Positions
 
-Your Heroes stand in a row. The Hero furthest left is the **Lead** (Position 1), the middle Hero is the **Center** (Position 2), and the Hero on the right is the **Closer** (Position 3). Positions decide when each Hero acts during the Battle Phase. A Hero can choose to act last, after the Closer, with the Step Back action.
+Your Heroes stand in a row. The Hero furthest left is the **Lead** (Position 1), the middle Hero is the **Center** (Position 2), and the Hero on the right is the **Closer** (Position 3). Positions decide when each Hero acts during the Battle Phase. A Hero can choose to act last, after the Closer, with the Abide action.
 
 ## 6. Resources
 
@@ -234,10 +234,10 @@ This is where the fighting happens. Set the Position marker to **Lead**.
 
 1. The active player takes one action with their Lead Hero.
 2. Priority passes clockwise. Each other player takes one action with their own Lead Hero.
-3. When every player has acted once with that position, move the Position marker to the next position: Lead, then Center, then Closer, then **Last** (only if a ready Hero has stepped back this round), then back to Lead.
+3. When every player has acted once with that position, move the Position marker to the next position: Lead, then Center, then Closer, then **Last** (only if a ready Hero is Abiding this round), then back to Lead.
 4. Keep going until every player has passed.
 
-**Stand-ins.** If the Hero in the marked position is exhausted, dead or has stepped back, the next ready Hero to its right acts instead. After the Closer, this wraps around to the Lead. A Hero that stepped back acts at Last; it stands in earlier only if none of your other Heroes are ready. If none of your Heroes are ready, you may still attack with a ready summon or surrender a dead Hero’s soul; otherwise you have no action this time.
+**Stand-ins.** If the Hero in the marked position is exhausted, dead or Abiding, the next ready Hero to its right acts instead. After the Closer, this wraps around to the Lead. An Abiding Hero acts at Last; it stands in earlier only if none of your other Heroes are ready. If none of your Heroes are ready, you may still attack with a ready summon or surrender a dead Hero’s soul; otherwise you have no action this time.
 
 **No Hero acts twice in a row.** A Hero can’t take two of your actions in a row while another of your Heroes is ready. If the Hero that took your last action would act again (for example, it stood in for an exhausted Lead and the marker has now reached its own position), your next ready Hero acts instead. A Hero may act again right away only if it’s your only ready Hero, or if a card gives it extra actions (such as Tempo Change or Refire). This resets at Dusk.
 
@@ -317,9 +317,9 @@ Arrows are Ranger items in your inventory. Activating one is an action: pay its 
 
 Each Hero can level up once per round, up to Level 6. Every two levels a Hero gains (when it reaches Level 2, Level 4 and Level 6), you may add +1 to one of its stats: STR, DEF or Aura. A Hero that reaches Level 6 has gained 3 stat points. Track the bonuses with counters. STR and DEF bonuses apply immediately. An Aura bonus is added to your pool starting at the next Dawn. Losing a level: if an effect makes a Hero lose a level and that leaves it on an odd level (2→1, 4→3 or 6→5), it also loses the stat point it got for that level (its owner chooses which level bonus to remove).
 
-### Step Back
+### Abide
 
-The Hero steps back: for the rest of this round it acts **last**, after the Closer (at the Last step of the Position marker). Party order doesn’t change. Stepping back uses the Hero’s action but doesn’t exhaust it. Each Hero can step back once per Battle Phase. If several Heroes stepped back, they act at Last in party order.
+The Hero Abides: for the rest of this round it acts **last**, after the Closer (at the Last step of the Position marker). Party order doesn’t change. Abiding uses the Hero’s action but doesn’t exhaust it. Only one of your Heroes can Abide each round.
 
 ### Inventory Actions
 
@@ -348,7 +348,7 @@ A Hero is always in one of these states:
 
 A Hero becomes exhausted when it makes a basic attack, levels up, activates an Arrow, pays an exhaust cost, or plays a card that says to exhaust it.
 
-An exhausted Hero can’t take any action: it can’t play cards, activate abilities, attack, Level, Step Back or equip, and it can’t be exhausted to trigger a Hidden card. Its equipment, enchantments and passive abilities (such as “While exhausted…”) still work, and it can still be targeted and healed. Another Hero can take equipment from it.
+An exhausted Hero can’t take any action: it can’t play cards, activate abilities, attack, Level, Abide or equip, and it can’t be exhausted to trigger a Hidden card. Its equipment, enchantments and passive abilities (such as “While exhausted…”) still work, and it can still be targeted and healed. Another Hero can take equipment from it.
 
 ## 11. Triggers and the Stack
 
@@ -650,8 +650,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Mulligan**: Once at setup, shuffle your hand into your library and draw a new hand of four.
 - **Active player**: The player with initiative. Acts first in each position, stacks triggers first, and visits Town first.
 - **Passive player**: Any player without initiative.
-- **Position marker**: Shared marker showing which position (Lead, Center, Closer, or Last for Heroes that stepped back) is acting.
-- **Stand-in**: If the marked Hero is exhausted, dead or stepped back, the next ready Hero to its right acts, wrapping from Closer to Lead. A Hero can’t take two of your actions in a row while another of your Heroes is ready.
+- **Position marker**: Shared marker showing which position (Lead, Center, Closer, or Last for an Abiding Hero) is acting.
+- **Stand-in**: If the marked Hero is exhausted, dead or Abiding, the next ready Hero to its right acts, wrapping from Closer to Lead. A Hero can’t take two of your actions in a row while another of your Heroes is ready.
 - **At Dawn / At Dusk**: During the Dawn Phase / Dusk Phase.
 
 ### Heroes and stats
@@ -716,7 +716,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 
 ### Actions and states
 
-- **Action**: One thing a ready Hero does when you have priority: play a card, activate an ability, basic attack, level, step back, add to or remove from inventory, equip.
+- **Action**: One thing a ready Hero does when you have priority: play a card, activate an ability, basic attack, level, Abide, add to or remove from inventory, equip.
 - **Ready**: Upright. The Hero can act.
 - **Exhausted**: Turned 90° right. The Hero can't take any action (including playing cards and equipping) until readied. Some players call this “tapped”.
 - **Exhaust (as a cost)**: “Exhaust:” before an ability means turn the Hero sideways to use it.
@@ -724,7 +724,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Basic attack**: Choose any target, resolve on-attack triggers, exhaust, calculate damage, set HP.
 - **Combat damage**: Damage dealt by an attack.
 - **Level (action)**: Exhaust the Hero, raise its level by 1, draw a card. Once per round, max Level 6.
-- **Step Back**: Action. The Hero acts last (after the Closer) for the rest of the round. Party order doesn’t change. Doesn’t exhaust. Once per Hero per Battle Phase.
+- **Abide**: Action. The Hero acts last (after the Closer) for the rest of the round. Party order doesn’t change. Doesn’t exhaust. Only one of your Heroes can Abide each round.
 - **Equip**: A Hero pays the equipment’s Aura cost and puts it on itself, whether it comes from your hand, your inventory, or another of your Heroes. The receiving Hero always takes the action. Equipment has no separate equip cost.
 - **Unequip**: Take equipment off a Hero. It goes to your inventory.
 - **Attach**: Put an enchantment or curse onto a Hero. On older cards, “attach an Equipment” means equip it.

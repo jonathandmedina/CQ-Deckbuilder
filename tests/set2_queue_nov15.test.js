@@ -7,7 +7,7 @@ const E=ctx.CQE;let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;conso
 const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Bar","Platinum Bar","Silver Bar","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
 const deck=h=>({name:"T",heroes:h.map(x=>"h:"+x),cards:Object.assign({},filler)});
 let U=5000;const uid=()=>"q"+(U++);
-function game(h0,h1){const s=E.newGame({seed:7,players:[{name:"A",deck:deck(h0||["Artificer A","Artificer B","Artificer C"])},{name:"B",deck:deck(h1||["Divine Knight","Arcane Scholar","Shadow Ranger"])}]});
+function game(h0,h1){const s=E.newGame({seed:7,players:[{name:"A",deck:deck(h0||["Wren Partsfinder","Material Bender","Val Craftsmith"])},{name:"B",deck:deck(h1||["Divine Knight","Arcane Scholar","Shadow Ranger"])}]});
   E.act(s,0,{type:"keep"});E.act(s,1,{type:"keep"});E.act(s,0,{type:"dawnDone"});E.act(s,1,{type:"dawnDone"});
   s.p.forEach(p=>{p.aura=10;p.inv=[];p.hand=[]});s.prio=0;s.passed=[false,false];return s}
 const inv=(s,pid,id)=>{const o=E.invObj(s,pid,{uid:uid(),id,owner:pid});s.p[pid].inv.push(o);return o};
@@ -27,7 +27,7 @@ ok(ctx.RAW_CARDS.filter(r=>names.includes(r[1])).every(r=>r[0]===2),"2 copies ea
 const h=E.DB["h:Remey the Incredible"];ok(h&&h.hc&&h.str===3&&h.def===2&&h.aura===1&&h.hp===10,"Remey the Incredible: 3/2/1/10 Hero Construct");
 ["Pocket Watch","The Archfrost","The Archflame","Dragonscale Scale","Wellness Rod","Deflecting Shield","Reclamation Kit","Blast Charge","Gearwork Hammer","Silver Edge","Mithril Blade","Warded Cloak"].forEach(n=>ok(E.isCrafted(E.DB[n]),n+" is Crafted"));
 ok(!ctx.RECIPES["Iron Guardians"].back.crafted&&!ctx.RECIPES["Remey Recipe"].back.crafted,"summons and Hero Constructs aren't Crafted items");
-ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&E.DB["Deflecting Shield"].pdef===1&&E.DB["Deflecting Shield"].cost==="1","Rod and Shield stats");
+ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&E.DB["Deflecting Shield"].pdef===1&&E.DB["Deflecting Shield"].cost==="5","Rod and Shield stats (Deflecting Shield costs 5, Nov 15 queue)");
 
 /* Remey Recipe: surrender a soul, Hero Construct */
 {const s=game();const c=hand(s,0,"Remey Recipe");["Platinum Bar","Revitalize","Potion","Dynamite"].forEach(n=>inv(s,0,n));
@@ -36,9 +36,9 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
   ok(canPlay(s,c),"playable with a dead Hero and the 4 ingredients");ok(!E.mourning(s,0),"no soul surrendered yet");
   const actor=E.actorFor(s,0),aura=s.p[0].aura;const r=E.act(s,0,{type:"play",uid:c.uid,targets:[dead.uid]});resolve(s);ok(r.ok,"play "+(r.err||""));
   ok(s.p[0].aura===aura-3,"pays 3 Aura");ok(dead.surr,"the dead Hero's soul is surrendered");ok(E.mourning(s,0),"counts as surrendering a soul (Mourn)");
-  ok(s.p[0].inv.length===0,"ingredients sacrificed");ok(actor.ex,"Exhaust this Hero");
+  ok(s.p[0].inv.length===0,"ingredients sacrificed");ok(!actor.ex,"crafting no longer exhausts the Hero");
   const rm=s.p[0].heroes.find(x=>x.name==="Remey the Incredible");ok(rm&&rm.hc&&rm.ex,"Remey joins the party, exhausted");
-  ok(s.p[0].heroes.indexOf(rm)===3,"at the end of the party order");ok(rm.base.str===4&&rm.base.hp===11,"Artificer B: Construct +1 Strength +1 Health Points");
+  ok(s.p[0].heroes.indexOf(rm)===3,"at the end of the party order");ok(rm.base.str===3&&rm.base.hp===10,"no Construct bonus any more (Artificer B became Material Bender)");
   ok(!s.p[0].disc.some(x=>x.uid===c.uid)&&!s.p[0].hand.some(x=>x.uid===c.uid),"the Recipe card is Remey (not discarded)");
   /* acts Last */
   s.p[0].heroes.forEach(x=>{if(!x.dead)x.ex=false});s.pos=0;s.p[0].t.lastActor=null;const ord=E.actorFor(s,0);ok(ord.name!=="Remey the Incredible","Remey isn't first at Lead");
@@ -97,7 +97,8 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
 
 /* Aura Pearl */
 {const s=game();const ap=inv(s,0,"Aura Pearl");const a=E.actorFor(s,0);const uo=opts(s,0).find(o=>(o.type==="use"||o.type==="useFree")&&o.uid===ap.uid);ok(uo,"Aura Pearl can be used");
-  const au=s.p[0].aura;E.act(s,0,uo);resolve(s);ok(s.p[0].aura===au+1,"gain 1 Aura");ok(!s.p[0].inv.includes(ap),"sacrificed")}
+  const au=s.p[0].aura;E.act(s,0,uo);resolve(s);ok(s.p[0].aura===au+2,"gain 1 Aura, doubled by Material Bender");ok(!s.p[0].inv.includes(ap),"sacrificed");
+  const ap2=inv(s,0,"Aura Pearl");s.p[0].heroes.forEach(h=>h.ex=false);s.prio=0;s.passed=[false,false];s.p[0].t.lastActor=null;const uo2=opts(s,0).find(o=>(o.type==="use"||o.type==="useFree")&&o.uid===ap2.uid);const au2=s.p[0].aura;if(uo2){E.act(s,0,uo2);resolve(s)}ok(uo2&&s.p[0].aura===au2+1,"Material Bender doubles only the first item ability each turn")}
 
 /* Crafter's Choice */
 {const s=game();const r1={uid:uid(),id:"Pocket Watch Recipe",owner:0,cr:true},r2={uid:uid(),id:"Wellness Rod Recipe",owner:0,cr:true},r3={uid:uid(),id:"Iron Guardians",owner:0},r4={uid:uid(),id:"Pocket Watch Recipe",owner:0};s.p[0].disc.push(r1,r2,r3,r4,{uid:uid(),id:"Potion",owner:0});
@@ -129,4 +130,36 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
   s.p[0].heroes[0].ex=false;s.prio=0;s.passed=[false,false];const need=E.need(s,0,{type:"play",uid:c.uid});ok(need.length===1&&need[0].cands.length===2,"choose which dead Hero's soul to surrender (2 choices)");
   E.act(s,0,{type:"play",uid:c.uid,targets:[d1.uid]});resolve(s);ok(d1.surr&&!d2.surr,"the chosen soul (not the lowest level) is surrendered")}
 {const s=game();const rod=inv(s,0,"Wellness Rod");const pl=s.p[0];pl.inv.splice(pl.inv.indexOf(rod),1);E.toDisc(s,rod);const e=pl.disc.find(x=>x.uid===rod.uid);ok(e&&e.id==="Wellness Rod Recipe"&&e.cr,"a Crafted item leaving play goes to the discard pile as its crafted Recipe")}
+
+/* Nov 15 afternoon queue: Toolbelt Generic, Recipe back costs, Shield of Riverstead, no exhaust on Craft, renamed Artificers, Gadget Commander, Material Bender, Recycler, Cy the Builder */
+ok(E.DB["Toolbelt"].cls==="Generic"&&E.DB["Toolbelt"].kind==="equip","Toolbelt: Generic Equipment - Tool");
+{const s=game(["Divine Knight","Arcane Scholar","Shadow Ranger"]);ok(E.canUseEq(s,s.p[0].heroes[0],E.DB["Toolbelt"]),"any class can equip the Toolbelt")}
+ok([["Pocket Watch","6"],["The Archfrost","5"],["The Archflame","5"],["Dragonscale Scale","6"],["Wellness Rod","1"],["Deflecting Shield","5"]].every(([n,c])=>E.DB[n].cost===c),"Recipe back Aura costs = ingredients + 1");
+ok(!ctx.RECIPES["Remey Recipe"].back.cost,"Remey has no printed cost");
+ok(Object.keys(ctx.RECIPES).every(k=>!/Exhaust this Hero/.test(E.DB[k].rules)),"no Recipe says Exhaust this Hero");
+{const sh=E.DB["Shield of Riverstead"];ok(sh&&sh.cls==="Generic"&&sh.sub==="Shield"&&sh.region==="One-Handed"&&sh.cost==="2"&&sh.pdef===1&&sh.up&&sh.up.cost===4&&sh.up.pdef===2,"Shield of Riverstead: 2 Aura, +1 Defense, upgrade 4 Gold to +2");
+  ok(ctx.SET2_CARDS.includes("Shield of Riverstead"),"Set 2 only");
+  const s=game();const c=hand(s,0,"Deflecting Shield Recipe");inv(s,0,"Time Pearl");inv(s,0,"Gold Bar");inv(s,0,"Shield of Riverstead");ok(canPlay(s,c),"Shield of Riverstead counts as any Shield")}
+ok(E.DB["h:Artificer A"].name==="Wren Partsfinder"&&E.DB["h:Artificer B"].name==="Material Bender"&&E.DB["h:Artificer C"].name==="Val Craftsmith"&&E.DB["h:Artificer D"].name==="Gadget Commander"&&E.DB["h:Artificer E"].name==="Cy the Builder","old placeholder names still load the renamed Heroes");
+/* Gadget Commander */
+{const s=game(["Gadget Commander","Wren Partsfinder","Val Craftsmith"]);const g=s.p[0].heroes[0];const s0=E.str(s,g);inv(s,0,"Wellness Rod");inv(s,0,"Potion");
+  ok(E.str(s,g)===s0+1,"a Crafted item in your inventory: +1 Strength");E.makeConstruct(s,0,2);ok(E.str(s,g)===s0+2,"a Construct: +1 Strength");
+  const w=inv(s,0,"The Archfrost");s.p[0].inv.splice(s.p[0].inv.indexOf(w),1);E.equipTo(s,s.p[0].heroes[1],w);ok(E.str(s,g)===s0+3,"an equipped Crafted item counts");
+  E.makeHeroConstruct(s,0,{uid:uid(),id:"Remey Recipe",owner:0},E.DB["Remey Recipe"].recipe.back);ok(E.str(s,g)===s0+4,"Remey counts as a Construct");
+  E.makeConstruct(s,1,2);inv(s,1,"Pocket Watch");ok(E.str(s,g)===s0+4,"the opponent's don't count")}
+/* Material Bender: Flame Pearl's enter trigger twice, once per turn */
+{const s=game(["Material Bender","Wren Partsfinder","Val Craftsmith"]);const t=s.p[1].heroes[1];const d0=t.dmg||0;const c=hand(s,0,"Flame Pearl");E.act(s,0,{type:"play",uid:c.uid,targets:[t.uid]});resolve(s);
+  const once=Math.max(0,2-E.defn(s,t));ok((t.dmg||0)-d0===2*once,"Flame Pearl resolves twice ("+((t.dmg||0)-d0)+")");
+  const d1=t.dmg||0;const c2=hand(s,0,"Flame Pearl");s.p[0].heroes.forEach(h=>h.ex=false);s.prio=0;s.passed=[false,false];s.p[0].t.lastActor=null;E.act(s,0,{type:"play",uid:c2.uid,targets:[t.uid]});resolve(s);ok((t.dmg||0)-d1===once,"only the first item ability each turn")}
+{const s=game(["Wren Partsfinder","Val Craftsmith","Cy the Builder"]);const au=s.p[0].aura;const o=inv(s,0,"Copper Ingot");const u=opts(s,0).find(x=>x.type==="use"&&x.uid===o.uid);E.act(s,0,u);resolve(s);ok(s.p[0].aura===au+1,"no doubling without Material Bender")}
+/* Recycler */
+{const s=game();const its=["Potion","Time Pearl","Copper Ingot","Dragon Scale","Aura Pearl","Antidote"].map(id=>{const x={uid:uid(),id,owner:0};s.p[0].disc.push(x);return x});s.p[0].disc.push({uid:uid(),id:"Precognition",owner:0},{uid:uid(),id:"Wellness Rod Recipe",owner:0,cr:true});
+  const L=s.p[0].lib.length;const c=hand(s,0,"Recycler");E.act(s,0,{type:"play",uid:c.uid});ok(s.pend[0]&&s.pend[0].max===5&&s.pend[0].cards.length===6,"choose up to 5 items (only Item cards)");
+  E.act(s,0,{type:"choose",picks:s.pend[0].cards.slice(0,5)});resolve(s);ok(s.p[0].lib.length===L+5,"5 items shuffled into the library")}
+/* Cy the Builder: Craft, then may search for a Recipe */
+{const s=game(["Cy the Builder","Wren Partsfinder","Val Craftsmith"]);const r={uid:uid(),id:"Pocket Watch Recipe",owner:0};s.p[0].lib.push({uid:uid(),id:"Potion",owner:0},r);
+  const c=hand(s,0,"Wellness Rod Recipe");["Antidote","Potion","Silver Bar"].forEach(n=>inv(s,0,n));const a=s.p[0].heroes[0];E.act(s,0,{type:"play",uid:c.uid});
+  const pr=s.pend.find(p=>p.type==="choose"&&/Cy the Builder/.test(p.title||""));ok(pr&&pr.min===0&&pr.cards.length===1,"Cy the Builder may search for a Recipe");
+  while(s.pend.length&&s.pend[0]!==pr)E.act(s,s.pend[0].pid,ctx.CQAI.choose(s,s.pend[0].pid));E.act(s,0,{type:"choose",picks:[r.uid]});resolve(s);
+  ok(s.p[0].hand.some(x=>x.uid===r.uid),"the Recipe goes to your hand");ok(!a.ex,"Crafting didn't exhaust Cy")}
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

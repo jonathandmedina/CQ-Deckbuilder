@@ -596,7 +596,8 @@ S["Quicksilver"]={};
 /* Recipes: the ingredients were paid when the card was played (E.payCraft). Resolving flips it: Constructs enter play (the Recipe goes to the discard pile);
    a made item or weapon goes into your inventory. "Exhaust this Hero." */
 const recipe=n=>def(n,{run(c){const keep=E.flipRecipe(c.s,c.pid,c.inst);
-  if(c.actor&&!c.actor.dead)exMe(c);
+  /* Nov 15, 2026: crafting doesn't exhaust the Hero by rule; only a Recipe whose text says "Exhaust this Hero." does */
+  if(c.actor&&!c.actor.dead&&/Exhaust this Hero\./.test((c.def&&c.def.rules)||""))exMe(c);
   return keep?"stay":undefined}});
 Object.keys(E.RECIPES||{}).forEach(recipe);
 /* made items */
@@ -625,6 +626,9 @@ EQ2["Wellness Rod"]={label:"Exhaust: remove all status counters from any target"
   const n=E.STATUS.reduce((a,k)=>a+(o.st[k]||0),0);E.STATUS.forEach(k=>o.st[k]=0);log(c,n?`Wellness Rod: ${o.name} loses all ${n} status counter${n>1?"s":""}.`:`Wellness Rod: ${o.name} has no status counters.`)}};
 S["Deflecting Shield"]={}; /* engine: response window (E.canDeflect) */
 S["Time Pearl"]={}; /* engine: response window (E.canPearl) */
+/* Recycler (Nov 15, 2026): shuffle up to 5 Item cards from your discard pile into your library */
+def("Recycler",{run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Item");if(!l.length){log(c,"Recycler: no items in your discard pile.");return}
+  E.pushChoose(c.s,c.pid,{title:"Recycler: shuffle up to 5 items from your discard pile into your library",cards:l.map(x=>x.uid),min:0,max:5,op:"discToLib"})}});
 def("Aura Pearl",item(0,[],c=>{c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{sac:true}));
 /* Crafter's Choice: a "Crafted item in your discard pile" is a Recipe that was crafted and flipped, then went to the discard pile when its made item left play (engine toDisc marks it cr) */
 const craftedRecipe=x=>{const d=E.DB[x.id]||{};const r=d.recipe;return!!(x.cr&&r&&r.back&&r.back.crafted)}; /* a Recipe that was crafted and flipped, then went to the discard pile (not one discarded uncrafted) */
@@ -648,14 +652,14 @@ OPS.lookHand=(s,pid,pr,picks)=>{const pl=s.p[pid];const look=pr.look||[];
   picks.slice(0,1).forEach(u=>{const i=pl.lib.findIndex(x=>x.uid===u);if(i>=0){const x=pl.lib.splice(i,1)[0];pl.hand.push(x);E.log(s,`${E.DB[x.id].name} goes to ${pl.name}'s hand.`,pid)}});
   let n=0;look.forEach(u=>{const i=pl.lib.findIndex(x=>x.uid===u);if(i>=0){pl.lib.unshift(pl.lib.splice(i,1)[0]);n++}});
   if(n)E.log(s,`${pl.name} puts ${n} card${n===1?"":"s"} on the bottom of their library.`,pid)};
-hab("Artificer A",[{label:"Look at the top 3 (an item to your hand)",can:(s,pid,a)=>a.lvl<3&&s.p[pid].lib.length>0,run(c){const top=c.me.lib.slice(-3);
+hab("Wren Partsfinder",[{label:"Look at the top 3 (an item to your hand)",can:(s,pid,a)=>a.lvl<3&&s.p[pid].lib.length>0,run(c){const top=c.me.lib.slice(-3);
   const its=top.filter(x=>(E.DB[x.id]||{}).type==="Item");
-  log(c,`Artificer A: ${c.me.name} looks at the top ${top.length} card${top.length===1?"":"s"} of their library.`);
-  if(its.length)E.pushChoose(c.s,c.pid,{title:"Artificer A: put an item from among them into your hand? The rest go on the bottom of your library.",cards:its.map(x=>x.uid),min:0,max:1,op:"lookHand",look:top.map(x=>x.uid)});
-  else{log(c,"Artificer A: no item among them.");OPS.lookHand(c.s,c.pid,{look:top.map(x=>x.uid)},[])}}},
+  log(c,`Wren Partsfinder: ${c.me.name} looks at the top ${top.length} card${top.length===1?"":"s"} of their library.`);
+  if(its.length)E.pushChoose(c.s,c.pid,{title:"Wren Partsfinder: put an item from among them into your hand? The rest go on the bottom of your library.",cards:its.map(x=>x.uid),min:0,max:1,op:"lookHand",look:top.map(x=>x.uid)});
+  else{log(c,"Wren Partsfinder: no item among them.");OPS.lookHand(c.s,c.pid,{look:top.map(x=>x.uid)},[])}}},
  {label:"Search your library for an item",lvl:3,can:(s,pid)=>s.p[pid].lib.length>0,run(c){const its=c.me.lib.filter(x=>(E.DB[x.id]||{}).type==="Item");
-  if(its.length)E.pushChoose(c.s,c.pid,{title:"Artificer A: choose an item",cards:its.map(x=>x.uid),min:1,max:1,op:"tutor"});
-  else{log(c,"Artificer A: there's no item in the library.");E.shuffle(c.s,c.me.lib)}}}]);
+  if(its.length)E.pushChoose(c.s,c.pid,{title:"Wren Partsfinder: choose an item",cards:its.map(x=>x.uid),min:1,max:1,op:"tutor"});
+  else{log(c,"Wren Partsfinder: there's no item in the library.");E.shuffle(c.s,c.me.lib)}}}]);
 
 /* ===== Set 2: Necromancer (Set Two Rules Supplement) =====
    Revenant: 1/1 summon token with Impervious (engine: damage and destroy do nothing; HP loss, sacrifice and exile work). Cards that summon one say "Exhaust this Hero".

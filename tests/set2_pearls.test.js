@@ -8,7 +8,7 @@ const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
 const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Bar","Platinum Bar","Silver Bar","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
 const deck=h=>({name:"T",heroes:h.map(x=>"h:"+x),cards:Object.assign({},filler)});
 let U=5000;const uid=()=>"u"+(U++);
-function game(h0,h1){const s=E.newGame({seed:7,players:[{name:"A",deck:deck(h0||["Artificer D","Artificer A","Artificer E"])},{name:"B",deck:deck(h1||["Divine Knight","Arcane Scholar","Shadow Ranger"])}]});
+function game(h0,h1){const s=E.newGame({seed:7,players:[{name:"A",deck:deck(h0||["Gadget Commander","Wren Partsfinder","Cy the Builder"])},{name:"B",deck:deck(h1||["Divine Knight","Arcane Scholar","Shadow Ranger"])}]});
   E.act(s,0,{type:"keep"});E.act(s,1,{type:"keep"});E.act(s,0,{type:"dawnDone"});E.act(s,1,{type:"dawnDone"});
   s.p.forEach(p=>{p.aura=20;p.inv=[];p.hand=[]});s.prio=0;s.passed=[false,false];return s}
 const inv=(s,pid,id)=>{const o=E.invObj(s,pid,{uid:uid(),id,owner:pid});s.p[pid].inv.push(o);return o};
@@ -26,7 +26,7 @@ ok(row("The Archfrost Recipe")[3]==="Legendary"&&row("The Archfrost Recipe")[0]=
 ok(row("Dragonscale Scale Recipe")[3]===""&&row("Dragonscale Scale Recipe")[0]===2,"Dragonscale Scale Recipe isn't Legendary");
 ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The Right Mix: Artificer Spell");
 {const af=E.DB["The Archfrost"],fl=E.DB["The Archflame"],ds=E.DB["Dragonscale Scale"];
-  ok(af&&af.kind==="equip"&&af.pstr===6&&af.region==="Two-Handed"&&af.cost==="6","The Archfrost: Two-Handed, +6, 6 Aura");
+  ok(af&&af.kind==="equip"&&af.pstr===6&&af.region==="Two-Handed"&&af.cost==="5","The Archfrost: Two-Handed, +6, 5 Aura (ingredients + 1, Nov 15)");
   ok(fl&&fl.kind==="equip"&&fl.pstr===6&&fl.region==="Two-Handed","The Archflame: Two-Handed, +6");
   ok(ds&&ds.kind==="equip"&&ds.region==="Chest"&&ds.sub==="Chestplate"&&ds.cost==="6","Dragonscale Scale: Chest armor (Chestplate), 6 Aura")}
 
@@ -45,8 +45,8 @@ ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The
   E.act(s,0,{type:"play",uid:c.uid});resolve(s);const w=s.p[0].inv.find(o=>o.name==="The Archfrost");ok(w&&w.kind==="equip","The Archfrost made");
   ok(s.p[0].inv.map(o=>o.name).sort().join()==="Long Dagger,The Archfrost","ingredients used, Long Dagger kept");
   s.prio=0;const a=E.actorFor(s,0);a.ex=false;const eo=opts(s,0).find(o=>o.type==="equipInv"&&o.uid===w.uid);ok(eo,"equip from inventory");const au=s.p[0].aura,s0=E.str(s,a);E.act(s,0,eo);
-  ok(s.p[0].aura===au-6,"costs 6 Aura to equip");ok(E.str(s,a)===s0+6,"+6 Strength");
-  const t=s.p[1].heroes[0];t.bon.def+=6;const d0=t.dmg||0;s.prio=0;a.ex=false;s.p[0].t.lastActor=null;/* equipping was this Hero's action */E.act(s,0,{type:"attack",att:a.uid,targets:[t.uid]});resolve(s);
+  ok(s.p[0].aura===au-5,"costs 5 Aura to equip");ok(E.str(s,a)===s0+6,"+6 Strength");
+  const t=s.p[1].heroes[0];t.bon.def+=6;const d0=t.dmg||0;s.prio=0;a.ex=false;s.p[0].t.lastActor=null;/* equipping was this Hero's action */s.p[0].heroes.forEach(x=>{if(x!==a)x.ex=true});/* Nov 15: crafting no longer exhausts the crafter, so make this Hero the actor */E.act(s,0,{type:"attack",att:a.uid,targets:[t.uid]});resolve(s);
   ok((t.dmg||0)-d0===E.str(s,a),"Piercing: the attack ignores all Defense ("+((t.dmg||0)-d0)+" of "+E.str(s,a)+")");ok(t.st.stun>=1,"the enemy is Stunned");}
 /* The Archflame: Flame Pearl + Sword + Gold Bar; attacks Burn three times */
 {const s=game();const c=hand(s,0,"The Archflame Recipe");inv(s,0,"Flame Pearl");inv(s,0,"Gold Bar");inv(s,0,"Knight's Sword");ok(canPlay(s,c),"Flame Pearl + Knight's Sword + Gold Bar");
@@ -58,7 +58,7 @@ ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The
   inv(s,0,"Bronze Chest Plate");ok(canPlay(s,c),"Dragon Scale + Bronze Chest Plate");E.act(s,0,{type:"play",uid:c.uid});resolve(s);
   const w=s.p[0].inv.find(o=>o.name==="Dragonscale Scale");ok(w,"Dragonscale Scale made");const h=E.actorFor(s,0);E.equipTo(s,h,s.p[0].inv.splice(s.p[0].inv.indexOf(w),1)[0]);
   const d0=h.dmg||0;s.prio=1;const en=s.p[1].heroes[0];en.ex=false;s.p[1].t.lastActor=null;s.bonus={pid:1,uid:en.uid};const ra=E.act(s,1,{type:"attack",att:en.uid,targets:[h.uid]});s.bonus=null;ok(ra&&ra.ok,"enemy attack resolves "+(ra&&ra.err||""));resolve(s);ok((h.dmg||0)===d0,"Impervious: no damage from an attack");
-  s.prio=0;h.ex=false;s.p[0].t.lastActor=null;const op=opts(s,0).find(o=>o.type==="eqAct");ok(op,"2 Aura ability offered");const au=s.p[0].aura,s0=E.str(s,h);if(op){E.act(s,0,op);resolve(s)}
+  s.prio=0;h.ex=false;s.p[0].t.lastActor=null;s.p[0].heroes.forEach(x=>{if(x!==h)x.ex=true});const op=opts(s,0).find(o=>o.type==="eqAct");ok(op,"2 Aura ability offered");const au=s.p[0].aura,s0=E.str(s,h);if(op){E.act(s,0,op);resolve(s)}
   ok(s.p[0].aura===au-2&&E.str(s,h)===s0+1,"2 Aura: +1 Strength ("+s0+"→"+E.str(s,h)+")")}
 /* The Right Mix: top 4, items to hand, rest to the bottom */
 {const s=game();const c=hand(s,0,"The Right Mix");const L=s.p[0].lib;const mk=id=>({uid:uid(),id,owner:0});

@@ -103,7 +103,7 @@ def main():
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(200); check(nm in text(pg).replace(f"“{nm}”", ""), f"[{w}] access: catalog shows {nm}")
             pg.fill("#cat-q", "")
             r = pg.evaluate("""(()=>{const f=n=>upFace(BYID.get(n));return[f('Remey Recipe').name,f('Remey Recipe').sub,f('Wellness Rod Recipe').sub,f('Pocket Watch Recipe').sub,f('Deflecting Shield Recipe').sub,BYID.get('Iron Guardians')?f('Iron Guardians').sub:'']})()""")
-            check(r[0] == "Remey the Incredible" and r[1].startswith("Hero Construct"), f"[{w}] Remey back: {r}")
+            check(r[0] == "Remey the Incredible" and r[1] == "Hero Construct · Omni", f"[{w}] Remey back (Omni): {r}")
             check("Crafted" in r[2] and "Crafted" in r[3] and "Crafted" in r[4] and "Crafted" not in r[5], f"[{w}] Crafted subtype on made items only: {r}")
             plain = pg.evaluate("""(()=>{let n=0;['Remey Recipe','Back in the Lab','Wellness Rod Recipe','Deflecting Shield Recipe',"Crafter's Choice",'Time Pearl','Aura Pearl',"Undead's Choice"].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points|\\bAura\\b/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")
@@ -147,6 +147,10 @@ def main():
             pg.wait_for_timeout(400); pg.click("[data-pa=resume-local]"); pg.wait_for_timeout(900)
             pt = text(pg)
             check("Remey the Incredible" in pt and "Hero Construct" in pt, f"[{w}] Play tab shows Remey as a Hero Construct")
+            # choosing the soul: the Remey Recipe's target slot lists your dead Heroes
+            nd = pg.evaluate("""(()=>{const s=JSON.parse(localStorage.getItem('cq.play.local')).s;const E=CQE;s.pend=[];s.p[0].heroes[1].dmg=99;s.p[0].heroes[2].dmg=99;E.checkDeaths(s);
+              const c={uid:'rr9',id:'Remey Recipe',owner:0};s.p[0].hand.push(c);return E.need(s,0,{type:'play',uid:'rr9'}).map(x=>[x.label,x.cands.length])})()""")
+            check(nd and nd[0][1] == 2 and "soul" in nd[0][0], f"[{w}] Remey Recipe asks which dead Hero's soul to surrender: {nd}")
             check("Delay it with a Time Pearl" in pt, f"[{w}] Time Pearl response button")
             if SHOTS and w == 1280: pg.screenshot(path=f"{SHOTS}/play_remey.png")
             pg.locator("button", has_text="Delay it with a Time Pearl").first.click(); pg.wait_for_timeout(600)

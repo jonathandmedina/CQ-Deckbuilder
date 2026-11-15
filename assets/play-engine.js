@@ -196,11 +196,17 @@ function defOf(s,o){
     if(modHas(o,"zeroDef"))d=0;return Math.max(0,d)}
   if(o.kind==="summon"){const pl=P(s,o.ctrl);let d=modSum(o,"def")+invCount(pl,"Horn Crystal")+invCount(pl,"Barkskin Totem")+(pl.pm.sdef||0);return Math.max(0,d)}
   return 0}
+function gadgets(s,pid){const pl=P(s,pid);let n=0;const cr=x=>!!(x&&x.id&&DB[x.id]&&DB[x.id].crafted);
+  pl.inv.forEach(x=>{if(!x.fd&&cr(x))n++});pl.heroes.forEach(h=>{if(!h.dead){eqList(h).forEach(e=>{if(cr(e))n++});if(h.hc)n++}});
+  pl.bf.forEach(x=>{if(x.kind==="summon"&&(x.name==="Construct"||x.sub==="Construct"))n++});return n}
+E.gadgets=gadgets;
 function strOf(s,o,vs){
   if(o.kind==="hero"){const pl=P(s,o.owner);let b=o.name==="King of Curses"?curses(s):o.base.str;
     let v=b+o.bon.str+modSum(o,"str")+(pl.pm.str||0);
     eqList(o).forEach(e=>v+=e.pstr||0);
     if(heroIs(o,"Barbarian"))v+=trophies(pl);
+    /* Set 2 Gadget Commander (Nov 15, 2026): Strength = Crafted items (inventory or equipped) and Constructs (summons and Hero Constructs) you control */
+    if(o.name==="Gadget Commander")v+=gadgets(s,o.owner);
     /* Set 2 Dagger of the Dead: +2 STR (upgraded +3) while you control a Revenant */if(pl.bf.some(x=>x.kind==="summon"&&x.name==="Revenant"))eqList(o).forEach(e=>{if(e.name==="Dagger of the Dead")v+=isUp(s,e)?3:2});
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
@@ -982,7 +988,7 @@ function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl
   const inv=pl.inv.filter(o=>!o.fd&&!o.tok&&o.id&&DB[o.id]&&(o.kind==="card"||o.kind==="equip"));
   const val=o=>num(def(o).cost)+(o.kind==="equip"?1:0);
   const subs=[];/* one-shot wildcards available to this Hero */
-  if(actor&&actor.name==="Artificer C"&&actor.fl.craftC!==s.round)subs.push({k:"anyItem",src:"Artificer C",flag:"craftC"});
+  if(actor&&actor.name==="Val Craftsmith"&&actor.fl.craftC!==s.round)subs.push({k:"anyItem",src:"Val Craftsmith",flag:"craftC"}); /* was Artificer C */
   if(actor&&hasEqN(actor,"Scavenger's Tongs")&&actor.fl.craftT!==s.round)subs.push({k:"disc",any:hasUpN(s,actor,"Scavenger's Tongs"),src:"Scavenger's Tongs",flag:"craftT"});
   const ings=r.ing;let best=null;
   function go(i,used,subUsed,cost,plan){if(best&&cost>=best.cost)return;if(i===ings.length){best={cost,plan:plan.slice(),subs:subUsed.slice()};return}
@@ -1006,11 +1012,13 @@ function payCraft(s,pid,actor,d){const plan=craftPlan(s,pid,actor,d);if(!plan)re
   if(actor&&hasEqN(actor,"Bellows")){eqList(actor).filter(e=>e.name==="Bellows").forEach(e=>{log(s,`Bellows: ${actor.name} Crafts, draw a card${isUp(s,e)?" and gain 1 Aura":""}.`,pid);draw(s,pid,1);if(isUp(s,e))pl.aura+=1})}
   /* Tinker's Goggles (Nov 14): whenever the equipped Hero Crafts, Scry 1 (upgraded: Scry 2) */
   if(actor&&hasEqN(actor,"Tinker's Goggles")){eqList(actor).filter(e=>e.name==="Tinker's Goggles").forEach(e=>{const n=isUp(s,e)?2:1;if(!pl.lib.length)return;log(s,`Tinker's Goggles: ${actor.name} Crafts, Scry ${n}.`,pid);pushScry(s,pid,n)})}
+  /* Cy the Builder (Nov 15, 2026): whenever this Hero Crafts, you may search your library for a Recipe card (then shuffle) */
+  if(actor&&actor.name==="Cy the Builder"&&!actor.dead){const l=pl.lib.filter(c=>(DB[c.id]||{}).type==="Recipe");
+    if(l.length){log(s,`Cy the Builder Crafts: ${pl.name} may search their library for a Recipe card.`,pid);pushChoose(s,pid,{title:"Cy the Builder: you may search your library for a Recipe card (then shuffle)",cards:l.map(c=>c.uid),min:0,max:1,op:"tutor"})}}
   return true}
 E.payCraft=payCraft;
 /* the Recipe flips: a summon Recipe summons its Constructs (then goes to the discard pile); an item or weapon goes into your inventory as the made card */
-function makeConstruct(s,pid,n){const o=makeSummon(s,pid,"Construct",false);o.str=n;o.hp=n;
-  if(living(P(s,pid)).some(h=>h.name==="Artificer B")){o.str+=1;o.hp+=1;log(s,`Artificer B: the Construct enters with +1 Strength and +1 Health Points (${o.str}/${o.hp}).`,pid)}return o}
+function makeConstruct(s,pid,n){const o=makeSummon(s,pid,"Construct",false);o.str=n;o.hp=n;return o} /* Artificer B's Construct bonus went away when it became Material Bender (Nov 15, 2026) */
 E.makeConstruct=makeConstruct;
 function flipRecipe(s,pid,card){const d=DB[card.id];const b=d.recipe.back;const pl=P(s,pid);
   log(s,`${pl.name} flips ${d.name}: ${b.name}.`,pid);
@@ -1023,10 +1031,8 @@ function flipRecipe(s,pid,card){const d=DB[card.id];const b=d.recipe.back;const 
   toInv(s,pid,o);return true}
 E.flipRecipe=flipRecipe;
 /* Hero Construct (Nov 15, 2026; Set Two Rules Supplement): joins the party as an extra Hero at the end of the party order and acts Last.
-   It enters exhausted, adds its Aura at Dawn, earns Gold, can level and equip, has the Hero type Omni (counts as every Hero type: any class's cards and equipment), counts as a Construct
-   (Artificer B: +1 Strength, +1 Health Points). When it dies it's destroyed: it can't be revived or surrendered, and the Recipe goes to the discard pile. */
+   It enters exhausted, adds its Aura at Dawn, earns Gold, can level and equip, has the Hero type Omni (counts as every Hero type: any class's cards and equipment), counts as a Construct (Gadget Commander counts it). When it dies it's destroyed: it can't be revived or surrendered, and the Recipe goes to the discard pile. */
 function makeHeroConstruct(s,pid,card,b){const pl=P(s,pid);const h=mkHero(s,pid,"h:"+b.name);h.hc=true;h.ex=true;h.card={uid:card.uid,id:card.id,owner:card.owner};h.sub="Construct";
-  if(living(pl).some(x=>x.name==="Artificer B")){h.base.str+=1;h.base.hp+=1;log(s,`Artificer B: ${h.name} enters with +1 Strength and +1 Health Points.`,pid)}
   pl.heroes.push(h);log(s,`${h.name} joins ${pl.name}'s party as a Hero Construct (exhausted; it acts Last).`,pid);return h}
 E.makeHeroConstruct=makeHeroConstruct;
 /* Warded Cloak (protection counters): whenever a Hero in your party would be dealt damage, prevent it and remove a counter instead */
@@ -1035,6 +1041,10 @@ function wardFor(s,tgt){if(!tgt||tgt.kind!=="hero")return null;const pl=P(s,tgt.
 function watchFor(s,pid){const pl=P(s,pid);return pl.inv.find(o=>!o.fd&&o.name==="Pocket Watch")}
 function canStall(s,pid,trig){return!!(trig&&trig.kind==="card"&&trig.card&&!trig.ability&&!trig.item&&trig.pid!==pid&&watchFor(s,pid)&&living(P(s,pid)).some(h=>!h.ex))}
 E.canStall=canStall;
+/* Set 2 Material Bender (was Artificer B, Nov 15, 2026): the first time each turn one of your items' abilities resolves, it resolves again (costs paid once) */
+function bend(s,pid,name){const pl=P(s,pid);if(!pl.t||pl.t.bent||!living(pl).some(h=>h.name==="Material Bender"))return false;const d=DB[name]||{};if(d.type!=="Item")return false;
+  pl.t.bent=true;log(s,`Material Bender: ${name}'s ability resolves twice.`,pid);return true}
+E.bend=bend;
 function stallTick(s,pid){const pl=P(s,pid);(pl.stall||[]).forEach(c=>{if(c.n>0){c.n--;log(s,c.n?`Stall: ${DB[c.id].name} has ${c.n} stall counter${c.n>1?"s":""} left.`:c.ret?`Stall: the last counter comes off ${DB[c.id].name}. It returns to ${pl.name}'s inventory.`:`Stall: the last counter comes off ${DB[c.id].name}. ${pl.name} may play it without paying its Aura cost.`,pid)}});
   /* Deflecting Shield: an exiled card with stall counters comes back into play (your inventory) when the last one is removed */
   const back=(pl.stall||[]).filter(c=>c.ret&&!(c.n>0));if(back.length){pl.stall=pl.stall.filter(c=>!back.includes(c));back.forEach(c=>toInv(s,pid,c.obj))}}
@@ -1082,7 +1092,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(d.sup==="Hidden"){pl.inv.push(Object.assign({kind:"card",fd:true,name:d.name},c));log(s,`${actor?actor.name:pl.name} sets a Hidden card face down.`,pid);overflow(s,pid);
     if(sc&&sc.onSet)sc.onSet(mkCtx(s,pid,actor,d,c,[]));return}
   if(d.type==="Item"){const it=Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c);pl.inv.push(it);overflow(s,pid);
-    if(sc&&sc.enter)sc.enter(mkCtx(s,pid,actor,d,it,targets));return}
+    if(sc&&sc.enter){sc.enter(mkCtx(s,pid,actor,d,it,targets));if(bend(s,pid,d.name))sc.enter(mkCtx(s,pid,actor,d,it,targets))}return}
   /* update 29: playing a Summon card no longer exhausts the Hero by rule; the card text says so when it does ("Exhaust this Hero") */
   const trig={kind:"card",src:actor,pid,card:d,cardUid:c.uid,targets,cost,cls:d.cls,type:d.type,name:d.name};
   /* update 23 Echo: only a card played from your hand can Echo; Songweaver gives its Songs Echo; Sing Along gives the ally's next Tactic or Song Echo */
@@ -1136,6 +1146,7 @@ function resolveCont(s,pid,cont,mods){
   if(cont.k==="item"){const isc=SC()[cont.itemName];const o=find(s,cont.item);const ctx=mkCtx(s,pid,actor,DB[cont.itemName],o?o.o:null,cont.targets,{mods,arrow:cont.arrow,modes:cont.modes||[],itemUid:cont.item,upg:(s.upg&&s.upg[cont.item])||0});
     if(cont.arrow)ctx.arrowBonus=arrowBonus(s,pid,actor);
     withSrc(s,cont.itemName,()=>isc.act.run(ctx));
+    if(bend(s,pid,cont.itemName))withSrc(s,cont.itemName+" (Material Bender)",()=>isc.act.run(Object.assign({},ctx)));
     if(cont.refire){const pl=P(s,pid);const i=pl.disc.findIndex(c=>c.uid===cont.item);if(i>=0){const c=pl.disc.splice(i,1)[0];toInv(s,pid,invObj(s,pid,c));log(s,`Refire: ${cont.itemName} returns to ${pl.name}'s inventory.`,pid)}}
     if(cont.arrow){const pl=P(s,pid);pl.t.arrows=(pl.t.arrows||0)+1;pl.fl.arrowNext=null;pl.fl.multi=0;pl.fl.multiPierce=0;
       /* Wild Archer: after YOUR first Arrow each turn (any Hero firing it), ready it; L3: also after every Arrow it fires itself */

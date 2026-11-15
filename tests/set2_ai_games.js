@@ -6,8 +6,9 @@ const E=ctx.CQE,AI=ctx.CQAI;
 const ui=fs.readFileSync(path.join(A,"play-ui.js"),"utf8");
 const ST=vm.runInNewContext("("+ui.match(/const STARTERS=(\[[\s\S]*?\]);/)[1]+")"),SL=vm.runInNewContext("("+ui.match(/const STARTER_LISTS=(\[[\s\S]*?\]);\nfunction starterDeck/)[1]+")");
 const starter=i=>({name:ST[i].name,heroes:ST[i].heroes.map(n=>"h:"+n),cards:Object.assign({},SL[i])});
-const ART={name:"Workshop",heroes:["h:Artificer A","h:Artificer B","h:Artificer C"],cards:{"Clockwork Pair":2,"Iron Guardians":2,"Pocket Watch Recipe":2,"Reclamation Kit Recipe":2,"Blast Charge Recipe":2,"Gearwork Hammer Recipe":2,"Silver Edge Recipe":2,"Mithril Blade Recipe":1,"Warded Cloak Recipe":1,
-  "Quicksilver":2,"Tinker's Goggles":2,"Toolbelt":2,"Bellows":2,"Scavenger's Tongs":2,"Copper Ingot":3,"Iron Ingot":3,"Silver Ingot":3,"Platinum Ingot":3,"Mithril Ingot":3,"Potion":3,"Gold Bar":2,"Rose Quartz":2,"Cloak of Protection":2}};
+/* Nov 14: deprecated Recipes swapped for the current Artificer cards */
+const ART={name:"Workshop",heroes:["h:Artificer A","h:Artificer B","h:Artificer C"],cards:{"Pocket Watch Recipe":3,"The Archfrost Recipe":1,"The Archflame Recipe":1,"Dragonscale Scale Recipe":2,"The Right Mix":3,"Flame Pearl":2,"Frost Pearl":2,"Sword of Riverstead":2,
+  "Quicksilver":2,"Tinker's Goggles":2,"Toolbelt":2,"Bellows":2,"Scavenger's Tongs":2,"Copper Ingot":3,"Iron Ingot":3,"Silver Ingot":3,"Platinum Ingot":3,"Mithril Ingot":3,"Potion":3,"Gold Bar":2,"Rose Quartz":2,"Dragon Scale":2}};
 const bad=E.validateDeck(ART);if(bad.length){console.log("deck:",bad);process.exit(1)}
 let err=0,stuck=0,wins=0,n=0;const tally={craft:0,stall:0,ward:0,construct:0,made:0};
 for(let i=0;i<40;i++){const seed=9100+i*17,opp=i%5;const me=i%2;const decks=me?[starter(opp),ART]:[ART,starter(opp)];

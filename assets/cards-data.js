@@ -333,16 +333,8 @@ const RAW_CARDS=[
 [2, "Silver Ingot", "2", "", "Item", "Metal", "Generic", "Exile: Deal 3 damage to target summon.", 1],
 [2, "Platinum Ingot", "2", "", "Item", "Metal", "Generic", "Exile: Gain 3 Gold.", 1],
 [2, "Mithril Ingot", "3", "", "Item", "Metal", "Generic", "Exile: Draw 2 cards.", 1],
-[2, "Clockwork Pair", "1", "", "Recipe", "", "Artificer", "Craft: any two Metals. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
-[2, "Iron Guardians", "2", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and Silver Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
 [2, "Pocket Watch Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Gold Bar, Platinum Ingot and Rose Quartz. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
-[2, "Reclamation Kit Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Silver Ingot. (Play this only if that ingredient is in your inventory. Sacrifice it, then flip this card.)\nExhaust this Hero.", 1],
-[2, "Blast Charge Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and Copper Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
-[2, "Gearwork Hammer Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and any Metal. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
-[2, "Silver Edge Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Silver Ingot and Iron Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
-[1, "Mithril Blade Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: Mithril Ingot and Platinum Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
 [2, "Quicksilver", "2", "", "Item", "Material", "Artificer", "This can be used as any ingredient.", 1],
-[1, "Warded Cloak Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: any Cloak, Platinum Ingot and Potion. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
 [2, "Flame Pearl", "2", "", "Item", "", "Generic", "When this enters, deal 2 damage to any target.", 1],
 [2, "Frost Pearl", "2", "", "Item", "", "Generic", "When this enters, Stun any target.", 1],
 [2, "Dragon Scale", "3", "", "Item", "", "Generic", "When this enters, target ally gains +3 Defense this turn.", 1],
@@ -434,7 +426,7 @@ const RAW_HEROES=[
 ["Wild Shifter", "Druid", "0", "0", "2", "16", "Exhaust: Ready a summon you control.\n{L3} Exhaust: Ready up to two summons you control.", 3],
 ["Rousing Bandleader", "Bard", "1", "1", "1", "16", "Heroes you control have Banding.\n{L3} Heroes you control get +1 STR while banding.", 1],
 /* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
-["Artificer A", "Artificer", "0", "0", "2", "14", "Exhaust: Look at the top 3 cards of your library. You may put a Metal from among them into an empty inventory slot. Put the rest on the bottom of your library.", 1],
+["Artificer A", "Artificer", "0", "0", "2", "14", "Exhaust: Look at the top 3 cards of your library. You may put an item from among them into your hand. Put the rest on the bottom of your library.\n{L3} Exhaust: Search your library for an item, put it into your hand, then shuffle your library.", 2],
 ["Artificer B", "Artificer", "0", "0", "2", "14", "Constructs made by your Recipes enter with +1 Strength and +1 Health Points.", 1],
 ["Artificer C", "Artificer", "0", "0", "2", "14", "Once each turn, when this Hero Crafts, one of the ingredients may be any item in your inventory.", 1],
 ["Artificer D", "Artificer", "0", "0", "2", "14", "", 1],
@@ -500,9 +492,9 @@ const RAW_EQUIP=[
 ["Multi Bow", "", "Weapon", "Ranger", "Destroy any number of Arrows in your inventory: The next Arrow you activate deals +3 damage for each Arrow destroyed this way.", "3", "Two-Handed", "0", "0", 3],
 ["Heavy Bow", "", "Weapon", "Ranger", "Arrows the equipped Hero activates deal double damage. Whenever this Hero becomes exhausted, put a Fatigue counter on it.", "4", "Two-Handed", "0", "0", 2],
 /* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
-["Tinker's Goggles", "", "Tool", "Artificer", "Once each turn, when the equipped Hero Crafts, one of the ingredients may be any Metal.", "2", "Head", "0", "0", 1],
-["Toolbelt", "", "Tool", "Artificer", "Recipes the equipped Hero plays cost 1 less Aura.", "2", "Accessory", "0", "0", 1],
-["Bellows", "", "Tool", "Artificer", "Whenever the equipped Hero Crafts, draw a card.", "2", "One-Handed", "0", "0", 1],
+["Tinker's Goggles", "", "Tool", "Artificer", "Whenever the equipped Hero Crafts, Scry 1. (Look at the top card of your library. You may put it on the bottom.)", "2", "Head", "0", "0", 2],
+["Toolbelt", "", "Tool", "Artificer", "Your party has one additional inventory slot.", "2", "Accessory", "0", "0", 2],
+["Bellows", "", "Tool", "Artificer", "Whenever the equipped Hero Crafts, draw a card.", "2", "Two-Handed", "0", "0", 2],
 ["Scavenger's Tongs", "", "Tool", "Artificer", "Once each turn, when the equipped Hero Crafts, one of the ingredients may come from your discard pile instead of your inventory.", "2", "One-Handed", "0", "0", 1],
 /* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
 ["Grave Caller's Wand", "", "Weapon", "Necromancer", "When this enters, summon a 1/1 Revenant with Impervious. Exhaust the equipped Hero. When this is upgraded, summon a 1/1 Revenant with Impervious. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)\nWhenever the equipped Hero exhausts, target player Mills 1. (They move the top card of their library to their discard pile.)", "2", "One-Handed", "0", "0", 1],
@@ -555,7 +547,16 @@ const DEPRECATED_CARDS=[
 [2, "Pop Rocks", "6", "", "Spell", "", "Mage", "Deal 1 damage to all enemies three times. Exhaust this Hero.", 1],
 [2, "Quick Inventory", "1", "", "Tactic", "", "Rogue", "Create a Dagger token.", 1],
 [2, "Refrain", "0", "Hidden", "Item", "Trap", "Bard", "Exhaust a Bard: Prevent all damage from target attack or Tactic.", 1],
-[2, "Campfire", "2", "", "Item", "", "Barbarian", "This enters with 3 Campfire counters. At Dawn, remove a Campfire counter and heal each Hero in your party for 1 HP. When the last counter is removed, exile this.", 2]];
+[2, "Campfire", "2", "", "Item", "", "Barbarian", "This enters with 3 Campfire counters. At Dawn, remove a Campfire counter and heal each Hero in your party for 1 HP. When the last counter is removed, exile this.", 2],
+/* Set 2 Artificer, deprecated Nov 14, 2026 (still Set 2 only) */
+[2, "Clockwork Pair", "1", "", "Recipe", "", "Artificer", "Craft: any two Metals. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Iron Guardians", "2", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and Silver Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Reclamation Kit Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Silver Ingot. (Play this only if that ingredient is in your inventory. Sacrifice it, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Blast Charge Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and Copper Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Gearwork Hammer Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Iron Ingot and any Metal. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[2, "Silver Edge Recipe", "1", "", "Recipe", "", "Artificer", "Craft: Silver Ingot and Iron Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[1, "Mithril Blade Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: Mithril Ingot and Platinum Ingot. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1],
+[1, "Warded Cloak Recipe", "2", "Legendary", "Recipe", "", "Artificer", "Craft: any Cloak, Platinum Ingot and Potion. (Play this only if those ingredients are in your inventory. Sacrifice them, then flip this card.)\nExhaust this Hero.", 1]];
 
 /* Equipment upgrades (update 19 weapons, update 20 all other equipment, 2026-11-04): one fixed upgrade per piece of equipment, bought at the Blacksmith in Town. name -> [Gold cost, upgraded rules, upgraded +STR, upgraded +DEF] (from Equipment_New columns M-P) */
 const EQUIP_UPGRADES={
@@ -611,8 +612,8 @@ const EQUIP_UPGRADES={
 "Cloak of Hate": [5, "Equipped Hero gains +2 DEF. Whenever it becomes exhausted, deal 2 Dark damage to any target.", 0, 2],
 "Bark of the Protector": [5, "Equipped Hero gains +1 Defense, plus +1 Defense for each summon you control.", 0, 1],
 "The Reaper Cleaver": [7, "Equipped Hero gains +4 Strength. Whenever this Hero deals 7 or more damage to a Hero, ready it.", 4, 0],
-"Tinker's Goggles": [4, "Once each turn, when the equipped Hero Crafts, one of the ingredients may be any item.", 0, 0],
-"Toolbelt": [5, "Recipes the equipped Hero plays cost 1 less Aura and don't exhaust it.", 0, 0],
+"Tinker's Goggles": [4, "Whenever the equipped Hero Crafts, Scry 2. (Look at the top 2 cards of your library. Put any number on the bottom and the rest back on top in any order.)", 0, 0],
+"Toolbelt": [5, "Your party has two additional inventory slots.", 0, 0],
 "Bellows": [4, "Whenever the equipped Hero Crafts, draw a card and gain 1 Aura.", 0, 0],
 "Scavenger's Tongs": [4, "Once each turn, when the equipped Hero Crafts, one of the ingredients may come from any discard pile instead of your inventory.", 0, 0],
 "Grave Caller's Wand": [3, "Whenever the equipped Hero exhausts, target player Mills 1. (They move the top card of their library to their discard pile.)", 0, 0],

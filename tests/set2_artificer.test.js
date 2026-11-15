@@ -57,17 +57,24 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   s.prio=0;const a=E.actorFor(s,0);a.ex=false;const eo=opts(s,0).find(o=>o.type==="equipInv"&&o.uid===w.uid);ok(eo,"any Hero can equip a made weapon from inventory");
   const aura=s.p[0].aura,st0=E.str(s,a);E.act(s,0,eo);ok(s.p[0].aura===aura-2,"equipping costs the weapon's Aura cost (2)");ok(E.str(s,a)===st0+3,"+3 Strength");
   E.destroyObj(s,w);ok(s.p[0].disc.some(x=>x.uid===w.uid&&x.id==="Gearwork Hammer Recipe"),"destroyed weapon goes to the discard pile as its Recipe")}
-/* Toolbelt (-1 Aura; upgraded: no exhaust) and Bellows (draw; upgraded: +1 Aura) */
-{const s=game(["Artificer D","Artificer A","Artificer E"]);const a=E.actorFor(s,0);
-  const tb=E.eqObjFromCard(s,0,{uid:uid(),id:"Toolbelt",owner:0});E.equipTo(s,a,tb);const bl=E.eqObjFromCard(s,0,{uid:uid(),id:"Bellows",owner:0});E.equipTo(s,a,bl);
-  ok(E.cardCost(s,0,a,E.DB["Iron Guardians"],0)===1,"Toolbelt: Recipe costs 1 less");
-  s.upg={[tb.uid]:1,[bl.uid]:1};const c=hand(s,0,"Iron Guardians");inv(s,0,"Iron Ingot");inv(s,0,"Silver Ingot");const h0=s.p[0].hand.length,au=s.p[0].aura;
-  E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(!a.ex,"upgraded Toolbelt: the Hero isn't exhausted");ok(s.p[0].hand.length===h0-1+1,"Bellows draws a card");ok(s.p[0].aura===au-1+1,"upgraded Bellows: +1 Aura")}
-/* Tinker's Goggles: one ingredient may be any Metal, once each turn */
-{const s=game(["Artificer D","Artificer A","Artificer E"]);const a=E.actorFor(s,0);E.equipTo(s,a,E.eqObjFromCard(s,0,{uid:uid(),id:"Tinker's Goggles",owner:0}));
-  const c=hand(s,0,"Silver Edge Recipe");inv(s,0,"Iron Ingot");inv(s,0,"Copper Ingot");ok(canPlay(s,c),"Goggles: Copper stands in for Silver");
-  E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(s.p[0].inv.some(o=>o.name==="Silver Edge"),"Silver Edge made");
-  const c2=hand(s,0,"Silver Edge Recipe");inv(s,0,"Iron Ingot");inv(s,0,"Copper Ingot");a.ex=false;s.prio=0;ok(!canPlay(s,c2),"Goggles only once each turn")}
+/* Nov 14: Toolbelt (+1 inventory slot; upgraded +2), Bellows (Two-Handed; draw, upgraded +1 Aura), Tinker's Goggles (Crafting: Scry 1, upgraded Scry 2) */
+{const s=game(["Artificer D","Artificer A","Artificer E"]);const a=E.actorFor(s,0);const base=E.slots(s,0);
+  ok(E.DB["Bellows"].region==="Two-Handed","Bellows is Two-Handed");
+  const tb=E.eqObjFromCard(s,0,{uid:uid(),id:"Toolbelt",owner:0});E.equipTo(s,a,tb);ok(E.slots(s,0)===base+1,"Toolbelt: one more inventory slot ("+E.slots(s,0)+")");
+  ok(E.cardCost(s,0,a,E.DB["Pocket Watch Recipe"],0)===1,"Toolbelt no longer lowers Recipe costs");
+  s.upg={[tb.uid]:1};ok(E.slots(s,0)===base+2,"upgraded Toolbelt: two more slots");
+  const bl=E.eqObjFromCard(s,0,{uid:uid(),id:"Bellows",owner:0});E.equipTo(s,a,bl);s.upg[bl.uid]=1;
+  const c=hand(s,0,"Pocket Watch Recipe");inv(s,0,"Gold Bar");inv(s,0,"Platinum Ingot");inv(s,0,"Rose Quartz");const h0=s.p[0].hand.length,au=s.p[0].aura;
+  E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(a.ex,"Recipes always exhaust the Hero (even with an upgraded Toolbelt)");ok(s.p[0].hand.length===h0-1+1,"Bellows draws a card");ok(s.p[0].aura===au-1+1,"upgraded Bellows: +1 Aura");
+  a.dead=true;ok(E.slots(s,0)===base,"a dead Hero's Toolbelt adds no slot");a.dead=false}
+{const s=game(["Artificer D","Artificer A","Artificer E"]);const a=E.actorFor(s,0);const g=E.eqObjFromCard(s,0,{uid:uid(),id:"Tinker's Goggles",owner:0});E.equipTo(s,a,g);
+  for(let i=0;i<5;i++)s.p[0].lib.push({uid:uid(),id:"Potion",owner:0});
+  const c=hand(s,0,"Pocket Watch Recipe");inv(s,0,"Gold Bar");inv(s,0,"Rose Quartz");inv(s,0,"Copper Ingot");ok(!canPlay(s,c),"Goggles are no longer a Metal wildcard");
+  s.p[0].inv=[];inv(s,0,"Gold Bar");inv(s,0,"Platinum Ingot");inv(s,0,"Rose Quartz");E.act(s,0,{type:"play",uid:c.uid});
+  ok(s.pend.some(pr=>pr.type==="scry"&&pr.pid===0&&(pr.n||pr.count||1)>=1),"Goggles: Crafting opens a Scry");ok(s.log.some(l=>/Tinker's Goggles: .* Scry 1/.test(l.m)),"logs Scry 1");resolve(s);
+  const s2=game(["Artificer D","Artificer A","Artificer E"]);const a2=E.actorFor(s2,0);const g2=E.eqObjFromCard(s2,0,{uid:uid(),id:"Tinker's Goggles",owner:0});E.equipTo(s2,a2,g2);s2.upg={[g2.uid]:1};
+  for(let i=0;i<5;i++)s2.p[0].lib.push({uid:uid(),id:"Potion",owner:0});const c2=hand(s2,0,"Pocket Watch Recipe");inv(s2,0,"Gold Bar");inv(s2,0,"Platinum Ingot");inv(s2,0,"Rose Quartz");
+  E.act(s2,0,{type:"play",uid:c2.uid});ok(s2.log.some(l=>/Tinker's Goggles: .* Scry 2/.test(l.m)),"upgraded Goggles: Scry 2");resolve(s2)}
 /* Artificer C: once each turn, one ingredient may be any item */
 {const s=game(["Artificer C","Artificer A","Artificer E"]);const c=hand(s,0,"Reclamation Kit Recipe");inv(s,0,"Potion");ok(canPlay(s,c),"Artificer C: a Potion stands in for the Silver Ingot");
   E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(s.p[0].inv.some(o=>o.name==="Reclamation Kit"),"Reclamation Kit made")}
@@ -114,8 +121,11 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   const h=s.p[0].hand.length;ok(use("Mithril Ingot")&&s.p[0].hand.length===h+2,"Mithril Ingot: draw 2");
   const al=s.p[0].heroes[2];const d0=E.defn(s,al);ok(use("Iron Ingot",[al.uid])&&E.defn(s,al)===d0+2,"Iron Ingot: +2 Defense");
   const z=E.makeSummon(s,1,"Construct",true);z.str=1;z.hp=5;ok(use("Silver Ingot",[z.uid])&&z.dmg===3,"Silver Ingot: 3 damage to a summon")}
-/* Artificer A: look at the top 3, a Metal into inventory */
-{const s=game(["Artificer A","Artificer D","Artificer E"]);const pl=s.p[0];pl.lib.push({uid:uid(),id:"Potion",owner:0},{uid:uid(),id:"Mithril Ingot",owner:0},{uid:uid(),id:"Topaz",owner:0});
-  const a=E.actorFor(s,0);ok(a.name==="Artificer A","acting Hero");const ab=opts(s,0).find(o=>o.type==="ability");ok(ab,"Artificer A ability offered");E.act(s,0,ab);resolve(s);
-  ok(pl.inv.some(o=>o.name==="Mithril Ingot"),"the Metal goes into inventory");ok(pl.lib[0].id==="Topaz"||pl.lib[1].id==="Topaz","the rest go on the bottom")}
+/* Artificer A (Nov 14): look at the top 3, an item into your hand, the rest on the bottom; Level 3: search your library for an item */
+{const s=game(["Artificer A","Artificer D","Artificer E"]);const pl=s.p[0];pl.lib.push({uid:uid(),id:"Disarm",owner:0},{uid:uid(),id:"Mithril Ingot",owner:0},{uid:uid(),id:"Humble",owner:0});
+  const a=E.actorFor(s,0);ok(a.name==="Artificer A","acting Hero");const ab=opts(s,0).filter(o=>o.type==="ability");ok(ab.length===1,"one Artificer A ability below Level 3");E.act(s,0,ab[0]);resolve(s);
+  ok(pl.hand.some(c=>c.id==="Mithril Ingot"),"the item goes to your hand");ok(!pl.inv.some(o=>o.name==="Mithril Ingot"),"not into inventory");ok(["Disarm","Humble"].every(n=>pl.lib.slice(0,2).some(c=>c.id===n)),"the rest go on the bottom");ok(a.ex,"Exhaust")}
+{const s=game(["Artificer A","Artificer D","Artificer E"]);const pl=s.p[0];const a=E.actorFor(s,0);a.lvl=3;pl.lib.unshift({uid:uid(),id:"Topaz",owner:0});
+  const ab=opts(s,0).filter(o=>o.type==="ability");ok(ab.length===1&&ab[0].idx===1,"Level 3: only the search ability");const n0=pl.lib.length;E.act(s,0,ab[0]);resolve(s);
+  ok(pl.hand.some(c=>(E.DB[c.id]||{}).type==="Item"),"Level 3: an item from the library goes to your hand");ok(pl.lib.length===n0-1,"one card left the library");ok(a.ex,"Exhaust")}
 console.log(`Set 2 Artificer checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

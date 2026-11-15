@@ -38,14 +38,15 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 
 - **Recipe:** a two-sided card type. The front lists its ingredients and Aura cost. The back shows what it makes.
 - **Craft:** play this only if its ingredients are in your inventory. Pay its Aura cost, sacrifice the ingredients, then flip the card. A made item or weapon goes into your inventory. A made summon enters play, and the Recipe then goes to your discard pile.
-- **Ingredients** always come from your inventory unless a card says otherwise. "Any Metal" means any card with the Metal subtype. "Any Cloak" means any equipment card with Cloak in its name. "Any Sword" means any Weapon card with Sword in its name. "Any Chest armor" means any equipment card in the Chest region.
+- **Ingredients** always come from your inventory unless a card says otherwise. "Any Metal" means any card with the Metal subtype. "Any Sword" means any Weapon card with Sword in its name. "Any Chest armor" means any equipment card in the Chest region.
 - **Metal:** a generic item subtype (Copper, Iron, Silver, Platinum and Mithril Ingots). Each Metal has its own use, so any class can play them; Artificers also use them as ingredients.
 - **Quicksilver:** a special Artificer material (2 Aura item). It does nothing on its own, but it can be used as any ingredient.
 - **Stall** (Pocket Watch): set the card being played aside with 2 stall counters on it. Each time that player takes an action, remove a stall counter. When the last one is removed, they may play the card without paying its Aura cost. The Aura they already paid is not refunded.
-- **Protection counters** (Warded Cloak): whenever a Hero in your party would be dealt damage, prevent that damage and remove a protection counter instead. With no counters left, nothing is prevented.
+- **Extra inventory slots** (Toolbelt): your party has one more inventory slot for each Toolbelt equipped to a Hero that isn't dead (two more if that Toolbelt is upgraded). If a Toolbelt leaves, use the normal inventory overflow rule: you choose which cards to discard until everything fits.
 - **Made weapons** are equipped by the normal rules: a Hero equips one from your inventory to itself by paying the weapon's Aura cost.
 - **Piercing** (The Archfrost, The Archflame): attacks from the equipped Hero ignore all of the target's Defense.
 - **Dragonscale Scale:** the equipped Hero has Impervious (see Necromancer). It still dies if it loses all its Health Points.
+- **Deprecated Artificer cards** (Nov 14, 2026; not legal in decks): Clockwork Pair, Iron Guardians, Reclamation Kit Recipe, Blast Charge Recipe, Gearwork Hammer Recipe, Silver Edge Recipe, Mithril Blade Recipe, Warded Cloak Recipe.
 
 ## Tokens
 
@@ -54,7 +55,7 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 | Revenant | Summon | 1 Strength / 1 Health Point | Impervious | Raise Revenant, Restless Dead, Grave Tide, Grave Whispers, Rise from the Grave, Grave Caller's Wand |
 | Abomination | Summon | 5 Strength / 5 Health Points | Enters with Stealth and ready | From Darkness |
 | Remains | Item, in an empty inventory slot | None | Sacrifice this: Gain 1 Aura. Spend it only to play Summon cards. | Cursed Urn |
-| Construct | Summon | 2/2 or 3/3 | None | Clockwork Pair, Iron Guardians |
+| Construct | Summon | 2/2 or 3/3 | None | No current card (Clockwork Pair and Iron Guardians were deprecated Nov 14, 2026) |
 
 ## Glossary
 

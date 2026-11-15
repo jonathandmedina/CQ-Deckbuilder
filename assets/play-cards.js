@@ -587,9 +587,9 @@ def("Mithril Ingot",item(0,[],c=>draw(c,2),{exile:true}));
 /* Quicksilver: no effect of its own; Craft can use it as any ingredient (E.craftPlan) */
 S["Quicksilver"]={};
 /* Recipes: the ingredients were paid when the card was played (E.payCraft). Resolving flips it: Constructs enter play (the Recipe goes to the discard pile);
-   a made item or weapon goes into your inventory. "Exhaust this Hero" unless an upgraded Toolbelt is equipped. */
+   a made item or weapon goes into your inventory. "Exhaust this Hero." */
 const recipe=n=>def(n,{run(c){const keep=E.flipRecipe(c.s,c.pid,c.inst);
-  if(c.actor&&!c.actor.dead){if(E.hasUp(c.s,c.actor,"Toolbelt"))log(c,`Upgraded Toolbelt: ${c.actor.name} isn't exhausted.`);else exMe(c)}
+  if(c.actor&&!c.actor.dead)exMe(c);
   return keep?"stay":undefined}});
 Object.keys(E.RECIPES||{}).forEach(recipe);
 /* made items */
@@ -609,11 +609,19 @@ def("The Right Mix",{run(c){const top=c.me.lib.slice(-4).reverse();if(!top.lengt
   const rest=top.filter(x=>(E.DB[x.id]||{}).type!=="Item").length;if(rest)log(c,`${rest} card${rest>1?"s go":" goes"} to the bottom of ${c.me.name}'s library.`)}});
 EQ2["Dragonscale Scale"]={label:"2 Aura: +1 Strength this turn",cost:2,run:c=>{buff(c.actor,{str:1});log(c,`${c.actor.name} gains +1 Strength this turn (Dragonscale Scale).`)}};
 /* Heroes */
-hab("Artificer A",[{label:"Look at the top 3 (a Metal to inventory)",can:(s,pid)=>s.p[pid].lib.length>0,run(c){const top=c.me.lib.slice(-3);
-  const room=c.me.inv.length<E.slots(c.s,c.pid);const ms=top.filter(x=>(E.DB[x.id]||{}).sub==="Metal");
+/* Artificer A (Nov 14): look at the top 3, an item may go to your hand, the rest to the bottom. Level 3: search your library for an item (then shuffle). */
+OPS.lookHand=(s,pid,pr,picks)=>{const pl=s.p[pid];const look=pr.look||[];
+  picks.slice(0,1).forEach(u=>{const i=pl.lib.findIndex(x=>x.uid===u);if(i>=0){const x=pl.lib.splice(i,1)[0];pl.hand.push(x);E.log(s,`${E.DB[x.id].name} goes to ${pl.name}'s hand.`,pid)}});
+  let n=0;look.forEach(u=>{const i=pl.lib.findIndex(x=>x.uid===u);if(i>=0){pl.lib.unshift(pl.lib.splice(i,1)[0]);n++}});
+  if(n)E.log(s,`${pl.name} puts ${n} card${n===1?"":"s"} on the bottom of their library.`,pid)};
+hab("Artificer A",[{label:"Look at the top 3 (an item to your hand)",can:(s,pid,a)=>a.lvl<3&&s.p[pid].lib.length>0,run(c){const top=c.me.lib.slice(-3);
+  const its=top.filter(x=>(E.DB[x.id]||{}).type==="Item");
   log(c,`Artificer A: ${c.me.name} looks at the top ${top.length} card${top.length===1?"":"s"} of their library.`);
-  if(ms.length&&room)E.pushChoose(c.s,c.pid,{title:"Artificer A: put a Metal from among them into an empty inventory slot? The rest go on the bottom of your library.",cards:ms.map(x=>x.uid),min:0,max:1,op:"reload",look:top.map(x=>x.uid)});
-  else{log(c,ms.length?"Artificer A: there's a Metal, but the inventory is full.":"Artificer A: no Metal among them.");OPS.reload(c.s,c.pid,{look:top.map(x=>x.uid)},[])}}}]);
+  if(its.length)E.pushChoose(c.s,c.pid,{title:"Artificer A: put an item from among them into your hand? The rest go on the bottom of your library.",cards:its.map(x=>x.uid),min:0,max:1,op:"lookHand",look:top.map(x=>x.uid)});
+  else{log(c,"Artificer A: no item among them.");OPS.lookHand(c.s,c.pid,{look:top.map(x=>x.uid)},[])}}},
+ {label:"Search your library for an item",lvl:3,can:(s,pid)=>s.p[pid].lib.length>0,run(c){const its=c.me.lib.filter(x=>(E.DB[x.id]||{}).type==="Item");
+  if(its.length)E.pushChoose(c.s,c.pid,{title:"Artificer A: choose an item",cards:its.map(x=>x.uid),min:1,max:1,op:"tutor"});
+  else{log(c,"Artificer A: there's no item in the library.");E.shuffle(c.s,c.me.lib)}}}]);
 
 /* ===== Set 2: Necromancer (Set Two Rules Supplement) =====
    Revenant: 1/1 summon token with Impervious (engine: damage and destroy do nothing; HP loss, sacrifice and exile work). Cards that summon one say "Exhaust this Hero".

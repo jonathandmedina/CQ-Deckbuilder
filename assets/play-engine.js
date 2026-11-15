@@ -160,7 +160,8 @@ const living=pl=>pl.heroes.filter(h=>!h.dead);
 const curses=s=>{let n=0;s.p.forEach(pl=>pl.heroes.forEach(h=>h.ench.forEach(e=>{if(def(e).sub==="Curse")n++})));return n};
 const invHas=(pl,n)=>pl.inv.some(o=>!o.fd&&o.name===n);
 const invCount=(pl,n)=>pl.inv.filter(o=>!o.fd&&o.name===n).length;
-E.slots=(s,pid)=>4+(living(P(s,pid)).some(h=>h.name==="Veteran Bowman")?1:0);
+E.slots=(s,pid)=>4+(living(P(s,pid)).some(h=>h.name==="Veteran Bowman")?1:0)
+  +living(P(s,pid)).reduce((n,h)=>n+eqList(h).filter(e=>e.name==="Toolbelt").reduce((m,e)=>m+(isUp(s,e)?2:1),0),0); /* Set 2 Toolbelt (Nov 14): +1 inventory slot (upgraded +2) */
 
 /* ---------- stats ---------- */
 function maxHp(s,o){
@@ -592,7 +593,6 @@ function cardCost(s,pid,actor,d,x){if(hasMourn(d)&&mourning(s,pid))return 0;let 
   if(actor&&actor.kind==="hero"&&eqList(actor).some(e=>e.name==="Ring of Vocation"&&e.x&&e.x.cls===d.cls&&isUp(s,e)))c-=1;
   if(d.type==="Summon"&&actor&&hasEqN(actor,"Antler Crown")&&actor.fl.antler!==s.round)c-=1;
   if(d.sub==="Combo"&&pl.fl.petalDisc)c-=1;
-  if(d.type==="Recipe"&&actor&&hasEqN(actor,"Toolbelt"))c-=1; /* Set 2 Toolbelt */
   if(actor&&actor.kind==="hero")c+=burden(actor);
   if(d.cls!=="Warlock"){s.p.forEach(p2=>{c+=invCount(p2,"Sphere of Hindrance")})}
   return Math.max(0,c)}
@@ -945,7 +945,7 @@ E.levelUp=levelUp;
    Craft (Set Two Rules Supplement): play a Recipe only if its ingredients are in your inventory. Pay its Aura cost, sacrifice the ingredients, then flip it.
    Ingredient spec: {name} = that card, {any:"Metal"} = any card with the Metal subtype, {any:"Cloak"} = any equipment with Cloak in its name.
    Wildcards (each covers one ingredient): Quicksilver (any ingredient; it's used up), Artificer C (once each turn: any item in your inventory),
-   Tinker's Goggles (once each turn: any Metal; upgraded: any item), Scavenger's Tongs (once each turn: one ingredient from your discard pile; upgraded: any discard pile).
+   Scavenger's Tongs (once each turn: one ingredient from your discard pile; upgraded: any discard pile).
    The engine picks the cheapest way to pay (cards from a discard pile first, then exact matches, then wildcards, Quicksilver last) and logs what it used. */
 function ingMatch(spec,d){if(!d)return false;if(spec.name)return d.name===spec.name;if(spec.any==="Metal")return d.sub==="Metal";if(spec.any==="Cloak")return d.kind==="equip"&&/Cloak/.test(d.name);
   /* Nov 13: "any Sword" = a Weapon with Sword in its name; "any Chest armor" = equipment in the Chest region */
@@ -955,7 +955,6 @@ function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl
   const val=o=>num(def(o).cost)+(o.kind==="equip"?1:0);
   const subs=[];/* one-shot wildcards available to this Hero */
   if(actor&&actor.name==="Artificer C"&&actor.fl.craftC!==s.round)subs.push({k:"anyItem",src:"Artificer C",flag:"craftC"});
-  if(actor&&hasEqN(actor,"Tinker's Goggles")&&actor.fl.craftG!==s.round)subs.push({k:hasUpN(s,actor,"Tinker's Goggles")?"anyItem":"anyMetal",src:"Tinker's Goggles",flag:"craftG"});
   if(actor&&hasEqN(actor,"Scavenger's Tongs")&&actor.fl.craftT!==s.round)subs.push({k:"disc",any:hasUpN(s,actor,"Scavenger's Tongs"),src:"Scavenger's Tongs",flag:"craftT"});
   const ings=r.ing;let best=null;
   function go(i,used,subUsed,cost,plan){if(best&&cost>=best.cost)return;if(i===ings.length){best={cost,plan:plan.slice(),subs:subUsed.slice()};return}
@@ -977,6 +976,8 @@ function payCraft(s,pid,actor,d){const plan=craftPlan(s,pid,actor,d);if(!plan)re
   log(s,`Craft: ${pl.name} sacrifices ${names.join(", ")}.`,pid);
   /* Bellows: whenever the equipped Hero Crafts, draw a card (upgraded: and gain 1 Aura) */
   if(actor&&hasEqN(actor,"Bellows")){eqList(actor).filter(e=>e.name==="Bellows").forEach(e=>{log(s,`Bellows: ${actor.name} Crafts, draw a card${isUp(s,e)?" and gain 1 Aura":""}.`,pid);draw(s,pid,1);if(isUp(s,e))pl.aura+=1})}
+  /* Tinker's Goggles (Nov 14): whenever the equipped Hero Crafts, Scry 1 (upgraded: Scry 2) */
+  if(actor&&hasEqN(actor,"Tinker's Goggles")){eqList(actor).filter(e=>e.name==="Tinker's Goggles").forEach(e=>{const n=isUp(s,e)?2:1;if(!pl.lib.length)return;log(s,`Tinker's Goggles: ${actor.name} Crafts, Scry ${n}.`,pid);pushScry(s,pid,n)})}
   return true}
 E.payCraft=payCraft;
 /* the Recipe flips: a summon Recipe summons its Constructs (then goes to the discard pile); an item or weapon goes into your inventory as the made card */

@@ -507,7 +507,13 @@ def("Null Stone",{enter(c){const names=[];const add=n=>{n=String(n||"").replace(
   E.ask(c.s,c.pid,"Null Stone: name a card. Its activated abilities can't be activated.",names.map(n=>({label:n,v:n})),"nullStone",{uid:c.inst.uid,name:"Null Stone"})}});
 A.nullStone=(s,pid,pr,v)=>{const f=E.find(s,pr.data.uid);if(f){f.o.x={name:v};E.log(s,`Null Stone names ${v}.`,pid)}};
 /* Mage */
-hid("Redirect","card",(s,pid,tr)=>(tr.targets||[]).some(u=>u&&typeof u==="string"&&u[0]!=="P"),c=>{const tr=c.trig,cont=c.cont||{};const i=(tr.targets||[]).findIndex(u=>u&&u[0]!=="P");if(i<0)return;
+hid("Redirect","card",(s,pid,tr)=>(tr.targets||[]).some(u=>u&&typeof u==="string"&&u[0]!=="P"),c=>redirectAsk(c));
+/* shared by Redirect and the Deflecting Shield (Nov 15, 2026; the Shield also redirects attacks) */
+function redirectAsk(c){const tr=c.trig,cont=c.cont||{};
+  if(tr.kind==="attack"){const att=E.find(c.s,tr.attacker);const cs=E.candidates(c.s,tr.pid,{k:"enemy"},{attack:true,actor:att&&att.o}).filter(u=>u!==tr.target).map(u=>E.resolveTarget(c.s,u)).filter(Boolean);
+    if(!cs.length){log(c,"Redirect: there's no other legal target for the attack.");return}
+    E.ask(c.s,c.pid,"Redirect the attack: choose the new target",cs.map(o=>({label:o.name+(o.kind==="summon"?" (summon)":"")+(E.ctrl(c.s,o)===c.pid?" (yours)":""),v:o.uid})),"redirect",{i:0,name:"Redirect"});return}
+  const i=(tr.targets||[]).findIndex(u=>u&&u[0]!=="P");if(i<0)return;
   let spec=null,card=null;const caster=tr.src&&tr.src.kind==="hero"?E.find(c.s,tr.src.uid):null;
   if(cont.k==="card"){card=E.DB[cont.card.id];const sc=S[card.name];spec=sc&&E.specsFor(sc,cont.modes)[i]}
   else if(cont.k==="ability"&&caster){const ab=(H[caster.o.name]||[])[cont.idx];spec=ab&&(ab.t||[])[i]}
@@ -516,7 +522,8 @@ hid("Redirect","card",(s,pid,tr)=>(tr.targets||[]).some(u=>u&&typeof u==="string
   const cs=E.candidates(c.s,tr.pid,spec,{actor:caster&&caster.o,card}).filter(u=>u!==tr.targets[i]).map(u=>E.resolveTarget(c.s,u)).filter(Boolean);
   cs.sort((a,b)=>((E.ctrl(c.s,b)===tr.pid)-(E.ctrl(c.s,a)===tr.pid)));
   if(!cs.length){log(c,"Redirect: there's no other legal target.");return}
-  E.ask(c.s,c.pid,"Redirect: choose the new target",cs.map(o=>({label:o.name+(o.kind==="summon"?" (summon)":"")+(E.ctrl(c.s,o)===c.pid?" (yours)":""),v:o.uid})),"redirect",{i,name:"Redirect"})});
+  E.ask(c.s,c.pid,"Redirect: choose the new target",cs.map(o=>({label:o.name+(o.kind==="summon"?" (summon)":"")+(E.ctrl(c.s,o)===c.pid?" (yours)":""),v:o.uid})),"redirect",{i,name:"Redirect"})}
+root.CQ_DEFLECT=(s,pid,pr)=>redirectAsk({s,pid,trig:pr.trig,cont:pr.cont});
 def("Tome of Gim",item(1,[],c=>{const o=c.inst;if(!o||!(o.under||[]).length){log(c,"There's nothing under Tome of Gim.");return}const show={};o.under.forEach(x=>{show[x.uid]=x.id});
   E.pushChoose(c.s,c.pid,{title:"Tome of Gim: put a card from under it into your hand",cards:o.under.map(x=>x.uid),show,min:1,max:1,op:"tomeTake",tome:o.uid})},{can:(s,pid,a,o)=>!!(o&&o.under&&o.under.length)}));
 OPS.tomePut=(s,pid,pr,picks)=>{const pl=s.p[pid];const f=E.find(s,pr.tome);if(!f)return;picks.forEach(u=>{const i=pl.hand.findIndex(x=>x.uid===u);if(i>=0){f.o.under=(f.o.under||[]).concat([pl.hand.splice(i,1)[0]]);E.log(s,`${pl.name} puts a card under Tome of Gim (${f.o.under.length} there).`,pid)}})};
@@ -607,6 +614,33 @@ def("The Right Mix",{run(c){const top=c.me.lib.slice(-4).reverse();if(!top.lengt
   log(c,`The Right Mix reveals ${top.map(x=>E.DB[x.id].name).join(", ")}.`);
   top.forEach(x=>{const i=c.me.lib.indexOf(x);if(i<0)return;c.me.lib.splice(i,1);if((E.DB[x.id]||{}).type==="Item"){c.me.hand.push(x);log(c,`${E.DB[x.id].name} goes to ${c.me.name}'s hand.`)}else c.me.lib.unshift(x)});
   const rest=top.filter(x=>(E.DB[x.id]||{}).type!=="Item").length;if(rest)log(c,`${rest} card${rest>1?"s go":" goes"} to the bottom of ${c.me.name}'s library.`)}});
+/* ===== Set 2, Nov 15, 2026: Remey Recipe, Back in the Lab, Wellness Rod, Deflecting Shield, Time Pearl, Aura Pearl, Crafter's Choice ===== */
+/* Remey Recipe: "As an additional cost to play this card, surrender a soul." (the engine picks your dead Hero with the lowest level) */
+Object.assign(S["Remey Recipe"]||{},{can:(s,pid)=>E.soulsLeft(s,pid).length>0,payCost:c=>{E.surrenderCost(c.s,c.pid,"Remey Recipe")}});
+def("Back in the Lab",{run(c){const l=c.me.lib.filter(x=>(E.DB[x.id]||{}).type==="Recipe");
+  if(l.length)E.pushChoose(c.s,c.pid,{title:"Back in the Lab: choose a Recipe card",cards:l.map(x=>x.uid),min:1,max:1,op:"tutor"});
+  else{log(c,"Back in the Lab: there's no Recipe card in the library.");E.shuffle(c.s,c.me.lib)}}});
+/* Wellness Rod (Crafted Tool): Exhaust: remove all status counters from any target */
+EQ2["Wellness Rod"]={label:"Exhaust: remove all status counters from any target",t:[ANY],run:c=>{const o=c.t[0];exMe(c);if(!o||!o.st){log(c,"Wellness Rod: no target.");return}
+  const n=E.STATUS.reduce((a,k)=>a+(o.st[k]||0),0);E.STATUS.forEach(k=>o.st[k]=0);log(c,n?`Wellness Rod: ${o.name} loses all ${n} status counter${n>1?"s":""}.`:`Wellness Rod: ${o.name} has no status counters.`)}};
+S["Deflecting Shield"]={}; /* engine: response window (E.canDeflect) */
+S["Time Pearl"]={}; /* engine: response window (E.canPearl) */
+def("Aura Pearl",item(0,[],c=>{c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{sac:true}));
+/* Crafter's Choice: "Crafted items" in a discard pile are the Recipe cards whose back is a Crafted item (a made item leaves play as its Recipe) */
+const craftedRecipe=x=>{const d=E.DB[x.id]||{};const r=d.recipe;return!!(r&&r.back&&r.back.crafted)};
+const craftedEq=o=>o&&o.kind==="equip"&&E.isCrafted(E.DB[o.id]);
+def("Crafter's Choice",M(2,[
+  {label:"Shuffle up to 2 Crafted items from your discard pile into your library",run:c=>{const l=c.me.disc.filter(craftedRecipe);if(!l.length){log(c,"Crafter's Choice: no Crafted item in your discard pile.");return}
+    E.pushChoose(c.s,c.pid,{title:"Crafter's Choice: shuffle up to 2 Crafted items into your library",cards:l.map(x=>x.uid),min:0,max:2,op:"discToLib"})}},
+  {label:"Equip a Crafted item from your inventory to target Hero for free",t:[AHERO],run:c=>{const h=c.t[0];if(!h||h.dead)return;
+    const l=c.me.inv.filter(o=>craftedEq(o)&&E.canUseEq(c.s,h,o));if(!l.length){log(c,`Crafter's Choice: no Crafted item in your inventory that ${h.name} can use.`);return}
+    if(l.length===1){OPS.craftEquip(c.s,c.pid,{hero:h.uid},[l[0].uid]);return}
+    E.pushChoose(c.s,c.pid,{title:`Crafter's Choice: equip a Crafted item to ${h.name} without paying its Aura cost`,cards:l.map(o=>o.uid),show:Object.fromEntries(l.map(o=>[o.uid,o.id])),min:1,max:1,op:"craftEquip",hero:h.uid})}},
+  {label:"Your next Recipe this turn costs 1 less Aura",run:c=>{c.me.t.recipeDisc=1;log(c,`${c.me.name}'s next Recipe this turn costs 1 less Aura.`)}}]));
+OPS.discToLib=(s,pid,pr,picks)=>{const pl=s.p[pid];const nm=[];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.lib.push(x);nm.push(E.DB[x.id].name)}});
+  if(nm.length){E.shuffle(s,pl.lib);E.log(s,`${nm.join(" and ")} shuffled into ${pl.name}'s library.`,pid)}};
+OPS.craftEquip=(s,pid,pr,picks)=>{const pl=s.p[pid];const h=E.find(s,pr.hero);if(!h||h.o.dead)return;const o=pl.inv.find(x=>x.uid===picks[0]);if(!o)return;
+  pl.inv.splice(pl.inv.indexOf(o),1);E.log(s,`Crafter's Choice: ${o.name} is equipped to ${h.o.name} without paying its Aura cost.`,pid);E.equipTo(s,h.o,o)};
 EQ2["Dragonscale Scale"]={label:"2 Aura: +1 Strength this turn",cost:2,run:c=>{buff(c.actor,{str:1});log(c,`${c.actor.name} gains +1 Strength this turn (Dragonscale Scale).`)}};
 /* Heroes */
 /* Artificer A (Nov 14): look at the top 3, an item may go to your hand, the rest to the bottom. Level 3: search your library for an item (then shuffle). */
@@ -673,6 +707,13 @@ def("Funeral Procession",{run(c){const sm=c.me.disc.filter(x=>(E.DB[x.id]||{}).t
   c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:sm.map(x=>x.uid),free:true,fromDisc:true,exileAfter:true,title:"Funeral Procession: play a Summon card from your discard pile without paying its Aura cost (it's exiled after it resolves)"})}});
 def("Grieving Thoughts",{run(c){draw(c,1);if(c.me.hand.length)E.pushChoose(c.s,c.pid,{title:"Grieving Thoughts: discard a card",cards:c.me.hand.map(x=>x.uid),from:"hand",min:1,max:1,op:"discard"})}});
 def("Mourner's Offering",{run(c){c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)}});
+/* Undead's Choice (Nov 15, 2026): choose two. The Revenant mode exhausts this Hero. The Exhume grant: a card in your discard pile may be played from there this turn (paying its costs). */
+def("Undead's Choice",M(2,[
+  {label:"Summon a 1/1 Revenant (exhaust this Hero)",run:c=>{raise(c,1);exMe(c)}},
+  {label:"Mill 2",run:c=>E.mill(c.s,c.pid,2)},
+  {label:"A card in your discard pile gains Exhume this turn",run:c=>{const l=c.me.disc.filter(x=>!(c.me.t.exhGrant||[]).includes(x.uid)&&(E.DB[x.id]||{}).kind!=="hero");if(!l.length){log(c,"Undead's Choice: your discard pile is empty.");return}
+    E.pushChoose(c.s,c.pid,{title:"Undead's Choice: choose a card in your discard pile. It gains Exhume this turn.",cards:l.map(x=>x.uid),min:1,max:1,op:"exhGrant"})}}]));
+OPS.exhGrant=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const x=pl.disc.find(y=>y.uid===u);if(!x)return;pl.t.exhGrant=(pl.t.exhGrant||[]).concat([u]);E.log(s,`Undead's Choice: ${E.DB[x.id].name} gains Exhume this turn.`,pid)})};
 /* items */
 S["Ossuary"]={}; /* engine strOf */
 S["Cursed Urn"]={}; /* engine destroyObj */

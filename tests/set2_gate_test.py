@@ -3,7 +3,8 @@ and the Play tab pieces (made items, Constructs, Stall, Warded Cloak) render. Se
 import json, os, sys, threading, functools, http.server, socketserver
 from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NAMES = ["Iron Guardians","Clockwork Pair","Quicksilver","Copper Ingot","Mithril Ingot","Toolbelt","Tinker's Goggles","Artificer A","Construct","Warded Cloak","Pocket Watch"]
+NAMES = ["Iron Guardians","Clockwork Pair","Quicksilver","Copper Ingot","Mithril Ingot","Toolbelt","Tinker's Goggles","Artificer A","Construct","Warded Cloak","Pocket Watch",
+         "Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice"]  # Nov 15 queue build
 SHOTS = os.environ.get("SHOTS")
 FAKE_SB = """window.supabase={createClient(){const res=d=>({data:d,error:null});
  const chain=()=>{const p=new Proxy(function(){},{get(t,k){if(k==='then')return(ok,bad)=>Promise.resolve(res([])).then(ok,bad);return()=>p},apply(){return p}});return p};
@@ -97,6 +98,16 @@ def main():
             plain = pg.evaluate("""(()=>{let n=0;['Pocket Watch Recipe','The Archfrost Recipe','The Archflame Recipe','Dragonscale Scale Recipe','Iron Ingot'].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")
             check(plain == 0, f"[{w}] stat words left plain on Set 2 cards: {plain}")
+            # Nov 15 queue build: new cards, Remey's Hero Construct back, the Crafted subtype, accent colors
+            for nm in ["Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice"]:
+                pg.fill("#cat-q", nm); pg.wait_for_timeout(200); check(nm in text(pg).replace(f"“{nm}”", ""), f"[{w}] access: catalog shows {nm}")
+            pg.fill("#cat-q", "")
+            r = pg.evaluate("""(()=>{const f=n=>upFace(BYID.get(n));return[f('Remey Recipe').name,f('Remey Recipe').sub,f('Wellness Rod Recipe').sub,f('Pocket Watch Recipe').sub,f('Deflecting Shield Recipe').sub,BYID.get('Iron Guardians')?f('Iron Guardians').sub:'']})()""")
+            check(r[0] == "Remey the Incredible" and r[1] == "Hero Construct", f"[{w}] Remey back: {r}")
+            check("Crafted" in r[2] and "Crafted" in r[3] and "Crafted" in r[4] and "Crafted" not in r[5], f"[{w}] Crafted subtype on made items only: {r}")
+            plain = pg.evaluate("""(()=>{let n=0;['Remey Recipe','Back in the Lab','Wellness Rod Recipe','Deflecting Shield Recipe',"Crafter's Choice",'Time Pearl','Aura Pearl',"Undead's Choice"].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);
+              d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points|\\bAura\\b/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")
+            check(plain == 0, f"[{w}] stat words left plain on the Nov 15 cards: {plain}")
             go(pg, port, "#build")
             check("Artificer A" in text(pg), f"[{w}] access: Artificer Heroes in the Deck Builder")
             go(pg, port, "#changelog")
@@ -125,6 +136,22 @@ def main():
             mt = pg.locator("#layer").inner_text(); check("+6 Strength" in mt or "Equipped Hero gains +6" in mt, f"[{w}] made weapon opens its card in the zoom: {mt[:80]}")
             if SHOTS and w == 1280: pg.screenshot(path=f"{SHOTS}/play_made_weapon.png")
             ow = pg.evaluate("document.documentElement.scrollWidth-innerWidth"); check(ow <= 1, f"[{w}] horizontal overflow {ow}")
+            # Nov 15: Remey the Incredible (fourth Hero, acts Last), and the Time Pearl / Deflecting Shield response buttons
+            pg.keyboard.press("Escape"); clear(pg)
+            pg.evaluate("""(()=>{const E=CQE;const deck=(h,c)=>({name:'T',heroes:h.map(x=>'h:'+x),cards:c});const fill={Potion:3,Antidote:3,Revitalize:3,Dynamite:3,'Platinum Bar':3,'Gold Bar':3,'Time Pearl':2,'Aura Pearl':2,'Remey Recipe':2,'Back in the Lab':2,'Wellness Rod Recipe':2,'Deflecting Shield Recipe':2,"Crafter's Choice":2,'Silver Bar':3,'Copper Ingot':3,'Iron Ingot':3,'Rose Quartz':3};
+              const s=E.newGame({seed:9,players:[{name:'You',deck:deck(['Artificer A','Artificer B','Artificer C'],fill)},{name:'AI',ai:true,deck:deck(['Divine Knight','Arcane Scholar','Shadow Ranger'],{Potion:3,Precognition:3,Humble:3,Vandalize:3,Disarm:3,Naturalize:3,Shatter:3,'Gold Bar':3,'Platinum Bar':3,'Silver Bar':3,'Rose Quartz':3,Antidote:3,Topaz:3,Almandine:3,'Smoke Bomb':3,Dynamite:3,Revitalize:3})}]});
+              E.act(s,0,{type:'keep'});E.act(s,1,{type:'keep'});E.act(s,0,{type:'dawnDone'});E.act(s,1,{type:'dawnDone'});s.p[0].aura=8;
+              E.flipRecipe(s,0,{uid:'r1',id:'Remey Recipe',owner:0});E.flipRecipe(s,0,{uid:'r2',id:'Deflecting Shield Recipe',owner:0});const sh=s.p[0].inv.find(o=>o.name==='Deflecting Shield');s.p[0].inv.splice(s.p[0].inv.indexOf(sh),1);E.equipTo(s,s.p[0].heroes[1],sh);
+              s.p[0].inv.push(E.invObj(s,0,{uid:'tp1',id:'Time Pearl',owner:0}));s.p[1].heroes.forEach(h=>h.ex=false);s.prio=1;const c={uid:'pc1',id:'Precognition',owner:1};s.p[1].hand.push(c);s.p[1].aura=5;E.act(s,1,{type:'play',uid:'pc1'});
+              localStorage.setItem('cq.play.local',JSON.stringify({s,me:0,meta:null}));CQPlay.mode='lobby';CQPlay.mount(document.getElementById('view'))})()""")
+            pg.wait_for_timeout(400); pg.click("[data-pa=resume-local]"); pg.wait_for_timeout(900)
+            pt = text(pg)
+            check("Remey the Incredible" in pt and "Hero Construct" in pt, f"[{w}] Play tab shows Remey as a Hero Construct")
+            check("Delay it with a Time Pearl" in pt, f"[{w}] Time Pearl response button")
+            if SHOTS and w == 1280: pg.screenshot(path=f"{SHOTS}/play_remey.png")
+            pg.locator("button", has_text="Delay it with a Time Pearl").first.click(); pg.wait_for_timeout(600)
+            check("Set aside with stall counters" in pg.content() or "Stalled" in text(pg), f"[{w}] the card is set aside after the Time Pearl")
+            ow = pg.evaluate("document.documentElement.scrollWidth-innerWidth"); check(ow <= 1, f"[{w}] horizontal overflow with four Heroes {ow}")
             check(not errs, f"[{w}] access errors: {errs[:3]}"); ctx.close()
         b.close()
     srv.shutdown()

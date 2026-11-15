@@ -47,7 +47,7 @@ const CARDS=[
 /* Set 2 Recipes (RECIPES in cards-data.js): two-sided cards. c.up.recipe holds the back: what Crafting the Recipe makes. The flip view and Print & Play show it like an upgraded side. */
 {const RC=(typeof RECIPES!=="undefined")?RECIPES:{};CARDS.forEach(c=>{const r=c.type==="Recipe"&&RC[c.name];if(r)c.up=Object.assign({recipe:true,ing:r.ing},r.back,{cost:r.back.cost,pstr:+r.back.pstr||0,pdef:+r.back.pdef||0})})}
 const isRecipe=c=>!!(c&&c.up&&c.up.recipe);
-function upFace(c){if(isRecipe(c)){const b=c.up;return Object.assign({},c,{id:c.id+"#up",face:"up",name:b.name,type:b.type,sub:b.type==="Equipment"?[b.sub,b.region].filter(Boolean).join(" · "):b.sub,region:b.region,cost:b.type==="Summon"?"":b.cost,rules:b.rules,pstr:b.pstr,pdef:b.pdef,sup:c.sup,backOf:c.name})}
+function upFace(c){if(isRecipe(c)){const b=c.up;return Object.assign({},c,{id:c.id+"#up",face:"up",name:b.name,type:b.type,sub:b.type==="Equipment"?[b.sub,b.crafted?"Crafted":"",b.region].filter(Boolean).join(" · "):(b.crafted?[b.sub,"Crafted"].filter(Boolean).join(" · "):b.sub),region:b.region,cost:b.type==="Summon"?"":b.cost,rules:b.rules,pstr:b.pstr,pdef:b.pdef,sup:c.sup,backOf:c.name})}
   return Object.assign({},c,{id:c.id+"#up",face:"up",rules:c.up.rules,pstr:c.up.pstr,pdef:c.up.pdef})}
 const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?" · "+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],ver:r[11]||1,sup:""}));
 const TOKEN_BY_NAME=new Map(TOKENS.map(t=>[t.name,t]));

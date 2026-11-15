@@ -58,6 +58,7 @@ These rules belong to Set 2 cards that are designed but not built yet. They take
 - **"Any Shield"** as an ingredient means any equipment card with Shield in its name.
 - **Deflecting Shield:** reveal it like a Hidden card (no action needed) when an attack, card or ability is declared. Redirect it, then exile the Shield with 4 stall counters on it. It comes back into play when the last counter is removed (your party takes 4 actions).
 - **Time Pearl:** sacrifice it to delay a card for 2 actions: put 2 stall counters on that card.
+- **Crafted:** an item made by a Recipe has the subtype Crafted (on its back, for example "Item — Crafted" or "Equipment — Weapon, Crafted"). Cards that say "Crafted item" (Crafter's Choice) mean these.
 
 ## Tokens
 
@@ -77,6 +78,7 @@ Every term new in Set Two, alphabetical.
 | Abomination | A 5/5 summon token made by From Darkness. It enters with Stealth and ready. It does not have Impervious. |
 | Construct | A summon made by an Artificer Recipe. |
 | Craft | See Artificer. |
+| Crafted | A subtype on items made by Recipes. See Queued Rules. |
 | Descale | Whenever damage is dealt to this Hero, it permanently loses 1 Defense. Triggers even if Defense prevents all the damage. |
 | Exhume | If this card was moved from your library to your discard pile this turn, you may play it from your discard pile. You still pay its costs. |
 | Hero Construct | See Queued Rules. |

@@ -21,7 +21,7 @@ const _RC=typeof RAW_CARDS!=="undefined"?RAW_CARDS:root.RAW_CARDS,_RE=typeof RAW
 const RCP=typeof RECIPES!=="undefined"?RECIPES:(root.RECIPES||{});E.RECIPES=RCP;
 for(const n in RCP){const r=RCP[n],b=r.back;if(DB[n])DB[n].recipe=r;
   /* Nov 15, 2026: a Hero Construct back (Remey the Incredible) gets a Hero entry (h:name); it never appears in the Hero list */
-  if(b.type==="Hero"){const h=b.hero||{};DB["h:"+b.name]={id:"h:"+b.name,name:b.name,cls:"Construct",str:num(h.str),def:num(h.def),aura:num(h.aura),hp:num(h.hp),rules:b.rules,type:"Hero",kind:"hero",made:n,hc:true};continue}
+  if(b.type==="Hero"){const h=b.hero||{};DB["h:"+b.name]={id:"h:"+b.name,name:b.name,cls:b.cls||"Omni",str:num(h.str),def:num(h.def),aura:num(h.aura),hp:num(h.hp),rules:b.rules,type:"Hero",kind:"hero",made:n,hc:true};continue}
   if(b.type!=="Summon"&&!DB[b.name])DB[b.name]={id:b.name,name:b.name,cost:b.cost,sup:"",type:b.type,sub:b.type==="Equipment"?b.sub:"",cls:"Generic",rules:b.rules,kind:b.type==="Equipment"?"equip":"card",region:b.region,pstr:num(b.pstr),pdef:num(b.pdef),made:n};
   /* Nov 15, 2026: everything a Recipe makes (items and equipment) has the subtype Crafted */
   if(b.type!=="Summon"&&DB[b.name])DB[b.name].crafted=!!b.crafted}
@@ -487,9 +487,9 @@ function die(s,h){const pl=P(s,h.owner);h.fl.dyingDone=false;pl.t.died=(pl.t.die
   if(heroIs(h,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre"){x.ctr=x.ctr||{};if(true){x.ctr.fury=(x.ctr.fury||0)+1;log(s,`Warrior's Pyre gets a Fury counter (${x.ctr.fury}).`,h.owner)}}});
   s.p.forEach((_,i)=>overflow(s,i));
 }
-function toDisc(s,o){const owner=o.owner;if(o.tok)return;const pl=P(s,owner);pl.disc.push({uid:o.uid,id:(DB[o.id]&&DB[o.id].made)||o.id,owner})}
+function toDisc(s,o){const owner=o.owner;if(o.tok)return;const pl=P(s,owner);const d=DB[o.id];const e={uid:o.uid,id:(d&&d.made)||o.id,owner};if(d&&d.made&&d.crafted)e.cr=true; /* a Crafted item that leaves play: its Recipe goes to the discard pile, already crafted and flipped (Crafter's Choice) */pl.disc.push(e)}
 function toInv(s,pid,o){const pl=P(s,pid);pl.inv.push(o);overflow(s,pid)}
-E.toInv=toInv;
+E.toInv=toInv;E.toDisc=toDisc;
 /* a discard-pile entry is only {uid,id,owner}; rebuild a full inventory object before it goes back to inventory (fixes Refire showing "undefined") */
 function invObj(s,pid,c){const d=DB[c.id];if(!d)return c;if(d.kind==="equip")return eqObjFromCard(s,pid,c);return Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c)}
 E.invObj=invObj;
@@ -558,7 +558,7 @@ function canUseEq(s,h,e){if(!h||h.kind!=="hero"||h.dead)return false;
   const cls=e.cls;if(cls!=="Generic"&&!heroIs(h,cls))return false;
   const r=def(e).rules||"";{const lm=/Must be Level (\d)/.exec(r);if(lm&&h.lvl<+lm[1])return false}if(/1 or more STR/.test(r)&&strOf(s,h)<1)return false;return true}
 E.canUseEq=canUseEq;
-function heroIs(h,cls){if(h.cls===cls)return true;return eqList(h).some(e=>e.name==="Ring of Vocation"&&e.x&&e.x.cls===cls)}
+function heroIs(h,cls){if(h.cls===cls)return true;if(h.cls==="Omni"&&cls!=="Generic")return true; /* Set 2 Hero Construct (Remey): Omni = every Hero type */return eqList(h).some(e=>e.name==="Ring of Vocation"&&e.x&&e.x.cls===cls)}
 E.heroIs=heroIs;
 function equipTo(s,h,e){const pid=h.owner;const r=e.region;let slot;
   const displaced=[];
@@ -591,7 +591,7 @@ const hasMourn=d=>/^Mourn\./.test((d&&d.rules)||"");E.hasMourn=hasMourn;
 const mourning=(s,pid)=>P(s,pid).heroes.some(h=>h.surr&&!h.hc);E.mourning=mourning;
 /* Set 2 "As an additional cost to play this card, surrender a soul" (Remey Recipe): one of your dead Heroes whose soul can still be surrendered */
 const soulsLeft=(s,pid)=>P(s,pid).heroes.filter(h=>h.dead&&!h.surr&&!h.hc);E.soulsLeft=soulsLeft;
-E.surrenderCost=(s,pid,why)=>{const l=soulsLeft(s,pid).sort((a,b)=>a.lvl-b.lvl);const h=l[0];if(!h)return null;h.surr=true;log(s,`${P(s,pid).name} surrenders ${h.name}'s soul (additional cost of ${why}).`,pid);return h};
+E.surrenderCost=(s,pid,why,pick)=>{const l=soulsLeft(s,pid).sort((a,b)=>a.lvl-b.lvl);const h=(pick&&l.includes(pick))?pick:l[0]; /* the player chooses (target slot); fallback: lowest level */if(!h)return null;h.surr=true;log(s,`${P(s,pid).name} surrenders ${h.name}'s soul (additional cost of ${why}).`,pid);return h};
 /* Set 2 Remains: Aura that can only be spent on Summon cards (pl.t.sAura, lost at Dusk) */
 function auraFor(s,pid,d){const pl=P(s,pid);return pl.aura+(d&&d.type==="Summon"?(pl.t.sAura||0):0)}
 E.auraFor=auraFor;
@@ -1018,7 +1018,7 @@ function flipRecipe(s,pid,card){const d=DB[card.id];const b=d.recipe.back;const 
   toInv(s,pid,o);return true}
 E.flipRecipe=flipRecipe;
 /* Hero Construct (Nov 15, 2026; Set Two Rules Supplement): joins the party as an extra Hero at the end of the party order and acts Last.
-   It enters exhausted, adds its Aura at Dawn, earns Gold, can level and equip (Generic equipment and cards: it has no class), counts as a Construct
+   It enters exhausted, adds its Aura at Dawn, earns Gold, can level and equip, has the Hero type Omni (counts as every Hero type: any class's cards and equipment), counts as a Construct
    (Artificer B: +1 Strength, +1 Health Points). When it dies it's destroyed: it can't be revived or surrendered, and the Recipe goes to the discard pile. */
 function makeHeroConstruct(s,pid,card,b){const pl=P(s,pid);const h=mkHero(s,pid,"h:"+b.name);h.hc=true;h.ex=true;h.card={uid:card.uid,id:card.id,owner:card.owner};h.sub="Construct";
   if(living(pl).some(x=>x.name==="Artificer B")){h.base.str+=1;h.base.hp+=1;log(s,`Artificer B: ${h.name} enters with +1 Strength and +1 Health Points.`,pid)}
@@ -1041,7 +1041,7 @@ E.canPearl=canPearl;E.stallTick=stallTick;
 function shieldsFor(s,pid){const out=[];living(P(s,pid)).forEach(h=>eqList(h).forEach(e=>{if(e.name==="Deflecting Shield")out.push({h,e})}));return out}
 function canDeflect(s,pid,trig){if(!trig||trig.pid===pid||!shieldsFor(s,pid).length)return false;
   if(trig.kind==="attack")return!!trig.target&&!trig.band;
-  return trig.kind==="card"&&(trig.targets||[]).some(u=>u&&typeof u==="string"&&u[0]!=="P")}
+  return trig.kind==="card"&&(trig.targets||[]).some(u=>{if(!u||typeof u!=="string"||u[0]==="P")return false;const o=resolveTarget(s,u);return!!o&&!o.dead})}
 E.canDeflect=canDeflect;E.shieldsFor=shieldsFor;
 
 /* ---------- card play ---------- */
@@ -1061,7 +1061,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(d.type==="Summon"&&cost>pl.aura&&pl.t.sAura){const k=Math.min(pl.t.sAura,cost-pl.aura);pl.t.sAura-=k;pl.aura+=k;log(s,`${pl.name} spends ${k} Aura from Remains (Summons only).`,pid)}
   pay(s,pid,actor,cost);consumeCostFlags(s,pid,actor,d);if(actor)burdenFat(s,actor);
   if(hasMourn(d)&&mourning(s,pid)&&!o.free&&num(d.cost)>0)log(s,`Mourn: ${d.name} is played without paying its Aura cost.`,pid);
-  zone.splice(zone.indexOf(c),1);if(o.fromStall)c={uid:c.uid,id:c.id,owner:c.owner};
+  zone.splice(zone.indexOf(c),1);delete c.cr;if(o.fromStall)c={uid:c.uid,id:c.id,owner:c.owner};
   pl.t.cards=(pl.t.cards||0)+1;
   /* Set 2 additional costs ("As an additional cost to play this card, sacrifice ..."): paid now, before the effect */
   if(sc&&sc.payCost)withSrc(s,d.name,()=>sc.payCost(mkCtx(s,pid,actor,d,c,a.targets||[],{x})));

@@ -615,8 +615,8 @@ def("The Right Mix",{run(c){const top=c.me.lib.slice(-4).reverse();if(!top.lengt
   top.forEach(x=>{const i=c.me.lib.indexOf(x);if(i<0)return;c.me.lib.splice(i,1);if((E.DB[x.id]||{}).type==="Item"){c.me.hand.push(x);log(c,`${E.DB[x.id].name} goes to ${c.me.name}'s hand.`)}else c.me.lib.unshift(x)});
   const rest=top.filter(x=>(E.DB[x.id]||{}).type!=="Item").length;if(rest)log(c,`${rest} card${rest>1?"s go":" goes"} to the bottom of ${c.me.name}'s library.`)}});
 /* ===== Set 2, Nov 15, 2026: Remey Recipe, Back in the Lab, Wellness Rod, Deflecting Shield, Time Pearl, Aura Pearl, Crafter's Choice ===== */
-/* Remey Recipe: "As an additional cost to play this card, surrender a soul." (the engine picks your dead Hero with the lowest level) */
-Object.assign(S["Remey Recipe"]||{},{can:(s,pid)=>E.soulsLeft(s,pid).length>0,payCost:c=>{E.surrenderCost(c.s,c.pid,"Remey Recipe")}});
+/* Remey Recipe: "As an additional cost to play this card, surrender a soul." You choose which dead Hero (the target slot). */
+Object.assign(S["Remey Recipe"]||{},{t:[t("deadAlly","dead Hero whose soul you surrender",(s,o)=>!o.hc)],can:(s,pid)=>E.soulsLeft(s,pid).length>0,payCost:c=>{E.surrenderCost(c.s,c.pid,"Remey Recipe",c.t[0])}});
 def("Back in the Lab",{run(c){const l=c.me.lib.filter(x=>(E.DB[x.id]||{}).type==="Recipe");
   if(l.length)E.pushChoose(c.s,c.pid,{title:"Back in the Lab: choose a Recipe card",cards:l.map(x=>x.uid),min:1,max:1,op:"tutor"});
   else{log(c,"Back in the Lab: there's no Recipe card in the library.");E.shuffle(c.s,c.me.lib)}}});
@@ -626,8 +626,8 @@ EQ2["Wellness Rod"]={label:"Exhaust: remove all status counters from any target"
 S["Deflecting Shield"]={}; /* engine: response window (E.canDeflect) */
 S["Time Pearl"]={}; /* engine: response window (E.canPearl) */
 def("Aura Pearl",item(0,[],c=>{c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{sac:true}));
-/* Crafter's Choice: "Crafted items" in a discard pile are the Recipe cards whose back is a Crafted item (a made item leaves play as its Recipe) */
-const craftedRecipe=x=>{const d=E.DB[x.id]||{};const r=d.recipe;return!!(r&&r.back&&r.back.crafted)};
+/* Crafter's Choice: a "Crafted item in your discard pile" is a Recipe that was crafted and flipped, then went to the discard pile when its made item left play (engine toDisc marks it cr) */
+const craftedRecipe=x=>{const d=E.DB[x.id]||{};const r=d.recipe;return!!(x.cr&&r&&r.back&&r.back.crafted)}; /* a Recipe that was crafted and flipped, then went to the discard pile (not one discarded uncrafted) */
 const craftedEq=o=>o&&o.kind==="equip"&&E.isCrafted(E.DB[o.id]);
 def("Crafter's Choice",M(2,[
   {label:"Shuffle up to 2 Crafted items from your discard pile into your library",run:c=>{const l=c.me.disc.filter(craftedRecipe);if(!l.length){log(c,"Crafter's Choice: no Crafted item in your discard pile.");return}
@@ -637,7 +637,7 @@ def("Crafter's Choice",M(2,[
     if(l.length===1){OPS.craftEquip(c.s,c.pid,{hero:h.uid},[l[0].uid]);return}
     E.pushChoose(c.s,c.pid,{title:`Crafter's Choice: equip a Crafted item to ${h.name} without paying its Aura cost`,cards:l.map(o=>o.uid),show:Object.fromEntries(l.map(o=>[o.uid,o.id])),min:1,max:1,op:"craftEquip",hero:h.uid})}},
   {label:"Your next Recipe this turn costs 1 less Aura",run:c=>{c.me.t.recipeDisc=1;log(c,`${c.me.name}'s next Recipe this turn costs 1 less Aura.`)}}]));
-OPS.discToLib=(s,pid,pr,picks)=>{const pl=s.p[pid];const nm=[];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.lib.push(x);nm.push(E.DB[x.id].name)}});
+OPS.discToLib=(s,pid,pr,picks)=>{const pl=s.p[pid];const nm=[];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];delete x.cr;pl.lib.push(x);nm.push(E.DB[x.id].name)}});
   if(nm.length){E.shuffle(s,pl.lib);E.log(s,`${nm.join(" and ")} shuffled into ${pl.name}'s library.`,pid)}};
 OPS.craftEquip=(s,pid,pr,picks)=>{const pl=s.p[pid];const h=E.find(s,pr.hero);if(!h||h.o.dead)return;const o=pl.inv.find(x=>x.uid===picks[0]);if(!o)return;
   pl.inv.splice(pl.inv.indexOf(o),1);E.log(s,`Crafter's Choice: ${o.name} is equipped to ${h.o.name} without paying its Aura cost.`,pid);E.equipTo(s,h.o,o)};
@@ -727,7 +727,7 @@ def("Consecrate",{run(c){const all=[...c.me.bf,...c.op.bf].filter(o=>o.kind==="s
 def("Retrace the Past",{t:[t("player","target player")],run(c){const p=c.t[0];if(!p)return;const pl=c.s.p[p.pid];
   if(!pl.disc.length){log(c,`${pl.name}'s discard pile is empty.`);E.draw(c.s,p.pid,1);return}
   E.pushChoose(c.s,c.pid,{title:`Retrace the Past: shuffle up to 3 cards from ${pl.name}'s discard pile into their library`,cards:pl.disc.map(x=>x.uid),min:0,max:3,op:"retrace",target:p.pid})}});
-OPS.retrace=(s,pid,pr,picks)=>{const pl=s.p[pr.target];const nm=[];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.lib.push(x);nm.push(E.DB[x.id].name)}});
+OPS.retrace=(s,pid,pr,picks)=>{const pl=s.p[pr.target];const nm=[];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];delete x.cr;pl.lib.push(x);nm.push(E.DB[x.id].name)}});
   if(nm.length){E.shuffle(s,pl.lib);E.log(s,`Retrace the Past: ${nm.join(", ")} shuffled into ${pl.name}'s library.`,pid)}E.draw(s,pr.target,1)};
 /* equipment (enter = played; onUpgrade = upgraded at the Blacksmith) */
 const discPlay=(c,h,title)=>{if(!h||h.dead)return;const l=c.me.disc.filter(x=>E.canPlayCard(c.s,c.pid,h,x,true));if(!l.length){log(c,`${title}: no card in your discard pile that ${h.name} can play.`);return}

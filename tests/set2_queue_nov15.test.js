@@ -34,7 +34,7 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
   ok(!canPlay(s,c),"needs a dead Hero whose soul can be surrendered");
   const dead=s.p[0].heroes[2];kill(s,dead);ok(dead.dead,"Artificer C dies");s.p[0].heroes.forEach(x=>{if(!x.dead)x.ex=false});s.prio=0;
   ok(canPlay(s,c),"playable with a dead Hero and the 4 ingredients");ok(!E.mourning(s,0),"no soul surrendered yet");
-  const actor=E.actorFor(s,0),aura=s.p[0].aura;const r=E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(r.ok,"play "+(r.err||""));
+  const actor=E.actorFor(s,0),aura=s.p[0].aura;const r=E.act(s,0,{type:"play",uid:c.uid,targets:[dead.uid]});resolve(s);ok(r.ok,"play "+(r.err||""));
   ok(s.p[0].aura===aura-3,"pays 3 Aura");ok(dead.surr,"the dead Hero's soul is surrendered");ok(E.mourning(s,0),"counts as surrendering a soul (Mourn)");
   ok(s.p[0].inv.length===0,"ingredients sacrificed");ok(actor.ex,"Exhaust this Hero");
   const rm=s.p[0].heroes.find(x=>x.name==="Remey the Incredible");ok(rm&&rm.hc&&rm.ex,"Remey joins the party, exhausted");
@@ -100,9 +100,9 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
   const au=s.p[0].aura;E.act(s,0,uo);resolve(s);ok(s.p[0].aura===au+1,"gain 1 Aura");ok(!s.p[0].inv.includes(ap),"sacrificed")}
 
 /* Crafter's Choice */
-{const s=game();const r1={uid:uid(),id:"Pocket Watch Recipe",owner:0},r2={uid:uid(),id:"Wellness Rod Recipe",owner:0},r3={uid:uid(),id:"Iron Guardians",owner:0};s.p[0].disc.push(r1,r2,r3,{uid:uid(),id:"Potion",owner:0});
-  const c=hand(s,0,"Crafter's Choice");const L=s.p[0].lib.length;E.act(s,0,{type:"play",uid:c.uid,modes:[0,2]});ok(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].cards.length===2&&!s.pend[0].cards.includes(r3.uid),"only Crafted items (Recipes that make items)");
-  E.act(s,0,{type:"choose",picks:s.pend[0].cards});resolve(s);ok(s.p[0].lib.length===L+2&&!s.p[0].disc.includes(r1),"shuffled into the library");
+{const s=game();const r1={uid:uid(),id:"Pocket Watch Recipe",owner:0,cr:true},r2={uid:uid(),id:"Wellness Rod Recipe",owner:0,cr:true},r3={uid:uid(),id:"Iron Guardians",owner:0},r4={uid:uid(),id:"Pocket Watch Recipe",owner:0};s.p[0].disc.push(r1,r2,r3,r4,{uid:uid(),id:"Potion",owner:0});
+  const c=hand(s,0,"Crafter's Choice");const L=s.p[0].lib.length;E.act(s,0,{type:"play",uid:c.uid,modes:[0,2]});ok(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].cards.length===2&&!s.pend[0].cards.includes(r3.uid)&&!s.pend[0].cards.includes(r4.uid),"only Crafted items: Recipes that were crafted and flipped (not one discarded uncrafted)");
+  E.act(s,0,{type:"choose",picks:s.pend[0].cards});resolve(s);ok(s.p[0].lib.length===L+2&&!s.p[0].disc.includes(r1),"shuffled into the library");ok(!r1.cr,"back in the library as a plain Recipe");
   ok(E.cardCost(s,0,E.actorFor(s,0),E.DB["Deflecting Shield Recipe"],0)===1,"next Recipe this turn costs 1 less");ok(E.cardCost(s,0,null,E.DB["Precognition"],0)===+E.DB["Precognition"].cost,"only Recipes");
   const c2=hand(s,0,"Wellness Rod Recipe");["Antidote","Potion","Silver Bar"].forEach(n=>inv(s,0,n));s.p[0].heroes.forEach(x=>x.ex=false);s.prio=0;s.passed=[false,false];const au=s.p[0].aura;E.act(s,0,{type:"play",uid:c2.uid});resolve(s);
   ok(s.p[0].aura===au,"Wellness Rod Recipe was free (1 - 1)");ok(!s.p[0].t.recipeDisc,"discount used up")}
@@ -119,4 +119,14 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
   const po=opts(s,0).find(o=>o.type==="play"&&o.uid===x.uid);ok(po,"the card can be played from the discard pile this turn (Exhume)");
   if(po){const au=s.p[0].aura;E.act(s,0,po);resolve(s);ok(s.p[0].aura===au-(+E.DB["Precognition"].cost||0),"paying its costs");ok(!s.p[0].disc.slice(0,-1).some(y=>y.uid===x.uid)||true,"")}}
 
+
+/* Nov 15 follow-up: Omni Hero type, choosing the soul, Crafted = crafted and flipped */
+{const s=game();const rm=E.makeHeroConstruct(s,0,{uid:uid(),id:"Remey Recipe",owner:0},E.DB["Remey Recipe"].recipe.back);ok(rm.cls==="Omni","Remey's Hero type is Omni");
+  ok(["Barbarian","Paladin","Necromancer","Artificer","Mage"].every(k=>E.heroIs(rm,k)),"Omni counts as every Hero type");
+  ok(E.canUseEq(s,rm,{cls:"Paladin",id:"Tower Shield"}),"Omni can use class equipment (Tower Shield)");rm.ex=false;
+}
+{const s=game();const c=hand(s,0,"Remey Recipe");["Platinum Bar","Revitalize","Potion","Dynamite"].forEach(n=>inv(s,0,n));const d1=s.p[0].heroes[1],d2=s.p[0].heroes[2];d2.lvl=0;d1.lvl=3;kill(s,d1);kill(s,d2);
+  s.p[0].heroes[0].ex=false;s.prio=0;s.passed=[false,false];const need=E.need(s,0,{type:"play",uid:c.uid});ok(need.length===1&&need[0].cands.length===2,"choose which dead Hero's soul to surrender (2 choices)");
+  E.act(s,0,{type:"play",uid:c.uid,targets:[d1.uid]});resolve(s);ok(d1.surr&&!d2.surr,"the chosen soul (not the lowest level) is surrendered")}
+{const s=game();const rod=inv(s,0,"Wellness Rod");const pl=s.p[0];pl.inv.splice(pl.inv.indexOf(rod),1);E.toDisc(s,rod);const e=pl.disc.find(x=>x.uid===rod.uid);ok(e&&e.id==="Wellness Rod Recipe"&&e.cr,"a Crafted item leaving play goes to the discard pile as its crafted Recipe")}
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

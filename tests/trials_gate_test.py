@@ -58,7 +58,7 @@ def main():
             for nm in NAMES:
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(250)
                 check(nm not in text(pg).replace("Search", "").replace(f"“{nm}”", ""), f"[{w}] no-access search shows {nm}")
-            check(pg.evaluate("[...document.querySelectorAll('#cat-type option')].every(o=>o.value!=='Trials')"), f"[{w}] Trials type option shown without access")
+            check(pg.evaluate("[...document.querySelectorAll('#cat-set option')].every(o=>o.value!=='trials')"), f"[{w}] Trials set option shown without access")
             check(pg.evaluate("!CARDS.some(c=>c.set==='trials')&&!TOKENS.some(c=>c.set==='trials')&&!BYID.has('Crag Helm')"), f"[{w}] Trials objects loaded without access")
             check(pg.evaluate("showRow({cards:{'Crag Helm':1,'Potion':3}})===false&&showRow({cards:{'Potion':3}})===true"), f"[{w}] showRow wrong without access")
             check(pg.evaluate("deckText({name:'x',heroes:[],cards:{'Crag Helm':1}},false).indexOf('Crag Helm')<0"), f"[{w}] deckText leaks a hidden card name")
@@ -74,8 +74,14 @@ def main():
             # with access, and with old SQL (admin, no trials key)
             for acc in ({"admin": False, "set2": False, "trials": True}, {"admin": True, "set2": True}):
                 ctx, pg, errs = page_for(b, port, acc, w)
-                check(pg.evaluate("[...document.querySelectorAll('#cat-type option')].some(o=>o.value==='Trials')"), f"[{w}] {acc}: no Trials type option")
-                pg.select_option("#cat-type", "Trials"); pg.wait_for_timeout(300)
+                check(pg.evaluate("[...document.querySelectorAll('#cat-set option')].some(o=>o.value==='trials')"), f"[{w}] {acc}: no Trials set option")
+                check(pg.evaluate("[...document.querySelectorAll('#cat-type option')].every(o=>o.value!=='Trials')"), f"[{w}] {acc}: Trials still under Type")
+                if acc.get('set2'):
+                    pg.select_option("#cat-set", "2"); pg.wait_for_timeout(300)
+                    check(pg.evaluate("(()=>{const l=filterSort([...HEROES,...CARDS,...TOKENS],S.cat);return S.cat.set==='2'&&l.length>0&&l.every(c=>c.set===2)})()"), f"[{w}] {acc}: Set 2 filter shows non-Set 2 cards")
+                    pg.select_option("#cat-set", "1"); pg.wait_for_timeout(300)
+                    check(pg.evaluate("(()=>{const l=filterSort([...HEROES,...CARDS,...TOKENS],S.cat);return S.cat.set==='1'&&l.length>100&&!l.some(c=>c.set===2||c.set==='trials')})()"), f"[{w}] {acc}: Set 1 filter shows Set 2 or Trials cards")
+                pg.select_option("#cat-set", "trials"); pg.wait_for_timeout(300)
                 t = text(pg)
                 for nm in ["Rock Mammoth", "Golem", "Crag Helm", "Tusk Gore", "The Mountain Wakes", "Heart of the Mountain"]:
                     check(nm in t, f"[{w}] {acc}: {nm} missing under Trials filter")

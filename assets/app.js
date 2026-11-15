@@ -169,7 +169,7 @@ const newId=()=>"d"+Date.now().toString(36)+Math.random().toString(36).slice(2,7
 /* ---------- state ---------- */
 const S={
   view:"catalog",
-  cat:store.get("cq.cat",{cls:"all",type:"all",sort:"class",q:""}),
+  cat:store.get("cq.cat",{cls:"all",type:"all",sort:"class",q:"",set:"all"}),
   b:{step:"heroes",heroCls:"all",cls:"all",type:"all",sort:"class",q:""},
   deck:store.get("cq.draft",null)||blankDeck(),
   dirty:false,
@@ -516,22 +516,28 @@ function artCardHTML(c,o,tag,attrs){
 </${tag}>`;
 }
 const kindRank=c=>c.kind==="hero"?0:c.kind==="token"?2:1;
+/* Set filter (Nov 15): Set 1 (main game), Set 2 (hidden playtest set), Trials module. Only sets this account can see are offered. */
+const setKey=c=>c.set===2?"2":c.set==="trials"?"trials":"1";
+const setOpts=()=>[["all","All sets"],["1","Set 1"],...(set2On()?[["2","Set 2"]]:[]),...(trialsOn()?[["trials","Trials module"]]:[])];
+const fixSet=f=>{if(f.type==="Trials"){f.type="all";f.set="trials"}if(!f.set||!setOpts().some(o=>o[0]===f.set))f.set="all"};
+const setSel=(id,f)=>setOpts().length>2?`<label class="field" for="${id}">Set ${selectHTML(id,id,f.set,setOpts())}</label>`:"";
 function filterSort(list,f){
   const q=f.q.trim().toLowerCase();
-  let l=list.filter(c=>canSee(c)&&(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Trials"?c.set==="trials":f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
+  let l=list.filter(c=>canSee(c)&&(!f.set||f.set==="all"||setKey(c)===f.set)&&(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Trials"?c.set==="trials":f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
   const byName=(a,b)=>sortName(a.name).localeCompare(sortName(b.name));
-  const s={class:(a,b)=>kindRank(a)-kindRank(b)||clsOrder(a.cls)-clsOrder(b.cls)||(a.set==="trials"&&b.set==="trials"?(a.tkind||"").localeCompare(b.tkind||""):0)||byName(a,b),
+  const setRank=c=>c.set==="trials"?2:c.set===2?1:0;
+  const s={class:(a,b)=>setRank(a)-setRank(b)||kindRank(a)-kindRank(b)||clsOrder(a.cls)-clsOrder(b.cls)||(a.set==="trials"&&b.set==="trials"?(a.tkind||"").localeCompare(b.tkind||""):0)||byName(a,b),
     name:byName,cost:(a,b)=>costNum(a)-costNum(b)||byName(a,b),type:(a,b)=>a.type.localeCompare(b.type)||byName(a,b)}[f.sort]||byName;
   return l.sort(s);
 }
 function gridWithGroups(list,f,tile){
   if(!list.length){/* say which filters are on, and offer to clear them (a saved Type or search could hide every card) */
-    const on=[f.q&&f.q.trim()?`search “${esc(f.q.trim())}”`:"",f.type&&f.type!=="all"&&f.type!=="Hero"?`type ${esc(f.type)}`:"",f.cls&&f.cls!=="all"&&f.type!=="Hero"?`class ${esc(f.cls)}`:""].filter(Boolean);
+    const on=[f.q&&f.q.trim()?`search “${esc(f.q.trim())}”`:"",f.set&&f.set!=="all"?`set ${esc((setOpts().find(o=>o[0]===f.set)||["",f.set])[1])}`:"",f.type&&f.type!=="all"&&f.type!=="Hero"?`type ${esc(f.type)}`:"",f.cls&&f.cls!=="all"&&f.type!=="Hero"?`class ${esc(f.cls)}`:""].filter(Boolean);
     const sc=f===S.cat?"cat":f===S.b?"b":"";
     return`<div class="empty">No cards match these filters${on.length?` (${on.join(", ")})`:""}.${sc&&on.length?` <button type="button" class="btn sm" data-act="clear-filters" data-scope="${sc}">Clear filters</button>`:""}</div>`}
   if(f.sort!=="class")return list.map(tile).join("");
   let out="",last=null;
-  const gk=c=>c.set==="trials"&&c.kind==="token"?"Trials module · "+(c.tkind==="Boss Card"?"Boss cards":c.tkind==="Boss"?"Bosses":"Spawns"):(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
+  const gk=c=>c.set==="trials"&&c.kind==="token"?"Trials module · "+(c.tkind==="Boss Card"?"Boss cards":c.tkind==="Boss"?"Bosses":"Spawns"):(c.set==="trials"?"Trials module · ":c.set===2?"Set 2 · ":"")+(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
   const counts={};list.forEach(c=>{const k=gk(c);counts[k]=(counts[k]||0)+1});
   for(const c of list){const k=gk(c);
     if(k!==last){out+=`<div class="group-h" style="--cc:${cc(c.cls)};--ci:${ci(c.cls)}"><i class="dot"></i>${esc(k)} <span>${counts[k]}</span></div>`;last=k}
@@ -571,15 +577,16 @@ function render(){
   else v.innerHTML=viewDecks();
 }
 function viewCatalog(){
-  const f=S.cat;{const ty=["all","Hero","Token",...visTypes(),...(trialsOn()?["Trials"]:[])];if(!ty.includes(f.type))f.type="all";if(f.cls!=="all"&&![...visClasses(),"Generic"].includes(f.cls))f.cls="all";if(typeof f.q!=="string")f.q=""}
+  const f=S.cat;fixSet(f);{const ty=["all","Hero","Token",...visTypes()];if(!ty.includes(f.type))f.type="all";if(f.cls!=="all"&&![...visClasses(),"Generic"].includes(f.cls))f.cls="all";if(typeof f.q!=="string")f.q=""}
   const all=[...HEROES,...CARDS,...TOKENS];
   const list=filterSort(all,f);
   return`<div class="bhead"><h1>Cards</h1><a href="#build" class="btn primary go newdeck build-go">Build a Deck</a></div>
-  <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.filter(canSee).length} Heroes, ${CARDS.filter(canSee).length} deck cards, ${TOKENS.filter(canSee).length} tokens.${SET2.size&&S.access&&S.access.set2?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===2).length} Set 2 cards (hidden playtest set).`:""}${trialsOn()&&TRIALS_OBJS.length?` Includes ${TRIALS_OBJS.length} Trials module cards (hidden; pick Trials module under Type).`:""}</p>
+  <p class="lede">Every Hero, card, piece of equipment and token in Crystal Quest. ${HEROES.filter(canSee).length} Heroes, ${CARDS.filter(canSee).length} deck cards, ${TOKENS.filter(canSee).length} tokens.${SET2.size&&S.access&&S.access.set2?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===2).length} Set 2 cards (hidden playtest set).`:""}${trialsOn()&&TRIALS_OBJS.length?` Includes ${TRIALS_OBJS.length} Trials module cards (hidden; pick Trials module under Set).`:""}</p>
   <div class="bar">${classChips(f.cls,"cat-cls",[...visClasses(),"Generic"])}</div>
   <div class="bar">
     <label class="field" for="cat-q">Search <input type="search" id="cat-q" data-act="cat-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
-    <label class="field" for="cat-type">Type ${selectHTML("cat-type","cat-type",f.type,[["all","All"],["Hero","Heroes"],...visTypes().map(t=>[t,t]),["Token","Tokens"],...(trialsOn()?[["Trials","Trials module"]]:[])])}</label>
+    <label class="field" for="cat-type">Type ${selectHTML("cat-type","cat-type",f.type,[["all","All"],["Hero","Heroes"],...visTypes().map(t=>[t,t]),["Token","Tokens"]])}</label>
+    ${setSel("cat-set",f)}
     <label class="field" for="cat-sort">Sort by ${selectHTML("cat-sort","cat-sort",f.sort,SORTS)}</label>
     <span class="count">${list.length} shown</span>
   </div>
@@ -610,12 +617,13 @@ function viewBuild(){
   const d=S.deck;const NS=HSLOTS(d),party=isTrialsDeck(d);
   if(HN(d)<NS)S.b.step="heroes";
   if(S.b.step==="heroes"){
-    const f={cls:S.b.heroCls,type:"Hero",sort:"class",q:""};
+    fixSet(S.b);const f={cls:S.b.heroCls,type:"Hero",sort:"class",q:"",set:S.b.set};
     const list=filterSort(HEROES,f);
     return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button>${trialsOn()?`<button type="button" class="btn newparty" data-act="new-party" title="A 2-Hero party for the co-op Trials">New Trials party</button>`:""}</div>${stepsHTML()}
     <h2 class="party-h">${party?"Choose your Trials party.":"Choose your party."}</h2><p class="lede">${party?"A Trials party has two Heroes: a Lead and a Closer. Then build a deck of at least 50 cards from their class cards and generic cards. Trials parties are for the co-op Trials in the Play tab.":"Pick three Heroes for your party, in order. Then pick from their specific class cards or generic cards to build your strategy."}</p>
     ${partySlots(d)}
     <div class="bar">${classChips(S.b.heroCls,"hero-cls",visClasses())}</div>
+    ${setOpts().length>2?`<div class="bar">${setSel("b-set",S.b)}</div>`:""}
     <div class="bar"><button type="button" class="btn primary go" data-act="to-cards" ${HN(d)===NS?"":"disabled"}>Continue to cards →</button>
       <span class="count">${HN(d)}/${NS} Heroes chosen</span>
       ${HN(d)||deckTotal(d)?`<button type="button" class="btn" data-act="new-deck">Start over</button>`:""}</div>
@@ -624,7 +632,7 @@ function viewBuild(){
   const pcls=partyClasses(d);
   const f=S.b;
   if(f.cls!=="all"&&f.cls!=="Generic"&&!pcls.includes(f.cls))f.cls="all";
-  if(f.type!=="all"&&!visTypes().includes(f.type))f.type="all";
+  if(f.type!=="all"&&!visTypes().includes(f.type))f.type="all";fixSet(f);
   const pool=filterSort(CARDS.filter(c=>allowed(c,d)),f);
   const total=deckTotal(d);
   return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button>${trialsOn()?`<button type="button" class="btn newparty" data-act="new-party" title="A 2-Hero party for the co-op Trials">New Trials party</button>`:""}</div>${stepsHTML()}
@@ -635,6 +643,7 @@ function viewBuild(){
       <div class="bar">
         <label class="field" for="b-q">Search <input type="search" id="b-q" data-act="b-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
         <label class="field" for="b-type">Type ${selectHTML("b-type","b-type",f.type,[["all","All"],...visTypes().map(t=>[t,t])])}</label>
+        ${setSel("b-set",f)}
         <label class="field" for="b-sort">Sort by ${selectHTML("b-sort","b-sort",f.sort,SORTS)}</label>
         <button type="button" class="btn sm" data-act="to-heroes">Change Heroes</button>
       </div>
@@ -1307,7 +1316,7 @@ document.addEventListener("click",async e=>{
   if(a==="cat-cls"){S.cat.cls=v;store.set("cq.cat",S.cat);render()}
   else if(a==="hero-cls"){S.b.heroCls=v;render()}
   else if(a==="b-cls"){S.b.cls=v;render()}
-  else if(a==="clear-filters"){const f=b.dataset.scope==="cat"?S.cat:S.b;f.q="";f.type="all";f.cls="all";if(f===S.cat)store.set("cq.cat",S.cat);render()}
+  else if(a==="clear-filters"){const f=b.dataset.scope==="cat"?S.cat:S.b;f.q="";f.type="all";f.cls="all";f.set="all";if(f===S.cat)store.set("cq.cat",S.cat);render()}
   else if(a==="inspect"){const c=BYID.get(id);if(c){inspect(c);zoomNav(b,"inspect")}}
   else if(a==="art-vote"){artVote(b)}
   else if(a==="edit-profile"){if(window.CQProf)CQProf.openSetup(false)}
@@ -1393,6 +1402,8 @@ document.addEventListener("input",e=>{const t=e.target,a=t.dataset&&t.dataset.ac
 });
 document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.act;if(!a)return;
   if(a==="cat-type"){S.cat.type=t.value;store.set("cq.cat",S.cat);render()}
+  else if(a==="cat-set"){S.cat.set=t.value;store.set("cq.cat",S.cat);render()}
+  else if(a==="b-set"){S.b.set=t.value;render()}
   else if(a==="cat-sort"){S.cat.sort=t.value;store.set("cq.cat",S.cat);render()}
   else if(a==="b-type"){S.b.type=t.value;render()}
   else if(a==="b-sort"){S.b.sort=t.value;render()}

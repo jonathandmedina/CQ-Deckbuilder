@@ -103,7 +103,7 @@ def main():
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(200); check(nm in text(pg).replace(f"“{nm}”", ""), f"[{w}] access: catalog shows {nm}")
             pg.fill("#cat-q", "")
             r = pg.evaluate("""(()=>{const f=n=>upFace(BYID.get(n));return[f('Remey Recipe').name,f('Remey Recipe').sub,f('Wellness Rod Recipe').sub,f('Pocket Watch Recipe').sub,f('Deflecting Shield Recipe').sub,BYID.get('Iron Guardians')?f('Iron Guardians').sub:'']})()""")
-            check(r[0] == "Remey the Incredible" and r[1] == "Hero Construct", f"[{w}] Remey back: {r}")
+            check(r[0] == "Remey the Incredible" and r[1].startswith("Hero Construct"), f"[{w}] Remey back: {r}")
             check("Crafted" in r[2] and "Crafted" in r[3] and "Crafted" in r[4] and "Crafted" not in r[5], f"[{w}] Crafted subtype on made items only: {r}")
             plain = pg.evaluate("""(()=>{let n=0;['Remey Recipe','Back in the Lab','Wellness Rod Recipe','Deflecting Shield Recipe',"Crafter's Choice",'Time Pearl','Aura Pearl',"Undead's Choice"].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points|\\bAura\\b/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")

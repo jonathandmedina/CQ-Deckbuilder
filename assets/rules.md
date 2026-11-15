@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 14, 2026 (Abide)*
+*Version: November 15, 2026 (update 35: type lines and subtypes)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -83,12 +83,11 @@ Items go into your inventory slots and stay there until used or removed. Item su
 - **Relic**: stays in play and gives a lasting effect.
 - **Trap**: a Hidden item that waits face down for its trigger (see Hidden Cards).
 - **Arrow**: a Ranger item you activate for damage and an effect.
-- **Gemstone**: a Generic item you may exile at Dawn, exhausting a Hero, for a one-time effect.
-- **Precious Metal**: a Generic item (Gold, Silver or Platinum Bar) with a paid effect.
+- **Material**: a Generic item with its own use, such as the Gold, Silver and Platinum Bars and the gems Almandine, Rose Quartz and Topaz (which you may exile at Dawn, exhausting a Hero, for a one-time effect).
 
 ### Equipment
 
-Weapons, armor, instruments and accessories that you equip to a Hero to boost it. Equipment has one cost: its Aura cost, which you pay every time you equip it, whether from your hand, from your inventory, or by moving it to another Hero. There is no separate equip cost. Some items and equipment can also be upgraded with Gold at the Blacksmith. See Upgrading.
+Weapons, armor, instruments and accessories that you equip to a Hero to boost it. An equipment card's subtype names what it is: Sword, Dagger, Axe, Hammer, Mace, Club, Bow, Staff, Wand, Chalice, Shield, Helm, Crown, Headband, Chestplate, Robe, Cloak, Gauntlets, Greaves, Boots, Ring, Quiver or Instrument. Equipment has one cost: its Aura cost, which you pay every time you equip it, whether from your hand, from your inventory, or by moving it to another Hero. There is no separate equip cost. Some items and equipment can also be upgraded with Gold at the Blacksmith. See Upgrading.
 
 ### Enchantments and Curses
 
@@ -106,14 +105,14 @@ Tokens are cards created by effects rather than drawn from your library, such as
 - Equipment tokens (such as Daggers) and item tokens (such as the Doll) go into an empty inventory slot.
 - A token has an Aura cost of 0 unless it says otherwise, so equipping an equipment token costs 0 Aura.
 - A token that leaves play (destroyed, discarded or exiled) is removed from the game.
-- **Dagger** means any equipment with “Dagger” in its name, including Dagger tokens.
+- **Dagger** means any equipment with the Dagger subtype, including Dagger tokens. **Sword** means any equipment with the Sword subtype.
 
 **Token list.** Summon stats are written STR/HP.
 
 | Token | Kind | Stats | Aura to equip | Text | Made by |
 |---|---|---|---|---|---|
-| Dagger | Equipment (Rogue, One-Handed) | +1 STR | 0 | Equipped Hero gains +1 STR. | Armed, Blademaster’s Choice |
-| Viper Fang Dagger | Equipment (Rogue, One-Handed) | +1 STR | 1 | Equipped Hero gains +1 STR and Poisonous 1. | Ritual of Fang |
+| Dagger | Equipment - Dagger (Rogue, One-Handed) | +1 STR | 0 | Equipped Hero gains +1 STR. | Armed, Blademaster’s Choice |
+| Viper Fang Dagger | Equipment - Dagger (Rogue, One-Handed) | +1 STR | 1 | Equipped Hero gains +1 STR and Poisonous 1. | Ritual of Fang |
 | Doll | Item | 0 STR, 0 DEF, 5 HP | — | Takes an inventory slot. It can be targeted and dealt damage like a Hero. At 0 HP it is destroyed. | Mocking Doll |
 | Soldier | Summon | 2/3 | — | | Conscript, Noble Choice, Rally the Troops |
 | Eliazar | Summon (Soldier) | 3/5 | — | | Sword of Eliazar |
@@ -136,6 +135,10 @@ Tokens are cards created by effects rather than drawn from your library, such as
 | Pain Pillar | Pillar | — | — | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. | Dark Insight, Ritual of Pain |
 
 Splitting Ritual and Doubling Ritual copy whichever Pillars you sacrifice.
+
+### Type Line
+
+Every card's type line reads **Supertype - Type - Subtype**, with a dash between each part, for example *Legendary - Equipment - Sword*, *Hidden - Item - Trap* or *Item - Material*. A card shows only the parts it has: a plain Tactic just says *Tactic*. Heroes say *Hero* and tokens say *Token* first (*Token - Equipment - Dagger*).
 
 ### Supertypes
 
@@ -223,10 +226,10 @@ All players do these steps together:
 1. **Ready.** Ready all your exhausted cards. A Meditating Hero first gets a meditation counter; then you may choose to keep it exhausted (see Meditate). A Hero with a Fatigue counter doesn’t ready; remove the counter instead.
 2. **Refresh Aura.** Your Aura pool becomes the total Aura of your Heroes that aren’t dead.
 3. **Status Health Point loss.** Each Burned, Poisoned or Wounded counter makes its Hero or summon lose 1 Health Point. Then remove one of each status counter from each Hero and summon.
-4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when exiled Echo cards are played again and Gemstones can be used.
+4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when exiled Echo cards are played again and items like Almandine, Rose Quartz and Topaz can be used.
 5. **Draw.** Each player draws a card.
 
-A Hero exhausted during Dawn, for example by a Gemstone, stays exhausted for the whole Battle Phase.
+A Hero exhausted during Dawn, for example by Topaz, stays exhausted for the whole Battle Phase.
 
 ### 2. Battle Phase
 
@@ -686,14 +689,14 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Spell**: Single-use magic. Resolves, then goes to the discard pile.
 - **Tactic**: Single-use action card. Resolves, then goes to the discard pile.
 - **Song**: Bard card type. Several Bard cards return, reveal or replay Songs.
-- **Item**: Card kept in an inventory slot. Subtypes: Consumable, Relic, Trap, Arrow, Gemstone, Precious Metal.
+- **Item**: Card kept in an inventory slot. Subtypes: Consumable, Relic, Trap, Arrow, Material.
 - **Consumable**: Item used once, then exiled.
 - **Relic**: Item that stays in play with a lasting effect.
 - **Trap**: A Hidden card with the subtype Trap.
 - **Arrow**: Ranger item. Activating it is an action: pay its Aura cost and exhaust the Hero.
-- **Gemstone**: Generic item you may exile at Dawn, exhausting a Hero, for a one-time effect. That Hero sits out the Battle Phase.
-- **Precious Metal**: Generic item (Gold, Silver, Platinum Bar) with a paid effect.
-- **Equipment**: Card that boosts a Hero while equipped. Subtypes: Armor, Weapon, Instrument, Accessory.
+- **Material**: Generic item with its own use (Gold, Silver and Platinum Bars; Almandine, Rose Quartz and Topaz, which you may exile at Dawn, exhausting a Hero, for a one-time effect; that Hero sits out the Battle Phase).
+- **Equipment**: Card that boosts a Hero while equipped. Its subtype names the item: Sword, Dagger, Axe, Hammer, Mace, Club, Bow, Staff, Wand, Chalice, Shield, Helm, Crown, Headband, Chestplate, Robe, Cloak, Gauntlets, Greaves, Boots, Ring, Quiver, Instrument.
+- **Type line**: Supertype - Type - Subtype, with dashes (Legendary - Equipment - Sword).
 - **Equipment region**: Where equipment is worn: Head, Chest, Arms, Hands, Legs, Feet, Accessory. One piece per region.
 - **One-Handed / Two-Handed**: How many hands a weapon or instrument uses. A Hero has two hands.
 - **Enchantment**: Card attached to a Hero that changes it. Card text says “Enchanted ally”.

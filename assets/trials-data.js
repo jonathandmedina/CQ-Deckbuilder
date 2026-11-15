@@ -20,12 +20,12 @@ const TRIALS_BOSS_CARDS=[
 const TRIALS_SPAWNS=[
 ["Golem","Rock Mammoth",1,0,4,"After each boss flip, attacks the Hero with the most Health Points in the party it was spawned against (if that party is wiped out, the next party clockwise). Ties: the Hero with the least Defense, then Lead before Closer.",1]];
 const TRIALS_LOOT=[
-["Rockbreaker Maul","Legendary","Weapon","Generic","Equipped Hero gains +3 Strength. When it attacks a target with 3 or more Defense, it has Piercing 2. (Piercing 2 ignores 2 of the target's Defense.)",3,"Two-Handed",3,0,1],
-["Mammoth Tusk","Legendary","Weapon","Generic","Equipped Hero gains +1 Strength. Its attacks deal +2 damage to summons.",2,"One-Handed",1,0,1],
-["Crag Helm","Legendary","Armor","Generic","Equipped Hero gains +1 Defense. It can't be Stunned.",2,"Head",0,1,1],
-["Stampede Boots","Legendary","Armor","Generic","Equipped Hero gains +1 Defense. It can't be exhausted by enemy cards or abilities.",2,"Feet",0,1,1],
-["Stoneplate Mantle","Legendary","Armor","Generic","Equipped Hero gains +1 Defense. The first time each game it would die, it stays at 1 Health Point instead.",3,"Chest",0,1,1],
-["Heart of the Mountain","Legendary","Accessory","Generic","Once per turn, when an enemy summon dies, gain 1 Aura.",2,"Accessory",0,0,1]];
+["Rockbreaker Maul","Legendary","Hammer","Generic","Equipped Hero gains +3 Strength. When it attacks a target with 3 or more Defense, it has Piercing 2. (Piercing 2 ignores 2 of the target's Defense.)",3,"Two-Handed",3,0,2],
+["Mammoth Tusk","Legendary","Club","Generic","Equipped Hero gains +1 Strength. Its attacks deal +2 damage to summons.",2,"One-Handed",1,0,2],
+["Crag Helm","Legendary","Helm","Generic","Equipped Hero gains +1 Defense. It can't be Stunned.",2,"Head",0,1,2],
+["Stampede Boots","Legendary","Boots","Generic","Equipped Hero gains +1 Defense. It can't be exhausted by enemy cards or abilities.",2,"Feet",0,1,2],
+["Stoneplate Mantle","Legendary","Chestplate","Generic","Equipped Hero gains +1 Defense. The first time each game it would die, it stays at 1 Health Point instead.",3,"Chest",0,1,2],
+["Heart of the Mountain","Legendary","Amulet","Generic","Once per turn, when an enemy summon dies, gain 1 Aura.",2,"Accessory",0,0,2]];
 const TRIALS_LOOT_UPGRADES={
 "Rockbreaker Maul":[6,"Equipped Hero gains +4 Strength. When it attacks a target with 3 or more Defense, it has Piercing 2. (Piercing 2 ignores 2 of the target's Defense.)",4,0],
 "Mammoth Tusk":[4,"Equipped Hero gains +2 Strength. Its attacks deal +2 damage to summons.",2,0],

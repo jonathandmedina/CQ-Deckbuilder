@@ -48,7 +48,12 @@ const isUp=(s,e)=>!!(e&&e.uid&&s.upg&&s.upg[e.uid]!=null);
 const hasUpN=(s,h,n)=>eqList(h).some(e=>e.name===n&&isUp(s,e));
 E.isUp=isUp;E.hasUp=hasUpN;
 /* Dagger check: name has "Dagger", or an upgraded Feather Blade ("This counts as a Dagger") */
-E.isDagger=(s,e)=>!!e&&(/Dagger/.test(e.name)||(e.name==="Feather Blade"&&isUp(s,e)));
+/* Nov 15 (update 35): the Dagger subtype decides what counts as a Dagger (Feather Blade, Ritual Athame and the Dagger tokens included) */
+E.isDagger=(s,e)=>!!e&&((DB[e.id]||{}).sub==="Dagger"||(TOK[e.name]||{}).sub==="Dagger");
+/* Dawn items (Almandine, Rose Quartz, Topaz): Material items that say "At Dawn, you may exile this". Before update 35 these were the Gemstone subtype. */
+const isDawnItem=d=>!!d&&d.type==="Item"&&/^At Dawn, you may exile this/.test(d.rules||"");E.isDawnItem=isDawnItem;
+/* Ingots (Set 2): the old Metal subtype, now Material */
+const isIngot=d=>!!d&&d.type==="Item"&&/ Ingot$/.test(d.name||"");
 function upgradeCost(o){const d=DB[o.id]||{};if(d.up)return{cost:d.up.cost,weapon:true};const m=/Upgrade[^:]*?(\d+|X) Gold/i.exec((DB[o.id]||{}).rules||"");if(!m)return null;return m[1]==="X"?{x:true}:{cost:+m[1]}}
 E.upgradeCost=upgradeCost;
 function upgradables(s,pid){const pl=s.p[pid];const objs=[...pl.inv.filter(o=>!o.fd&&o.id),...pl.heroes.flatMap(h=>Object.values(h.eq).filter(e=>e&&e!=="2H"))];
@@ -695,7 +700,7 @@ E.options=function(s,pid){
   if(s.pend.length){const pr=s.pend[0];if(pr.pid!==pid)return[];return promptOptions(s,pid,pr)}
   if(s.phase==="mull"){const pl=P(s,pid);if(pl.mullDone)return[];return[{type:"keep"},{type:"mull"}]}
   if(s.phase==="dawn"){if(s.dawnDone[pid])return[];const pl=P(s,pid);const out=[];
-    pl.inv.forEach(o=>{if(!o.fd&&def(o).sub==="Gemstone")living(pl).filter(h=>!h.ex).forEach(h=>out.push({type:"gem",uid:o.uid,hero:h.uid}))});
+    pl.inv.forEach(o=>{if(!o.fd&&isDawnItem(def(o)))living(pl).filter(h=>!h.ex).forEach(h=>out.push({type:"gem",uid:o.uid,hero:h.uid}))});
     pl.heroes.forEach(h=>{if(h.med&&!h.dead)out.push({type:"wake",hero:h.uid,v:h.keepMed})});
     out.push({type:"dawnDone"});return out}
   if(s.phase==="town"){if(!s.town||s.town.order[s.town.i]!==pid)return[];const pl=P(s,pid);const out=[];
@@ -964,15 +969,15 @@ E.levelUp=levelUp;
 
 /* ---------- Set 2: Artificer (Craft, Stall, protection counters, Constructs) ----------
    Craft (Set Two Rules Supplement): play a Recipe only if its ingredients are in your inventory. Pay its Aura cost, sacrifice the ingredients, then flip it.
-   Ingredient spec: {name} = that card, {any:"Metal"} = any card with the Metal subtype, {any:"Cloak"} = any equipment with Cloak in its name.
+   Ingredient spec: {name} = that card, {any:"Metal"} = any Ingot (Material), {any:"Cloak"} = any equipment with Cloak in its name.
    Wildcards (each covers one ingredient): Quicksilver (any ingredient; it's used up), Artificer C (once each turn: any item in your inventory),
    Scavenger's Tongs (once each turn: one ingredient from your discard pile; upgraded: any discard pile).
    The engine picks the cheapest way to pay (cards from a discard pile first, then exact matches, then wildcards, Quicksilver last) and logs what it used. */
-function ingMatch(spec,d){if(!d)return false;if(spec.name)return d.name===spec.name;if(spec.any==="Metal")return d.sub==="Metal";if(spec.any==="Cloak")return d.kind==="equip"&&/Cloak/.test(d.name);
-  /* Nov 13: "any Sword" = a Weapon with Sword in its name; "any Chest armor" = equipment in the Chest region */
-  if(spec.any==="Sword")return d.kind==="equip"&&d.sub==="Weapon"&&/Sword/.test(d.name);if(spec.any==="Chest")return d.kind==="equip"&&d.region==="Chest";
+function ingMatch(spec,d){if(!d)return false;if(spec.name)return d.name===spec.name;if(spec.any==="Metal")return isIngot(d);if(spec.any==="Cloak")return d.kind==="equip"&&(d.sub==="Cloak"||/Cloak/.test(d.name));
+  /* "any Sword" = equipment with the Sword subtype (update 35; before: a Weapon with Sword in its name); "any Chest armor" = equipment in the Chest region */
+  if(spec.any==="Sword")return d.kind==="equip"&&d.sub==="Sword";if(spec.any==="Chest")return d.kind==="equip"&&d.region==="Chest";
   /* Nov 15: "any Shield" = any equipment with Shield in its name */
-  if(spec.any==="Shield")return d.kind==="equip"&&/Shield/.test(d.name);return false}
+  if(spec.any==="Shield")return d.kind==="equip"&&(d.sub==="Shield"||/Shield/.test(d.name));return false}
 function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl=P(s,pid);
   const inv=pl.inv.filter(o=>!o.fd&&!o.tok&&o.id&&DB[o.id]&&(o.kind==="card"||o.kind==="equip"));
   const val=o=>num(def(o).cost)+(o.kind==="equip"?1:0);
@@ -988,7 +993,7 @@ function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl
     inv.forEach(o=>{if(used.includes(o.uid)||o.name!=="Quicksilver")return;plan.push({o,zone:"inv",how:"Quicksilver"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o)+0.5,plan);plan.pop()});
     subs.forEach((w,wi)=>{if(subUsed.includes(wi))return;
       if(w.k==="disc"){const piles=w.any?s.p.map((p2,i2)=>i2):[pid];piles.forEach(pp=>{P(s,pp).disc.forEach(c=>{if(used.includes(c.uid)||!ingMatch(sp,DB[c.id]))return;plan.push({c,pile:pp,zone:"disc",how:w.src});go(i+1,used.concat([c.uid]),subUsed.concat([wi]),cost-0.25,plan);plan.pop()})});return}
-      inv.forEach(o=>{if(used.includes(o.uid))return;const dd=def(o);const ok=w.k==="anyItem"?true:dd.sub==="Metal";if(!ok||ingMatch(sp,dd))return;plan.push({o,zone:"inv",how:w.src});go(i+1,used.concat([o.uid]),subUsed.concat([wi]),cost+val(o)+0.25,plan);plan.pop()})})}
+      inv.forEach(o=>{if(used.includes(o.uid))return;const dd=def(o);const ok=w.k==="anyItem"?true:isIngot(dd);if(!ok||ingMatch(sp,dd))return;plan.push({o,zone:"inv",how:w.src});go(i+1,used.concat([o.uid]),subUsed.concat([wi]),cost+val(o)+0.25,plan);plan.pop()})})}
   go(0,[],[],0,[]);if(!best)return null;best.subs=best.subs.map(i=>subs[i]);return best}
 E.craftPlan=craftPlan;
 /* pay a Recipe's ingredients (called when the Recipe is played, after its Aura cost) */
@@ -1442,7 +1447,7 @@ function doDawn(s){
   });
   checkDeaths(s);if(s.over)return;
   s.p.forEach((pl,pid)=>{if(!isBoss(s,pid)&&!(s.trials&&wiped(s,pid)))draw(s,pid,1)});
-  s.dawnDone=s.p.map((pl,pid)=>!(pl.inv.some(o=>!o.fd&&def(o).sub==="Gemstone")));
+  s.dawnDone=s.p.map((pl,pid)=>!(pl.inv.some(o=>!o.fd&&isDawnItem(def(o)))));
   if(s.dawnDone.every(Boolean)&&!s.pend.length)startBattle(s)}
 function startBattle(s){s.phase="battle";s.pos=0;s.acted=s.p.map(()=>false);s.passed=s.p.map((_,i)=>isBoss(s,i));s.bonus=null;s.prio=s.init;if(s.trials)s.trials.swAct=false;
   log(s,`— Battle Phase (${s.p[s.init].name} has initiative) —`)}

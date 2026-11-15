@@ -39,8 +39,9 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 
 - **Recipe:** a two-sided card type. The front lists its ingredients and Aura cost. The back shows what it makes.
 - **Craft:** play this only if its ingredients are in your inventory. Pay its Aura cost, sacrifice the ingredients, then flip the card. A made item or weapon goes into your inventory. A made summon enters play, and the Recipe then goes to your discard pile.
-- **Ingredients** always come from your inventory unless a card says otherwise. "Any Metal" means any card with the Metal subtype. "Any Sword" means any Weapon card with Sword in its name. "Any Chest armor" means any equipment card in the Chest region.
-- **Metal:** a generic item subtype (Copper, Iron, Silver, Platinum and Mithril Ingots). Each Metal has its own use, so any class can play them; Artificers also use them as ingredients.
+- **Ingredients** always come from your inventory unless a card says otherwise. "Any Metal" means any Ingot. "Any Sword" means any equipment with the Sword subtype. "Any Shield" means any equipment with the Shield subtype. "Any Chest armor" means any equipment card in the Chest region.
+- **Ingots and other Materials:** the Copper, Iron, Silver, Platinum and Mithril Ingots, the Pearls (Flame, Frost, Time and Aura) and Dragon Scale are generic items with the Material subtype, like the Set 1 Bars and gems. Each has its own use, so any class can play them; Artificers also use them as ingredients.
+- **Tool:** the subtype of Artificer equipment (Tinker's Goggles, Toolbelt, Bellows, Scavenger's Tongs, Wellness Rod). Necromancer equipment uses item subtypes: Wand, Dagger, Amulet.
 - **Quicksilver:** a special Artificer material (2 Aura item). It does nothing on its own, but it can be used as any ingredient.
 - **Stall counters:** stall counters always go on a card. While a card has stall counters, it is delayed: it can't be played (or, for a card set aside from play, it can't come back into play). Each time a player in the party that owns the card takes an action, remove one stall counter from it. When the last one is removed, the delay ends.
 - **Stall** (Pocket Watch): set the card being played aside with 2 stall counters on it. When the last one is removed, its owner may play the card without paying its Aura cost. The Aura they already paid is not refunded.
@@ -48,7 +49,7 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 - **Made weapons** are equipped by the normal rules: a Hero equips one from your inventory to itself by paying the weapon's Aura cost.
 - **Piercing** (The Archfrost, The Archflame): attacks from the equipped Hero ignore all of the target's Defense.
 - **Dragonscale Scale:** the equipped Hero has Impervious (see Necromancer). It still dies if it loses all its Health Points.
-- **Crafted:** everything a Recipe makes that is an item or a piece of equipment has the subtype Crafted (on its back, for example "Item · Crafted" or "Armor · Crafted · One-Handed"). Summons and Hero Constructs are not Crafted items. When a Crafted item leaves play, its Recipe card goes to the discard pile. A "Crafted item in your discard pile" (Crafter's Choice) is a Recipe that was already crafted and flipped and went to the discard pile that way. A Recipe that was discarded without being crafted doesn't count.
+- **Crafted:** everything a Recipe makes that is an item or a piece of equipment has the subtype Crafted (on its back, for example "Item - Crafted" or "Equipment - Crafted Shield"). Summons and Hero Constructs are not Crafted items. When a Crafted item leaves play, its Recipe card goes to the discard pile. A "Crafted item in your discard pile" (Crafter's Choice) is a Recipe that was already crafted and flipped and went to the discard pile that way. A Recipe that was discarded without being crafted doesn't count.
 - **"Any Shield"** as an ingredient means any equipment card with Shield in its name.
 - **Surrender a soul as a cost** (Remey Recipe): "As an additional cost to play this card, surrender a soul" means you choose one of your dead Heroes and surrender its soul (the normal Surrender Your Soul rules, without choosing one of its effects). You can't play the card if you have no dead Hero whose soul can be surrendered. It counts as surrendering a soul for Mourn.
 - **Hero Construct** (Remey the Incredible, made by the Remey Recipe): a Construct that joins your party as an extra Hero. It goes at the end of your party order and acts Last (after the Closer). It enters exhausted. It adds its Aura at Dawn, earns Gold like your other Heroes, and can level and equip like any Hero. Its Hero type is Omni: it counts as every Hero type, so it can play any class's cards and use any class's equipment, and cards that care about a Hero type count it. It counts as a Construct for card text (Artificer B: it enters with +1 Strength and +1 Health Points). Your party isn't defeated while it's alive. When it dies it is destroyed instead of dying face down: it can't be revived, its soul can't be surrendered, and the Recipe card goes to your discard pile.
@@ -82,7 +83,9 @@ Every term new in Set Two, alphabetical.
 | Hero Construct | A Construct that joins your party as an extra Hero and acts Last. See Artificer. |
 | Omni | A Hero type that counts as every Hero type (Remey the Incredible). See Artificer. |
 | Impervious | This can't be dealt damage or destroyed. It still dies if it loses all its Health Points. Sacrificing it is allowed. |
-| Metal | See Artificer. |
+| Material | Item subtype. In Set 2: the Ingots, Pearls and Dragon Scale. See Artificer. |
+| Metal | "Any Metal" means any Ingot. See Artificer. |
+| Tool | Equipment subtype for Artificer gear. See Artificer. |
 | Mill X | Move the top X cards of a library to its discard pile. |
 | Mourn | If you've surrendered a soul this game, you may play this card without paying its Aura cost. You still pay all other costs. Mourn is printed first on the card. |
 | Quicksilver | See Artificer. |

@@ -116,7 +116,7 @@ def("Healer's Choice",M(2,[{label:"Heal 2 HP",t:[ANY],run:c=>heal(c,c.t[0],2)},{
 /* ===== Paladin ===== */
 def("Power Thrust",{t:[DMG],run(c){D(c,c.t[0],(c.actor?dstr(c,c.actor):0)+2);exMe(c)}});
 def("Shield Bash",{t:[ANY],run(c){D(c,c.t[0],dfn(c,c.actor))}});
-def("Radiant Strike",{t:[ANY],run(c){const sw=E.eqList(c.actor).some(e=>/Sword/.test(e.name+" "+(E.DB[e.id]||{}).rules));D(c,c.t[0],sw?5:3,{type:"Light"});exMe(c)}});
+def("Radiant Strike",{t:[ANY],run(c){const sw=E.eqList(c.actor).some(e=>(E.DB[e.id]||{}).sub==="Sword"||/Sword/.test(e.name+" "+(E.DB[e.id]||{}).rules));D(c,c.t[0],sw?5:3,{type:"Light"});exMe(c)}});
 def("Divine Judgment",{run(c){const d=dfn(c,c.actor);enemies(c).forEach(e=>D(c,e,d));exMe(c)}});
 def("Blockade",{t:[HERO],run(c){buff(c.t[0],{def:4})}});
 def("Protect",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 DEF this turn.`)}}});
@@ -166,7 +166,7 @@ def("Armed",{t:[cls("Rogue")],run(c){const h=c.t[0];if(!h)return;E.equipTo(c.s,h
 def("Quick Inventory",{run(c){E.toInv(c.s,c.pid,E.makeEqToken(c.s,c.pid,"Dagger"));log(c,"A Dagger token goes to inventory.")}});
 def("Ritual of Fang",{run(c){E.toInv(c.s,c.pid,E.makeEqToken(c.s,c.pid,"Viper Fang Dagger"));log(c,"A Viper Fang Dagger token goes to inventory.")}});
 def("Blademaster's Choice",Object.assign(M(2,[{label:"+1 additional STR",run:c=>{c._x.str=1}},{label:"Poisonous 1",run:c=>{c._x.poison=1}},{label:"Stun on combat damage",run:c=>{c._x.stun=1}}]),{run(c){const x={};c._x=x;(c.modes||[]).forEach(i=>this.modes.opts[i]&&this.modes.opts[i].run(c));const e=E.makeEqToken(c.s,c.pid,"Dagger",x);if(x.str)e.pstr+=1;E.toInv(c.s,c.pid,e);log(c,"A custom Dagger token goes to inventory.")}}));
-def("Resourceful Maneuver",{t:[cls("Rogue")],can:(s,pid)=>s.p[pid].disc.some(x=>/Dagger/.test(x.id||"")&&E.DB[x.id].kind==="equip"),run(c){const pl=c.me;const i=pl.disc.findIndex(x=>/Dagger/.test(x.id||"")&&E.DB[x.id].kind==="equip");if(i<0||!c.t[0])return;const card=pl.disc.splice(i,1)[0];E.equipTo(c.s,c.t[0],E.eqObjFromCard(c.s,c.pid,card))}});
+def("Resourceful Maneuver",{t:[cls("Rogue")],can:(s,pid)=>s.p[pid].disc.some(x=>(E.DB[x.id]||{}).kind==="equip"&&E.DB[x.id].sub==="Dagger"),run(c){const pl=c.me;const i=pl.disc.findIndex(x=>(E.DB[x.id]||{}).kind==="equip"&&E.DB[x.id].sub==="Dagger");if(i<0||!c.t[0])return;const card=pl.disc.splice(i,1)[0];E.equipTo(c.s,c.t[0],E.eqObjFromCard(c.s,c.pid,card))}});
 def("Broken Blade",{t:[t("allyHero","your Hero with a Dagger",(s,o)=>E.eqList(o).some(e=>E.isDagger(s,e)))],can:(s,pid)=>E.living(s.p[pid]).some(h=>E.eqList(h).some(e=>E.isDagger(s,e))),run(c){const h=c.t[0];if(!h)return;const d=daggers(h,c.s)[0];if(d){destroy(c,d);h.ex=false;log(c,`${h.name} readies.`)}}}); /* update 18 */
 def("Flick Dagger",{can:(s,pid,a)=>a&&E.eqList(a).some(e=>E.isDagger(s,e)),run(c){const d=daggers(c.actor,c.s)[0];if(!d)return;destroy(c,d);const n=dstr(c,c.actor);enemies(c).forEach(e=>D(c,e,n))}});
 def("Death by a Thousand Cuts",{t:[ANY],run(c){let n=0;enemies(c).forEach(e=>n+=e.st.poison);living(c.me).filter(h=>h.cls==="Rogue").forEach(h=>n+=daggers(h,c.s).length);D(c,c.t[0],n);exMe(c)}});
@@ -350,7 +350,7 @@ def("Phoenix Down",item(3,[t("deadAny","dead Hero")],c=>{const h=c.t[0];if(!h)re
 def("Platinum Bar",item(2,[],c=>draw(c,1)));
 def("Gold Bar",item(3,[],c=>{c.me.pm.def=(c.me.pm.def||0)+1;log(c,"Your party gains +1 DEF this turn.")}));
 def("Silver Bar",item(3,[],c=>{c.me.pm.str=(c.me.pm.str||0)+1;log(c,"Your party gains +1 STR this turn.")}));
-def("Dynamite",item(3,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
+def("Dynamite",item(3,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)},{exile:true})); /* update 35: Exile */
 def("Sleeping Potion",item(2,[HERO],c=>{if(c.t[0])E.exhaust(c.s,c.pid,c.t[0])},{exile:true,ex:true}));
 def("Amnesia Puzzle Box",item(0,[t("player","target player")],c=>{const p=c.s.p[c.t[0].pid];p.lib.push(...p.disc.splice(0));E.shuffle(c.s,p.lib);log(c,`${p.name} shuffles their discard pile into their library.`)},{exile:true}));
 def("Energy Stone",item(0,[t("allySummon","first ready summon to exhaust",(s,o)=>!o.ex),t("allySummon","second ready summon to exhaust",(s,o)=>!o.ex,{distinct:true})],c=>{const ss=c.t.filter(o=>o&&!o.ex);if(ss.length<2){log(c,"Energy Stone needs two ready summons.");return}ss.slice(0,2).forEach(o=>{o.ex=true;log(c,`${o.name} is exhausted.`)});c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{anyClass:true,can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=2}));
@@ -585,7 +585,7 @@ OPS.equipFree=(s,pid,pr,picks)=>{const pl=s.p[pid];const h=E.heroByUid(s,pr.hero
 OPS.fromDisc=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(c=>c.uid===u);if(i>=0){const c=pl.disc.splice(i,1)[0];pl.hand.push(c);E.log(s,`${pl.name} returns ${E.DB[c.id].name} to hand.`,pid)}})};
 
 /* ===== Set 2: Artificer (Set Two Rules Supplement) ===== */
-/* Metals: generic items; each has its own use (Exile). Artificers also use them as ingredients. */
+/* Ingots (Material, formerly the Metal subtype): generic items; each has its own use (Exile). Artificers also use them as ingredients. */
 def("Copper Ingot",item(0,[],c=>{c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{exile:true}));
 def("Iron Ingot",item(0,[AL],c=>{if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 Defense until Dusk.`)}},{exile:true}));
 def("Silver Ingot",item(0,[SUM],c=>D(c,c.t[0],3),{exile:true}));
@@ -601,8 +601,8 @@ const recipe=n=>def(n,{run(c){const keep=E.flipRecipe(c.s,c.pid,c.inst);
 Object.keys(E.RECIPES||{}).forEach(recipe);
 /* made items */
 def("Blast Charge",item(0,[EN],c=>D(c,c.t[0],3),{sac:true,ex:true}));
-def("Reclamation Kit",item(0,[],c=>{const ms=c.me.disc.filter(x=>(E.DB[x.id]||{}).sub==="Metal");if(!ms.length){log(c,"Reclamation Kit: no Metal in your discard pile.");return}
-  E.pushChoose(c.s,c.pid,{title:"Reclamation Kit: return a Metal to an empty inventory slot",cards:ms.map(x=>x.uid),min:1,max:1,op:"discToInv"})},{sac:true,can:(s,pid)=>s.p[pid].disc.some(x=>(E.DB[x.id]||{}).sub==="Metal")}));
+def("Reclamation Kit",item(0,[],c=>{const ms=c.me.disc.filter(x=>/ Ingot$/.test(x.id||""));if(!ms.length){log(c,"Reclamation Kit: no Metal in your discard pile.");return}
+  E.pushChoose(c.s,c.pid,{title:"Reclamation Kit: return a Metal to an empty inventory slot",cards:ms.map(x=>x.uid),min:1,max:1,op:"discToInv"})},{sac:true,can:(s,pid)=>s.p[pid].disc.some(x=>/ Ingot$/.test(x.id||""))}));
 OPS.discToInv=OPS.discToInv||((s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i<0)return;if(pl.inv.length>=E.slots(s,pid)){E.log(s,"There's no empty inventory slot.",pid);return}
   const x=pl.disc.splice(i,1)[0];pl.inv.push(E.invObj(s,pid,x));E.log(s,`${E.DB[x.id].name} returns to ${pl.name}'s inventory.`,pid)})});
 S["Pocket Watch"]={}; /* answered from the response window (E.canStall) */

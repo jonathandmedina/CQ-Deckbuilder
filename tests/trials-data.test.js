@@ -13,7 +13,7 @@ const b=c.TRIALS_BOSSES.find(r=>r[0]==="Rock Mammoth");
 ok(b&&b[1]===1&&b[2]===25&&b[3]===0&&b[4]===1&&b[5]===1&&/Raging Stampede/.test(b[6])&&/number of parties plus 1/.test(b[6])&&b[7]===1,"Rock Mammoth stats");
 const g=c.TRIALS_SPAWNS.find(r=>r[0]==="Golem");ok(g&&g[2]===1&&g[3]===0&&g[4]===4&&g[6]===1,"Golem 1/0/4");
 ok(c.TRIALS_LOOT.length===6,"6 loot cards");
-c.TRIALS_LOOT.forEach(r=>{ok(r.length===10&&r[1]==="Legendary"&&r[3]==="Generic"&&r[9]===1,"loot row "+r[0]);ok(Array.isArray(c.TRIALS_LOOT_UPGRADES[r[0]])&&c.TRIALS_LOOT_UPGRADES[r[0]].length===4,"upgrade "+r[0]);
+c.TRIALS_LOOT.forEach(r=>{ok(r.length===10&&r[1]==="Legendary"&&r[3]==="Generic"&&r[9]===2,"loot row (v2 since update 35 subtypes) "+r[0]);ok(Array.isArray(c.TRIALS_LOOT_UPGRADES[r[0]])&&c.TRIALS_LOOT_UPGRADES[r[0]].length===4,"upgrade "+r[0]);
   ok(!/\b(STR|DEF|HP)\b/.test(r[4]+c.TRIALS_LOOT_UPGRADES[r[0]][1]),"spelled-out stats "+r[0])});
 const L=Object.fromEntries(c.TRIALS_LOOT.map(r=>[r[0],r]));
 ok(L["Rockbreaker Maul"][5]===3&&L["Rockbreaker Maul"][6]==="Two-Handed"&&L["Rockbreaker Maul"][7]===3,"Maul");

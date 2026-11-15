@@ -28,7 +28,7 @@ ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The
 {const af=E.DB["The Archfrost"],fl=E.DB["The Archflame"],ds=E.DB["Dragonscale Scale"];
   ok(af&&af.kind==="equip"&&af.pstr===6&&af.region==="Two-Handed"&&af.cost==="6","The Archfrost: Two-Handed, +6, 6 Aura");
   ok(fl&&fl.kind==="equip"&&fl.pstr===6&&fl.region==="Two-Handed","The Archflame: Two-Handed, +6");
-  ok(ds&&ds.kind==="equip"&&ds.region==="Chest"&&ds.sub==="Armor"&&ds.cost==="6","Dragonscale Scale: Chest armor, 6 Aura")}
+  ok(ds&&ds.kind==="equip"&&ds.region==="Chest"&&ds.sub==="Chestplate"&&ds.cost==="6","Dragonscale Scale: Chest armor (Chestplate), 6 Aura")}
 
 /* Flame Pearl: 2 damage to any target when it enters; stays in the inventory */
 {const s=game();const c=hand(s,0,"Flame Pearl");const t=s.p[1].heroes[2];const hp0=E.hp(s,t);ok(canPlay(s,c),"Flame Pearl playable");

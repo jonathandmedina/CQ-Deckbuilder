@@ -36,6 +36,8 @@ const ICON_BASE=new URL("assets/",document.baseURI).href;
 const ci=c=>ICON_CLS.has(c)?`url(${ICON_BASE}ico-${c.toLowerCase()}.png)`:"none";
 const TYPES=["Spell","Tactic","Song","Item","Equipment","Enchantment","Summon"];
 
+/* Type lines read Supertype - Type - Subtype (update 35, Nov 15, 2026) */
+const TL_SEP=" - ";const typeText=c=>[c.sup,c.type,c.sub].filter(Boolean).join(TL_SEP);
 const HEROES=RAW_HEROES.map(r=>({id:"h:"+r[0],kind:"hero",name:r[0],cls:r[1],str:r[2],def:r[3],aura:r[4],hp:r[5],rules:r[6],ver:r[7]||1,type:"Hero",sup:"",sub:"",cost:""}));
 const CARDS=[
   ...RAW_CARDS.map(r=>({id:r[1],kind:"card",name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7],ver:r[8]||1})),
@@ -47,9 +49,9 @@ const CARDS=[
 /* Set 2 Recipes (RECIPES in cards-data.js): two-sided cards. c.up.recipe holds the back: what Crafting the Recipe makes. The flip view and Print & Play show it like an upgraded side. */
 {const RC=(typeof RECIPES!=="undefined")?RECIPES:{};CARDS.forEach(c=>{const r=c.type==="Recipe"&&RC[c.name];if(r)c.up=Object.assign({recipe:true,ing:r.ing},r.back,{cost:r.back.cost,pstr:+r.back.pstr||0,pdef:+r.back.pdef||0})})}
 const isRecipe=c=>!!(c&&c.up&&c.up.recipe);
-function upFace(c){if(isRecipe(c)){const b=c.up;return Object.assign({},c,{id:c.id+"#up",face:"up",name:b.name,type:b.type,sub:b.type==="Equipment"?[b.sub,b.crafted?"Crafted":"",b.region].filter(Boolean).join(" · "):(b.crafted?[b.sub,"Crafted"].filter(Boolean).join(" · "):b.sub),region:b.region,cost:b.type==="Summon"?"":b.cost,rules:b.rules,pstr:b.pstr,pdef:b.pdef,sup:c.sup,backOf:c.name})}
+function upFace(c){if(isRecipe(c)){const b=c.up;return Object.assign({},c,{id:c.id+"#up",face:"up",name:b.name,type:b.type,sub:b.crafted?["Crafted",b.sub].filter(Boolean).join(" "):b.sub,region:b.region,cost:b.type==="Summon"?"":b.cost,rules:b.rules,pstr:b.pstr,pdef:b.pdef,sup:c.sup,backOf:c.name})}
   return Object.assign({},c,{id:c.id+"#up",face:"up",rules:c.up.rules,pstr:c.up.pstr,pdef:c.up.pdef})}
-const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?" · "+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],ver:r[11]||1,sup:""}));
+const TOKENS=(typeof RAW_TOKENS!=="undefined"?RAW_TOKENS:[]).map(r=>({id:"t:"+r[0],kind:"token",name:r[0],tkind:r[1],type:"Token",sub:r[1]+(r[2]&&r[2]!==r[1]?TL_SEP+r[2]:""),cls:r[3],str:r[4],def:r[5],hp:r[6],cost:r[7],region:r[8],rules:r[9],madeBy:r[10],ver:r[11]||1,sup:""}));
 const TOKEN_BY_NAME=new Map(TOKENS.map(t=>[t.name,t]));
 const TOKEN_SRC=(typeof TOKEN_SOURCES!=="undefined")?TOKEN_SOURCES:{};
 /* Set 2 (hidden playtest set): cards named in SET2_CARDS (cards-data.js) only show for admins and players an admin gave Set 2 access (Admin page). */
@@ -404,8 +406,8 @@ function shareURL(d){return location.origin+location.pathname+"?deck="+shareCode
 /* ---------- rendering: card tile ---------- */
 function typeLine(c){const v=`<i class="cver" title="Card version">v${c.ver||1}</i>`;
   if(c.kind==="hero")return`<span>Hero</span><span>${esc(c.cls)} ${v}</span>`;
-  if(c.kind==="token")return`<span>${c.set==="trials"?"":"Token — "}${esc(c.sub)}</span><span>${esc(c.cls)} ${v}</span>`;
-  const left=(c.sup?`<span class="leg${c.sup==="Legendary"?" legendary":""}">${esc(c.sup)}</span> `:"")+esc(c.type)+(c.sub?" — "+esc(c.sub):"");
+  if(c.kind==="token")return`<span>${c.set==="trials"?"":"Token"+TL_SEP}${esc(c.sub)}</span><span>${esc(c.cls)} ${v}</span>`;
+  const left=(c.sup?`<span class="leg${c.sup==="Legendary"?" legendary":""}">${esc(c.sup)}</span>${TL_SEP}`:"")+esc(c.type)+(c.sub?TL_SEP+esc(c.sub):"");
   return`<span>${left}</span><span>${esc(c.cls)} ${v}</span>`;
 }
 function footHTML(c){
@@ -454,7 +456,7 @@ function artNum(c,f){if(f==="aura"&&c.kind!=="hero")f="cost";
   const v=c[f];return v==null||v===""?"":String(v)}
 function artText(c,f){
   if(f==="title")return esc(c.name);
-  if(f==="sub")return esc(c.kind==="hero"?c.cls+" Hero":[c.sup,c.type,c.sub].filter(Boolean).join(" "));
+  if(f==="sub")return esc(c.kind==="hero"?c.cls+" Hero":typeText(c));
   if(f==="region")return esc(c.region||"");
   if(f==="upgrade")return c.face==="up"?"Upgraded!":c.up?`Upgrade: ${esc(c.up.cost)}<i class="coin" aria-label="Gold"></i>`:"";
   return""}
@@ -1034,7 +1036,7 @@ function drawCard(ctx,c,W,H){
     ctx.fillStyle="#1C232E";ctx.font=`800 ${52*s}px ${F_DISP}`;ctx.textAlign="center";ctx.fillText(String(c.cost),gx,gy+18*s);ctx.textAlign="left"}
   // type line
   let ty=iy+hb+50*s;ctx.font=`italic 400 ${32*s}px ${F_BODY}`;ctx.fillStyle="#4C5563";
-  const tl=c.kind==="hero"?"Hero":c.kind==="token"?"Token — "+c.sub:(c.sup?c.sup+" ":"")+c.type+(c.sub?" — "+c.sub:"");
+  const tl=c.kind==="hero"?"Hero":c.kind==="token"?"Token"+TL_SEP+c.sub:typeText(c);
   ctx.fillText(tl,ix+22*s,ty);ctx.textAlign="right";ctx.font=`700 ${30*s}px ${F_BODY}`;ctx.fillStyle=col==="#D4AE3A"?"#8A6D10":col;ctx.fillText(c.cls.toUpperCase(),ix+iw-22*s,ty);ctx.textAlign="left";
   ctx.strokeStyle="#D9DCD6";ctx.lineWidth=2*s;ctx.beginPath();ctx.moveTo(ix+22*s,ty+20*s);ctx.lineTo(ix+iw-22*s,ty+20*s);ctx.stroke();
   // footer

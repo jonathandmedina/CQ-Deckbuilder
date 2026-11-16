@@ -595,7 +595,7 @@ def("Mithril Ingot",item(0,[],c=>draw(c,2),{exile:true}));
 S["Quicksilver"]={};
 /* Recipes: the ingredients were paid when the card was played (E.payCraft). Resolving flips it: Constructs enter play (the Recipe goes to the discard pile);
    a made item or weapon goes into your inventory. "Exhaust this Hero." */
-const recipe=n=>def(n,{run(c){const keep=E.flipRecipe(c.s,c.pid,c.inst);
+const recipe=n=>def(n,{run(c){const keep=E.flipRecipe(c.s,c.pid,c.inst,c.actor);
   /* Nov 15, 2026: crafting doesn't exhaust the Hero by rule; only a Recipe whose text says "Exhaust this Hero." does */
   if(c.actor&&!c.actor.dead&&/Exhaust this Hero\./.test((c.def&&c.def.rules)||""))exMe(c);
   return keep?"stay":undefined}});

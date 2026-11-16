@@ -12,6 +12,7 @@ function game(h0,h1){const s=E.newGame({seed:7,players:[{name:"A",deck:deck(h0||
   s.p.forEach(p=>{p.aura=10;p.inv=[];p.hand=[]});s.prio=0;s.passed=[false,false];return s}
 const inv=(s,pid,id)=>{const o=E.invObj(s,pid,{uid:uid(),id,owner:pid});s.p[pid].inv.push(o);return o};
 const hand=(s,pid,id)=>{const c={uid:uid(),id,owner:pid};s.p[pid].hand.push(c);return c};
+const made=(s,n)=>{let o=s.p[0].inv.find(x=>x.name===n);if(o)return o;for(const h of s.p[0].heroes)for(const k in h.eq){const e=h.eq[k];if(e&&e!=="2H"&&e.name===n){made.on=h;E.unequip(s,e);return s.p[0].inv.find(x=>x.name===n)}}}; /* Nov 15: made equipment enters equipped to its crafter; tests that re-equip from inventory unequip it first */
 const opts=(s,pid)=>E.options(s,pid);
 const canPlay=(s,c)=>opts(s,0).some(o=>o.type==="play"&&o.uid===c.uid);
 function resolve(s){let g=0;while(s.pend.length&&g++<20){const pr=s.pend[0];const a=ctx.CQAI.choose(s,pr.pid);if(!a)break;E.act(s,pr.pid,a)}}
@@ -67,7 +68,7 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
 
 /* Wellness Rod */
 {const s=game();const c=hand(s,0,"Wellness Rod Recipe");["Antidote","Potion","Silver Bar"].forEach(n=>inv(s,0,n));ok(canPlay(s,c),"Antidote, Potion and Silver Bar");
-  const au=s.p[0].aura;E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(s.p[0].aura===au-1,"Recipe costs 1 Aura");const rod=s.p[0].inv.find(o=>o.name==="Wellness Rod");ok(rod,"Wellness Rod made");
+  const au=s.p[0].aura;E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(s.p[0].aura===au-1,"Recipe costs 1 Aura");const rod=made(s,"Wellness Rod");ok(rod,"Wellness Rod made");
   const a=s.p[0].heroes[0];a.ex=false;E.equipTo(s,a,s.p[0].inv.splice(s.p[0].inv.indexOf(rod),1)[0]);const t=s.p[1].heroes[0];t.st.poison=2;t.st.stun=1;t.st.burn=1;
   s.p[0].heroes.forEach(x=>x.ex=x!==a);s.p[0].t.lastActor=null;s.prio=0;s.passed=[false,false];const eo=opts(s,0).find(o=>o.type==="eqAct"&&o.uid===rod.uid);ok(eo,"Rod ability offered");
   if(eo){E.act(s,0,Object.assign({},eo,{targets:[t.uid]}));resolve(s);ok(E.STATUS.every(k=>!t.st[k]),"all status counters removed (any target, either side)");ok(a.ex,"Exhaust")}}
@@ -75,7 +76,7 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
 /* Deflecting Shield + Time Pearl */
 {const s=game();const c=hand(s,0,"Deflecting Shield Recipe");inv(s,0,"Time Pearl");inv(s,0,"Gold Bar");ok(!canPlay(s,c),"needs any Shield");inv(s,0,"Tower Shield");
   ok(canPlay(s,c),"any Shield (Tower Shield), Time Pearl and Gold Bar");const au=s.p[0].aura;E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(s.p[0].aura===au-2,"Recipe costs 2 Aura");
-  const sh=s.p[0].inv.find(o=>o.name==="Deflecting Shield");ok(sh,"Deflecting Shield made");const def=s.p[0].heroes[1];E.equipTo(s,def,s.p[0].inv.splice(s.p[0].inv.indexOf(sh),1)[0]);
+  const sh=made(s,"Deflecting Shield");ok(sh,"Deflecting Shield made");const def=s.p[0].heroes[1];E.equipTo(s,def,s.p[0].inv.splice(s.p[0].inv.indexOf(sh),1)[0]);
   ok(E.defn(s,def)===E.DB["h:"+def.name].def+1,"+1 Defense");
   /* an enemy attacks def; redirect to another of A's Heroes */
   s.p[1].heroes.forEach(x=>x.ex=false);s.prio=1;s.passed=[false,false];const att=E.actorFor(s,1);const ao=opts(s,1).find(o=>o.type==="attack"&&o.att===att.uid);
@@ -162,4 +163,16 @@ ok(E.DB["h:Artificer A"].name==="Wren Partsfinder"&&E.DB["h:Artificer B"].name==
   const pr=s.pend.find(p=>p.type==="choose"&&/Cy the Builder/.test(p.title||""));ok(pr&&pr.min===0&&pr.cards.length===1,"Cy the Builder may search for a Recipe");
   while(s.pend.length&&s.pend[0]!==pr)E.act(s,s.pend[0].pid,ctx.CQAI.choose(s,s.pend[0].pid));E.act(s,0,{type:"choose",picks:[r.uid]});resolve(s);
   ok(s.p[0].hand.some(x=>x.uid===r.uid),"the Recipe goes to your hand");ok(!a.ex,"Crafting didn't exhaust Cy")}
+
+/* Nov 15 (evening): ingredients can be equipped; made equipment enters equipped to the crafter */
+{const s=game(["Wren Partsfinder","Val Craftsmith","Cy the Builder"]);const a=s.p[0].heroes[0],b=s.p[0].heroes[1];
+  const sw=inv(s,0,"Sword of Riverstead");s.p[0].inv.splice(s.p[0].inv.indexOf(sw),1);E.equipTo(s,b,sw);inv(s,0,"Frost Pearl");inv(s,0,"Gold Bar");
+  const c=hand(s,0,"The Archfrost Recipe");ok(canPlay(s,c),"a Sword equipped to another Hero counts as an ingredient");
+  const old=inv(s,0,"Long Sword");s.p[0].inv.splice(s.p[0].inv.indexOf(old),1);E.equipTo(s,a,old);
+  const au=s.p[0].aura;E.act(s,0,{type:"play",uid:c.uid});resolve(s);
+  ok(!Object.values(b.eq).some(e=>e&&e.name==="Sword of Riverstead")&&s.p[0].disc.some(x=>x.uid===sw.uid),"the equipped Sword is unequipped and sacrificed");
+  ok(Object.values(a.eq).some(e=>e&&e.name==="The Archfrost"),"The Archfrost enters equipped to the Hero that crafted it");
+  ok(s.p[0].aura===au-2,"only the Recipe's 2 Aura is paid (equipping it is free)");
+  ok(s.p[0].inv.some(o=>o.name==="Long Sword"),"the crafter's old weapon goes to the inventory");ok(!a.ex,"and the crafter isn't exhausted")}
+{const s=game();const c=hand(s,0,"Pocket Watch Recipe");["Gold Bar","Platinum Ingot","Rose Quartz"].forEach(n=>inv(s,0,n));E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(s.p[0].inv.some(o=>o.name==="Pocket Watch"),"a made item still goes to the inventory")}
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

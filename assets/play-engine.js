@@ -974,7 +974,7 @@ function levelUp(s,h,stat,announce){if(h.lvl>=6)return;if(arrested(h)){log(s,`${
 E.levelUp=levelUp;
 
 /* ---------- Set 2: Artificer (Craft, Stall, protection counters, Constructs) ----------
-   Craft (Set Two Rules Supplement): play a Recipe only if its ingredients are in your inventory. Pay its Aura cost, sacrifice the ingredients, then flip it.
+   Craft (Set Two Rules Supplement): play a Recipe only if you control its ingredients (inventory or equipped, Nov 15). Pay its Aura cost, sacrifice the ingredients, then flip it.
    Ingredient spec: {name} = that card, {any:"Metal"} = any Ingot (Material), {any:"Cloak"} = any equipment with Cloak in its name.
    Wildcards (each covers one ingredient): Quicksilver (any ingredient; it's used up), Artificer C (once each turn: any item in your inventory),
    Scavenger's Tongs (once each turn: one ingredient from your discard pile; upgraded: any discard pile).
@@ -986,7 +986,10 @@ function ingMatch(spec,d){if(!d)return false;if(spec.name)return d.name===spec.n
   if(spec.any==="Shield")return d.kind==="equip"&&(d.sub==="Shield"||/Shield/.test(d.name));return false}
 function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl=P(s,pid);
   const inv=pl.inv.filter(o=>!o.fd&&!o.tok&&o.id&&DB[o.id]&&(o.kind==="card"||o.kind==="equip"));
-  const val=o=>num(def(o).cost)+(o.kind==="equip"?1:0);
+  /* Nov 15, 2026: ingredients can be anywhere in play: in your inventory or equipped to one of your living Heroes (inventory first) */
+  const eqd=[];living(pl).forEach(h=>eqList(h).forEach(e=>{if(!e.tok&&e.id&&DB[e.id])eqd.push(e)}));
+  const pool=inv.concat(eqd);
+  const val=o=>num(def(o).cost)+(o.kind==="equip"?1:0)+(eqd.includes(o)?0.5:0);
   const subs=[];/* one-shot wildcards available to this Hero */
   if(actor&&actor.name==="Val Craftsmith"&&actor.fl.craftC!==s.round)subs.push({k:"anyItem",src:"Val Craftsmith",flag:"craftC"}); /* was Artificer C */
   if(actor&&hasEqN(actor,"Scavenger's Tongs")&&actor.fl.craftT!==s.round)subs.push({k:"disc",any:hasUpN(s,actor,"Scavenger's Tongs"),src:"Scavenger's Tongs",flag:"craftT"});
@@ -994,7 +997,7 @@ function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl
   function go(i,used,subUsed,cost,plan){if(best&&cost>=best.cost)return;if(i===ings.length){best={cost,plan:plan.slice(),subs:subUsed.slice()};return}
     const sp=ings[i];
     /* exact match from inventory */
-    inv.forEach(o=>{if(used.includes(o.uid))return;if(ingMatch(sp,def(o))&&o.name!=="Quicksilver"){plan.push({o,zone:"inv",how:"exact"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o),plan);plan.pop()}});
+    pool.forEach(o=>{if(used.includes(o.uid))return;if(ingMatch(sp,def(o))&&o.name!=="Quicksilver"){plan.push({o,zone:"inv",how:"exact"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o),plan);plan.pop()}});
     /* Quicksilver: any ingredient */
     inv.forEach(o=>{if(used.includes(o.uid)||o.name!=="Quicksilver")return;plan.push({o,zone:"inv",how:"Quicksilver"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o)+0.5,plan);plan.pop()});
     subs.forEach((w,wi)=>{if(subUsed.includes(wi))return;
@@ -1005,7 +1008,8 @@ E.craftPlan=craftPlan;
 /* pay a Recipe's ingredients (called when the Recipe is played, after its Aura cost) */
 function payCraft(s,pid,actor,d){const plan=craftPlan(s,pid,actor,d);if(!plan)return false;const pl=P(s,pid);const names=[];
   plan.subs.forEach(w=>{if(actor)actor.fl[w.flag]=s.round});
-  plan.plan.forEach(p=>{if(p.zone==="inv"){const i=pl.inv.indexOf(p.o);if(i>=0)pl.inv.splice(i,1);toDisc(s,p.o);names.push(p.o.name+(p.how==="exact"?"":` (${p.how})`))}
+  plan.plan.forEach(p=>{if(p.zone==="inv"){const i=pl.inv.indexOf(p.o);let from="";if(i>=0)pl.inv.splice(i,1);else{const f=find(s,p.o.uid);if(f&&f.zone==="eq"){f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;f.hero.eqGuard=guardEq(f.hero,s);from=` (equipped to ${f.hero.name})`}}
+    toDisc(s,p.o);names.push(p.o.name+from+(p.how==="exact"?"":` (${p.how})`))}
     else{const dp=P(s,p.pile);const i=dp.disc.indexOf(p.c);if(i>=0)dp.disc.splice(i,1);dp.exile.push(p.c);names.push(`${DB[p.c.id].name} from ${p.pile===pid?"your":dp.name+"'s"} discard pile (${p.how})`)}});
   log(s,`Craft: ${pl.name} sacrifices ${names.join(", ")}.`,pid);
   /* Bellows: whenever the equipped Hero Crafts, draw a card (upgraded: and gain 1 Aura) */
@@ -1020,7 +1024,7 @@ E.payCraft=payCraft;
 /* the Recipe flips: a summon Recipe summons its Constructs (then goes to the discard pile); an item or weapon goes into your inventory as the made card */
 function makeConstruct(s,pid,n){const o=makeSummon(s,pid,"Construct",false);o.str=n;o.hp=n;return o} /* Artificer B's Construct bonus went away when it became Material Bender (Nov 15, 2026) */
 E.makeConstruct=makeConstruct;
-function flipRecipe(s,pid,card){const d=DB[card.id];const b=d.recipe.back;const pl=P(s,pid);
+function flipRecipe(s,pid,card,actor){const d=DB[card.id];const b=d.recipe.back;const pl=P(s,pid);
   log(s,`${pl.name} flips ${d.name}: ${b.name}.`,pid);
   if(b.type==="Hero"){makeHeroConstruct(s,pid,card,b);return true}
   if(b.type==="Summon"){const m=/Summon (two|three|a|one) (\d+)\/(\d+)/.exec(b.rules)||[];const k={a:1,one:1,two:2,three:3}[m[1]]||2;const n=+m[2]||2;for(let i=0;i<k;i++)makeConstruct(s,pid,n);return false}
@@ -1028,6 +1032,8 @@ function flipRecipe(s,pid,card){const d=DB[card.id];const b=d.recipe.back;const 
   if(md.kind==="equip")o={uid:card.uid,kind:"equip",id:b.name,name:b.name,cls:"Generic",region:md.region,pstr:md.pstr,pdef:md.pdef,cost:num(md.cost),owner:card.owner,tok:false,x:null};
   else o={uid:card.uid,id:b.name,owner:card.owner,kind:"card",fd:false,name:b.name,ctr:{}};
   if(b.name==="Warded Cloak"){o.prot=3;log(s,"Warded Cloak is made with 3 protection counters.",pid)}
+  /* Nov 15, 2026: made equipment enters play equipped to the Hero that crafted it (if it can use it; otherwise it goes to your inventory) */
+  if(o.kind==="equip"&&actor&&actor.kind==="hero"&&!actor.dead&&actor.owner===pid&&canUseEq(s,actor,o)){equipTo(s,actor,o);return true}
   toInv(s,pid,o);return true}
 E.flipRecipe=flipRecipe;
 /* Hero Construct (Nov 15, 2026; Set Two Rules Supplement): joins the party as an extra Hero at the end of the party order and acts Last.

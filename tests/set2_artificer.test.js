@@ -13,6 +13,7 @@ function game(h0,h1){const s=E.newGame({seed:42,players:[{name:"A",deck:deck(h0|
   s.p.forEach(p=>{p.aura=10;p.inv=[];p.hand=[]});s.prio=0;s.passed=[false,false];return s}
 const inv=(s,pid,id)=>{const o=E.invObj(s,pid,{uid:uid(),id,owner:pid});s.p[pid].inv.push(o);return o};
 const hand=(s,pid,id)=>{const c={uid:uid(),id,owner:pid};s.p[pid].hand.push(c);return c};
+const made=(s,n)=>{let o=s.p[0].inv.find(x=>x.name===n);if(o)return o;for(const h of s.p[0].heroes)for(const k in h.eq){const e=h.eq[k];if(e&&e!=="2H"&&e.name===n){made.on=h;E.unequip(s,e);return s.p[0].inv.find(x=>x.name===n)}}}; /* Nov 15: made equipment enters equipped to its crafter; tests that re-equip from inventory unequip it first */
 const opts=(s,pid)=>E.options(s,pid);
 const canPlay=(s,c)=>opts(s,0).some(o=>o.type==="play"&&o.uid===c.uid);
 function resolve(s){let g=0;while(s.pend.length&&g++<20){const pr=s.pend[0];const a=ctx.CQAI.choose(s,pr.pid);if(!a)break;E.act(s,pr.pid,a)}}
@@ -53,7 +54,7 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok(!s.p[0].inv.includes(bc)&&s.p[0].disc.some(x=>x.uid===bc.uid&&x.id==="Blast Charge Recipe"),"sacrificed: the Recipe card goes to the discard pile");ok(a2.ex,"exhausts the Hero")}
 /* made weapon: Gearwork Hammer */
 {const s=game(["Wren Partsfinder","Gadget Commander","Cy the Builder"],["Divine Knight","Arcane Scholar","Shadow Ranger"]);const c=hand(s,0,"Gearwork Hammer Recipe");inv(s,0,"Iron Ingot");inv(s,0,"Silver Ingot");
-  E.act(s,0,{type:"play",uid:c.uid});resolve(s);const w=s.p[0].inv.find(o=>o.name==="Gearwork Hammer");ok(w&&w.kind==="equip"&&w.pstr===3,"Gearwork Hammer made as a weapon (+3)");
+  E.act(s,0,{type:"play",uid:c.uid});resolve(s);const w=made(s,"Gearwork Hammer");ok(w&&w.kind==="equip"&&w.pstr===3,"Gearwork Hammer made as a weapon (+3)");
   s.prio=0;const a=E.actorFor(s,0);a.ex=false;const eo=opts(s,0).find(o=>o.type==="equipInv"&&o.uid===w.uid);ok(eo,"any Hero can equip a made weapon from inventory");
   const aura=s.p[0].aura,st0=E.str(s,a);E.act(s,0,eo);ok(s.p[0].aura===aura-2,"equipping costs the weapon's Aura cost (2)");ok(E.str(s,a)===st0+3,"+3 Strength");
   E.destroyObj(s,w);ok(s.p[0].disc.some(x=>x.uid===w.uid&&x.id==="Gearwork Hammer Recipe"),"destroyed weapon goes to the discard pile as its Recipe")}
@@ -87,7 +88,7 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok(s.p[0].inv.some(o=>o.uid===m.uid&&o.name==="Copper Ingot"),"Reclamation Kit returns a Metal to inventory");ok(!s.p[0].inv.includes(kit),"Reclamation Kit sacrificed")}
 /* Warded Cloak: 3 protection counters, opponents' spells and abilities can't target the Hero */
 {const s=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const c=hand(s,0,"Warded Cloak Recipe");inv(s,0,"Cloak of Protection");inv(s,0,"Platinum Ingot");inv(s,0,"Potion");
-  ok(canPlay(s,c),"any Cloak + Platinum Ingot + Potion");E.act(s,0,{type:"play",uid:c.uid});resolve(s);const w=s.p[0].inv.find(o=>o.name==="Warded Cloak");ok(w&&w.prot===3,"made with 3 protection counters");
+  ok(canPlay(s,c),"any Cloak + Platinum Ingot + Potion");E.act(s,0,{type:"play",uid:c.uid});resolve(s);const w=made(s,"Warded Cloak");ok(w&&w.prot===3,"made with 3 protection counters");
   const a=E.actorFor(s,0);a.ex=false;s.prio=0;E.act(s,0,opts(s,0).find(o=>o.type==="equipInv"&&o.uid===w.uid));
   const ally=s.p[0].heroes.find(h=>h!==a);const hp0=E.hp(s,ally);E.damage(s,{name:"Test"},ally,5,{card:true});ok(E.hp(s,ally)===hp0&&w.prot===2,"damage to another Hero in the party is prevented, a counter removed");
   E.damage(s,{name:"Test"},a,1,{card:true});E.damage(s,{name:"Test"},a,1,{card:true});ok(w.prot===0,"counters run out");const hp1=E.hp(s,a);E.damage(s,{name:"Test"},a,3,{card:true,ignoreDef:true});ok(E.hp(s,a)===hp1-3,"no counters: damage goes through");
@@ -108,7 +109,7 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   s.p[1].heroes.forEach(x=>{x.ex=false;x.fl.stepped=null});const pso=opts(s,1).find(o=>o.type==="playStalled");ok(pso,"then it can be played");
   s.p[0].heroes.forEach(x=>x.ex=true);const au=s.p[1].aura;const rr=E.act(s,1,Object.assign({},pso));if(!rr.ok)console.log("playStalled:",rr.err,JSON.stringify(pso),JSON.stringify(s.p[1].stall));resolve(s);ok(s.p[1].aura===au,"without paying its Aura cost");ok(!(s.p[1].stall||[]).length,"leaves the Stall zone")}
 /* Silver Edge (double damage to summons), Mithril Blade (Piercing 2) */
-{const s=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const a=E.actorFor(s,0);const se=E.flipRecipe(s,0,{uid:uid(),id:"Silver Edge Recipe",owner:0});const w=s.p[0].inv.find(o=>o.name==="Silver Edge");s.p[0].inv=[];E.equipTo(s,a,w);
+{const s=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const a=E.actorFor(s,0);const se=E.flipRecipe(s,0,{uid:uid(),id:"Silver Edge Recipe",owner:0});const w=made(s,"Silver Edge");s.p[0].inv=[];E.equipTo(s,a,w);
   const z=E.makeSummon(s,1,"Construct",true);z.str=1;z.hp=9;const st=E.str(s,a);E.damage(s,a,z,st,{combat:true});ok(z.dmg===2*st,"Silver Edge doubles damage to summons ("+z.dmg+")");
   const s2=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"],["Hetroll"].length?["Divine Knight","Arcane Scholar","Shadow Ranger"]:null);const b=E.actorFor(s2,0);E.flipRecipe(s2,0,{uid:uid(),id:"Mithril Blade Recipe",owner:0});const mb=s2.p[0].inv.pop();E.equipTo(s2,b,mb);
   ok(E.str(s2,b)===5,"Mithril Blade +4 Strength, +1 from Gadget Commander (one Crafted item)");const t=s2.p[1].heroes[0];t.bon.def+=5;const d0=t.dmg||0;s2.prio=0;b.ex=false;

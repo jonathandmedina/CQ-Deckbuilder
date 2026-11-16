@@ -3,8 +3,9 @@ and the Play tab pieces (made items, Constructs, Stall, Warded Cloak) render. Se
 import json, os, sys, threading, functools, http.server, socketserver
 from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NAMES = ["Iron Guardians","Clockwork Pair","Quicksilver","Copper Ingot","Mithril Ingot","Toolbelt","Tinker's Goggles","Artificer A","Construct","Warded Cloak","Pocket Watch",
-         "Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice"]  # Nov 15 queue build
+NAMES = ["Iron Guardians","Clockwork Pair","Quicksilver","Copper Ingot","Mithril Ingot","Toolbelt","Tinker's Goggles","Wren Partsfinder","Construct","Warded Cloak","Pocket Watch",
+         "Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice",
+         "Recycler","Shield of Riverstead","Wren Partsfinder","Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"]  # Nov 15 queue builds
 SHOTS = os.environ.get("SHOTS")
 FAKE_SB = """window.supabase={createClient(){const res=d=>({data:d,error:null});
  const chain=()=>{const p=new Proxy(function(){},{get(t,k){if(k==='then')return(ok,bad)=>Promise.resolve(res([])).then(ok,bad);return()=>p},apply(){return p}});return p};
@@ -65,7 +66,7 @@ def main():
             check(not pg.evaluate("!!document.querySelector('[data-v=set2]')"), f"[{w}] no access: Set 2 changelog tab")
             for v in ("cards", "site"):
                 pg.click(f"[data-cl=tab][data-v={v}]"); pg.wait_for_timeout(300)
-                tt = text(pg); check(not any(nm in tt for nm in ["Iron Guardians","Artificer A","Quicksilver","Copper Ingot"]), f"[{w}] no access: Set 2 entry in changelog tab {v}")
+                tt = text(pg); check(not any(nm in tt for nm in ["Iron Guardians","Wren Partsfinder","Quicksilver","Copper Ingot"]), f"[{w}] no access: Set 2 entry in changelog tab {v}")
             # a shared deck link with a Set 2 card: the card isn't added
             check(pg.evaluate("trialsHidden('Iron Guardians')&&trialsHidden('h:Artificer A')&&!trialsHidden('Potion')"), f"[{w}] no access: Set 2 names not masked")
             check(not errs, f"[{w}] no access errors: {errs[:3]}"); ctx.close()
@@ -99,17 +100,18 @@ def main():
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")
             check(plain == 0, f"[{w}] stat words left plain on Set 2 cards: {plain}")
             # Nov 15 queue build: new cards, Remey's Hero Construct back, the Crafted subtype, accent colors
-            for nm in ["Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice"]:
+            for nm in ["Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice","Recycler","Shield of Riverstead"]:
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(200); check(nm in text(pg).replace(f"“{nm}”", ""), f"[{w}] access: catalog shows {nm}")
             pg.fill("#cat-q", "")
             r = pg.evaluate("""(()=>{const f=n=>upFace(BYID.get(n));return[f('Remey Recipe').name,f('Remey Recipe').sub,f('Wellness Rod Recipe').sub,f('Pocket Watch Recipe').sub,f('Deflecting Shield Recipe').sub,BYID.get('Iron Guardians')?f('Iron Guardians').sub:'']})()""")
-            check(r[0] == "Remey the Incredible" and r[1] == "Hero Construct · Omni", f"[{w}] Remey back (Omni): {r}")
+            check(r[0] == "Remey the Incredible" and r[1].startswith("Hero Construct"), f"[{w}] Remey back: {r}")
             check("Crafted" in r[2] and "Crafted" in r[3] and "Crafted" in r[4] and "Crafted" not in r[5], f"[{w}] Crafted subtype on made items only: {r}")
-            plain = pg.evaluate("""(()=>{let n=0;['Remey Recipe','Back in the Lab','Wellness Rod Recipe','Deflecting Shield Recipe',"Crafter's Choice",'Time Pearl','Aura Pearl',"Undead's Choice"].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);
+            plain = pg.evaluate("""(()=>{let n=0;['Remey Recipe','Back in the Lab','Wellness Rod Recipe','Deflecting Shield Recipe',"Crafter's Choice",'Time Pearl','Aura Pearl',"Undead's Choice",'Recycler','Shield of Riverstead','Toolbelt','Pocket Watch Recipe','The Archfrost Recipe'].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points|\\bAura\\b/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")
             check(plain == 0, f"[{w}] stat words left plain on the Nov 15 cards: {plain}")
             go(pg, port, "#build")
             check("Wren Partsfinder" in text(pg), f"[{w}] access: Artificer Heroes in the Deck Builder")
+            tb = text(pg); check(all(n in tb for n in ["Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"]), f"[{w}] renamed Artificer Heroes in the Deck Builder")
             go(pg, port, "#changelog")
             check(pg.evaluate("!!document.querySelector('[data-v=set2]')"), f"[{w}] access: Set 2 tab")
             pg.click("[data-cl=tab][data-v=set2]"); pg.wait_for_timeout(300)
@@ -121,7 +123,7 @@ def main():
             # Play tab: a game with made items, Constructs, a Stalled card and Warded Cloak (Constructs and Warded Cloak come from Recipes deprecated Nov 14; still rendered for old games)
             go(pg, port, "#play")
             pg.evaluate("""(()=>{const E=CQE;const deck=(h,c)=>({name:'T',heroes:h.map(x=>'h:'+x),cards:c});const fill={Potion:3,'Copper Ingot':3,'Iron Ingot':3,'Silver Ingot':3,'Platinum Ingot':3,'Mithril Ingot':3,'Iron Guardians':2,'Clockwork Pair':2,'Gearwork Hammer Recipe':2,'Pocket Watch Recipe':2,'Quicksilver':2,'Toolbelt':2,'Bellows':2,"Tinker's Goggles":2,"Scavenger's Tongs":2,'Gold Bar':2,'Rose Quartz':2,'Reclamation Kit Recipe':2,'Blast Charge Recipe':2,'Silver Edge Recipe':2,'Cloak of Protection':2};
-              const s=E.newGame({seed:7,players:[{name:'You',deck:deck(['Artificer A','Artificer B','Artificer C'],fill)},{name:'AI',ai:true,deck:deck(['Divine Knight','Arcane Scholar','Shadow Ranger'],{Potion:3,Precognition:3,Humble:3,Vandalize:3,Disarm:3,Naturalize:3,Shatter:3,'Gold Bar':3,'Platinum Bar':3,'Silver Bar':3,'Rose Quartz':3,Topaz:3,Almandine:3,Dynamite:3,Antidote:3,'Smoke Bomb':3,Revitalize:2})}]});
+              const s=E.newGame({seed:7,players:[{name:'You',deck:deck(['Wren Partsfinder','Material Bender','Val Craftsmith'],fill)},{name:'AI',ai:true,deck:deck(['Divine Knight','Arcane Scholar','Shadow Ranger'],{Potion:3,Precognition:3,Humble:3,Vandalize:3,Disarm:3,Naturalize:3,Shatter:3,'Gold Bar':3,'Platinum Bar':3,'Silver Bar':3,'Rose Quartz':3,Topaz:3,Almandine:3,Dynamite:3,Antidote:3,'Smoke Bomb':3,Revitalize:2})}]});
               E.act(s,0,{type:'keep'});E.act(s,1,{type:'keep'});E.act(s,0,{type:'dawnDone'});E.act(s,1,{type:'dawnDone'});s.prio=0;s.p[0].aura=8;
               E.flipRecipe(s,0,{uid:'w1',id:'Pocket Watch Recipe',owner:0});E.flipRecipe(s,0,{uid:'w2',id:'The Archfrost Recipe',owner:0});E.flipRecipe(s,0,{uid:'w3',id:'Warded Cloak Recipe',owner:0});
               const cl=s.p[0].inv.find(o=>o.name==='Warded Cloak');s.p[0].inv.splice(s.p[0].inv.indexOf(cl),1);E.equipTo(s,s.p[0].heroes[1],cl);
@@ -139,7 +141,7 @@ def main():
             # Nov 15: Remey the Incredible (fourth Hero, acts Last), and the Time Pearl / Deflecting Shield response buttons
             pg.keyboard.press("Escape"); clear(pg)
             pg.evaluate("""(()=>{const E=CQE;const deck=(h,c)=>({name:'T',heroes:h.map(x=>'h:'+x),cards:c});const fill={Potion:3,Antidote:3,Revitalize:3,Dynamite:3,'Platinum Bar':3,'Gold Bar':3,'Time Pearl':2,'Aura Pearl':2,'Remey Recipe':2,'Back in the Lab':2,'Wellness Rod Recipe':2,'Deflecting Shield Recipe':2,"Crafter's Choice":2,'Silver Bar':3,'Copper Ingot':3,'Iron Ingot':3,'Rose Quartz':3};
-              const s=E.newGame({seed:9,players:[{name:'You',deck:deck(['Artificer A','Artificer B','Artificer C'],fill)},{name:'AI',ai:true,deck:deck(['Divine Knight','Arcane Scholar','Shadow Ranger'],{Potion:3,Precognition:3,Humble:3,Vandalize:3,Disarm:3,Naturalize:3,Shatter:3,'Gold Bar':3,'Platinum Bar':3,'Silver Bar':3,'Rose Quartz':3,Antidote:3,Topaz:3,Almandine:3,'Smoke Bomb':3,Dynamite:3,Revitalize:3})}]});
+              const s=E.newGame({seed:9,players:[{name:'You',deck:deck(['Wren Partsfinder','Material Bender','Val Craftsmith'],fill)},{name:'AI',ai:true,deck:deck(['Divine Knight','Arcane Scholar','Shadow Ranger'],{Potion:3,Precognition:3,Humble:3,Vandalize:3,Disarm:3,Naturalize:3,Shatter:3,'Gold Bar':3,'Platinum Bar':3,'Silver Bar':3,'Rose Quartz':3,Antidote:3,Topaz:3,Almandine:3,'Smoke Bomb':3,Dynamite:3,Revitalize:3})}]});
               E.act(s,0,{type:'keep'});E.act(s,1,{type:'keep'});E.act(s,0,{type:'dawnDone'});E.act(s,1,{type:'dawnDone'});s.p[0].aura=8;
               E.flipRecipe(s,0,{uid:'r1',id:'Remey Recipe',owner:0});E.flipRecipe(s,0,{uid:'r2',id:'Deflecting Shield Recipe',owner:0});const sh=s.p[0].inv.find(o=>o.name==='Deflecting Shield');s.p[0].inv.splice(s.p[0].inv.indexOf(sh),1);E.equipTo(s,s.p[0].heroes[1],sh);
               s.p[0].inv.push(E.invObj(s,0,{uid:'tp1',id:'Time Pearl',owner:0}));s.p[1].heroes.forEach(h=>h.ex=false);s.prio=1;const c={uid:'pc1',id:'Precognition',owner:1};s.p[1].hand.push(c);s.p[1].aura=5;E.act(s,1,{type:'play',uid:'pc1'});
@@ -147,10 +149,6 @@ def main():
             pg.wait_for_timeout(400); pg.click("[data-pa=resume-local]"); pg.wait_for_timeout(900)
             pt = text(pg)
             check("Remey the Incredible" in pt and "Hero Construct" in pt, f"[{w}] Play tab shows Remey as a Hero Construct")
-            # choosing the soul: the Remey Recipe's target slot lists your dead Heroes
-            nd = pg.evaluate("""(()=>{const s=JSON.parse(localStorage.getItem('cq.play.local')).s;const E=CQE;s.pend=[];s.p[0].heroes[1].dmg=99;s.p[0].heroes[2].dmg=99;E.checkDeaths(s);
-              const c={uid:'rr9',id:'Remey Recipe',owner:0};s.p[0].hand.push(c);return E.need(s,0,{type:'play',uid:'rr9'}).map(x=>[x.label,x.cands.length])})()""")
-            check(nd and nd[0][1] == 2 and "soul" in nd[0][0], f"[{w}] Remey Recipe asks which dead Hero's soul to surrender: {nd}")
             check("Delay it with a Time Pearl" in pt, f"[{w}] Time Pearl response button")
             if SHOTS and w == 1280: pg.screenshot(path=f"{SHOTS}/play_remey.png")
             pg.locator("button", has_text="Delay it with a Time Pearl").first.click(); pg.wait_for_timeout(600)

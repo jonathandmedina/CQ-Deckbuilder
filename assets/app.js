@@ -668,7 +668,7 @@ function deckPanel(d){
   const entries=Object.entries(d.cards).map(([id,q])=>({c:BYID.get(id),id,q})).filter(x=>x.q>0);
   const groups={};
   for(const e of entries){const g=e.c?(e.c.kind==="equip"?"Equipment":e.c.type):"Unknown";(groups[g]=groups[g]||[]).push(e)}
-  const order=["Spell","Tactic","Song","Summon","Enchantment","Item","Equipment","Unknown"];
+  const order=["Spell","Tactic","Song","Summon","Enchantment","Item","Equipment","Recipe"];Object.keys(groups).forEach(g=>{if(!order.includes(g))order.push(g)}); /* Nov 15: Set 2 Recipes (and any other type) show too */
   const curve=[0,0,0,0,0,0,0,0];// 0..6, 7+ incl X
   for(const e of entries){if(!e.c)continue;const n=e.c.cost==="X"?7:Math.min(+e.c.cost||0,7);curve[n]+=e.q}
   const cmax=Math.max(1,...curve);
@@ -705,7 +705,7 @@ function openOwn(o){if(!o)return false;if(S.dirty&&S.deck.id!==o.id&&!confirmRep
 function deckLog(d){const o=S.decks.find(x=>x.id===d.id);return(o&&o.log)||d.log||[]}
 const deckSorted=d=>Object.entries(d.cards).filter(([,q])=>q>0).map(([id,q])=>({c:BYID.get(id),id,q})).filter(x=>x.c)
   .sort((a,b)=>costNum(a.c)-costNum(b.c)||sortName(a.c.name).localeCompare(sortName(b.c.name)));
-const VIS_GROUPS=[["Spell","Spells"],["Tactic","Tactics"],["Song","Songs"],["Summon","Summons"],["Enchantment","Enchantments"],["Item","Items"],["Equipment","Equipment"]];
+const VIS_GROUPS=[["Spell","Spells"],["Tactic","Tactics"],["Song","Songs"],["Summon","Summons"],["Enchantment","Enchantments"],["Item","Items"],["Equipment","Equipment"],["Recipe","Recipes"]];
 const visGroup=c=>c.kind==="equip"?"Equipment":c.type;
 function visualModal(d){
   const es=deckSorted(d),hs=d.heroes.map(h=>BYID.get(h)).filter(Boolean);

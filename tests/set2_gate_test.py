@@ -109,7 +109,7 @@ def main():
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points|\\bAura\\b/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")
             check(plain == 0, f"[{w}] stat words left plain on the Nov 15 cards: {plain}")
             go(pg, port, "#build")
-            check("Artificer A" in text(pg), f"[{w}] access: Artificer Heroes in the Deck Builder")
+            check("Wren Partsfinder" in text(pg), f"[{w}] access: Artificer Heroes in the Deck Builder")
             go(pg, port, "#changelog")
             check(pg.evaluate("!!document.querySelector('[data-v=set2]')"), f"[{w}] access: Set 2 tab")
             pg.click("[data-cl=tab][data-v=set2]"); pg.wait_for_timeout(300)

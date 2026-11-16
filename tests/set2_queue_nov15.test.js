@@ -21,10 +21,10 @@ const kill=(s,h)=>{h.dmg=99;E.checkDeaths(s)};
 /* data */
 const names=["Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice"];
 ok(names.every(n=>E.DB[n]&&ctx.SET2_CARDS.includes(n)),"8 queued cards in the pool and Set 2 only");
-ok(E.DB["Remey Recipe"].type==="Recipe"&&E.DB["Remey Recipe"].cost==="3"&&E.DB["Remey Recipe"].cls==="Artificer","Remey Recipe: Artificer Recipe, 3 Aura");
+ok(E.DB["Remey Recipe"].type==="Recipe"&&E.DB["Remey Recipe"].cost==="4"&&E.DB["Remey Recipe"].sup==="Legendary"&&E.DB["Remey Recipe"].cls==="Artificer","Remey Recipe: Legendary Artificer Recipe, 4 Aura (Nov 16)");
 ok(E.DB["Time Pearl"].cls==="Generic"&&E.DB["Aura Pearl"].cls==="Generic"&&E.DB["Time Pearl"].cost==="2"&&E.DB["Aura Pearl"].cost==="2","Pearls: generic items, 2 Aura");
 ok(E.DB["Undead's Choice"].cls==="Necromancer"&&E.DB["Crafter's Choice"].cls==="Artificer"&&E.DB["Undead's Choice"].type==="Tactic","Choice cards: Tactics");
-ok(ctx.RAW_CARDS.filter(r=>names.includes(r[1])).every(r=>r[0]===2),"2 copies each");
+ok(ctx.RAW_CARDS.filter(r=>names.includes(r[1])).every(r=>r[0]===(r[1]==="Remey Recipe"?1:2)),"2 copies each (Remey Recipe: 1, Legendary)");
 const h=E.DB["h:Remey the Incredible"];ok(h&&h.hc&&h.str===3&&h.def===2&&h.aura===1&&h.hp===10,"Remey the Incredible: 3/2/1/10 Hero Construct");
 ["Pocket Watch","The Archfrost","The Archflame","Dragonscale Scale","Wellness Rod","Deflecting Shield","Reclamation Kit","Blast Charge","Gearwork Hammer","Silver Edge","Mithril Blade","Warded Cloak"].forEach(n=>ok(E.isCrafted(E.DB[n]),n+" is Crafted"));
 ok(!ctx.RECIPES["Iron Guardians"].back.crafted&&!ctx.RECIPES["Remey Recipe"].back.crafted,"summons and Hero Constructs aren't Crafted items");
@@ -36,7 +36,7 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
   const dead=s.p[0].heroes[2];kill(s,dead);ok(dead.dead,"Artificer C dies");s.p[0].heroes.forEach(x=>{if(!x.dead)x.ex=false});s.prio=0;
   ok(canPlay(s,c),"playable with a dead Hero and the 4 ingredients");ok(!E.mourning(s,0),"no soul surrendered yet");
   const actor=E.actorFor(s,0),aura=s.p[0].aura;const r=E.act(s,0,{type:"play",uid:c.uid,targets:[dead.uid]});resolve(s);ok(r.ok,"play "+(r.err||""));
-  ok(s.p[0].aura===aura-3,"pays 3 Aura");ok(dead.surr,"the dead Hero's soul is surrendered");ok(E.mourning(s,0),"counts as surrendering a soul (Mourn)");
+  ok(s.p[0].aura===aura-4,"pays 4 Aura");ok(dead.surr,"the dead Hero's soul is surrendered");ok(E.mourning(s,0),"counts as surrendering a soul (Mourn)");
   ok(s.p[0].inv.length===0,"ingredients sacrificed");ok(!actor.ex,"crafting no longer exhausts the Hero");
   const rm=s.p[0].heroes.find(x=>x.name==="Remey the Incredible");ok(rm&&rm.hc&&rm.ex,"Remey joins the party, exhausted");
   ok(s.p[0].heroes.indexOf(rm)===3,"at the end of the party order");ok(rm.base.str===3&&rm.base.hp===10,"no Construct bonus any more (Artificer B became Material Bender)");
@@ -97,9 +97,11 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
   E.act(s,1,{type:"play",uid:card.uid});ok(!opts(s,1).some(o=>o.type==="pearl"),"can't delay your own card")}
 
 /* Aura Pearl */
-{const s=game();const ap=inv(s,0,"Aura Pearl");const a=E.actorFor(s,0);const uo=opts(s,0).find(o=>(o.type==="use"||o.type==="useFree")&&o.uid===ap.uid);ok(uo,"Aura Pearl can be used");
+{const s=game();const ap=inv(s,0,"Aura Pearl");const mb=s.p[0].heroes.find(h=>h.name==="Material Bender");s.p[0].heroes.forEach(h=>h.ex=h!==mb);const a=E.actorFor(s,0);const uo=opts(s,0).find(o=>(o.type==="use"||o.type==="useFree")&&o.uid===ap.uid);ok(uo,"Aura Pearl can be used");
   const au=s.p[0].aura;E.act(s,0,uo);resolve(s);ok(s.p[0].aura===au+2,"gain 1 Aura, doubled by Material Bender");ok(!s.p[0].inv.includes(ap),"sacrificed");
-  const ap2=inv(s,0,"Aura Pearl");s.p[0].heroes.forEach(h=>h.ex=false);s.prio=0;s.passed=[false,false];s.p[0].t.lastActor=null;const uo2=opts(s,0).find(o=>(o.type==="use"||o.type==="useFree")&&o.uid===ap2.uid);const au2=s.p[0].aura;if(uo2){E.act(s,0,uo2);resolve(s)}ok(uo2&&s.p[0].aura===au2+1,"Material Bender doubles only the first item ability each turn")}
+  const ap2=inv(s,0,"Aura Pearl");s.p[0].heroes.forEach(h=>h.ex=h!==mb);s.prio=0;s.passed=[false,false];s.p[0].t.lastActor=null;const uo2=opts(s,0).find(o=>(o.type==="use"||o.type==="useFree")&&o.uid===ap2.uid);const au2=s.p[0].aura;if(uo2){E.act(s,0,uo2);resolve(s)}ok(uo2&&s.p[0].aura===au2+1,"Material Bender doubles only the first item ability each turn")}
+{const s=game();const ap=inv(s,0,"Aura Pearl");const mb=s.p[0].heroes.find(h=>h.name==="Material Bender");s.p[0].heroes.forEach(h=>h.ex=h===mb);s.p[0].t.lastActor=null;const a=E.actorFor(s,0);
+  const uo=opts(s,0).find(o=>(o.type==="use"||o.type==="useFree")&&o.uid===ap.uid);const au=s.p[0].aura;E.act(s,0,uo);resolve(s);ok(a!==mb&&s.p[0].aura===au+1,"another Hero's item isn't doubled (only items Material Bender plays or activates)")}
 
 /* Crafter's Choice */
 {const s=game();const r1={uid:uid(),id:"Pocket Watch Recipe",owner:0,cr:true},r2={uid:uid(),id:"Wellness Rod Recipe",owner:0,cr:true},r3={uid:uid(),id:"Iron Guardians",owner:0},r4={uid:uid(),id:"Pocket Watch Recipe",owner:0};s.p[0].disc.push(r1,r2,r3,r4,{uid:uid(),id:"Potion",owner:0});
@@ -172,7 +174,16 @@ ok(E.DB["h:Artificer A"].name==="Wren Partsfinder"&&E.DB["h:Artificer B"].name==
   const au=s.p[0].aura;E.act(s,0,{type:"play",uid:c.uid});resolve(s);
   ok(!Object.values(b.eq).some(e=>e&&e.name==="Sword of Riverstead")&&s.p[0].disc.some(x=>x.uid===sw.uid),"the equipped Sword is unequipped and sacrificed");
   ok(Object.values(a.eq).some(e=>e&&e.name==="The Archfrost"),"The Archfrost enters equipped to the Hero that crafted it");
-  ok(s.p[0].aura===au-2,"only the Recipe's 2 Aura is paid (equipping it is free)");
+  ok(s.p[0].aura===au-3,"only the Recipe's 3 Aura is paid (equipping it is free)");
   ok(s.p[0].inv.some(o=>o.name==="Long Sword"),"the crafter's old weapon goes to the inventory");ok(!a.ex,"and the crafter isn't exhausted")}
 {const s=game();const c=hand(s,0,"Pocket Watch Recipe");["Gold Bar","Platinum Ingot","Rose Quartz"].forEach(n=>inv(s,0,n));E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(s.p[0].inv.some(o=>o.name==="Pocket Watch"),"a made item still goes to the inventory")}
+
+/* Nov 16 tuning: Quicksilver = any Material ingredient only */
+{const s=game(["Wren Partsfinder","Cy the Builder","Gadget Commander"]);const c=hand(s,0,"The Archfrost Recipe");inv(s,0,"Frost Pearl");inv(s,0,"Sword of Riverstead");inv(s,0,"Quicksilver");
+  ok(canPlay(s,c),"Quicksilver stands in for Gold Bar (a Material)")}
+{const s=game(["Wren Partsfinder","Cy the Builder","Gadget Commander"]);const c=hand(s,0,"The Archfrost Recipe");inv(s,0,"Frost Pearl");inv(s,0,"Gold Bar");inv(s,0,"Quicksilver");
+  ok(!canPlay(s,c),"Quicksilver can't stand in for a Sword")}
+{const s=game(["Wren Partsfinder","Cy the Builder","Gadget Commander"]);const c=hand(s,0,"Wellness Rod Recipe");inv(s,0,"Antidote");inv(s,0,"Silver Bar");inv(s,0,"Quicksilver");
+  ok(!canPlay(s,c),"Quicksilver can't stand in for a Potion");ok(/any Material/.test(E.DB["Quicksilver"].rules),"Quicksilver text")}
+ok(/plays or activates/.test(E.DB["h:Material Bender"].rules),"Material Bender text (Nov 16)");
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

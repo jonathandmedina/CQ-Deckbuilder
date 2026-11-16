@@ -976,7 +976,7 @@ E.levelUp=levelUp;
 /* ---------- Set 2: Artificer (Craft, Stall, protection counters, Constructs) ----------
    Craft (Set Two Rules Supplement): play a Recipe only if you control its ingredients (inventory or equipped, Nov 15). Pay its Aura cost, sacrifice the ingredients, then flip it.
    Ingredient spec: {name} = that card, {any:"Metal"} = any Ingot (Material), {any:"Cloak"} = any equipment with Cloak in its name.
-   Wildcards (each covers one ingredient): Quicksilver (any ingredient; it's used up), Artificer C (once each turn: any item in your inventory),
+   Wildcards (each covers one ingredient): Quicksilver (any Material ingredient; it's used up), Artificer C (once each turn: any item in your inventory),
    Scavenger's Tongs (once each turn: one ingredient from your discard pile; upgraded: any discard pile).
    The engine picks the cheapest way to pay (cards from a discard pile first, then exact matches, then wildcards, Quicksilver last) and logs what it used. */
 function ingMatch(spec,d){if(!d)return false;if(spec.name)return d.name===spec.name;if(spec.any==="Metal")return isIngot(d);if(spec.any==="Cloak")return d.kind==="equip"&&(d.sub==="Cloak"||/Cloak/.test(d.name));
@@ -998,8 +998,9 @@ function craftPlan(s,pid,actor,d){const r=d&&d.recipe;if(!r)return null;const pl
     const sp=ings[i];
     /* exact match from inventory */
     pool.forEach(o=>{if(used.includes(o.uid))return;if(ingMatch(sp,def(o))&&o.name!=="Quicksilver"){plan.push({o,zone:"inv",how:"exact"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o),plan);plan.pop()}});
-    /* Quicksilver: any ingredient */
-    inv.forEach(o=>{if(used.includes(o.uid)||o.name!=="Quicksilver")return;plan.push({o,zone:"inv",how:"Quicksilver"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o)+0.5,plan);plan.pop()});
+    /* Quicksilver (Nov 16, 2026): any Material ingredient (a named card with the Material subtype, or "any Metal") */
+    const matSpec=sp.any==="Metal"||(sp.name&&DB[sp.name]&&DB[sp.name].sub==="Material");
+    inv.forEach(o=>{if(!matSpec||used.includes(o.uid)||o.name!=="Quicksilver")return;plan.push({o,zone:"inv",how:"Quicksilver"});go(i+1,used.concat([o.uid]),subUsed,cost+val(o)+0.5,plan);plan.pop()});
     subs.forEach((w,wi)=>{if(subUsed.includes(wi))return;
       if(w.k==="disc"){const piles=w.any?s.p.map((p2,i2)=>i2):[pid];piles.forEach(pp=>{P(s,pp).disc.forEach(c=>{if(used.includes(c.uid)||!ingMatch(sp,DB[c.id]))return;plan.push({c,pile:pp,zone:"disc",how:w.src});go(i+1,used.concat([c.uid]),subUsed.concat([wi]),cost-0.25,plan);plan.pop()})});return}
       inv.forEach(o=>{if(used.includes(o.uid))return;const dd=def(o);const ok=w.k==="anyItem"?true:isIngot(dd);if(!ok||ingMatch(sp,dd))return;plan.push({o,zone:"inv",how:w.src});go(i+1,used.concat([o.uid]),subUsed.concat([wi]),cost+val(o)+0.25,plan);plan.pop()})})}
@@ -1048,8 +1049,10 @@ function watchFor(s,pid){const pl=P(s,pid);return pl.inv.find(o=>!o.fd&&o.name==
 function canStall(s,pid,trig){return!!(trig&&trig.kind==="card"&&trig.card&&!trig.ability&&!trig.item&&trig.pid!==pid&&watchFor(s,pid)&&living(P(s,pid)).some(h=>!h.ex))}
 E.canStall=canStall;
 /* Set 2 Material Bender (was Artificer B, Nov 15, 2026): the first time each turn one of your items' abilities resolves, it resolves again (costs paid once) */
-function bend(s,pid,name){const pl=P(s,pid);if(!pl.t||pl.t.bent||!living(pl).some(h=>h.name==="Material Bender"))return false;const d=DB[name]||{};if(d.type!=="Item")return false;
-  pl.t.bent=true;log(s,`Material Bender: ${name}'s ability resolves twice.`,pid);return true}
+function bend(s,pid,name,actor){const d=DB[name]||{};if(d.type!=="Item")return false;
+  /* Nov 16, 2026: only an item this Hero plays or activates, the first one each turn */
+  if(!actor||actor.kind!=="hero"||actor.dead||actor.name!=="Material Bender"||actor.owner!==pid||actor.fl.bentRound===s.round)return false;
+  actor.fl.bentRound=s.round;log(s,`Material Bender: ${name}'s ability resolves twice.`,pid);return true}
 E.bend=bend;
 function stallTick(s,pid){const pl=P(s,pid);(pl.stall||[]).forEach(c=>{if(c.n>0){c.n--;log(s,c.n?`Stall: ${DB[c.id].name} has ${c.n} stall counter${c.n>1?"s":""} left.`:c.ret?`Stall: the last counter comes off ${DB[c.id].name}. It returns to ${pl.name}'s inventory.`:`Stall: the last counter comes off ${DB[c.id].name}. ${pl.name} may play it without paying its Aura cost.`,pid)}});
   /* Deflecting Shield: an exiled card with stall counters comes back into play (your inventory) when the last one is removed */
@@ -1098,7 +1101,7 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(d.sup==="Hidden"){pl.inv.push(Object.assign({kind:"card",fd:true,name:d.name},c));log(s,`${actor?actor.name:pl.name} sets a Hidden card face down.`,pid);overflow(s,pid);
     if(sc&&sc.onSet)sc.onSet(mkCtx(s,pid,actor,d,c,[]));return}
   if(d.type==="Item"){const it=Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c);pl.inv.push(it);overflow(s,pid);
-    if(sc&&sc.enter){sc.enter(mkCtx(s,pid,actor,d,it,targets));if(bend(s,pid,d.name))sc.enter(mkCtx(s,pid,actor,d,it,targets))}return}
+    if(sc&&sc.enter){sc.enter(mkCtx(s,pid,actor,d,it,targets));if(bend(s,pid,d.name,actor))sc.enter(mkCtx(s,pid,actor,d,it,targets))}return}
   /* update 29: playing a Summon card no longer exhausts the Hero by rule; the card text says so when it does ("Exhaust this Hero") */
   const trig={kind:"card",src:actor,pid,card:d,cardUid:c.uid,targets,cost,cls:d.cls,type:d.type,name:d.name};
   /* update 23 Echo: only a card played from your hand can Echo; Songweaver gives its Songs Echo; Sing Along gives the ally's next Tactic or Song Echo */
@@ -1152,7 +1155,7 @@ function resolveCont(s,pid,cont,mods){
   if(cont.k==="item"){const isc=SC()[cont.itemName];const o=find(s,cont.item);const ctx=mkCtx(s,pid,actor,DB[cont.itemName],o?o.o:null,cont.targets,{mods,arrow:cont.arrow,modes:cont.modes||[],itemUid:cont.item,upg:(s.upg&&s.upg[cont.item])||0});
     if(cont.arrow)ctx.arrowBonus=arrowBonus(s,pid,actor);
     withSrc(s,cont.itemName,()=>isc.act.run(ctx));
-    if(bend(s,pid,cont.itemName))withSrc(s,cont.itemName+" (Material Bender)",()=>isc.act.run(Object.assign({},ctx)));
+    if(bend(s,pid,cont.itemName,actor))withSrc(s,cont.itemName+" (Material Bender)",()=>isc.act.run(Object.assign({},ctx)));
     if(cont.refire){const pl=P(s,pid);const i=pl.disc.findIndex(c=>c.uid===cont.item);if(i>=0){const c=pl.disc.splice(i,1)[0];toInv(s,pid,invObj(s,pid,c));log(s,`Refire: ${cont.itemName} returns to ${pl.name}'s inventory.`,pid)}}
     if(cont.arrow){const pl=P(s,pid);pl.t.arrows=(pl.t.arrows||0)+1;pl.fl.arrowNext=null;pl.fl.multi=0;pl.fl.multiPierce=0;
       /* Wild Archer: after YOUR first Arrow each turn (any Hero firing it), ready it; L3: also after every Arrow it fires itself */

@@ -23,7 +23,7 @@ const row=n=>ctx.RAW_CARDS.find(r=>r[1]===n);
 ["Flame Pearl","Frost Pearl","Dragon Scale","The Archfrost Recipe","The Archflame Recipe","Dragonscale Scale Recipe","The Right Mix"].forEach(n=>ok(ctx.SET2_CARDS.includes(n)&&row(n),n+" in Set 2"));
 ok(row("Flame Pearl")[6]==="Generic"&&row("Flame Pearl")[4]==="Item"&&row("Flame Pearl")[2]==="2","Flame Pearl: Generic Item, 2 Aura");
 ok(row("Dragon Scale")[2]==="3","Dragon Scale 3 Aura");
-ok(row("The Archfrost Recipe")[3]==="Legendary"&&row("The Archfrost Recipe")[0]===1&&row("The Archfrost Recipe")[6]==="Artificer"&&row("The Archfrost Recipe")[2]==="2","The Archfrost Recipe: Legendary Artificer, 2 Aura, 1 copy");
+ok(row("The Archfrost Recipe")[3]==="Legendary"&&row("The Archfrost Recipe")[0]===1&&row("The Archfrost Recipe")[6]==="Artificer"&&row("The Archfrost Recipe")[2]==="3"&&row("The Archflame Recipe")[2]==="3","The Archfrost/Archflame Recipes: Legendary Artificer, 3 Aura (Nov 16), 1 copy");
 ok(row("Dragonscale Scale Recipe")[3]===""&&row("Dragonscale Scale Recipe")[0]===2,"Dragonscale Scale Recipe isn't Legendary");
 ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The Right Mix: Artificer Spell");
 {const af=E.DB["The Archfrost"],fl=E.DB["The Archflame"],ds=E.DB["Dragonscale Scale"];
@@ -61,10 +61,9 @@ ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The
   const d0=h.dmg||0;s.prio=1;const en=s.p[1].heroes[0];en.ex=false;s.p[1].t.lastActor=null;s.bonus={pid:1,uid:en.uid};const ra=E.act(s,1,{type:"attack",att:en.uid,targets:[h.uid]});s.bonus=null;ok(ra&&ra.ok,"enemy attack resolves "+(ra&&ra.err||""));resolve(s);ok((h.dmg||0)===d0,"Impervious: no damage from an attack");
   s.prio=0;h.ex=false;s.p[0].t.lastActor=null;s.p[0].heroes.forEach(x=>{if(x!==h)x.ex=true});const op=opts(s,0).find(o=>o.type==="eqAct");ok(op,"2 Aura ability offered");const au=s.p[0].aura,s0=E.str(s,h);if(op){E.act(s,0,op);resolve(s)}
   ok(s.p[0].aura===au-2&&E.str(s,h)===s0+1,"2 Aura: +1 Strength ("+s0+"→"+E.str(s,h)+")")}
-/* The Right Mix: top 4, items to hand, rest to the bottom */
+/* The Right Mix (Nov 16): top 3, Materials to hand, rest to the bottom */
 {const s=game();const c=hand(s,0,"The Right Mix");const L=s.p[0].lib;const mk=id=>({uid:uid(),id,owner:0});
-  const top=[mk("Potion"),mk("Precognition"),mk("Copper Ingot"),mk("Humble")];L.push(...top);const below=L[L.length-5];
-  E.act(s,0,{type:"play",uid:c.uid});resolve(s);const hn=s.p[0].hand.map(x=>x.id).sort().join();ok(hn==="Copper Ingot,Potion","items to hand ("+hn+")");
-  ok(L[0].id==="Precognition"||L[1].id==="Precognition","non-items on the bottom");ok(L[L.length-1]===below,"the next card is now on top");
-  ok(!L.some(x=>x.id==="Potion"&&top.includes(x)),"revealed items left the library")}
+  const top=[mk("Humble"),mk("Potion"),mk("Copper Ingot"),mk("Gold Bar")];L.push(...top);const fourth=top[0];
+  E.act(s,0,{type:"play",uid:c.uid});resolve(s);const hn=s.p[0].hand.map(x=>x.id).sort().join();ok(hn==="Copper Ingot,Gold Bar","only Materials to hand ("+hn+")");
+  ok(L.slice(0,2).some(x=>x.id==="Potion"),"a non-Material item goes on the bottom");ok(L[L.length-1]===fourth,"only the top 3 were revealed (the 4th card is now on top)")}
 console.log(`Set 2 Pearls / Arch weapons / Dragonscale / The Right Mix: ${pass} pass, ${fail} fail`);process.exitCode=fail?1:0;

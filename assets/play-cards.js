@@ -611,10 +611,12 @@ S["Pocket Watch"]={}; /* answered from the response window (E.canStall) */
 def("Flame Pearl",{t:[ANY],enter(c){if(c.t[0])D(c,c.t[0],2)}});
 def("Frost Pearl",{t:[ANY],enter(c){if(c.t[0])st(c,c.t[0],"stun",1)}});
 def("Dragon Scale",{t:[AL],enter(c){const a=c.t[0];if(a){buff(a,{def:3});log(c,`${a.name} gains +3 Defense this turn.`)}}});
-def("The Right Mix",{run(c){const top=c.me.lib.slice(-4).reverse();if(!top.length){log(c,"The Right Mix: the library is empty.");return}
+/* The Right Mix (Nov 16, 2026): top 3; only Materials go to your hand */
+const isMat=x=>(E.DB[x.id]||{}).sub==="Material";
+def("The Right Mix",{run(c){const top=c.me.lib.slice(-3).reverse();if(!top.length){log(c,"The Right Mix: the library is empty.");return}
   log(c,`The Right Mix reveals ${top.map(x=>E.DB[x.id].name).join(", ")}.`);
-  top.forEach(x=>{const i=c.me.lib.indexOf(x);if(i<0)return;c.me.lib.splice(i,1);if((E.DB[x.id]||{}).type==="Item"){c.me.hand.push(x);log(c,`${E.DB[x.id].name} goes to ${c.me.name}'s hand.`)}else c.me.lib.unshift(x)});
-  const rest=top.filter(x=>(E.DB[x.id]||{}).type!=="Item").length;if(rest)log(c,`${rest} card${rest>1?"s go":" goes"} to the bottom of ${c.me.name}'s library.`)}});
+  top.forEach(x=>{const i=c.me.lib.indexOf(x);if(i<0)return;c.me.lib.splice(i,1);if(isMat(x)){c.me.hand.push(x);log(c,`${E.DB[x.id].name} goes to ${c.me.name}'s hand.`)}else c.me.lib.unshift(x)});
+  const rest=top.filter(x=>!isMat(x)).length;if(rest)log(c,`${rest} card${rest>1?"s go":" goes"} to the bottom of ${c.me.name}'s library.`)}});
 /* ===== Set 2, Nov 15, 2026: Remey Recipe, Back in the Lab, Wellness Rod, Deflecting Shield, Time Pearl, Aura Pearl, Crafter's Choice ===== */
 /* Remey Recipe: "As an additional cost to play this card, surrender a soul." You choose which dead Hero (the target slot). */
 Object.assign(S["Remey Recipe"]||{},{t:[t("deadAlly","dead Hero whose soul you surrender",(s,o)=>!o.hc)],can:(s,pid)=>E.soulsLeft(s,pid).length>0,payCost:c=>{E.surrenderCost(c.s,c.pid,"Remey Recipe",c.t[0])}});

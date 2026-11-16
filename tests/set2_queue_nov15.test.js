@@ -186,4 +186,21 @@ ok(E.DB["h:Artificer A"].name==="Wren Partsfinder"&&E.DB["h:Artificer B"].name==
 {const s=game(["Wren Partsfinder","Cy the Builder","Gadget Commander"]);const c=hand(s,0,"Wellness Rod Recipe");inv(s,0,"Antidote");inv(s,0,"Silver Bar");inv(s,0,"Quicksilver");
   ok(!canPlay(s,c),"Quicksilver can't stand in for a Potion");ok(/any Material/.test(E.DB["Quicksilver"].rules),"Quicksilver text")}
 ok(/plays or activates/.test(E.DB["h:Material Bender"].rules),"Material Bender text (Nov 16)");
+
+/* Nov 16: Time Pearl answers equipment being played (from hand or equipped from inventory) */
+{const s=game();const tp=inv(s,0,"Time Pearl");s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);s.p[1].t.lastActor=null;const a1=E.actorFor(s,1);
+  const eq=hand(s,1,"Sword of Riverstead");const au=s.p[1].aura;const r=E.act(s,1,{type:"play",uid:eq.uid});ok(r.ok&&s.pend[0]&&s.pend[0].type==="window"&&s.pend[0].pid===0,"window opens when an opponent plays equipment");
+  ok(!Object.values(a1.eq).some(e=>e&&e.name==="Sword of Riverstead"),"not equipped yet");const po=opts(s,0).find(o=>o.type==="pearl");ok(po,"Time Pearl option on equipment");
+  E.act(s,0,po);ok((s.p[1].stall||[]).some(x=>x.uid===eq.uid&&x.n===2),"the equipment is set aside with 2 stall counters");ok(!Object.values(a1.eq).some(e=>e&&e.name==="Sword of Riverstead"),"and isn't equipped");
+  E.stallTick(s,1);E.stallTick(s,1);s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>{x.ex=false;x.fl.stepped=null});s.p[1].t.lastActor=null;
+  const ps=opts(s,1).find(o=>o.type==="playStalled"&&o.uid===eq.uid);ok(ps,"then its owner may play it");const au2=s.p[1].aura;if(ps){E.act(s,1,ps);resolve(s)}
+  ok(s.p[1].heroes.some(h=>Object.values(h.eq).some(e=>e&&e.name==="Sword of Riverstead"))&&s.p[1].aura===au2,"equipped without paying its Aura cost")}
+{const s=game();s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);const a1=E.actorFor(s,1);const eq=hand(s,1,"Sword of Riverstead");E.act(s,1,{type:"play",uid:eq.uid});
+  ok(!s.pend.length&&Object.values(a1.eq).some(e=>e&&e.name==="Sword of Riverstead"),"no Time Pearl: equipment is equipped right away (no window)")}
+{const s=game();inv(s,0,"Time Pearl");s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);const a1=E.actorFor(s,1);const eq=hand(s,1,"Sword of Riverstead");E.act(s,1,{type:"play",uid:eq.uid});
+  E.act(s,0,{type:"decline"});ok(Object.values(a1.eq).some(e=>e&&e.name==="Sword of Riverstead"),"declining: the equipment is equipped")}
+{const s=game();inv(s,0,"Time Pearl");s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);s.p[1].t.lastActor=null;const a1=E.actorFor(s,1);const w=inv(s,1,"Sword of Riverstead");
+  const eo=opts(s,1).find(o=>o.type==="equipInv"&&o.uid===w.uid);ok(eo,"equip from inventory offered");E.act(s,1,eo);ok(s.pend[0]&&s.pend[0].type==="window"&&opts(s,0).some(o=>o.type==="pearl"),"Time Pearl window when equipping from inventory");
+  ok(!opts(s,0).some(o=>o.type==="stall"),"no Pocket Watch here (it isn't playing a card)");E.act(s,0,opts(s,0).find(o=>o.type==="pearl"));
+  ok((s.p[1].stall||[]).some(x=>x.uid===w.uid&&x.n===2)&&!s.p[1].inv.includes(w)&&!Object.values(a1.eq).includes(w),"the equipment from inventory is set aside with 2 stall counters")}
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

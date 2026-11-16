@@ -956,7 +956,11 @@ function doAct(s,pid,a){const pl=P(s,pid);
     else if(isc.act.sac){pl.inv.splice(pl.inv.indexOf(o),1);log(s,`${pl.name} sacrifices ${o.name}.`,pid);toDisc(s,o)}
     const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:c,cls:def(o).cls,type:"Item",name:o.name};
     queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],modes:a.modes||[],arrow:def(o).sub==="Arrow",refire:!!(s.bonus&&s.bonus.pid===pid&&s.bonus.refire&&def(o).sub==="Arrow")},trig);return}
-  if(a.type==="equipInv"){const o=find(s,a.uid).o;pay(s,pid,actor,eqCost(s,actor,o));pl.inv.splice(pl.inv.indexOf(o),1);equipTo(s,actor,o);return}
+  if(a.type==="equipInv"){const o=find(s,a.uid).o;pay(s,pid,actor,eqCost(s,actor,o));pl.inv.splice(pl.inv.indexOf(o),1);
+    /* Set 2 (Nov 16, 2026): equipping from inventory can be answered by a Time Pearl */
+    {const op=oppOf(s,pid);const tr={kind:"card",equip:true,fromInv:true,src:actor,pid,card:def(o),cardUid:o.uid,targets:[],name:o.name,type:"Equipment"};
+      if(!isBoss(s,op)&&canPearl(s,op,tr)){s.pend.unshift({type:"window",pid:op,trig:tr,cont:{k:"equip",actor:actor.uid,card:{uid:o.uid,id:o.id,owner:o.owner},inv:o},mods:{}});log(s,`${actor.name} equips ${o.name} from inventory. ${P(s,op).name} may respond…`);return}}
+    equipTo(s,actor,o);return}
   if(a.type==="take"){const f=find(s,a.uid);pay(s,pid,actor,eqCost(s,actor,f.o));f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;log(s,`${actor.name} takes ${f.o.name} from ${f.hero.name}.`,pid);equipTo(s,actor,f.o);return}
   if(a.type==="clear"){const o=find(s,a.uid).o;pl.inv.splice(pl.inv.indexOf(o),1);log(s,`${pl.name} clears ${o.fd?"a face-down card":o.name} from inventory.`,pid);toDisc(s,o);return}
   if(a.type==="soul"){const h=heroByUid(s,a.hero);h.surr=true;log(s,`${pl.name} surrenders ${h.name}'s soul: ${SOULS[a.ch]}.`,pid);
@@ -1046,7 +1050,7 @@ E.makeHeroConstruct=makeHeroConstruct;
 function wardFor(s,tgt){if(!tgt||tgt.kind!=="hero")return null;const pl=P(s,tgt.owner);for(const h of pl.heroes){if(h.dead)continue;const w=eqList(h).find(e=>e.name==="Warded Cloak"&&(e.prot||0)>0);if(w)return w}return null}
 /* Pocket Watch (Stall): set the played card aside with 2 stall counters; each action its owner takes removes one; then they may play it without paying its Aura cost */
 function watchFor(s,pid){const pl=P(s,pid);return pl.inv.find(o=>!o.fd&&o.name==="Pocket Watch")}
-function canStall(s,pid,trig){return!!(trig&&trig.kind==="card"&&trig.card&&!trig.ability&&!trig.item&&trig.pid!==pid&&watchFor(s,pid)&&living(P(s,pid)).some(h=>!h.ex))}
+function canStall(s,pid,trig){return!!(trig&&trig.kind==="card"&&trig.card&&!trig.ability&&!trig.item&&!trig.fromInv&&trig.pid!==pid&&watchFor(s,pid)&&living(P(s,pid)).some(h=>!h.ex))}
 E.canStall=canStall;
 /* Set 2 Material Bender (was Artificer B, Nov 15, 2026): the first time each turn one of your items' abilities resolves, it resolves again (costs paid once) */
 function bend(s,pid,name,actor){const d=DB[name]||{};if(d.type!=="Item")return false;
@@ -1097,7 +1101,11 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(d.type==="Song")pl.t.songs=(pl.t.songs||0)+1;
   if(d.sup!=="Hidden")countCombo(s,pid,actor,d);
   /* permanents */
-  if(d.kind==="equip"){const eo=eqObjFromCard(s,pid,c);equipTo(s,actor,eo);if(sc&&sc.enter)withSrc(s,d.name,()=>sc.enter(mkCtx(s,pid,actor,d,eo,[],{fromDisc:!!o.fromDisc})));return}
+  if(d.kind==="equip"){
+    /* Set 2 (Nov 16, 2026): an opponent with a Time Pearl (or Pocket Watch) may respond to equipment being played. Only Set 2 responses open this window; Hidden cards don't. */
+    if(!o.fromStall&&actor){const op=oppOf(s,pid);const tr={kind:"card",equip:true,src:actor,pid,card:d,cardUid:c.uid,targets:[],cost,cls:d.cls,type:d.type,name:d.name};
+      if(!isBoss(s,op)&&(canPearl(s,op,tr)||canStall(s,op,tr))){s.pend.unshift({type:"window",pid:op,trig:tr,cont:{k:"equip",actor:actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},fromDisc:!!o.fromDisc},mods:{}});log(s,`${P(s,op).name} may respond…`);return}}
+    const eo=eqObjFromCard(s,pid,c);equipTo(s,actor,eo);if(sc&&sc.enter)withSrc(s,d.name,()=>sc.enter(mkCtx(s,pid,actor,d,eo,[],{fromDisc:!!o.fromDisc})));return}
   if(d.sup==="Hidden"){pl.inv.push(Object.assign({kind:"card",fd:true,name:d.name},c));log(s,`${actor?actor.name:pl.name} sets a Hidden card face down.`,pid);overflow(s,pid);
     if(sc&&sc.onSet)sc.onSet(mkCtx(s,pid,actor,d,c,[]));return}
   if(d.type==="Item"){const it=Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c);pl.inv.push(it);overflow(s,pid);
@@ -1146,6 +1154,9 @@ function afterCancel(s,pr){const c=pr.cont;if(c.k==="card"){const pl=P(s,pr.trig
 function resolveCont(s,pid,cont,mods){
   if(cont.k==="none")return;
   if(cont.k==="attack"){resolveAttack(s,pid,cont,mods);return}
+  /* Set 2: equipment held for a Time Pearl / Pocket Watch window and not delayed: equip it now */
+  if(cont.k==="equip"){const h=heroByUid(s,cont.actor);if(!h||h.dead){P(s,pid).disc.push(cont.card);return}const d=DB[cont.card.id];const sc=SC()[d.name];
+    const eo=cont.inv||eqObjFromCard(s,pid,cont.card);equipTo(s,h,eo);if(!cont.inv&&sc&&sc.enter)withSrc(s,d.name,()=>sc.enter(mkCtx(s,pid,h,d,eo,[],{fromDisc:!!cont.fromDisc})));return}
   if(cont.k==="dying"){const f=find(s,cont.hero);const h=f&&f.o;if(!h||h.dead)return;
     if(hpOf(s,h)>0){h.fl.dyingDone=false;return}
     if(cont.stage===1){const tr={kind:"dying",hero:h.uid,pid:h.owner};if(windowFor(s,oppOf(s,h.owner),tr)){s.pend.unshift({type:"window",pid:oppOf(s,h.owner),trig:tr,cont:{k:"dying",hero:h.uid,stage:2},mods:{}});log(s,`${P(s,oppOf(s,h.owner)).name} may respond with a Hidden card…`);return}}

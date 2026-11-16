@@ -109,6 +109,10 @@ def main():
             plain = pg.evaluate("""(()=>{let n=0;['Remey Recipe','Back in the Lab','Wellness Rod Recipe','Deflecting Shield Recipe',"Crafter's Choice",'Time Pearl','Aura Pearl',"Undead's Choice",'Recycler','Shield of Riverstead','Toolbelt','Pocket Watch Recipe','The Archfrost Recipe'].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points|\\bAura\\b/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")
             check(plain == 0, f"[{w}] stat words left plain on the Nov 15 cards: {plain}")
+            # Nov 15: Recipes show in the deck side panel and Visual View
+            dp = pg.evaluate("""(()=>{const h=deckPanel({name:'T',heroes:['h:Wren Partsfinder'],cards:{'Pocket Watch Recipe':2,'The Archfrost Recipe':1,'Potion':2}});const d=document.createElement('div');d.innerHTML=h;
+              return{heads:[...d.querySelectorAll('.dl h4 span:first-child')].map(x=>x.textContent),names:d.textContent.includes('Pocket Watch Recipe')&&d.textContent.includes('The Archfrost Recipe'),vis:VIS_GROUPS.some(g=>g[0]==='Recipe')}})()""")
+            check("Recipe" in dp["heads"] and dp["names"] and dp["vis"], f"[{w}] deck side panel lists Recipes: {dp}")
             go(pg, port, "#build")
             check("Wren Partsfinder" in text(pg), f"[{w}] access: Artificer Heroes in the Deck Builder")
             tb = text(pg); check(all(n in tb for n in ["Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"]), f"[{w}] renamed Artificer Heroes in the Deck Builder")

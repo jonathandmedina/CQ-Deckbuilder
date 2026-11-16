@@ -349,7 +349,7 @@ const RAW_CARDS=[
 [2, "Deflecting Shield Recipe", "2", "", "Recipe", "", "Artificer", "Craft: any Shield, Time Pearl and Gold Bar. (Play this only if you control those ingredients, in your inventory or equipped. Sacrifice them, then flip this card.)", 4],
 [2, "Recycler", "2", "", "Tactic", "", "Artificer", "Shuffle up to 5 items from your discard pile into your library.", 1],
 [2, "Crafter's Choice", "3", "", "Tactic", "", "Artificer", "Choose two:\n- Shuffle up to 2 Crafted items from your discard pile into your library.\n- Equip a Crafted item from your inventory to target Hero without paying its Aura cost.\n- Your next Recipe this turn costs 1 less Aura.", 1],
-[2, "Time Pearl", "2", "", "Item", "Material", "Generic", "Sacrifice this: When an opponent plays a card, put 2 stall counters on it. You don't need an action to use this. (The card is set aside until its owner's party takes 2 actions. Then they may play it without paying its Aura cost.)", 2],
+[2, "Time Pearl", "2", "", "Item", "Material", "Generic", "Sacrifice this: When an opponent plays a card or equips equipment from their inventory, put 2 stall counters on it. You don't need an action to use this. (The card is set aside until its owner's party takes 2 actions. Then they may play it without paying its Aura cost.)", 3],
 [2, "Aura Pearl", "2", "", "Item", "Material", "Generic", "Sacrifice this: Gain 1 Aura.", 2],
 /* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
 [2, "Raise Revenant", "1", "", "Summon", "", "Necromancer", "Summon a 1/1 Revenant with Impervious. Exhaust this Hero. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)", 1],

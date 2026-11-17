@@ -723,7 +723,7 @@ def("Mourner's Offering",{run(c){c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`
 /* Undead's Choice (Nov 15, 2026): choose two. The Revenant mode exhausts this Hero. The Exhume grant: a card in your discard pile may be played from there this turn (paying its costs). */
 def("Undead's Choice",M(2,[
   {label:"Summon a 1/1 Revenant (exhaust this Hero)",run:c=>{raise(c,1);exMe(c)}},
-  {label:"Mill 2",run:c=>E.mill(c.s,c.pid,2)},
+  {label:"Target player Mills 2",t:[t("player","player to Mill 2")],run:c=>{const p=c.t[0];E.mill(c.s,p?p.pid:c.pid,2)}}, /* Nov 17: you or an opponent */
   {label:"A card in your discard pile gains Exhume this turn",run:c=>{const l=c.me.disc.filter(x=>!(c.me.t.exhGrant||[]).includes(x.uid)&&(E.DB[x.id]||{}).kind!=="hero");if(!l.length){log(c,"Undead's Choice: your discard pile is empty.");return}
     E.pushChoose(c.s,c.pid,{title:"Undead's Choice: choose a card in your discard pile. It gains Exhume this turn.",cards:l.map(x=>x.uid),min:1,max:1,op:"exhGrant"})}}]));
 OPS.exhGrant=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const x=pl.disc.find(y=>y.uid===u);if(!x)return;pl.t.exhGrant=(pl.t.exhGrant||[]).concat([u]);E.log(s,`Undead's Choice: ${E.DB[x.id].name} gains Exhume this turn.`,pid)})};

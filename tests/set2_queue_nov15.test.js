@@ -115,10 +115,10 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
 
 /* Undead's Choice */
 {const NEC=["Gravecaller","Jorkev, the Pillager","Filth Scavenger"];const s=game(NEC);for(let i=0;i<6;i++)s.p[0].lib.push({uid:uid(),id:"Precognition",owner:0});
-  const c=hand(s,0,"Undead's Choice");const a=E.actorFor(s,0);E.act(s,0,{type:"play",uid:c.uid,modes:[0,1]});resolve(s);
+  const c=hand(s,0,"Undead's Choice");const a=E.actorFor(s,0);E.act(s,0,{type:"play",uid:c.uid,modes:[0,1],targets:["P0"]});resolve(s);
   ok(s.p[0].bf.filter(o=>o.name==="Revenant").length===1,"Revenant summoned");ok(a.ex,"the Revenant mode exhausts this Hero");ok(s.p[0].t.milled&&s.p[0].t.milled.length===2,"Mill 2")}
 {const NEC=["Gravecaller","Jorkev, the Pillager","Filth Scavenger"];const s=game(NEC);const x={uid:uid(),id:"Precognition",owner:0};s.p[0].disc.push(x);for(let i=0;i<4;i++)s.p[0].lib.push({uid:uid(),id:"Potion",owner:0});
-  const c=hand(s,0,"Undead's Choice");const a=E.actorFor(s,0);E.act(s,0,{type:"play",uid:c.uid,modes:[1,2]});ok(s.pend[0]&&s.pend[0].type==="choose","choose a card for Exhume");
+  const c=hand(s,0,"Undead's Choice");const a=E.actorFor(s,0);E.act(s,0,{type:"play",uid:c.uid,modes:[1,2],targets:["P0"]});ok(s.pend[0]&&s.pend[0].type==="choose","choose a card for Exhume");
   E.act(s,0,{type:"choose",picks:[x.uid]});resolve(s);ok(!a.ex,"no Revenant mode: Hero not exhausted");s.p[0].heroes.forEach(h=>h.ex=false);s.prio=0;s.passed=[false,false];
   const po=opts(s,0).find(o=>o.type==="play"&&o.uid===x.uid);ok(po,"the card can be played from the discard pile this turn (Exhume)");
   if(po){const au=s.p[0].aura;E.act(s,0,po);resolve(s);ok(s.p[0].aura===au-(+E.DB["Precognition"].cost||0),"paying its costs");ok(!s.p[0].disc.slice(0,-1).some(y=>y.uid===x.uid)||true,"")}}
@@ -236,4 +236,8 @@ const kat=(name,ings,heroes)=>{const s=game(heroes||["Wren Partsfinder","Val Cra
   s.p[0].stall=[{uid:"zz2",id:"Humble",owner:0,n:1,cont:{k:"card",card:{uid:"zz2",id:"Humble",owner:0},targets:[]}}];E.damage(s,k,s.p[1].heroes[2],5,{combat:true});ok(s.pend[0]&&s.pend[0].op==="timeKat"&&s.pend[0].opts.length===2,"two Stalled cards: choose one");E.act(s,0,{type:"ask",i:s.pend[0].opts.findIndex(o=>o.v==="zz2")});ok(s.p[0].stall[0].n===3,"chosen card gets the counters")}
 {const {s,ok1}=kat("Z Recipe",["Flame Pearl","Life Seed","Iron Ingot","Dragon Scale"],["Gadget Commander","Val Craftsmith","Cy the Builder"]);const z=s.p[0].bf.find(o=>o.name==="Z");ok(ok1&&z&&z.str===7&&z.imp,"Z enters (7/0/7, Impervious)");
   E.damage(s,{name:"x"},z,5,{card:true});ok(E.hp(s,z)===7,"Impervious: no damage");ok(E.str(s,s.p[0].heroes[0])>=1,"Gadget Commander counts the Dragon Construct")}
+/* Nov 17: Undead's Choice can Mill the opponent */
+{const NEC=["Gravecaller","Jorkev, the Pillager","Filth Scavenger"];const s=game(NEC);for(let i=0;i<4;i++)s.p[1].lib.push({uid:uid(),id:"Potion",owner:1});const L1=s.p[1].lib.length,L0=s.p[0].lib.length;
+  const c=hand(s,0,"Undead's Choice");const n=E.need(s,0,{type:"play",uid:c.uid,modes:[1,2]});ok(n[0]&&n[0].cands.includes("P1")&&n[0].cands.includes("P0"),"choose a player to Mill");
+  E.act(s,0,{type:"play",uid:c.uid,modes:[1,2],targets:["P1"]});resolve(s);ok(s.p[1].lib.length===L1-2&&s.p[0].lib.length===L0,"the opponent Mills 2")}
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

@@ -12,6 +12,8 @@
 .ap-pop.old{grid-template-columns:34px minmax(0,1fr);padding:6px 10px;opacity:.88}
 .ap-pop.old .ap-sub,.ap-pop.old .ap-bar{display:none}
 .ap-pop img{width:100%;border-radius:5px;display:block;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.ap-thumb{cursor:zoom-in}
+.modal.zoom-only{z-index:70} /* the big card view opens above the pop-ups */[data-apz]:focus-visible{outline:2px solid var(--accent,#F2C14E);outline-offset:2px}
 .ap-card{width:112px;position:relative;z-index:2;transform-origin:top right;transition:transform .15s ease;cursor:zoom-in}
 .ap-pop.new:hover{z-index:3;position:relative}
 .ap-card:hover{transform:scale(1.5);filter:drop-shadow(0 12px 26px rgba(0,0,0,.7))}.ap-card .card{width:112px;margin:0;box-shadow:0 2px 8px rgba(0,0,0,.5)}.ap-card .zoom,.ap-card .flip,.ap-card .c-ctrl{display:none!important}
@@ -44,7 +46,10 @@
     wrap=document.createElement("div");wrap.className="ap-wrap";wrap.setAttribute("role","log");wrap.setAttribute("aria-live","polite");wrap.setAttribute("aria-label","Opponent actions");
     wrap.addEventListener("mouseenter",()=>{paused=true;wrap.classList.add("paused");items.forEach(i=>{clearTimeout(i.t);i.left-=Date.now()-i.at})});
     wrap.addEventListener("mouseleave",()=>{paused=false;wrap.classList.remove("paused");items.forEach(i=>arm(i,Math.max(i.left,400)))});
-    wrap.addEventListener("click",e=>{const x=e.target.closest("[data-ap]");if(!x)return;if(x.dataset.ap==="all")clear();else drop(+x.dataset.ap)});
+    /* Nov 17: clicking the card (or an older pop-up's thumbnail) opens the same big view as the hand's magnifier */
+    const zoomIt=z=>{const c=typeof BYID!=="undefined"&&BYID.get(z.dataset.apz);if(c&&typeof zoomOnly==="function")zoomOnly(c)};
+    wrap.addEventListener("keydown",e=>{const z=e.target.closest&&e.target.closest("[data-apz]");if(z&&(e.key==="Enter"||e.key===" ")){e.preventDefault();zoomIt(z)}});
+    wrap.addEventListener("click",e=>{const z=e.target.closest("[data-apz]");if(z){zoomIt(z);return}const x=e.target.closest("[data-ap]");if(!x)return;if(x.dataset.ap==="all")clear();else drop(+x.dataset.ap)});
     document.body.appendChild(wrap);
     svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("class","ap-svg");svg.setAttribute("aria-hidden","true");
     svg.innerHTML='<defs><marker id="apHead" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F2C14E"/></marker></defs>';
@@ -57,7 +62,7 @@
   function draw(){if(!wrap)return;
     wrap.innerHTML=(items.length>1?`<div class="ap-top"><button type="button" class="ap-all" data-ap="all">Dismiss all (${items.length})</button></div>`:"")+
       items.map((i,k)=>{const a=i.a,dest=a.dest?` → ${esc(a.dest)}`:"",c=a.cardId&&typeof BYID!=="undefined"?BYID.get(a.cardId):null;
-        const thumb=!c?"<span></span>":k?`<img src="${esc(artSrc(c))}" alt="">`:`<div class="ap-card">${cardHTML(c,{nozoom:true})}</div>`;return`<div class="ap-pop ${k?"old":"new"}${a.boss?" boss":""}">${thumb}
+        const zb=c?` data-apz="${esc(c.id)}" role="button" tabindex="0" title="Click to view ${esc(c.name)}" aria-label="View ${esc(c.name)}"`:"";const thumb=!c?"<span></span>":k?`<img src="${esc(artSrc(c))}" alt=""${zb} class="ap-thumb">`:`<div class="ap-card"${zb}>${cardHTML(c,{nozoom:true})}</div>`;return`<div class="ap-pop ${k?"old":"new"}${a.boss?" boss":""}">${thumb}
         <div style="min-width:0"><div class="ap-who">${esc(a.who||"Opponent")}</div><div class="ap-what">${a.verb?esc(a.verb)+" ":""}<em>${esc(a.name!=null&&a.name!==""?a.name:(c?c.name:""))}</em>${dest}</div>
         ${a.sub?`<div class="ap-sub">${esc(a.sub)}</div>`:""}<div class="ap-row"><span class="ap-bar"><i style="animation-duration:${LIFE}ms"></i></span><button type="button" class="ap-x" data-ap="${i.id}">Dismiss</button></div></div></div>`}).join("");
     wrap.hidden=!items.length;try{if(typeof fitArt==="function")fitArt(wrap)}catch(e){}anchor();arrows()}

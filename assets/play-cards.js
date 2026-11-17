@@ -629,6 +629,29 @@ EQ2["Wellness Rod"]={label:"Exhaust: remove all status counters from any target"
 S["Deflecting Shield"]={}; /* engine: response window (E.canDeflect) */
 S["Time Pearl"]={}; /* engine: response window (E.canPearl) */
 /* Recycler (Nov 15, 2026): shuffle up to 5 Item cards from your discard pile into your library */
+/* Nov 17, 2026 Artificer Tactics: Activate, Sands of Time, Time Ripple, Displace, Refactor */
+const actItems=c=>c.me.inv.filter(o=>{if(o.fd||o.kind!=="card")return false;const d=E.DB[o.id]||{};const sc=S[o.name]||{};if(d.type!=="Item"||!sc.act||sc.act.free)return false;
+  return(d.cls==="Generic"||(c.actor&&E.heroIs(c.actor,d.cls))||sc.act.anyClass)&&(!sc.act.can||!c.actor||sc.act.can(c.s,c.pid,c.actor,o))});
+const trigItems=c=>c.me.inv.filter(o=>{if(o.fd||o.kind!=="card")return false;const sc=S[o.name]||{};return!!sc.gem||(!!sc.enter&&!(sc.t&&sc.t.length))});
+def("Activate",{run(c){const a=actItems(c),tr=trigItems(c).filter(o=>!a.includes(o));if(!c.actor||(!a.length&&!tr.length)){log(c,"Activate: no item in your inventory has an ability to use.");return}
+  E.ask(c.s,c.pid,"Activate: choose an item (no cost; it stays in your inventory)",a.map(o=>({label:`Activate ${o.name}`,v:"a:"+o.uid})).concat(tr.map(o=>({label:`Trigger ${o.name} (${S[o.name].gem?"its At Dawn ability":"its When this enters ability"})`,v:"t:"+o.uid}))),"activatePick",{actor:c.actor.uid,name:"Activate"})}});
+A.activatePick=(s,pid,pr,v)=>{const u=String(v).slice(2);const pl=s.p[pid];const o=pl.inv.find(x=>x.uid===u);const actor=pl.heroes.find(h=>h.uid===pr.data.actor);if(!o||!actor)return;
+  if(String(v)[0]==="a"){s.bonus={pid,uid:actor.uid,n:2,only:"activate",item:o.uid,allowEx:true};E.log(s,`Activate: ${actor.name} activates ${o.name} now, with no cost.`,pid);return}
+  const sc=S[o.name];E.log(s,`Activate: ${o.name}'s ability triggers (it stays in the inventory).`,pid);const ctx=E.mkCtx(s,pid,actor,E.DB[o.id],o,[]);if(sc.gem)sc.gem(ctx);else sc.enter(ctx)};
+def("Sands of Time",{run(c){const l=E.stalledAll(c.s);if(!l.length){log(c,"Sands of Time: no card has a stall counter.");return}
+  l.forEach(({c:x})=>{x.n+=2});log(c,`Sands of Time: ${l.map(({c:x})=>`${E.stName(x)} (${x.n})`).join(", ")}.`)}});
+def("Time Ripple",{run(c){const l=E.stalledAll(c.s);if(!l.length){log(c,"Time Ripple: no card has a stall counter.");return}
+  E.ask(c.s,c.pid,"Time Ripple: put 3 stall counters on which card?",l.map(({c:x,pid})=>({label:`${E.stName(x)} (${c.s.p[pid].name}, ${x.n} stall counter${x.n>1?"s":""})`,v:x.uid})),"rippleT",{name:"Time Ripple"})}});
+A.rippleT=(s,pid,pr,v)=>{const x=E.stalledAll(s).find(e=>e.c.uid===v);if(!x)return;x.c.n+=3;E.log(s,`Time Ripple: ${E.stName(x.c)} now has ${x.c.n} stall counters.`,pid)};
+def("Displace",{t:[t("nonHero","non-Hero object to exile")],run(c){const o=c.t[0];if(o)E.displace(c.s,o,3)}});
+def("Refactor",{t:[t("item","Item of yours to sacrifice",(s,o,x)=>o.kind==="card"&&!o.fd&&x&&x.actor&&E.ctrl(s,o)===x.actor.owner)],run(c){const o=c.t[0];if(!o)return;
+  const cap=parseInt((E.DB[o.id]||{}).cost,10)||0;E.sacrifice(c.s,o);
+  const l=c.me.lib.filter(x=>{const d=E.DB[x.id]||{};return d.type==="Item"&&(parseInt(d.cost,10)||0)<=cap});
+  if(!l.length){log(c,`Refactor: no Item in your library costs ${cap} Aura or less.`);E.shuffle(c.s,c.me.lib);return}
+  E.pushChoose(c.s,c.pid,{title:`Refactor: put an Item costing ${cap} Aura or less from your library into play`,cards:l.map(x=>x.uid),min:1,max:1,op:"refactor",actor:c.actor&&c.actor.uid})}});
+OPS.refactor=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.findIndex(x=>x.uid===u);if(i<0)return;const card=pl.lib.splice(i,1)[0];const o=E.invObj(s,pid,card);
+  pl.inv.push(o);E.log(s,`Refactor: ${pl.name} puts ${o.name} into play.`,pid);const sc=S[o.name];const actor=pl.heroes.find(h=>h.uid===pr.actor)||null;
+  if(sc&&sc.enter&&!(sc.t&&sc.t.length))sc.enter(E.mkCtx(s,pid,actor,E.DB[o.id],o,[]))});E.shuffle(s,pl.lib)};
 /* Salvage (Nov 17, 2026): return an Item from your discard pile to your hand */
 def("Salvage",{run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Item");if(!l.length){log(c,"Salvage: no items in your discard pile.");return}
   E.pushChoose(c.s,c.pid,{title:"Salvage: return an Item from your discard pile to your hand",cards:l.map(x=>x.uid),min:1,max:1,op:"fromDisc"})}});

@@ -336,6 +336,8 @@ ASK.pillage=(s,pid,pr,v)=>{const e=s.limbo&&s.limbo[pr.data.uid];if(!e)return;de
   else if(v==="disc"){log(s,`${e.name} is discarded (to its owner's discard pile).`,pid);toDisc(s,e)}
   else{const h=heroByUid(s,v);if(h&&!h.dead){log(s,`Pillage the Dead: ${h.name} equips ${e.name} for free.`,pid);equipTo(s,h,e)}else toInv(s,pid,e)}};
 /* Rapid Shot / Line It Up / Echo Performer bonus bookkeeping */
+/* Set 2 Activate (Nov 17, 2026): this Hero activates the chosen item with no costs (no Aura, no exile or sacrifice, no exhaust); the item stays */
+function freeAct(s,pid,a,o){const b=s.bonus;return!!(b&&b.only==="activate"&&b.pid===pid&&a&&b.uid===a.uid&&o&&b.item===o.uid)}E.freeAct=freeAct;
 function endBonus(s){const b=s.bonus;s.bonus=null;if(b&&b.rapid){const h=heroByUid(s,b.uid);if(h&&!h.dead){h.ex=true;log(s,`${h.name} is exhausted (Rapid Shot).`,b.pid)}P(s,b.pid).fl.rapidPierce=false}}
 E.endBonus=endBonus;
 /* end-of-game summary: rounds, lineups (start / final order, level, died), top 5 damage, top 5 prevention, top healer per side */
@@ -740,6 +742,7 @@ function battleOptions(s,pid){const out0=battleOptions0(s,pid);
   /* update 27 Arrow of Persuasion: the forced Hero must attack; no other action, no passing (abilities that use no action, like Energy Stone, are still allowed) */
   {const a=actorFor(s,pid);if(a&&!(s.bonus&&s.bonus.pid===pid)&&!a.fl.noAttack&&!a.st.stun&&!(chained(a)&&P(s,pid).aura<1)&&forcedTarget(s,a)){const r=out0.filter(o=>o.type==="attack"&&o.att===a.uid||o.type==="useFree");if(r.some(o=>o.type==="attack"))return r}}
   /* Refire: the bonus action may only activate an Arrow (or be skipped) */
+  if(s.bonus&&s.bonus.pid===pid&&s.bonus.only==="activate"){const r=out0.filter(o=>o.type==="use"&&o.uid===s.bonus.item);r.push({type:"skipBonus"});return r}
   if(s.bonus&&s.bonus.pid===pid&&s.bonus.only==="arrow"){const r=out0.filter(o=>o.type==="use"&&def(find(s,o.uid).o).sub==="Arrow");r.push({type:"skipBonus"});return r}
   /* Echo Performer: the extra action may only play a Bard Tactic or Song */
   if(s.bonus&&s.bonus.pid===pid&&s.bonus.only==="bard"){const r=out0.filter(o=>{if(o.type!=="play")return false;const c=findCardAnywhere(s,pid,o.uid);const d=c&&DB[c.id];return d&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)});r.push({type:"skipBonus"});return r}
@@ -783,12 +786,12 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
   out.push({type:"pass"});
   return out}
 function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,oppOf(s,pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0):0)}
-function itemCost(s,pid,a,o){if(s.bonus&&s.bonus.free&&s.bonus.pid===pid&&a&&s.bonus.uid===a.uid&&def(o).sub==="Arrow")return 0;const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);return c+(a?burden(a):0)}
+function itemCost(s,pid,a,o){if(freeAct(s,pid,a,o))return 0;if(s.bonus&&s.bonus.free&&s.bonus.pid===pid&&a&&s.bonus.uid===a.uid&&def(o).sub==="Arrow")return 0;const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);return c+(a?burden(a):0)}
 E.abilityCost=abilityCost;E.itemCost=itemCost;
 function promptOptions(s,pid,pr){
   if(pr.type==="window"){const out=[{type:"decline"}];
     P(s,pid).inv.forEach(o=>{if(o.fd&&canReveal(s,pid,o,pr))revealHeroes(s,pid,o,pr).forEach(h=>out.push({type:"reveal",uid:o.uid,hero:h.uid}))});
-    if(canStall(s,pid,pr.trig)){const w=watchFor(s,pid);living(P(s,pid)).filter(h=>!h.ex).forEach(h=>out.push({type:"stall",uid:w.uid,hero:h.uid}))}
+    if(canStall(s,pid,pr.trig)){const w=watchFor(s,pid);out.push({type:"stall",uid:w.uid})}
     if(canPearl(s,pid,pr.trig))out.push({type:"pearl",uid:pearlFor(s,pid).uid});
     if(canDeflect(s,pid,pr.trig)&&!pr.deflected)shieldsFor(s,pid).forEach(x=>out.push({type:"deflect",uid:x.e.uid,hero:x.h.uid}));return out}
   if(pr.type==="combo"){const out=[{type:"decline"}];pr.cands.forEach(u=>{const c=findCardAnywhere(s,pid,u);if(c){const a=comboActor(s,pr,u);if(a&&!a.dead&&canPlayCards(a)&&(pr.free||cardCost(s,pid,a,DB[c.id])<=auraFor(s,pid,DB[c.id])))out.push({type:"comboPlay",uid:u})}});return out}
@@ -908,8 +911,8 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"pass":log(s,`${pl.name} passes.`,pid);s.passed[pid]=true;endBonus(s);advance(s,pid);return;
   case"decline":{const pr=s.pend.shift();if(pr.type==="window")closeWindow(s,pr);else if(pr.type==="combo")log(s,"Combo: no card played.",pid);return}
   case"reveal":{const pr=s.pend[0];const o=find(s,a.uid).o;doReveal(s,pid,o,pr,a.hero);return}
-  case"stall":{const pr=s.pend[0];const h=heroByUid(s,a.hero);if(!pr||pr.type!=="window"||!h)return;h.ex=true;s.pend.shift();const c=pr.cont.card;const op=P(s,pr.trig.pid);
-    op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2,cont:pr.cont}]);log(s,`${pl.name} uses the Pocket Watch, exhausting ${h.name}: ${DB[c.id].name} is Stalled with 2 stall counters (its Aura isn't refunded).`,pid);return}
+  case"stall":{const pr=s.pend[0];const w=watchFor(s,pid);if(!pr||pr.type!=="window"||!w)return;w.exh=true;s.pend.shift();const c=pr.cont.card;const op=P(s,pr.trig.pid);
+    op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2,cont:pr.cont}]);log(s,`${pl.name} exhausts the Pocket Watch: ${DB[c.id].name} is Stalled with 2 stall counters (its Aura isn't refunded).`,pid);return}
   case"pearl":{const pr=s.pend[0];const o=pearlFor(s,pid);if(!pr||pr.type!=="window"||!o)return;s.pend.shift();pl.inv.splice(pl.inv.indexOf(o),1);toDisc(s,o);const c=pr.cont.card;const op=P(s,pr.trig.pid);
     op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2,cont:pr.cont}]);log(s,`${pl.name} sacrifices a Time Pearl: ${DB[c.id].name} gets 2 stall counters and is set aside (its Aura isn't refunded).`,pid);return}
   case"deflect":{const pr=s.pend[0];const x=shieldsFor(s,pid).find(y=>y.e.uid===a.uid);if(!pr||pr.type!=="window"||!x)return;pr.deflected=true;
@@ -962,7 +965,9 @@ function doAct(s,pid,a){const pl=P(s,pid);
     const trig={kind:"card",ability:true,src:actor,pid,targets:a.targets||[],cost:c,cls:actor.cls,type:"Ability",idx:a.idx};
     queueResolve(s,pid,{k:"ability",actor:actor.uid,idx:a.idx,targets:a.targets||[]},trig);return}
   if(a.type==="manualAbility"){log(s,`${actor.name} uses an ability (resolved by hand). Pay its costs in the panel.`,pid);s.pend.unshift({type:"manual",pid,title:`${actor.name}: ability`,text:DB[actor.id].rules,actor:actor.uid});return}
-  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];const c=itemCost(s,pid,actor,o);pay(s,pid,actor,c);burdenFat(s,actor);
+  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];const fa=freeAct(s,pid,actor,o);const c=itemCost(s,pid,actor,o);pay(s,pid,actor,c);if(!fa)burdenFat(s,actor);
+    if(fa){log(s,`${actor.name} activates ${o.name} with Activate (no cost; it stays in the inventory).`,pid);const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:0,cls:def(o).cls,type:"Item",name:o.name};
+      queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],modes:a.modes||[],arrow:false,refire:false},trig);return}
     if((def(o).sub==="Arrow"&&!(s.bonus&&s.bonus.rapid&&s.bonus.uid===actor.uid))||isc.act.ex)actor.ex=true;
     log(s,`${actor.name} activates ${o.name}.`,pid);
     if(isc.act.exile||def(o).sub==="Arrow"){pl.inv.splice(pl.inv.indexOf(o),1);if(isc.act.exile)pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});else pl.disc.push({uid:o.uid,id:o.id,owner:o.owner})}
@@ -1063,8 +1068,9 @@ E.makeHeroConstruct=makeHeroConstruct;
 /* Warded Cloak (protection counters): whenever a Hero in your party would be dealt damage, prevent it and remove a counter instead */
 function wardFor(s,tgt){if(!tgt||tgt.kind!=="hero")return null;const pl=P(s,tgt.owner);for(const h of pl.heroes){if(h.dead)continue;const w=eqList(h).find(e=>e.name==="Warded Cloak"&&(e.prot||0)>0);if(w)return w}return null}
 /* Pocket Watch (Stall): set the played card aside with 2 stall counters; each action its owner takes removes one; then they may play it without paying its Aura cost */
-function watchFor(s,pid){const pl=P(s,pid);return pl.inv.find(o=>!o.fd&&o.name==="Pocket Watch")}
-function canStall(s,pid,trig){return!!(trig&&trig.kind==="card"&&trig.card&&!trig.ability&&!trig.item&&!trig.fromInv&&trig.pid!==pid&&watchFor(s,pid)&&living(P(s,pid)).some(h=>!h.ex))}
+/* Nov 17, 2026: the Pocket Watch exhausts itself (readies at Dawn) instead of a Hero */
+function watchFor(s,pid){const pl=P(s,pid);return pl.inv.find(o=>!o.fd&&o.name==="Pocket Watch"&&!o.exh)}
+function canStall(s,pid,trig){return!!(trig&&trig.kind==="card"&&trig.card&&!trig.ability&&!trig.item&&!trig.fromInv&&trig.pid!==pid&&watchFor(s,pid))}
 E.canStall=canStall;
 /* Set 2 Material Bender (was Artificer B, Nov 15, 2026): the first time each turn one of your items' abilities resolves, it resolves again (costs paid once) */
 function bend(s,pid,name,actor){const d=DB[name]||{};if(d.type!=="Item")return false;
@@ -1072,9 +1078,22 @@ function bend(s,pid,name,actor){const d=DB[name]||{};if(d.type!=="Item")return f
   if(!actor||actor.kind!=="hero"||actor.dead||actor.name!=="Material Bender"||actor.owner!==pid||actor.fl.bentRound===s.round)return false;
   actor.fl.bentRound=s.round;log(s,`Material Bender: ${name}'s ability resolves twice.`,pid);return true}
 E.bend=bend;
-function stallTick(s,pid){const pl=P(s,pid);(pl.stall||[]).forEach(c=>{if(c.n>0){c.n--;log(s,c.n?`Stall: ${DB[c.id].name} has ${c.n} stall counter${c.n>1?"s":""} left.`:c.ret?`Stall: the last counter comes off ${DB[c.id].name}. It returns to ${pl.name}'s inventory.`:`Stall: the last counter comes off ${DB[c.id].name}. ${pl.name} may play it without paying its Aura cost.`,pid)}});
+/* Set 2 Displace (Nov 17, 2026): exile a non-Hero object with 3 stall counters. It isn't destroyed and nothing "leaves play" triggers;
+   when the last counter comes off (its controller's party takes actions) it returns: a summon or Pillar to the battlefield (a summon exhausted), anything else to the inventory. */
+function displace(s,o,n){const f=find(s,o.uid);if(!f||o.kind==="hero")return false;const pl=P(s,f.pid);
+  if(f.zone==="bf")pl.bf.splice(pl.bf.indexOf(o),1);else if(f.zone==="inv")pl.inv.splice(pl.inv.indexOf(o),1);
+  else if(f.zone==="eq"){f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null}
+  else if(f.zone==="ench")f.hero.ench.splice(f.hero.ench.indexOf(o),1);else return false;
+  pl.stall=(pl.stall||[]).concat([{uid:o.uid,id:o.id||o.name,name:o.name,owner:f.pid,n:n||3,ret:true,obj:o,displaced:true}]);
+  log(s,`${o.name} is exiled with ${n||3} stall counters. It returns when the last one comes off.`,f.pid);return true}
+E.displace=displace;
+/* Set 2 Sands of Time / Time Ripple: every card with stall counters (any party) */
+function stalledAll(s){const out=[];s.p.forEach((pl,pid)=>(pl.stall||[]).forEach(c=>{if(c.n>0)out.push({c,pid})}));return out}E.stalledAll=stalledAll;
+/* Set 2: a stalled entry's name (cards by id; Displaced tokens by name) */
+function stName(c){return(DB[c.id]&&DB[c.id].name)||c.name||c.id}E.stName=stName;
+function stallTick(s,pid){const pl=P(s,pid);(pl.stall||[]).forEach(c=>{if(c.n>0){c.n--;log(s,c.n?`Stall: ${stName(c)} has ${c.n} stall counter${c.n>1?"s":""} left.`:c.ret?`Stall: the last counter comes off ${stName(c)}. It returns to ${pl.name}'s inventory.`:`Stall: the last counter comes off ${stName(c)}. ${pl.name} may play it without paying its Aura cost.`,pid)}});
   /* Deflecting Shield: an exiled card with stall counters comes back into play (your inventory) when the last one is removed */
-  const back=(pl.stall||[]).filter(c=>c.ret&&!(c.n>0));if(back.length){pl.stall=pl.stall.filter(c=>!back.includes(c));back.forEach(c=>toInv(s,pid,c.obj))}
+  const back=(pl.stall||[]).filter(c=>c.ret&&!(c.n>0));if(back.length){pl.stall=pl.stall.filter(c=>!back.includes(c));back.forEach(c=>{const o=c.obj;if(o.kind==="summon"||o.kind==="pillar"){o.dmg=0;o.mods=[];if(o.kind==="summon")o.ex=true;pl.bf.push(o);log(s,`${o.name} returns to the battlefield${o.kind==="summon"?" (exhausted)":""}.`,pid)}else toInv(s,pid,o)})}
   /* Stall rule (Nov 16, 2026): when the last stall counter comes off, the card is played with the same targets (no new response window).
      If a target (or the Hero that played it) isn't legal any more, it does nothing and goes to the discard pile. Equipment goes to its owner's inventory. Stall counters carry over between turns. */
   const done=(pl.stall||[]).filter(c=>!c.ret&&!(c.n>0)&&c.cont);if(!done.length)return;pl.stall=pl.stall.filter(c=>!done.includes(c));

@@ -100,7 +100,7 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok(canPlay(s,c),"Gold Bar, Platinum Ingot and Rose Quartz");E.act(s,0,{type:"play",uid:c.uid});resolve(s);const pw=s.p[0].inv.find(o=>o.name==="Pocket Watch");ok(pw,"Pocket Watch made");
   s.p[0].heroes.forEach(h=>h.ex=false);s.prio=1;const card=hand(s,1,"Precognition");const aura=s.p[1].aura;
   const r=E.act(s,1,{type:"play",uid:card.uid});ok(r.ok,"opponent plays a card");const pr=s.pend[0];ok(pr&&pr.type==="window"&&pr.pid===0,"response window opens for the Pocket Watch");
-  const so=opts(s,0).find(o=>o.type==="stall");ok(so,"Stall option");E.act(s,0,so);const h=E.find(s,so.hero).o;ok(h.ex,"exhausts a ready Hero");
+  const so=opts(s,0).find(o=>o.type==="stall");ok(so,"Stall option");const ex0=s.p[0].heroes.map(h=>h.ex);E.act(s,0,so);ok(pw.exh&&s.p[0].heroes.every((h,i)=>h.ex===ex0[i]),"exhausts the Pocket Watch, not a Hero (Nov 17)");
   ok((s.p[1].stall||[]).some(x=>x.uid===card.uid&&x.n===2),"the card is set aside with 2 stall counters");ok(s.p[1].aura===aura-1,"its Aura isn't refunded");
   ok(!s.p[1].disc.some(x=>x.uid===card.uid),"the card didn't resolve");
   s.prio=1;s.passed=[false,false];ok(!opts(s,1).some(o=>o.type==="playStalled"),"can't play it yet");

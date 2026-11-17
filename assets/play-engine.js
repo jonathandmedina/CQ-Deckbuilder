@@ -211,7 +211,7 @@ function strOf(s,o,vs){
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
     /* update 26: Level 3 Radiant Sentinel gets +5 instead when 5+ of its DEF comes from equipment */if(o.name==="Radiant Sentinel"){const eqd=eqList(o).reduce((n,e)=>n+(e.pdef||0),0);if(o.lvl>=3&&eqd>=5)v+=5;else if(defOf(s,o)>=5)v+=2}
-    if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2;
+    if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2*(o.fl.bannerN||1); /* Nov 17: +2 per Brute's Banner */
     if(heroIs(o,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre")v+=(x.ctr&&x.ctr.fury)||0});
     o.ench.forEach(e=>{if(e.name==="Weaken")v-=1});
     const op=P(s,oppOf(s,o.owner));if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
@@ -274,7 +274,7 @@ function deckOut(s,pid){if(s.over)return;const pl=P(s,pid);
 function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
   for(let i=0;i<n;i++){if(!pl.lib.length){deckOut(s,pid);break}
     pl.hand.push(pl.lib.pop());got++;
-    if(s.phase==="battle"&&invHas(pl,"Healing Relic")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,{name:"Healing Relic",ctrl:pid},t,1,pid)}}
+    if(s.phase==="battle"&&invHas(pl,"Healing Relic")){for(let k=invCount(pl,"Healing Relic");k>0;k--){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,{name:"Healing Relic",ctrl:pid},t,1,pid)}} /* Nov 17: each copy triggers */}
   if(!quiet&&got)log(s,`${pl.name} draws ${got} card${got===1?"":"s"}.`,pid);return got}
 E.draw=draw;
 function addStatus(s,o,k,n){if(!o||o.dead||!o.st)return;
@@ -1246,9 +1246,10 @@ function resolveCont(s,pid,cont,mods){
     if(n>0&&hs.length)ask(s,pid,`Staff of Doom: target Hero loses ${n} HP`,targetOpts(s,pid,hs.filter(o=>ctrl(s,o)!==pid),n).concat(targetOpts(s,pid,hs.filter(o=>ctrl(s,o)===pid),n)).concat([{label:"No one",v:null}]),"loseTo",{n,name:"Staff of Doom"})}
   if(d.type==="Song"&&actor&&!actor.dead&&heroIs(actor,"Bard")){living(pl).filter(h=>h.name==="Harmony Sage").forEach(hs=>heal(s,hs,actor,1,pid))}
   if(d.type==="Song"&&pl.inv.some(o=>!o.fd&&o.name==="Tip Jar"))tip(s,pid,"Tip Jar");
-  if(d.type==="Song"){const tun=pl.inv.find(o=>!o.fd&&o.name==="The Forbidden Tuner");if(tun){const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);
+  if(d.type==="Song"){/* Nov 17: every Forbidden Tuner in your inventory triggers (each copy deals its own 1 damage) */
+    pl.inv.filter(o=>!o.fd&&o.name==="The Forbidden Tuner").forEach(tun=>{const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);
       /* the player picks the target (best damage target listed first; the AI takes option 0) */
-      if(ts.length)ask(s,pid,"The Forbidden Tuner: deal 1 damage to any target (Piercing 1)",targetOpts(s,pid,ts,1),"dmgTo",{n:1,name:"The Forbidden Tuner",pierce:1,src:tun.uid})}
+      if(ts.length)ask(s,pid,"The Forbidden Tuner: deal 1 damage to any target (Piercing 1)",targetOpts(s,pid,ts,1),"dmgTo",{n:1,name:"The Forbidden Tuner",pierce:1,src:tun.uid})});
     if(actor&&hasEqN(actor,"War Lute")){const t=autoTarget(s,pid,"strAlly");if(t)addMod(t,{str:hasUpN(s,actor,"War Lute")?2:1})}
     if(actor&&hasEqN(actor,"Celestial Harp")&&pl.t.songs===2)living(pl).forEach(h=>heal(s,actor,h,1));
     if(actor&&hasUpN(s,actor,"Celestial Harp")&&pl.t.songs===1){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,actor,t,1)}
@@ -1508,7 +1509,7 @@ function doDawn(s){
     if(invHas(pl,"Ley Grove")){const g=Math.floor(pl.bf.filter(o=>o.kind==="summon").length/2)*invCount(pl,"Ley Grove");if(g){pl.aura+=g;log(s,`Ley Grove: ${pl.name} gains ${g} Aura.`,pid)}}
     {const sp=pl.bf.filter(o=>o.kind==="summon"&&o.name==="Sapling").length;if(sp){pl.aura+=sp;log(s,`Sapling: ${pl.name} gains ${sp} Aura.`,pid)}}
     pl.inv.filter(o=>o.name==="Campfire"&&!o.fd).forEach(o=>{o.ctr=o.ctr||{};if(o.ctr.camp==null)o.ctr.camp=3;o.ctr.camp--;log(s,"Campfire burns down (heals the party 1 HP).",pid);living(pl).forEach(h=>heal(s,null,h,1,pid));if(o.ctr.camp<=0){pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,"Campfire is exiled.",pid)}});
-    if(invHas(pl,"Brute's Banner")){const b=living(pl).filter(h=>h.cls==="Barbarian").sort((a,b)=>strOf(s,b)-strOf(s,a))[0];if(b){b.fl.bannerRound=s.round;log(s,`Brute's Banner: ${b.name} +2 STR this turn.`,pid)}}
+    if(invHas(pl,"Brute's Banner")){const n=invCount(pl,"Brute's Banner");const b=living(pl).filter(h=>h.cls==="Barbarian").sort((a,b)=>strOf(s,b)-strOf(s,a))[0];if(b){b.fl.bannerRound=s.round;b.fl.bannerN=n;log(s,`Brute's Banner: ${b.name} +${2*n} STR this turn.`,pid)}} /* Nov 17: each copy triggers */
     living(pl).forEach(h=>{if(h.name==="Lightbringer"){const lt=living(pl).filter(o=>o!==h&&o.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(lt)heal(s,h,lt,1)}
       if(hasEqN(h,"Chalice of Life")){living(pl).forEach(o=>heal(s,h,o,1));if(hasUpN(s,h,"Chalice of Life")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,h,t,2)}}
       h.ench.forEach(e=>{if(e.name==="Sanctuary")heal(s,null,h,1,e.owner)})});

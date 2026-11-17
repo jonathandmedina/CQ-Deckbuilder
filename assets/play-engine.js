@@ -194,11 +194,11 @@ function defOf(s,o){
     /* update 29: Bark of the Protector, +1 DEF for each summon you control */if(hasEqN(o,"Bark of the Protector"))d+=pl.bf.filter(x=>x.kind==="summon").length;
     o.ench.forEach(e=>{if(e.name==="Distract")d-=1});
     if(modHas(o,"zeroDef"))d=0;return Math.max(0,d)}
-  if(o.kind==="summon"){const pl=P(s,o.ctrl);let d=modSum(o,"def")+invCount(pl,"Horn Crystal")+invCount(pl,"Barkskin Totem")+(pl.pm.sdef||0);return Math.max(0,d)}
+  if(o.kind==="summon"){const pl=P(s,o.ctrl);let d=(o.bdef||0)+modSum(o,"def") /* Set 2 Constructs have printed Defense (Nov 17) */+invCount(pl,"Horn Crystal")+invCount(pl,"Barkskin Totem")+(pl.pm.sdef||0);return Math.max(0,d)}
   return 0}
 function gadgets(s,pid){const pl=P(s,pid);let n=0;const cr=x=>!!(x&&x.id&&DB[x.id]&&DB[x.id].crafted);
   pl.inv.forEach(x=>{if(!x.fd&&cr(x))n++});pl.heroes.forEach(h=>{if(!h.dead){eqList(h).forEach(e=>{if(cr(e))n++});if(h.hc)n++}});
-  pl.bf.forEach(x=>{if(x.kind==="summon"&&(x.name==="Construct"||x.sub==="Construct"))n++});return n}
+  pl.bf.forEach(x=>{if(x.kind==="summon"&&(x.name==="Construct"||/Construct/.test(x.sub||"")))n++});return n}
 E.gadgets=gadgets;
 function strOf(s,o,vs){
   if(o.kind==="hero"){const pl=P(s,o.owner);let b=o.name==="King of Curses"?curses(s):o.base.str;
@@ -444,6 +444,14 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
       /* update 29: The Reaper Cleaver, if this Hero deals 7 or more damage to a Hero, ready it */
     if(src.kind==="hero"&&dealt>=7&&tgt.kind==="hero"&&src.ex&&!src.dead&&hasEqN(src,"The Reaper Cleaver")){src.ex=false;log(s,`The Reaper Cleaver: ${src.name} dealt ${dealt} damage to ${tgt.name} and readies.`)}
     if(src.kind==="summon"&&src.name==="Woods Beast"&&dealt>0)draw(s,src.ctrl,1);
+    /* Set 2 Kats (Nov 17, 2026): whenever this deals damage to an enemy */
+    if(src.kind==="summon"&&dealt>0&&tgt.st&&!sameTeam(s,ctrl(s,tgt),src.ctrl)){
+      if(src.name==="Frost Kat"&&!tgt.dead){log(s,`Frost Kat: ${tgt.name} is Stunned.`);addStatus(s,tgt,"stun",1)}
+      if(src.name==="Flame Kat"&&!tgt.dead){log(s,`Flame Kat: ${tgt.name} is Burned three times.`);addStatus(s,tgt,"burn",3)}
+      if(src.name==="Time Kat"){const st=[];s.p.forEach((p2,i)=>(p2.stall||[]).forEach(c=>{if(c.n>0||c.ret)st.push({c,i})}));
+        if(!st.length)log(s,"Time Kat: there's no Stalled card.");
+        else if(st.length===1){st[0].c.n+=2;log(s,`Time Kat: ${DB[st[0].c.id].name} gets two more stall counters (${st[0].c.n}).`)}
+        else ask(s,src.ctrl,"Time Kat: put two stall counters on which Stalled card?",st.map(x=>({label:`${DB[x.c.id].name} (${P(s,x.i).name}, ${x.c.n} stall counter${x.c.n===1?"":"s"})`,v:x.c.uid})),"timeKat",{name:"Time Kat"})}}
   }
   checkDeaths(s);return dealt}
 E.damage=damage;
@@ -545,7 +553,7 @@ function checkWin(s){if(s.over)return;
     log(s,s.winner<0?"Both parties fall. The game is a draw.":`🏆 ${s.p[s.winner].name} wins!`);}}
 
 /* ---------- tokens / summons ---------- */
-function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};const o={uid:nid(s),kind:"summon",name,str:t.str,hp:t.hp,sub:t.sub||"",dmg:0,ex:!ready,ctrl:pid,owner:pid,tok:true,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},mods:[],fl:{}};
+function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};const o={uid:nid(s),kind:"summon",name,str:t.str,hp:t.hp,bdef:t.def||0,sub:t.sub||"",dmg:0,ex:!ready,ctrl:pid,owner:pid,tok:true,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},mods:[],fl:{}};
   if(/\bStealth\b/.test(t.rules||""))o.stealth=true;
   if(/^Impervious\b/.test(t.rules||""))o.imp=true; /* Set 2 Revenant */ /* update 29: summons that enter with Stealth (Woods Beast, Great Rootfolk) */
   P(s,pid).bf.push(o);log(s,`${P(s,pid).name} summons ${/^[AEIOU]/.test(name)?"an":"a"} ${name} (${t.str}/${t.hp}).`,pid);
@@ -556,6 +564,7 @@ function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};con
   if(name==="Revenant")living(P(s,pid)).filter(h=>h.name==="Jorkev, the Pillager").forEach(()=>ask(s,pid,"Jorkev, the Pillager: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,oppOf(s,pid)).name} Mills 1`,v:oppOf(s,pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Jorkev, the Pillager"}));
   return o}
 ASK.millOne=(s,pid,pr,v)=>{if(v==null)return;mill(s,v,1)};
+ASK.timeKat=(s,pid,pr,v)=>{for(const p2 of s.p){const c=(p2.stall||[]).find(x=>x.uid===v);if(c){c.n+=2;log(s,`Time Kat: ${DB[c.id].name} gets two more stall counters (${c.n}).`,pid);return}}};
 function makePillar(s,pid,name){const o={uid:nid(s),kind:"pillar",name,ctrl:pid,owner:pid,tok:true};P(s,pid).bf.push(o);log(s,`${P(s,pid).name} conjures a ${name}.`,pid);return o}
 function makeEqToken(s,pid,name,x){const t=TOK[name];return{uid:nid(s),kind:"equip",id:null,name,cls:t.cls,region:t.region,pstr:t.str,pdef:0,cost:t.cost,owner:pid,tok:true,x:x||null}}
 E.makeSummon=makeSummon;E.makePillar=makePillar;E.makeEqToken=makeEqToken;
@@ -1032,6 +1041,7 @@ E.makeConstruct=makeConstruct;
 function flipRecipe(s,pid,card,actor){const d=DB[card.id];const b=d.recipe.back;const pl=P(s,pid);
   log(s,`${pl.name} flips ${d.name}: ${b.name}.`,pid);
   if(b.type==="Hero"){makeHeroConstruct(s,pid,card,b);return true}
+  if(b.type==="Summon"&&b.token){makeSummon(s,pid,b.token,false);return false} /* Nov 17: Kat and Z Constructs (tokens with their own stats) */
   if(b.type==="Summon"){const m=/Summon (two|three|a|one) (\d+)\/(\d+)/.exec(b.rules)||[];const k={a:1,one:1,two:2,three:3}[m[1]]||2;const n=+m[2]||2;for(let i=0;i<k;i++)makeConstruct(s,pid,n);return false}
   const md=DB[b.name];let o;
   if(md.kind==="equip")o={uid:card.uid,kind:"equip",id:b.name,name:b.name,cls:"Generic",region:md.region,pstr:md.pstr,pdef:md.pdef,cost:num(md.cost),owner:card.owner,tok:false,x:null};

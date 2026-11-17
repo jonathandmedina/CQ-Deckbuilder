@@ -222,4 +222,18 @@ ok(E.DB["Life Seed"]&&E.DB["Life Seed"].cls==="Generic"&&E.DB["Life Seed"].cost=
 {const s=game();inv(s,0,"Time Pearl");s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);s.p[1].t.lastActor=null;const t=s.p[0].heroes[1];
   const bolt=hand(s,1,"Lightning Bolt");s.p[1].heroes.forEach(x=>x.ex=x.cls!=="Mage");E.act(s,1,{type:"play",uid:bolt.uid,targets:[t.uid]});E.act(s,0,opts(s,0).find(o=>o.type==="pearl"));kill(s,t);
   E.stallTick(s,1);E.stallTick(s,1);ok(s.log.some(l=>/target isn't legal any more, so it does nothing/.test(l.m))&&s.p[1].disc.some(x=>x.uid===bolt.uid),"target died: the card does nothing and goes to the discard pile")}
+
+/* Nov 17: Kat and Z Construct Recipes */
+ok(["Frost Kat Recipe","Time Kat Recipe","Flame Kat Recipe"].every(n=>E.DB[n].cost==="2"&&E.DB[n].type==="Recipe")&&E.DB["Z Recipe"].cost==="4","Kat Recipes 2 Aura, Z Recipe 4 Aura");
+ok(E.TOK["Frost Kat"].str===5&&E.TOK["Frost Kat"].def===1&&E.TOK["Frost Kat"].hp===5&&E.TOK["Z"].str===7&&E.TOK["Z"].hp===7&&E.TOK["Z"].sub==="Dragon Construct","Kat 5/1/5 Construct, Z 7/0/7 Dragon Construct");
+const kat=(name,ings,heroes)=>{const s=game(heroes||["Wren Partsfinder","Val Craftsmith","Cy the Builder"]);const c=hand(s,0,name);ings.forEach(n=>inv(s,0,n));const ok1=canPlay(s,c);E.act(s,0,{type:"play",uid:c.uid});resolve(s);return{s,c,ok1}};
+{const {s,c,ok1}=kat("Frost Kat Recipe",["Frost Pearl","Life Seed","Iron Ingot"]);ok(ok1,"Frost Pearl, Life Seed, Iron Ingot");const k=s.p[0].bf.find(o=>o.name==="Frost Kat");
+  ok(k&&k.str===5&&E.defn(s,k)===1&&E.hp(s,k)===5&&k.ex,"Frost Kat enters (5/1/5, exhausted)");ok(s.p[0].disc.some(x=>x.uid===c.uid),"the Recipe goes to the discard pile");
+  const t=s.p[1].heroes[1];E.damage(s,k,t,5,{combat:true});ok(t.st.stun>=1,"Frost Kat damage Stuns the enemy");const before=E.hp(s,k);E.damage(s,{name:"x"},k,2,{card:true});ok(E.hp(s,k)===before-1,"1 Defense")}
+{const {s}=kat("Flame Kat Recipe",["Flame Pearl","Life Seed","Iron Ingot"]);const k=s.p[0].bf.find(o=>o.name==="Flame Kat");const t=s.p[1].heroes[1];const b0=t.st.burn;E.damage(s,k,t,5,{combat:true});ok(k&&t.st.burn===b0+3,"Flame Kat Burns three times")}
+{const {s}=kat("Time Kat Recipe",["Time Pearl","Life Seed","Iron Ingot"]);const k=s.p[0].bf.find(o=>o.name==="Time Kat");ok(k,"Time Kat made");s.p[1].stall=[{uid:"zz1",id:"Precognition",owner:1,n:1,cont:{k:"card",card:{uid:"zz1",id:"Precognition",owner:1},targets:[]}}];
+  E.damage(s,k,s.p[1].heroes[1],5,{combat:true});ok(s.p[1].stall[0].n===3,"Time Kat: two more stall counters on the Stalled card");
+  s.p[0].stall=[{uid:"zz2",id:"Humble",owner:0,n:1,cont:{k:"card",card:{uid:"zz2",id:"Humble",owner:0},targets:[]}}];E.damage(s,k,s.p[1].heroes[2],5,{combat:true});ok(s.pend[0]&&s.pend[0].op==="timeKat"&&s.pend[0].opts.length===2,"two Stalled cards: choose one");E.act(s,0,{type:"ask",i:s.pend[0].opts.findIndex(o=>o.v==="zz2")});ok(s.p[0].stall[0].n===3,"chosen card gets the counters")}
+{const {s,ok1}=kat("Z Recipe",["Flame Pearl","Life Seed","Iron Ingot","Dragon Scale"],["Gadget Commander","Val Craftsmith","Cy the Builder"]);const z=s.p[0].bf.find(o=>o.name==="Z");ok(ok1&&z&&z.str===7&&z.imp,"Z enters (7/0/7, Impervious)");
+  E.damage(s,{name:"x"},z,5,{card:true});ok(E.hp(s,z)===7,"Impervious: no damage");ok(E.str(s,s.p[0].heroes[0])>=1,"Gadget Commander counts the Dragon Construct")}
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

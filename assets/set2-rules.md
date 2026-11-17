@@ -59,9 +59,11 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 - **Deflecting Shield:** when an opponent declares an attack, card or ability that has a target, you may reveal the Shield like a Hidden card (no action needed) and redirect it to another legal target. Then exile the Shield with 4 stall counters on it. When the last counter is removed (your party has taken 4 actions), it returns to your inventory, and a Hero can equip it again by the normal rules.
 - **Time Pearl:** when an opponent plays a card (equipment included) or equips equipment from their inventory, you may sacrifice a Time Pearl (no action needed) to put 2 stall counters on that card (see Stall). Time Pearl can't be used on a card already in play.
 - **Crafter's Choice** "next Recipe this turn costs 1 less Aura" lasts until the end of the turn or until you play a Recipe.
+- **Construct Recipes** (Frost Kat, Time Kat, Flame Kat, Z): the back is a summon with its own Strength, Defense and Health Points. It enters play exhausted, and the Recipe goes to your discard pile. Constructs with Defense reduce damage like a Hero's Defense. Z is a Dragon Construct, which counts as a Construct. Time Kat puts two stall counters on a Stalled card (any party's); if more than one card is Stalled, its controller chooses.
+- **Made equipment** uses the Generic frame on the back of its Recipe; any class can equip it.
 - **Life Seed:** a generic item (2 Aura). Sacrifice two Life Seeds to revive a dead Hero in your party with 5 Health Points; it's exhausted. A surrendered soul or a Hero Construct can't be revived.
 - **Material Bender:** the first time each turn this Hero plays an item or activates an item's ability, that item's ability resolves twice (a "When this enters" ability when it plays the item, or the activated ability, like "Exile: Gain 1 Aura"). Its costs are paid once and its targets stay the same. Items other Heroes play or activate aren't doubled.
-- **Gadget Commander:** its Strength equals the number of Crafted items (in your inventory or equipped) and Constructs (summons and Hero Constructs) you control.
+- **Gadget Commander:** its Strength equals the number of Crafted items (in your inventory or equipped) and Constructs (summons, including Dragon Constructs, and Hero Constructs) you control.
 - **Artificer Heroes** (renamed Nov 15, 2026): Wren Partsfinder (was Artificer A), Material Bender (was Artificer B), Val Craftsmith (was Artificer C), Gadget Commander (was Artificer D), Cy the Builder (was Artificer E).
 - **Deprecated Artificer cards** (Nov 14, 2026; not legal in decks): Clockwork Pair, Iron Guardians, Reclamation Kit Recipe, Blast Charge Recipe, Gearwork Hammer Recipe, Silver Edge Recipe, Mithril Blade Recipe, Warded Cloak Recipe.
 
@@ -73,6 +75,10 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 | Abomination | Summon | 5 Strength / 5 Health Points | Enters with Stealth and ready | From Darkness |
 | Remains | Item, in an empty inventory slot | None | Sacrifice this: Gain 1 Aura. Spend it only to play Summon cards. | Cursed Urn |
 | Construct | Summon | 2/2 or 3/3 | None | No current card (Clockwork Pair and Iron Guardians were deprecated Nov 14, 2026) |
+| Frost Kat | Summon - Construct | 5 Strength / 1 Defense / 5 Health Points | Whenever it deals damage to an enemy, Stun it. | Frost Kat Recipe |
+| Time Kat | Summon - Construct | 5 Strength / 1 Defense / 5 Health Points | Whenever it deals damage to an enemy, put two stall counters on a Stalled card. | Time Kat Recipe |
+| Flame Kat | Summon - Construct | 5 Strength / 1 Defense / 5 Health Points | Whenever it deals damage to an enemy, Burn it three times. | Flame Kat Recipe |
+| Z | Summon - Dragon Construct | 7 Strength / 0 Defense / 7 Health Points | Impervious | Z Recipe |
 | Remey the Incredible | Hero Construct (the back of the Remey Recipe, not a token) | 3 Strength / 2 Defense / 1 Aura / 10 Health Points | Whenever Remey attacks, deal 3 damage to all enemies. | Remey Recipe |
 
 ## Glossary

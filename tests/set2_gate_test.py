@@ -5,7 +5,8 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NAMES = ["Iron Guardians","Clockwork Pair","Quicksilver","Copper Ingot","Mithril Ingot","Toolbelt","Tinker's Goggles","Wren Partsfinder","Construct","Warded Cloak","Pocket Watch",
          "Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice",
-         "Recycler","Shield of Riverstead","Wren Partsfinder","Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"]  # Nov 15 queue builds
+         "Recycler","Shield of Riverstead","Wren Partsfinder","Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder",
+         "Frost Kat Recipe","Time Kat Recipe","Flame Kat Recipe","Z Recipe","Life Seed"]  # Nov 15-17 builds
 SHOTS = os.environ.get("SHOTS")
 FAKE_SB = """window.supabase={createClient(){const res=d=>({data:d,error:null});
  const chain=()=>{const p=new Proxy(function(){},{get(t,k){if(k==='then')return(ok,bad)=>Promise.resolve(res([])).then(ok,bad);return()=>p},apply(){return p}});return p};
@@ -83,7 +84,7 @@ def main():
             ft = tile.inner_text(); check("Impervious" in ft, f"[{w}] flip shows the made side: {ft[:120]}")
             if SHOTS and w == 1280: pg.screenshot(path=f"{SHOTS}/recipe_flip.png", clip={"x":0,"y":0,"width":1280,"height":900})
             pg.locator(".card[data-cid='Dragonscale Scale Recipe'] [data-flip]").first.click(); pg.wait_for_timeout(200)
-            check("Craft: Dragon Scale and any Chest armor" in tile.inner_text(), f"[{w}] flip back to the Recipe")
+            check("Craft: Dragon Scale, Mithril Ingot and any Chest armor" in tile.inner_text(), f"[{w}] flip back to the Recipe")
             # zoom view flips too
             pg.locator(".card[data-cid='Dragonscale Scale Recipe']").first.click(); pg.wait_for_timeout(400)
             mz = pg.locator("#layer .modal .card[data-cid='Dragonscale Scale Recipe'] [data-flip]")
@@ -104,6 +105,9 @@ def main():
                 pg.fill("#cat-q", nm); pg.wait_for_timeout(200); check(nm in text(pg).replace(f"“{nm}”", ""), f"[{w}] access: catalog shows {nm}")
             pg.fill("#cat-q", "")
             r = pg.evaluate("""(()=>{const f=n=>upFace(BYID.get(n));return[f('Remey Recipe').name,f('Remey Recipe').sub,f('Wellness Rod Recipe').sub,f('Pocket Watch Recipe').sub,f('Deflecting Shield Recipe').sub,BYID.get('Iron Guardians')?f('Iron Guardians').sub:'']})()""")
+            # Nov 17: made equipment backs use the Generic frame; Kat / Z backs
+            fr = pg.evaluate("""(()=>[upFace(BYID.get('The Archfrost Recipe')).cls,upFace(BYID.get('Wellness Rod Recipe')).cls,upFace(BYID.get('Pocket Watch Recipe')).cls,upFace(BYID.get('Frost Kat Recipe')).name,upFace(BYID.get('Z Recipe')).sub,!!BYID.get('Time Kat Recipe')&&!!BYID.get('Flame Kat Recipe')])()""")
+            check(fr[0] == "Generic" and fr[1] == "Generic" and fr[2] == "Artificer" and fr[3] == "Frost Kat" and fr[4] == "Dragon Construct" and fr[5], f"[{w}] Generic frame on made equipment; Kat/Z backs: {fr}")
             check(r[0] == "Remey the Incredible" and r[1].startswith("Hero Construct"), f"[{w}] Remey back: {r}")
             check("Crafted" in r[2] and "Crafted" in r[3] and "Crafted" in r[4] and "Crafted" not in r[5], f"[{w}] Crafted subtype on made items only: {r}")
             plain = pg.evaluate("""(()=>{let n=0;['Remey Recipe','Back in the Lab','Wellness Rod Recipe','Deflecting Shield Recipe',"Crafter's Choice",'Time Pearl','Aura Pearl',"Undead's Choice",'Recycler','Shield of Riverstead','Toolbelt','Pocket Watch Recipe','The Archfrost Recipe'].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);

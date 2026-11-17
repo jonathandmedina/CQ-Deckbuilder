@@ -137,7 +137,7 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
 /* Nov 15 afternoon queue: Toolbelt Generic, Recipe back costs, Shield of Riverstead, no exhaust on Craft, renamed Artificers, Gadget Commander, Material Bender, Recycler, Cy the Builder */
 ok(E.DB["Toolbelt"].cls==="Generic"&&E.DB["Toolbelt"].kind==="equip","Toolbelt: Generic Equipment - Tool");
 {const s=game(["Divine Knight","Arcane Scholar","Shadow Ranger"]);ok(E.canUseEq(s,s.p[0].heroes[0],E.DB["Toolbelt"]),"any class can equip the Toolbelt")}
-ok([["Pocket Watch","6"],["The Archfrost","5"],["The Archflame","5"],["Dragonscale Scale","9"],["Wellness Rod","1"],["Deflecting Shield","5"]].every(([n,c])=>E.DB[n].cost===c),"Recipe back Aura costs = ingredients + 1");
+ok([["Pocket Watch","6"],["The Archfrost","5"],["The Archflame","5"],["Dragonscale Scale","6"],["Wellness Rod","1"],["Deflecting Shield","5"]].every(([n,c])=>E.DB[n].cost===c),"Recipe back Aura costs = ingredients + 1");
 ok(!ctx.RECIPES["Remey Recipe"].back.cost,"Remey has no printed cost");
 ok(Object.keys(ctx.RECIPES).every(k=>!/Exhaust this Hero/.test(E.DB[k].rules)),"no Recipe says Exhaust this Hero");
 {const sh=E.DB["Shield of Riverstead"];ok(sh&&sh.cls==="Generic"&&sh.sub==="Shield"&&sh.region==="One-Handed"&&sh.cost==="2"&&sh.pdef===1&&sh.up&&sh.up.cost===4&&sh.up.pdef===2,"Shield of Riverstead: 2 Aura, +1 Defense, upgrade 4 Gold to +2");
@@ -205,7 +205,7 @@ ok(/plays or activates/.test(E.DB["h:Material Bender"].rules),"Material Bender t
   ok((s.p[1].stall||[]).some(x=>x.uid===w.uid&&x.n===2)&&!s.p[1].inv.includes(w)&&!Object.values(a1.eq).includes(w),"the equipment from inventory is set aside with 2 stall counters")}
 
 /* Nov 16 (b): Dragonscale Scale Recipe, Life Seed, Hero stats, Stall auto-play */
-ok(E.DB["Dragonscale Scale Recipe"].cost==="4"&&/Mithril Ingot/.test(E.DB["Dragonscale Scale Recipe"].rules),"Dragonscale Scale Recipe: 4 Aura, needs a Mithril Ingot");
+ok(E.DB["Dragonscale Scale Recipe"].cost==="2"&&/Mithril Ingot/.test(E.DB["Dragonscale Scale Recipe"].rules),"Dragonscale Scale Recipe: 2 Aura (Nov 17), needs a Mithril Ingot");
 ok(["Wren Partsfinder","Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"].every(n=>E.DB["h:"+n].def===1&&E.DB["h:"+n].hp===15),"every Artificer: 1 Defense, 15 Health Points");
 ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Necromancer D","Necromancer E"].every(n=>E.DB["h:"+n].hp===15),"every Necromancer: 15 Health Points");
 ok(E.DB["Life Seed"]&&E.DB["Life Seed"].cls==="Generic"&&E.DB["Life Seed"].cost==="2"&&ctx.SET2_CARDS.includes("Life Seed"),"Life Seed: Generic, 2 Aura, Set 2");

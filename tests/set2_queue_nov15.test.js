@@ -208,7 +208,7 @@ ok(/plays or activates/.test(E.DB["h:Material Bender"].rules),"Material Bender t
 ok(E.DB["Dragonscale Scale Recipe"].cost==="2"&&/Mithril Ingot/.test(E.DB["Dragonscale Scale Recipe"].rules),"Dragonscale Scale Recipe: 2 Aura (Nov 17), needs a Mithril Ingot");
 ok(["Wren Partsfinder","Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"].every(n=>E.DB["h:"+n].def===1&&E.DB["h:"+n].hp===15),"every Artificer: 1 Defense, 15 Health Points");
 ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Necromancer D","Necromancer E"].every(n=>E.DB["h:"+n].hp===15),"every Necromancer: 15 Health Points");
-ok(E.DB["Life Seed"]&&E.DB["Life Seed"].cls==="Generic"&&E.DB["Life Seed"].cost==="2"&&ctx.SET2_CARDS.includes("Life Seed"),"Life Seed: Generic, 2 Aura, Set 2");
+ok(E.DB["Life Seed"]&&E.DB["Life Seed"].cls==="Generic"&&E.DB["Life Seed"].cost==="2"&&E.DB["Life Seed"].sub==="Material"&&ctx.SET2_CARDS.includes("Life Seed"),"Life Seed: Generic, 2 Aura, Set 2");
 {const s=game();const d=s.p[0].heroes[2];kill(s,d);const l1=inv(s,0,"Life Seed");s.p[0].heroes.forEach(h=>{if(!h.dead)h.ex=false});s.prio=0;s.passed=[false,false];s.p[0].t.lastActor=null;
   ok(!opts(s,0).some(o=>o.type==="use"&&o.uid===l1.uid),"one Life Seed isn't enough");const l2=inv(s,0,"Life Seed");const u=opts(s,0).find(o=>o.type==="use"&&(o.uid===l1.uid||o.uid===l2.uid));ok(u,"two Life Seeds: can be used");
   E.act(s,0,Object.assign({},u,{targets:[d.uid]}));resolve(s);ok(!d.dead&&E.hp(s,d)===5&&d.ex,"the dead Hero is revived with 5 Health Points, exhausted");ok(!s.p[0].inv.some(o=>o.name==="Life Seed"),"both Life Seeds sacrificed")}
@@ -227,6 +227,8 @@ ok(E.DB["Life Seed"]&&E.DB["Life Seed"].cls==="Generic"&&E.DB["Life Seed"].cost=
 ok(["Frost Kat Recipe","Time Kat Recipe","Flame Kat Recipe"].every(n=>E.DB[n].cost==="2"&&E.DB[n].type==="Recipe")&&E.DB["Z Recipe"].cost==="4","Kat Recipes 2 Aura, Z Recipe 4 Aura");
 ok(E.TOK["Frost Kat"].str===5&&E.TOK["Frost Kat"].def===1&&E.TOK["Frost Kat"].hp===5&&E.TOK["Z"].str===7&&E.TOK["Z"].hp===7&&E.TOK["Z"].sub==="Dragon Construct","Kat 5/1/5 Construct, Z 7/0/7 Dragon Construct");
 const kat=(name,ings,heroes)=>{const s=game(heroes||["Wren Partsfinder","Val Craftsmith","Cy the Builder"]);const c=hand(s,0,name);ings.forEach(n=>inv(s,0,n));const ok1=canPlay(s,c);E.act(s,0,{type:"play",uid:c.uid});resolve(s);return{s,c,ok1}};
+/* Nov 17: Life Seed is a Material, so Quicksilver can stand in for it */
+{const {s,ok1}=kat("Frost Kat Recipe",["Frost Pearl","Quicksilver","Iron Ingot"],["Wren Partsfinder","Material Bender","Cy the Builder"]);ok(ok1&&s.p[0].bf.some(o=>o.name==="Frost Kat"),"Quicksilver covers the Life Seed in a Kat Recipe")}
 {const {s,c,ok1}=kat("Frost Kat Recipe",["Frost Pearl","Life Seed","Iron Ingot"]);ok(ok1,"Frost Pearl, Life Seed, Iron Ingot");const k=s.p[0].bf.find(o=>o.name==="Frost Kat");
   ok(k&&k.str===5&&E.defn(s,k)===1&&E.hp(s,k)===5&&k.ex,"Frost Kat enters (5/1/5, exhausted)");ok(s.p[0].disc.some(x=>x.uid===c.uid),"the Recipe goes to the discard pile");
   const t=s.p[1].heroes[1];E.damage(s,k,t,5,{combat:true});ok(t.st.stun>=1,"Frost Kat damage Stuns the enemy");const before=E.hp(s,k);E.damage(s,{name:"x"},k,2,{card:true});ok(E.hp(s,k)===before-1,"1 Defense")}

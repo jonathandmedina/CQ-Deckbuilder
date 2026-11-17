@@ -355,7 +355,7 @@ const RAW_CARDS=[
 [2, "Time Kat Recipe", "2", "", "Recipe", "", "Artificer", "Craft: Time Pearl, Life Seed and Iron Ingot. (Play this only if you control those ingredients, in your inventory or equipped. Sacrifice them, then flip this card.)", 1],
 [2, "Flame Kat Recipe", "2", "", "Recipe", "", "Artificer", "Craft: Flame Pearl, Life Seed and Iron Ingot. (Play this only if you control those ingredients, in your inventory or equipped. Sacrifice them, then flip this card.)", 1],
 [2, "Z Recipe", "4", "", "Recipe", "", "Artificer", "Craft: Flame Pearl, Life Seed, Iron Ingot and Dragon Scale. (Play this only if you control those ingredients, in your inventory or equipped. Sacrifice them, then flip this card.)", 1],
-[2, "Life Seed", "2", "", "Item", "", "Generic", "Sacrifice this and another Life Seed: Revive target dead Hero in your party with 5 Health Points. It's exhausted.", 1],
+[2, "Life Seed", "2", "", "Item", "Material", "Generic", "Sacrifice this and another Life Seed: Revive target dead Hero in your party with 5 Health Points. It's exhausted.", 1],
 [2, "Aura Pearl", "2", "", "Item", "Material", "Generic", "Sacrifice this: Gain 1 Aura.", 2],
 /* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
 [2, "Raise Revenant", "1", "", "Summon", "", "Necromancer", "Summon a 1/1 Revenant with Impervious. Exhaust this Hero. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)", 1],

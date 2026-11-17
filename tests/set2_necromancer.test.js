@@ -31,7 +31,7 @@ ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Necromancer D","Necr
 ok(E.DB["h:Gravecaller"].str===0&&E.DB["h:Gravecaller"].def===1&&E.DB["h:Gravecaller"].aura===1&&E.DB["h:Gravecaller"].hp===15,"0/1/1/15 (Nov 16)");
 ok(/\{L3\} Activate any number/.test(E.DB["h:Filth Scavenger"].rules),"Filth Scavenger Level 3 line");
 ok(["Grave Caller's Wand","Gravedigger's Medallion","Dagger of the Dead"].every(n=>E.DB[n]&&E.DB[n].up),"3 equipment with upgrades");
-ok(E.TOK.Revenant&&E.TOK.Abomination&&E.TOK.Remains,"3 tokens");ok(ctx.SET2_CARDS.length===93,"93 Set 2 names (Nov 17: + 4 Recipes, 4 Construct tokens) (Nov 15: +8, then +7 names) ("+ctx.SET2_CARDS.length+")");
+ok(E.TOK.Revenant&&E.TOK.Abomination&&E.TOK.Remains,"3 tokens");ok(ctx.SET2_CARDS.length===96,"96 Set 2 names (Nov 17b: + Revenant King, Salvage, Super Satchel) (Nov 17: + 4 Recipes, 4 Construct tokens) (Nov 15: +8, then +7 names) ("+ctx.SET2_CARDS.length+")");
 ok(!E.DB["h:Golduron"]&&!E.DB["h:Hetroll"],"Dragonborn left out");ok(E.DB["Cursed Urn"].sup==="Legendary"&&E.DB["Skeleton Key"].sup==="Legendary","Legendaries");
 ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Revenants");
 
@@ -127,6 +127,13 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
   ok(ab&&ab.str===5&&E.hp(s,ab)===5&&!ab.ex&&ab.stealth&&!ab.imp,"Abomination 5/5, ready, Stealth, not Impervious");ok(revs(s).length===0,"4 sacrificed");ok(!a.ex,"Hero not exhausted");
   ok(!E.candidates(s,1,{k:"enemy"},{}).includes(ab.uid)&&E.candidates(s,1,{k:"enemy"},{attack:true}).includes(ab.uid),"Stealth: can't be targeted by cards, can be attacked")}
 {const s=game();rev(s,1);inv(s,0,"Ossuary");ok(E.str(s,revs(s)[0])===1,"Ossuary off below 25");for(let i=0;i<25;i++)disc(s,0,"Potion");ok(E.str(s,revs(s)[0])===2,"Ossuary: +1 STR at 25")}
+/* Revenant King (Nov 17): Legendary 5 Aura, 4/4 Impervious, counts as a Revenant */
+{const d=E.DB["Revenant King"];ok(d&&d.sup==="Legendary"&&d.type==="Summon"&&d.cost==="5"&&d.cls==="Necromancer"&&ctx.SET2_CARDS.includes("Revenant King"),"Revenant King: Legendary Necromancer Summon, 5 Aura");
+  ok(E.TOK["Revenant King"]&&ctx.TOKEN_SOURCES["Revenant King"],"Revenant King token");
+  const s=game();const c=hand(s,0,"Revenant King");const o=opts(s,0).find(x=>x.type==="play"&&x.uid===c.uid);ok(!!o,"playable");E.act(s,0,o);resolve(s);
+  const k=s.p[0].bf.find(x=>x.name==="Revenant King");ok(k&&E.str(s,k)===4&&E.hp(s,k)===4&&k.imp,"a 4/4 Impervious Revenant King enters");
+  ok(s.p[0].heroes.filter(h=>h.ex).length===1,"the Hero who played it is exhausted");ok(E.isRev(k)&&E.revenants(s,0).includes(k),"it counts as a Revenant");
+  const b=E.damage?null:null;for(let i=0;i<25;i++)disc(s,0,"Potion");inv(s,0,"Ossuary");ok(E.str(s,k)===5,"Ossuary buffs it like any Revenant")}
 /* Grim Divination: the opponent chooses */
 {const s=game();const a1=top(s,0,"Potion"),a2=top(s,0,"Raise Revenant");play(s,hand(s,0,"Grim Divination"));
   ok(s.p[0].hand.length+s.p[0].disc.filter(x=>x.uid===a1.uid||x.uid===a2.uid).length>=2,"Grim Divination resolves");ok(s.log.some(l=>/Grim Divination/.test(l.m)),"logged")}

@@ -23,6 +23,7 @@ Necromancers raise an army of Revenants, then choose between growing it and cash
 
 - **Heroes:** 0 Strength, 1 Defense, 1 Aura, 15 Health Points.
 - **Revenants:** every Revenant is a 1/1 with Impervious. Summoning one always exhausts the Hero; each card says so.
+- **Revenant King** (Legendary, 5 Aura) summons a 4/4 Revenant King with Impervious and exhausts the Hero. It counts as a Revenant for every card that mentions Revenants (Army of Darkness, Bone Spur, Ossuary, Grave Tide, Cursed Urn, Dagger of the Dead, Jorkev, and so on).
 - **Keywords:** Mourn, Exhume, Impervious, Mill.
 - **Gaining Exhume** (Undead's Choice): "Target card in your discard pile gains Exhume this turn" means you may play that card from your discard pile this turn, paying its costs, even if it wasn't milled.
 
@@ -62,6 +63,8 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 - **Construct Recipes** (Frost Kat, Time Kat, Flame Kat, Z): the back is a summon with its own Strength, Defense and Health Points. It enters play exhausted, and the Recipe goes to your discard pile. Constructs with Defense reduce damage like a Hero's Defense. Z is a Dragon Construct, which counts as a Construct. Time Kat puts two stall counters on a Stalled card (any party's); if more than one card is Stalled, its controller chooses.
 - **Made equipment** uses the Generic frame on the back of its Recipe; any class can equip it.
 - **Life Seed:** a generic Material item (2 Aura). Sacrifice two Life Seeds to revive a dead Hero in your party with 5 Health Points; it's exhausted. A surrendered soul or a Hero Construct can't be revived.
+- **Super Satchel:** generic Accessory equipment (2 Aura). Each Super Satchel equipped on a living Hero in your party raises your maximum hand size by 2 (5 becomes 7). Upgraded (4 Gold), the equipped Hero also gains +1 Defense.
+- **Salvage** (Artificer Tactic, 2 Aura): return an Item card from your discard pile to your hand. Crafted Recipe cards are not Items.
 - **Material Bender:** the first time each turn this Hero plays an item or activates an item's ability, that item's ability resolves twice (a "When this enters" ability when it plays the item, or the activated ability, like "Exile: Gain 1 Aura"). Its costs are paid once and its targets stay the same. Items other Heroes play or activate aren't doubled.
 - **Gadget Commander:** its Strength equals the number of Crafted items (in your inventory or equipped) and Constructs (summons, including Dragon Constructs, and Hero Constructs) you control.
 - **Artificer Heroes** (renamed Nov 15, 2026): Wren Partsfinder (was Artificer A), Material Bender (was Artificer B), Val Craftsmith (was Artificer C), Gadget Commander (was Artificer D), Cy the Builder (was Artificer E).
@@ -72,6 +75,7 @@ Artificers make things. They play two-sided Recipe cards, spend ingredients from
 | Token | Kind | Stats | Abilities | Made by |
 |---|---|---|---|---|
 | Revenant | Summon | 1 Strength / 1 Health Point | Impervious | Raise Revenant, Restless Dead, Grave Tide, Grave Whispers, Rise from the Grave, Grave Caller's Wand |
+| Revenant King | Summon - Revenant | 4 Strength / 4 Health Points | Impervious; counts as a Revenant | Revenant King |
 | Abomination | Summon | 5 Strength / 5 Health Points | Enters with Stealth and ready | From Darkness |
 | Remains | Item, in an empty inventory slot | None | Sacrifice this: Gain 1 Aura. Spend it only to play Summon cards. | Cursed Urn |
 | Construct | Summon | 2/2 or 3/3 | None | No current card (Clockwork Pair and Iron Guardians were deprecated Nov 14, 2026) |

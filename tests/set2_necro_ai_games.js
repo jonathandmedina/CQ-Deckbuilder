@@ -8,7 +8,7 @@ const ui=fs.readFileSync(path.join(A,"play-ui.js"),"utf8");
 const ST=vm.runInNewContext("("+ui.match(/const STARTERS=(\[[\s\S]*?\]);/)[1]+")"),SL=vm.runInNewContext("("+ui.match(/const STARTER_LISTS=(\[[\s\S]*?\]);\nfunction starterDeck/)[1]+")");
 const starter=i=>({name:ST[i].name,heroes:ST[i].heroes.map(n=>"h:"+n),cards:Object.assign({},SL[i])});
 const names=["Raise Revenant","Bone Wall","Army of Darkness","Devastating Ritual","From Darkness","Restless Dead","Grave Tide","Grave Whispers","Corpse Harvest","Dig the Grave","Dead March","Ossuary","Funeral Procession","Grieving Thoughts","Mourner's Offering","Reawaken","Grim Divination","Rise from the Grave","Consecrate","Retrace the Past","Bone Spur","Robbed Grave","Restless Echo","Soul Lantern","Grave Caller's Wand","Gravedigger's Medallion","Dagger of the Dead","Undead's Choice"];
-const NEC={name:"Graveyard",heroes:["h:Gravecaller","h:Jorkev, the Pillager","h:Filth Scavenger"],cards:Object.assign(Object.fromEntries(names.map(n=>[n,2])),{"Cursed Urn":1,"Skeleton Key":1})};
+const NEC={name:"Graveyard",heroes:["h:Gravecaller","h:Jorkev, the Pillager","h:Filth Scavenger"],cards:Object.assign(Object.fromEntries(names.map(n=>[n,2])),{"Cursed Urn":1,"Skeleton Key":1,"Revenant King":1,"Super Satchel":1})};
 const bad=E.validateDeck(NEC);if(bad.length){console.log("deck:",bad);process.exit(1)}
 let err=0,stuck=0,wins=0,n=0,engErr=0,maxMs=0,maxLog=0;const tally={revenant:0,exhume:0,mill:0,remains:0,mourn:0,sac:0,abom:0,funeral:0,necroA:0};
 const G=+process.argv[2]||40;

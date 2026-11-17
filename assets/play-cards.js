@@ -629,6 +629,9 @@ EQ2["Wellness Rod"]={label:"Exhaust: remove all status counters from any target"
 S["Deflecting Shield"]={}; /* engine: response window (E.canDeflect) */
 S["Time Pearl"]={}; /* engine: response window (E.canPearl) */
 /* Recycler (Nov 15, 2026): shuffle up to 5 Item cards from your discard pile into your library */
+/* Salvage (Nov 17, 2026): return an Item from your discard pile to your hand */
+def("Salvage",{run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Item");if(!l.length){log(c,"Salvage: no items in your discard pile.");return}
+  E.pushChoose(c.s,c.pid,{title:"Salvage: return an Item from your discard pile to your hand",cards:l.map(x=>x.uid),min:1,max:1,op:"fromDisc"})}});
 def("Recycler",{run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Item");if(!l.length){log(c,"Recycler: no items in your discard pile.");return}
   E.pushChoose(c.s,c.pid,{title:"Recycler: shuffle up to 5 items from your discard pile into your library",cards:l.map(x=>x.uid),min:0,max:5,op:"discToLib"})}});
 /* Life Seed (Nov 16, 2026): sacrifice two Life Seeds to revive a dead Hero in your party with 5 Health Points (exhausted). Surrendered souls and Hero Constructs can't be revived. */
@@ -674,16 +677,18 @@ hab("Wren Partsfinder",[{label:"Look at the top 3 (an item to your hand)",can:(s
    Revenant: 1/1 summon token with Impervious (engine: damage and destroy do nothing; HP loss, sacrifice and exile work). Cards that summon one say "Exhaust this Hero".
    Mourn (engine cardCost), Exhume (engine battle options: play from your discard pile a card milled this turn), Mill (E.mill marks the cards for Exhume).
    "If you played this card from your discard pile" = c.fromDisc (any play from the discard pile: Exhume, Gravecaller, Funeral Procession, Gravedigger's Medallion). */
-const REV=t("allySummon","your Revenant",(s,o)=>o.name==="Revenant");
+const REV=t("allySummon","your Revenant",(s,o)=>E.isRev(o));
 const revs=c=>E.revenants(c.s,c.pid);
 const raise=(c,n)=>{for(let i=0;i<n;i++)summon(c,"Revenant")};
 /* sacrifice n Revenants as a cost: the ones the player picked (c.t, the "Revenant to sacrifice" slots); any still missing are picked automatically, exhausted ones first */
-const SACT=(n)=>Array.from({length:n},(_,i)=>t("allySummon",n>1?`Revenant to sacrifice (${i+1} of ${n})`:"Revenant to sacrifice",(s,o)=>o.name==="Revenant",{distinct:true}));
-const sacRevs=(c,n)=>{const pick=(c.t||[]).filter(o=>o&&o.name==="Revenant"&&o.kind==="summon"&&E.ctrl(c.s,o)===c.pid);const l=pick.slice(0,n);
+const SACT=(n)=>Array.from({length:n},(_,i)=>t("allySummon",n>1?`Revenant to sacrifice (${i+1} of ${n})`:"Revenant to sacrifice",(s,o)=>E.isRev(o),{distinct:true}));
+const sacRevs=(c,n)=>{const pick=(c.t||[]).filter(o=>o&&E.isRev(o)&&E.ctrl(c.s,o)===c.pid);const l=pick.slice(0,n);
   revs(c).filter(o=>!l.includes(o)).sort((a,b)=>(b.ex?1:0)-(a.ex?1:0)).forEach(o=>{if(l.length<n)l.push(o)});if(l.length)log(c,`${c.me.name} sacrifices ${l.length} Revenant${l.length>1?"s":""} (additional cost).`);l.forEach(o=>E.sacrifice(c.s,o));return l.length};
 const needRevs=n=>(s,pid)=>E.revenants(s,pid).length>=n;
 const millMark=(c,pid,cards)=>{const pl=c.s.p[pid];cards.forEach(x=>{const i=pl.lib.indexOf(x);if(i>=0){pl.lib.splice(i,1);pl.disc.push(x);E.markMilled(c.s,pid,x)}})};
 def("Raise Revenant",{run(c){raise(c,1);exMe(c)}});
+/* Revenant King (Nov 17, 2026): Legendary 5 Aura, a 4/4 Impervious Revenant (counts as a Revenant for every Revenant card) */
+def("Revenant King",{run(c){summon(c,"Revenant King");exMe(c)}});
 def("Restless Dead",{run(c){raise(c,2);exMe(c)}});
 def("Grave Whispers",{run(c){draw(c,1);raise(c,1);exMe(c)}});
 def("Rise from the Grave",{run(c){raise(c,c.fromDisc?3:2);if(c.fromDisc)log(c,"Played from the discard pile: three Revenants.");exMe(c)}});

@@ -207,7 +207,7 @@ function strOf(s,o,vs){
     if(heroIs(o,"Barbarian"))v+=trophies(pl);
     /* Set 2 Gadget Commander (Nov 15, 2026): Strength = Crafted items (inventory or equipped) and Constructs (summons and Hero Constructs) you control */
     if(o.name==="Gadget Commander")v+=gadgets(s,o.owner);
-    /* Set 2 Dagger of the Dead: +2 STR (upgraded +3) while you control a Revenant */if(pl.bf.some(x=>x.kind==="summon"&&x.name==="Revenant"))eqList(o).forEach(e=>{if(e.name==="Dagger of the Dead")v+=isUp(s,e)?3:2});
+    /* Set 2 Dagger of the Dead: +2 STR (upgraded +3) while you control a Revenant */if(pl.bf.some(x=>isRev(x)))eqList(o).forEach(e=>{if(e.name==="Dagger of the Dead")v+=isUp(s,e)?3:2});
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
     /* update 26: Level 3 Radiant Sentinel gets +5 instead when 5+ of its DEF comes from equipment */if(o.name==="Radiant Sentinel"){const eqd=eqList(o).reduce((n,e)=>n+(e.pdef||0),0);if(o.lvl>=3&&eqd>=5)v+=5;else if(defOf(s,o)>=5)v+=2}
@@ -221,7 +221,7 @@ function strOf(s,o,vs){
     (o.mods||[]).forEach(m=>{if(m.mulStr&&(m.until==null||m.until>=s.round))v*=m.mulStr});
     if(modHas(o,"zeroStr"))v=0;return Math.max(0,v)}
   if(o.kind==="summon"){const pl=P(s,o.ctrl);let v=o.str+modSum(o,"str")+invCount(pl,"Tooth Crystal")+(pl.pm.sstr||0);
-    /* Set 2 Ossuary: while your discard pile has 25 or more cards, your Revenants have +1 STR */if(o.name==="Revenant"&&pl.disc.length>=25)v+=invCount(pl,"Ossuary");
+    /* Set 2 Ossuary: while your discard pile has 25 or more cards, your Revenants have +1 STR */if(isRev(o)&&pl.disc.length>=25)v+=invCount(pl,"Ossuary");
     if(/Soldier/.test(o.sub||o.name))v+=invCount(pl,"Captain's Banner")+(pl.pm.soldier||0);
     const op=P(s,oppOf(s,o.ctrl));if(op)v-=(op.pm.enemyStr||0);if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
     return Math.max(0,v)}
@@ -533,7 +533,7 @@ function destroyObj(s,o,exile,why){const f=find(s,o.uid);if(!f)return;const pl=P
     if(o.name==="Aurawing Familiar"){P(s,c).aura+=1;log(s,`${P(s,c).name} gains 1 Aura.`)}
     if(o.name==="Drawwing Familiar")draw(s,c,1);
     /* Set 2 Cursed Urn: whenever a Revenant you control dies (sacrifice included), create a Remains token in an empty inventory slot */
-    if(o.name==="Revenant"&&!exile){const cp=P(s,c);for(let k=invCount(cp,"Cursed Urn");k>0;k--){if(cp.inv.length>=E.slots(s,c)){log(s,"Cursed Urn: no empty inventory slot for a Remains token.",c);break}
+    if(isRev(o)&&!exile){const cp=P(s,c);for(let k=invCount(cp,"Cursed Urn");k>0;k--){if(cp.inv.length>=E.slots(s,c)){log(s,"Cursed Urn: no empty inventory slot for a Remains token.",c);break}
       cp.inv.push({uid:nid(s),id:"Remains",kind:"card",fd:false,name:"Remains",owner:c,tok:true,ctr:{}});log(s,`Cursed Urn: ${cp.name} creates a Remains token.`,c)}}
     if(o.name==="Spore"){const h=P(s,c).hand;if(h.length){const i=ri(s,h.length);const x=h.splice(i,1)[0];P(s,c).disc.push(x);log(s,`Spore: ${P(s,c).name} discards ${DB[x.id].name}.`)}}
     return}
@@ -543,7 +543,11 @@ function destroyObj(s,o,exile,why){const f=find(s,o.uid);if(!f)return;const pl=P
 E.destroyObj=destroyObj;
 /* Set 2: sacrifice a summon you control (not "destroy", so Impervious doesn't stop it) */
 E.sacrifice=(s,o)=>destroyObj(s,o,false,"sac");
-const revenants=(s,pid)=>P(s,pid).bf.filter(o=>o.kind==="summon"&&o.name==="Revenant");E.revenants=revenants;
+/* Set 2 (Nov 17): Revenant King counts as a Revenant */
+function isRev(o){return!!o&&o.kind==="summon"&&(o.name==="Revenant"||o.name==="Revenant King")}E.isRev=isRev;
+/* Set 2 Super Satchel (Nov 17): +2 maximum hand size for each one equipped */
+function handMax(s,pid){return E.HAND_MAX+living(P(s,pid)).reduce((n,h)=>n+eqList(h).filter(e=>e.name==="Super Satchel").length*2,0)}E.handMax=handMax;
+const revenants=(s,pid)=>P(s,pid).bf.filter(isRev);E.revenants=revenants;
 function checkWin(s){if(s.over)return;
   /* Trials: the players win when the boss Hero dies (at once, even mid-resolution); they lose only when every party is wiped out */
   if(s.trials){const b=s.trials.boss;const bossDead=wiped(s,b);const allWiped=parties(s).every(p=>wiped(s,p));
@@ -561,7 +565,7 @@ function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};con
   {const pl=P(s,pid);const n=(/Barkborn/.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
    if(n>0){addMod(o,{def:n*o.hp});log(s,`${name} has Barkborn${n>1?" ×"+n:""}: +${n*o.hp} DEF this turn.`,pid)}}
   /* Set 2 Jorkev, the Pillager (was Necromancer B): whenever a Revenant enters under your control, you may choose a player; that player Mills 1 (one trigger per Revenant) */
-  if(name==="Revenant")living(P(s,pid)).filter(h=>h.name==="Jorkev, the Pillager").forEach(()=>ask(s,pid,"Jorkev, the Pillager: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,oppOf(s,pid)).name} Mills 1`,v:oppOf(s,pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Jorkev, the Pillager"}));
+  if(name==="Revenant"||name==="Revenant King")living(P(s,pid)).filter(h=>h.name==="Jorkev, the Pillager").forEach(()=>ask(s,pid,"Jorkev, the Pillager: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,oppOf(s,pid)).name} Mills 1`,v:oppOf(s,pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Jorkev, the Pillager"}));
   return o}
 ASK.millOne=(s,pid,pr,v)=>{if(v==null)return;mill(s,v,1)};
 ASK.timeKat=(s,pid,pr,v)=>{for(const p2 of s.p){const c=(p2.stall||[]).find(x=>x.uid===v);if(c){c.n+=2;log(s,`Time Kat: ${DB[c.id].name} gets two more stall counters (${c.n}).`,pid);return}}};
@@ -1541,7 +1545,7 @@ function doDusk(s){
   /* Town: each party visits in initiative order; a wiped-out party sits out */
   s.phase="town";s.town={order:parties(s).filter(p=>!(s.trials&&wiped(s,p))),i:0};log(s,`— Town —`);
   /* maximum hand size: discard down to 5 */
-  parties(s).reverse().forEach(pid=>{const pl=P(s,pid);const k=pl.hand.length-E.HAND_MAX;if(k>0){log(s,`${pl.name} has ${pl.hand.length} cards in hand and discards down to ${E.HAND_MAX}.`,pid);pushChoose(s,pid,{title:`Maximum hand size is ${E.HAND_MAX}: discard ${k} card${k>1?"s":""}`,cards:pl.hand.map(c=>c.uid),from:"hand",min:k,max:k,op:"discard"})}})}
+  parties(s).reverse().forEach(pid=>{const pl=P(s,pid);const hm=handMax(s,pid);const k=pl.hand.length-hm;if(k>0){log(s,`${pl.name} has ${pl.hand.length} cards in hand and discards down to ${hm}.`,pid);pushChoose(s,pid,{title:`Maximum hand size is ${hm}: discard ${k} card${k>1?"s":""}`,cards:pl.hand.map(c=>c.uid),from:"hand",min:k,max:k,op:"discard"})}})}
 
 /* ---------- views ---------- */
 E.publicCard=c=>DB[c.id];

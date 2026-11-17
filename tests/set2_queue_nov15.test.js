@@ -242,4 +242,15 @@ const kat=(name,ings,heroes)=>{const s=game(heroes||["Wren Partsfinder","Val Cra
 {const NEC=["Gravecaller","Jorkev, the Pillager","Filth Scavenger"];const s=game(NEC);for(let i=0;i<4;i++)s.p[1].lib.push({uid:uid(),id:"Potion",owner:1});const L1=s.p[1].lib.length,L0=s.p[0].lib.length;
   const c=hand(s,0,"Undead's Choice");const n=E.need(s,0,{type:"play",uid:c.uid,modes:[1,2]});ok(n[0]&&n[0].cands.includes("P1")&&n[0].cands.includes("P0"),"choose a player to Mill");
   E.act(s,0,{type:"play",uid:c.uid,modes:[1,2],targets:["P1"]});resolve(s);ok(s.p[1].lib.length===L1-2&&s.p[0].lib.length===L0,"the opponent Mills 2")}
+/* Nov 17 (b): Super Satchel, Salvage */
+{const d=E.DB["Super Satchel"];ok(d&&d.cls==="Generic"&&d.sub==="Satchel"&&d.region==="Accessory"&&d.cost==="2"&&d.pdef===0&&d.up&&d.up.cost===4&&d.up.pdef===1&&ctx.SET2_CARDS.includes("Super Satchel"),"Super Satchel: Generic Satchel, Accessory, 2 Aura; upgrade 4 Gold adds +1 Defense");
+  const s=game();ok(E.handMax(s,0)===5,"hand size 5 without it");const c=hand(s,0,"Super Satchel");ok(canPlay(s,c),"Super Satchel can be played");
+  const o=opts(s,0).find(x=>x.type==="play"&&x.uid===c.uid);E.act(s,0,o);resolve(s);
+  ok(s.p[0].heroes.some(h=>Object.values(h.eq).some(e=>e&&e.name==="Super Satchel"))||s.p[0].inv.some(x=>x.name==="Super Satchel"),"Super Satchel enters play");
+  const h=s.p[0].heroes.find(h=>Object.values(h.eq).some(e=>e&&e.name==="Super Satchel"));if(!h){const e=s.p[0].inv.find(x=>x.name==="Super Satchel");E.act(s,0,opts(s,0).find(x=>x.type==="equip"&&x.uid===e.uid)||{});resolve(s)}
+  ok(E.handMax(s,0)===7,"equipped: maximum hand size 7");ok(E.handMax(s,1)===5,"the opponent's stays 5")}
+{const d=E.DB["Salvage"];ok(d&&d.type==="Tactic"&&d.cls==="Artificer"&&d.cost==="2"&&ctx.SET2_CARDS.includes("Salvage"),"Salvage: Artificer Tactic, 2 Aura");
+  const s=game();const it=Object.assign({uid:"sv1",id:"Iron Ingot",owner:0});s.p[0].disc.push(it);s.p[0].disc.push({uid:"sv2",id:"Back in the Lab",owner:0});const c=hand(s,0,"Salvage");
+  E.act(s,0,{type:"play",uid:c.uid});ok(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].cards.length===1&&s.pend[0].cards[0]==="sv1","only Items can be picked");
+  E.act(s,0,{type:"choose",picks:["sv1"]});ok(s.p[0].hand.some(x=>x.uid==="sv1")&&!s.p[0].disc.some(x=>x.uid==="sv1"),"the Item returns to hand")}
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

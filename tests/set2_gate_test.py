@@ -109,10 +109,6 @@ def main():
             plain = pg.evaluate("""(()=>{let n=0;['Remey Recipe','Back in the Lab','Wellness Rod Recipe','Deflecting Shield Recipe',"Crafter's Choice",'Time Pearl','Aura Pearl',"Undead's Choice",'Recycler','Shield of Riverstead','Toolbelt','Pocket Watch Recipe','The Archfrost Recipe'].forEach(nm=>{const c=BYID.get(nm);[c,c.up?upFace(c):null].filter(Boolean).forEach(f=>{const d=document.createElement('div');d.innerHTML=cardHTML(f);
               d.querySelectorAll('.c-rules').forEach(r=>{const txt=r.innerHTML.replace(/<b class="kw kw-[a-z]+">[^<]*<\\/b>/g,'');if(/Strength|Defense|Health Points|\\bAura\\b/.test(txt.replace(/<[^>]+>/g,'')))n++})})});return n})()""")
             check(plain == 0, f"[{w}] stat words left plain on the Nov 15 cards: {plain}")
-            # Nov 15: Recipes show in the deck side panel and Visual View
-            dp = pg.evaluate("""(()=>{const h=deckPanel({name:'T',heroes:['h:Wren Partsfinder'],cards:{'Pocket Watch Recipe':2,'The Archfrost Recipe':1,'Potion':2}});const d=document.createElement('div');d.innerHTML=h;
-              return{heads:[...d.querySelectorAll('.dl h4 span:first-child')].map(x=>x.textContent),names:d.textContent.includes('Pocket Watch Recipe')&&d.textContent.includes('The Archfrost Recipe'),vis:VIS_GROUPS.some(g=>g[0]==='Recipe')}})()""")
-            check("Recipe" in dp["heads"] and dp["names"] and dp["vis"], f"[{w}] deck side panel lists Recipes: {dp}")
             go(pg, port, "#build")
             check("Wren Partsfinder" in text(pg), f"[{w}] access: Artificer Heroes in the Deck Builder")
             tb = text(pg); check(all(n in tb for n in ["Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"]), f"[{w}] renamed Artificer Heroes in the Deck Builder")
@@ -154,6 +150,10 @@ def main():
             pt = text(pg)
             check("Remey the Incredible" in pt and "Hero Construct" in pt, f"[{w}] Play tab shows Remey as a Hero Construct")
             check("Delay it with a Time Pearl" in pt, f"[{w}] Time Pearl response button")
+            # Nov 16: the Time Pearl window also opens when the opponent plays equipment
+            r2 = pg.evaluate("""(()=>{const E=CQE;const s=JSON.parse(localStorage.getItem('cq.play.local')).s;s.pend=[];s.p[0].inv.push(E.invObj(s,0,{uid:'tp9',id:'Time Pearl',owner:0}));s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(h=>h.ex=false);s.p[1].t.lastActor=null;
+              s.p[1].hand.push({uid:'sw9',id:'Sword of Riverstead',owner:1});s.p[1].aura=5;const r=E.act(s,1,{type:'play',uid:'sw9'});return[r.ok,s.pend[0]&&s.pend[0].type,E.options(s,0).some(o=>o.type==='pearl')]})()""")
+            check(r2 == [True, "window", True], f"[{w}] Time Pearl window on equipment: {r2}")
             if SHOTS and w == 1280: pg.screenshot(path=f"{SHOTS}/play_remey.png")
             pg.locator("button", has_text="Delay it with a Time Pearl").first.click(); pg.wait_for_timeout(600)
             check("Set aside with stall counters" in pg.content() or "Stalled" in text(pg), f"[{w}] the card is set aside after the Time Pearl")

@@ -896,9 +896,9 @@ function doAct(s,pid,a){const pl=P(s,pid);
   case"decline":{const pr=s.pend.shift();if(pr.type==="window")closeWindow(s,pr);else if(pr.type==="combo")log(s,"Combo: no card played.",pid);return}
   case"reveal":{const pr=s.pend[0];const o=find(s,a.uid).o;doReveal(s,pid,o,pr,a.hero);return}
   case"stall":{const pr=s.pend[0];const h=heroByUid(s,a.hero);if(!pr||pr.type!=="window"||!h)return;h.ex=true;s.pend.shift();const c=pr.cont.card;const op=P(s,pr.trig.pid);
-    op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2}]);log(s,`${pl.name} uses the Pocket Watch, exhausting ${h.name}: ${DB[c.id].name} is Stalled with 2 stall counters (its Aura isn't refunded).`,pid);return}
+    op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2,cont:pr.cont}]);log(s,`${pl.name} uses the Pocket Watch, exhausting ${h.name}: ${DB[c.id].name} is Stalled with 2 stall counters (its Aura isn't refunded).`,pid);return}
   case"pearl":{const pr=s.pend[0];const o=pearlFor(s,pid);if(!pr||pr.type!=="window"||!o)return;s.pend.shift();pl.inv.splice(pl.inv.indexOf(o),1);toDisc(s,o);const c=pr.cont.card;const op=P(s,pr.trig.pid);
-    op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2}]);log(s,`${pl.name} sacrifices a Time Pearl: ${DB[c.id].name} gets 2 stall counters and is set aside (its Aura isn't refunded).`,pid);return}
+    op.stall=(op.stall||[]).concat([{uid:c.uid,id:c.id,owner:c.owner,n:2,cont:pr.cont}]);log(s,`${pl.name} sacrifices a Time Pearl: ${DB[c.id].name} gets 2 stall counters and is set aside (its Aura isn't refunded).`,pid);return}
   case"deflect":{const pr=s.pend[0];const x=shieldsFor(s,pid).find(y=>y.e.uid===a.uid);if(!pr||pr.type!=="window"||!x)return;pr.deflected=true;
     const f=find(s,x.e.uid);if(f&&f.zone==="eq"){for(const k in x.h.eq)if(x.h.eq[k]===x.e)x.h.eq[k]=null;if(x.h.eq.H2==="2H"&&!x.h.eq.H1)x.h.eq.H2=null;x.h.eqGuard=guardEq(x.h,s)}
     pl.stall=(pl.stall||[]).concat([{uid:x.e.uid,id:x.e.id,owner:x.e.owner,n:4,ret:true,obj:x.e}]);
@@ -1060,7 +1060,18 @@ function bend(s,pid,name,actor){const d=DB[name]||{};if(d.type!=="Item")return f
 E.bend=bend;
 function stallTick(s,pid){const pl=P(s,pid);(pl.stall||[]).forEach(c=>{if(c.n>0){c.n--;log(s,c.n?`Stall: ${DB[c.id].name} has ${c.n} stall counter${c.n>1?"s":""} left.`:c.ret?`Stall: the last counter comes off ${DB[c.id].name}. It returns to ${pl.name}'s inventory.`:`Stall: the last counter comes off ${DB[c.id].name}. ${pl.name} may play it without paying its Aura cost.`,pid)}});
   /* Deflecting Shield: an exiled card with stall counters comes back into play (your inventory) when the last one is removed */
-  const back=(pl.stall||[]).filter(c=>c.ret&&!(c.n>0));if(back.length){pl.stall=pl.stall.filter(c=>!back.includes(c));back.forEach(c=>toInv(s,pid,c.obj))}}
+  const back=(pl.stall||[]).filter(c=>c.ret&&!(c.n>0));if(back.length){pl.stall=pl.stall.filter(c=>!back.includes(c));back.forEach(c=>toInv(s,pid,c.obj))}
+  /* Stall rule (Nov 16, 2026): when the last stall counter comes off, the card is played with the same targets (no new response window).
+     If a target (or the Hero that played it) isn't legal any more, it does nothing and goes to the discard pile. Equipment goes to its owner's inventory. Stall counters carry over between turns. */
+  const done=(pl.stall||[]).filter(c=>!c.ret&&!(c.n>0)&&c.cont);if(!done.length)return;pl.stall=pl.stall.filter(c=>!done.includes(c));
+  done.forEach(c=>{const d=DB[c.id];const card={uid:c.uid,id:c.id,owner:c.owner};const cont=c.cont;
+    if(!d){pl.disc.push(card);return}
+    if(d.kind==="equip"||cont.k==="equip"){const o=cont.inv||invObj(s,pid,card);toInv(s,pid,o);log(s,`Stall: ${d.name} goes to ${pl.name}'s inventory.`,pid);return}
+    const actor=cont.actor?heroByUid(s,cont.actor):null;
+    const bad=(cont.actor&&(!actor||actor.dead))||(cont.targets||[]).some(u=>{if(u==null)return false;if(typeof u==="string"&&u[0]==="P")return false;const o=resolveTarget(s,u);return!o||o.dead});
+    if(bad){pl.disc.push(card);log(s,`Stall: ${d.name} is played, but a target isn't legal any more, so it does nothing.`,pid);return}
+    log(s,`Stall: ${d.name} is played with the same targets.`,pid);
+    resolveCont(s,pid,Object.assign({},cont,{card,echo:true,hand:false}),{});checkDeaths(s)})}
 /* Time Pearl (Nov 15, 2026): sacrifice it to put 2 stall counters on a card an opponent plays (a response; no action, no Hero exhausted) */
 function pearlFor(s,pid){return P(s,pid).inv.find(o=>!o.fd&&o.name==="Time Pearl")}
 function canPearl(s,pid,trig){return!!(trig&&trig.kind==="card"&&trig.card&&!trig.ability&&!trig.item&&trig.pid!==pid&&pearlFor(s,pid))}

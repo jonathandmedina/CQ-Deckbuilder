@@ -631,6 +631,13 @@ S["Time Pearl"]={}; /* engine: response window (E.canPearl) */
 /* Recycler (Nov 15, 2026): shuffle up to 5 Item cards from your discard pile into your library */
 def("Recycler",{run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Item");if(!l.length){log(c,"Recycler: no items in your discard pile.");return}
   E.pushChoose(c.s,c.pid,{title:"Recycler: shuffle up to 5 items from your discard pile into your library",cards:l.map(x=>x.uid),min:0,max:5,op:"discToLib"})}});
+/* Life Seed (Nov 16, 2026): sacrifice two Life Seeds to revive a dead Hero in your party with 5 Health Points (exhausted). Surrendered souls and Hero Constructs can't be revived. */
+const seeds=(s,pid)=>s.p[pid].inv.filter(o=>!o.fd&&o.name==="Life Seed");
+def("Life Seed",item(0,[t("deadAlly","dead Hero to revive",(s,o)=>!o.hc)],c=>{const h=c.t[0];const other=seeds(c.s,c.pid).find(o=>o!==c.inst);
+  if(other){c.me.inv.splice(c.me.inv.indexOf(other),1);E.toDisc(c.s,other);log(c,`${c.me.name} sacrifices a second Life Seed.`)}
+  if(!h||!h.dead||h.surr){log(c,"Life Seed: no Hero to revive.");return}
+  h.dead=false;h.dmg=Math.max(0,E.maxHp(c.s,h)-5);h.ex=true;log(c,`Life Seed: ${h.name} is revived with ${E.maxHp(c.s,h)-h.dmg} Health Points (exhausted).`)},
+  {sac:true,can:(s,pid,a,o)=>seeds(s,pid).length>=2&&s.p[pid].heroes.some(h=>h.dead&&!h.surr&&!h.hc)}));
 def("Aura Pearl",item(0,[],c=>{c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{sac:true}));
 /* Crafter's Choice: a "Crafted item in your discard pile" is a Recipe that was crafted and flipped, then went to the discard pile when its made item left play (engine toDisc marks it cr) */
 const craftedRecipe=x=>{const d=E.DB[x.id]||{};const r=d.recipe;return!!(x.cr&&r&&r.back&&r.back.crafted)}; /* a Recipe that was crafted and flipped, then went to the discard pile (not one discarded uncrafted) */

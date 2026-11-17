@@ -137,7 +137,7 @@ ok(E.DB["Wellness Rod"].region==="One-Handed"&&E.DB["Wellness Rod"].cost==="1"&&
 /* Nov 15 afternoon queue: Toolbelt Generic, Recipe back costs, Shield of Riverstead, no exhaust on Craft, renamed Artificers, Gadget Commander, Material Bender, Recycler, Cy the Builder */
 ok(E.DB["Toolbelt"].cls==="Generic"&&E.DB["Toolbelt"].kind==="equip","Toolbelt: Generic Equipment - Tool");
 {const s=game(["Divine Knight","Arcane Scholar","Shadow Ranger"]);ok(E.canUseEq(s,s.p[0].heroes[0],E.DB["Toolbelt"]),"any class can equip the Toolbelt")}
-ok([["Pocket Watch","6"],["The Archfrost","5"],["The Archflame","5"],["Dragonscale Scale","6"],["Wellness Rod","1"],["Deflecting Shield","5"]].every(([n,c])=>E.DB[n].cost===c),"Recipe back Aura costs = ingredients + 1");
+ok([["Pocket Watch","6"],["The Archfrost","5"],["The Archflame","5"],["Dragonscale Scale","9"],["Wellness Rod","1"],["Deflecting Shield","5"]].every(([n,c])=>E.DB[n].cost===c),"Recipe back Aura costs = ingredients + 1");
 ok(!ctx.RECIPES["Remey Recipe"].back.cost,"Remey has no printed cost");
 ok(Object.keys(ctx.RECIPES).every(k=>!/Exhaust this Hero/.test(E.DB[k].rules)),"no Recipe says Exhaust this Hero");
 {const sh=E.DB["Shield of Riverstead"];ok(sh&&sh.cls==="Generic"&&sh.sub==="Shield"&&sh.region==="One-Handed"&&sh.cost==="2"&&sh.pdef===1&&sh.up&&sh.up.cost===4&&sh.up.pdef===2,"Shield of Riverstead: 2 Aura, +1 Defense, upgrade 4 Gold to +2");
@@ -193,8 +193,8 @@ ok(/plays or activates/.test(E.DB["h:Material Bender"].rules),"Material Bender t
   ok(!Object.values(a1.eq).some(e=>e&&e.name==="Sword of Riverstead"),"not equipped yet");const po=opts(s,0).find(o=>o.type==="pearl");ok(po,"Time Pearl option on equipment");
   E.act(s,0,po);ok((s.p[1].stall||[]).some(x=>x.uid===eq.uid&&x.n===2),"the equipment is set aside with 2 stall counters");ok(!Object.values(a1.eq).some(e=>e&&e.name==="Sword of Riverstead"),"and isn't equipped");
   E.stallTick(s,1);E.stallTick(s,1);s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>{x.ex=false;x.fl.stepped=null});s.p[1].t.lastActor=null;
-  const ps=opts(s,1).find(o=>o.type==="playStalled"&&o.uid===eq.uid);ok(ps,"then its owner may play it");const au2=s.p[1].aura;if(ps){E.act(s,1,ps);resolve(s)}
-  ok(s.p[1].heroes.some(h=>Object.values(h.eq).some(e=>e&&e.name==="Sword of Riverstead"))&&s.p[1].aura===au2,"equipped without paying its Aura cost")}
+  ok(!(s.p[1].stall||[]).length&&s.p[1].inv.some(o=>o.uid===eq.uid),"Nov 16: when the last counter comes off, the equipment goes to its owner's inventory");
+  ok(!s.p[1].heroes.some(h=>Object.values(h.eq).some(e=>e&&e.name==="Sword of Riverstead")),"not equipped")}
 {const s=game();s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);const a1=E.actorFor(s,1);const eq=hand(s,1,"Sword of Riverstead");E.act(s,1,{type:"play",uid:eq.uid});
   ok(!s.pend.length&&Object.values(a1.eq).some(e=>e&&e.name==="Sword of Riverstead"),"no Time Pearl: equipment is equipped right away (no window)")}
 {const s=game();inv(s,0,"Time Pearl");s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);const a1=E.actorFor(s,1);const eq=hand(s,1,"Sword of Riverstead");E.act(s,1,{type:"play",uid:eq.uid});
@@ -203,4 +203,23 @@ ok(/plays or activates/.test(E.DB["h:Material Bender"].rules),"Material Bender t
   const eo=opts(s,1).find(o=>o.type==="equipInv"&&o.uid===w.uid);ok(eo,"equip from inventory offered");E.act(s,1,eo);ok(s.pend[0]&&s.pend[0].type==="window"&&opts(s,0).some(o=>o.type==="pearl"),"Time Pearl window when equipping from inventory");
   ok(!opts(s,0).some(o=>o.type==="stall"),"no Pocket Watch here (it isn't playing a card)");E.act(s,0,opts(s,0).find(o=>o.type==="pearl"));
   ok((s.p[1].stall||[]).some(x=>x.uid===w.uid&&x.n===2)&&!s.p[1].inv.includes(w)&&!Object.values(a1.eq).includes(w),"the equipment from inventory is set aside with 2 stall counters")}
+
+/* Nov 16 (b): Dragonscale Scale Recipe, Life Seed, Hero stats, Stall auto-play */
+ok(E.DB["Dragonscale Scale Recipe"].cost==="4"&&/Mithril Ingot/.test(E.DB["Dragonscale Scale Recipe"].rules),"Dragonscale Scale Recipe: 4 Aura, needs a Mithril Ingot");
+ok(["Wren Partsfinder","Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"].every(n=>E.DB["h:"+n].def===1&&E.DB["h:"+n].hp===15),"every Artificer: 1 Defense, 15 Health Points");
+ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Necromancer D","Necromancer E"].every(n=>E.DB["h:"+n].hp===15),"every Necromancer: 15 Health Points");
+ok(E.DB["Life Seed"]&&E.DB["Life Seed"].cls==="Generic"&&E.DB["Life Seed"].cost==="2"&&ctx.SET2_CARDS.includes("Life Seed"),"Life Seed: Generic, 2 Aura, Set 2");
+{const s=game();const d=s.p[0].heroes[2];kill(s,d);const l1=inv(s,0,"Life Seed");s.p[0].heroes.forEach(h=>{if(!h.dead)h.ex=false});s.prio=0;s.passed=[false,false];s.p[0].t.lastActor=null;
+  ok(!opts(s,0).some(o=>o.type==="use"&&o.uid===l1.uid),"one Life Seed isn't enough");const l2=inv(s,0,"Life Seed");const u=opts(s,0).find(o=>o.type==="use"&&(o.uid===l1.uid||o.uid===l2.uid));ok(u,"two Life Seeds: can be used");
+  E.act(s,0,Object.assign({},u,{targets:[d.uid]}));resolve(s);ok(!d.dead&&E.hp(s,d)===5&&d.ex,"the dead Hero is revived with 5 Health Points, exhausted");ok(!s.p[0].inv.some(o=>o.name==="Life Seed"),"both Life Seeds sacrificed")}
+{const s=game();const d=s.p[0].heroes[2];kill(s,d);d.surr=true;inv(s,0,"Life Seed");inv(s,0,"Life Seed");s.p[0].heroes.forEach(h=>{if(!h.dead)h.ex=false});s.prio=0;ok(!opts(s,0).some(o=>o.type==="use"),"a surrendered soul can't be revived")}
+/* Stall auto-play: same targets; illegal target = nothing; counters carry over */
+{const s=game();inv(s,0,"Time Pearl");s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);s.p[1].t.lastActor=null;const t=s.p[0].heroes[1];const d0=t.dmg||0;
+  const bolt=hand(s,1,"Lightning Bolt");s.p[1].heroes.forEach(x=>x.ex=x.cls!=="Mage");s.p[1].t.lastActor=null;s.prio=1;s.passed=[false,false];
+  const r=E.act(s,1,{type:"play",uid:bolt.uid,targets:[t.uid]});ok(r.ok&&opts(s,0).some(o=>o.type==="pearl"),"Time Pearl on Lightning Bolt");E.act(s,0,opts(s,0).find(o=>o.type==="pearl"));
+  ok((t.dmg||0)===d0,"delayed: no damage yet");E.doDawn?0:0;E.stallTick(s,1);ok(s.p[1].stall[0].n===1,"one counter left");s.round+=1;ok(s.p[1].stall[0].n===1,"counters carry over");E.stallTick(s,1);
+  ok(!(s.p[1].stall||[]).length&&(t.dmg||0)>d0,"last counter: played with the same target ("+(t.dmg||0)+")");ok(s.p[1].disc.some(x=>x.uid===bolt.uid),"then discarded")}
+{const s=game();inv(s,0,"Time Pearl");s.prio=1;s.passed=[false,false];s.p[1].heroes.forEach(x=>x.ex=false);s.p[1].t.lastActor=null;const t=s.p[0].heroes[1];
+  const bolt=hand(s,1,"Lightning Bolt");s.p[1].heroes.forEach(x=>x.ex=x.cls!=="Mage");E.act(s,1,{type:"play",uid:bolt.uid,targets:[t.uid]});E.act(s,0,opts(s,0).find(o=>o.type==="pearl"));kill(s,t);
+  E.stallTick(s,1);E.stallTick(s,1);ok(s.log.some(l=>/target isn't legal any more, so it does nothing/.test(l.m))&&s.p[1].disc.some(x=>x.uid===bolt.uid),"target died: the card does nothing and goes to the discard pile")}
 console.log(`Set 2 queue (Nov 15) checks: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

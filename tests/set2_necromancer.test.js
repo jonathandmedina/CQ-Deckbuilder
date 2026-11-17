@@ -28,10 +28,10 @@ const rev=(s,n,pid)=>{for(let i=0;i<(n||1);i++)E.makeSummon(s,pid||0,"Revenant")
 const N=["Raise Revenant","Bone Wall","Army of Darkness","Devastating Ritual","From Darkness","Cursed Urn","Restless Dead","Grave Tide","Grave Whispers","Corpse Harvest","Dig the Grave","Dead March","Ossuary","Funeral Procession","Grieving Thoughts","Mourner's Offering","Reawaken","Grim Divination","Rise from the Grave","Consecrate","Retrace the Past","Bone Spur","Robbed Grave","Restless Echo","Soul Lantern","Skeleton Key"];
 ok(N.every(n=>E.DB[n]),"all 26 Set2_Cards rows in the engine");ok(N.every(n=>ctx.SET2_CARDS.includes(n)),"all 26 in SET2_CARDS");
 ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Necromancer D","Necromancer E"].every(n=>E.DB["h:"+n]&&ctx.SET2_CARDS.includes(n)),"Necromancer Heroes A–E");
-ok(E.DB["h:Gravecaller"].str===0&&E.DB["h:Gravecaller"].def===1&&E.DB["h:Gravecaller"].aura===1&&E.DB["h:Gravecaller"].hp===16,"0/1/1/16");
+ok(E.DB["h:Gravecaller"].str===0&&E.DB["h:Gravecaller"].def===1&&E.DB["h:Gravecaller"].aura===1&&E.DB["h:Gravecaller"].hp===15,"0/1/1/15 (Nov 16)");
 ok(/\{L3\} Activate any number/.test(E.DB["h:Filth Scavenger"].rules),"Filth Scavenger Level 3 line");
 ok(["Grave Caller's Wand","Gravedigger's Medallion","Dagger of the Dead"].every(n=>E.DB[n]&&E.DB[n].up),"3 equipment with upgrades");
-ok(E.TOK.Revenant&&E.TOK.Abomination&&E.TOK.Remains,"3 tokens");ok(ctx.SET2_CARDS.length===84,"84 Set 2 names (Nov 15: +8, then +7 names) ("+ctx.SET2_CARDS.length+")");
+ok(E.TOK.Revenant&&E.TOK.Abomination&&E.TOK.Remains,"3 tokens");ok(ctx.SET2_CARDS.length===85,"85 Set 2 names (Nov 16: + Life Seed) (Nov 15: +8, then +7 names) ("+ctx.SET2_CARDS.length+")");
 ok(!E.DB["h:Golduron"]&&!E.DB["h:Hetroll"],"Dragonborn left out");ok(E.DB["Cursed Urn"].sup==="Legendary"&&E.DB["Skeleton Key"].sup==="Legendary","Legendaries");
 ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Revenants");
 

@@ -29,7 +29,7 @@ ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The
 {const af=E.DB["The Archfrost"],fl=E.DB["The Archflame"],ds=E.DB["Dragonscale Scale"];
   ok(af&&af.kind==="equip"&&af.pstr===6&&af.region==="Two-Handed"&&af.cost==="5","The Archfrost: Two-Handed, +6, 5 Aura (ingredients + 1, Nov 15)");
   ok(fl&&fl.kind==="equip"&&fl.pstr===6&&fl.region==="Two-Handed","The Archflame: Two-Handed, +6");
-  ok(ds&&ds.kind==="equip"&&ds.region==="Chest"&&ds.sub==="Chestplate"&&ds.cost==="6","Dragonscale Scale: Chest armor (Chestplate), 6 Aura")}
+  ok(ds&&ds.kind==="equip"&&ds.region==="Chest"&&ds.sub==="Chestplate"&&ds.cost==="9","Dragonscale Scale: Chest armor (Chestplate), 9 Aura (ingredients + 1, Nov 16)")}
 
 /* Flame Pearl: 2 damage to any target when it enters; stays in the inventory */
 {const s=game();const c=hand(s,0,"Flame Pearl");const t=s.p[1].heroes[2];const hp0=E.hp(s,t);ok(canPlay(s,c),"Flame Pearl playable");
@@ -56,7 +56,7 @@ ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The
   E.act(s,0,{type:"attack",att:a.uid,targets:[t.uid]});resolve(s);ok(t.st.burn===b0+3,"Burned three times ("+b0+"→"+t.st.burn+")");ok(!(t.st.stun>0),"no Stun from The Archflame")}
 /* Dragonscale Scale: Dragon Scale + any Chest armor; Impervious; 2 Aura: +1 Strength this turn */
 {const s=game();const c=hand(s,0,"Dragonscale Scale Recipe");inv(s,0,"Dragon Scale");inv(s,0,"Helm of Protection");ok(!canPlay(s,c),"a Head piece isn't Chest armor");
-  inv(s,0,"Bronze Chest Plate");ok(canPlay(s,c),"Dragon Scale + Bronze Chest Plate");E.act(s,0,{type:"play",uid:c.uid});resolve(s);
+  inv(s,0,"Bronze Chest Plate");ok(!canPlay(s,c),"Nov 16: needs a Mithril Ingot too");inv(s,0,"Mithril Ingot");ok(canPlay(s,c),"Dragon Scale + Mithril Ingot + Bronze Chest Plate");E.act(s,0,{type:"play",uid:c.uid});resolve(s);
   const w=made(s,"Dragonscale Scale");ok(w,"Dragonscale Scale made");const h=E.actorFor(s,0);E.equipTo(s,h,s.p[0].inv.splice(s.p[0].inv.indexOf(w),1)[0]);
   const d0=h.dmg||0;s.prio=1;const en=s.p[1].heroes[0];en.ex=false;s.p[1].t.lastActor=null;s.bonus={pid:1,uid:en.uid};const ra=E.act(s,1,{type:"attack",att:en.uid,targets:[h.uid]});s.bonus=null;ok(ra&&ra.ok,"enemy attack resolves "+(ra&&ra.err||""));resolve(s);ok((h.dmg||0)===d0,"Impervious: no damage from an attack");
   s.prio=0;h.ex=false;s.p[0].t.lastActor=null;s.p[0].heroes.forEach(x=>{if(x!==h)x.ex=true});const op=opts(s,0).find(o=>o.type==="eqAct");ok(op,"2 Aura ability offered");const au=s.p[0].aura,s0=E.str(s,h);if(op){E.act(s,0,op);resolve(s)}

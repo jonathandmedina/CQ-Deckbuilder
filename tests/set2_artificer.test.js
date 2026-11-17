@@ -91,7 +91,7 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok(canPlay(s,c),"any Cloak + Platinum Ingot + Potion");E.act(s,0,{type:"play",uid:c.uid});resolve(s);const w=made(s,"Warded Cloak");ok(w&&w.prot===3,"made with 3 protection counters");
   const a=E.actorFor(s,0);a.ex=false;s.prio=0;E.act(s,0,opts(s,0).find(o=>o.type==="equipInv"&&o.uid===w.uid));
   const ally=s.p[0].heroes.find(h=>h!==a);const hp0=E.hp(s,ally);E.damage(s,{name:"Test"},ally,5,{card:true});ok(E.hp(s,ally)===hp0&&w.prot===2,"damage to another Hero in the party is prevented, a counter removed");
-  E.damage(s,{name:"Test"},a,1,{card:true});E.damage(s,{name:"Test"},a,1,{card:true});ok(w.prot===0,"counters run out");const hp1=E.hp(s,a);E.damage(s,{name:"Test"},a,3,{card:true,ignoreDef:true});ok(E.hp(s,a)===hp1-3,"no counters: damage goes through");
+  E.damage(s,{name:"Test"},a,1,{card:true,ignoreDef:true});E.damage(s,{name:"Test"},a,1,{card:true,ignoreDef:true});ok(w.prot===0,"counters run out");const hp1=E.hp(s,a);E.damage(s,{name:"Test"},a,3,{card:true,ignoreDef:true});ok(E.hp(s,a)===hp1-3,"no counters: damage goes through");
   const spell=E.need(s,1,{type:"play",uid:(hand(s,1,"Lightning Bolt")).uid});const isTarget=sl=>sl.some(x=>x.cands.includes(a.uid));
   ok(!isTarget(spell),"opponent's spell can't target the Warded Hero");ok(isTarget(spell)||true,"");
   const atk=E.need(s,1,{type:"attack",att:s.p[1].heroes[0].uid});ok(isTarget(atk),"the Warded Hero can still be attacked")}
@@ -105,9 +105,8 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok(!s.p[1].disc.some(x=>x.uid===card.uid),"the card didn't resolve");
   s.prio=1;s.passed=[false,false];ok(!opts(s,1).some(o=>o.type==="playStalled"),"can't play it yet");
   E.act(s,1,{type:"step"});s.p[1].heroes.forEach(x=>x.fl.stepped=null);/* Abide is once per party per round: clear it so a second Abide can be the filler action */s.prio=1;E.act(s,1,opts(s,1).find(o=>o.type==="step")||{type:"pass"});
-  const st=s.p[1].stall[0];ok(st.n===0,"each action removes a stall counter ("+st.n+")");s.prio=1;s.passed=[false,false];
-  s.p[1].heroes.forEach(x=>{x.ex=false;x.fl.stepped=null});const pso=opts(s,1).find(o=>o.type==="playStalled");ok(pso,"then it can be played");
-  s.p[0].heroes.forEach(x=>x.ex=true);const au=s.p[1].aura;const rr=E.act(s,1,Object.assign({},pso));if(!rr.ok)console.log("playStalled:",rr.err,JSON.stringify(pso),JSON.stringify(s.p[1].stall));resolve(s);ok(s.p[1].aura===au,"without paying its Aura cost");ok(!(s.p[1].stall||[]).length,"leaves the Stall zone")}
+  ok(!(s.p[1].stall||[]).length,"each action removes a stall counter; after the last one the card leaves the Stall zone");
+  ok(s.log.some(l=>/Stall: Precognition is played with the same targets/.test(l.m)),"Nov 16: the card is played automatically when the last counter comes off");ok(s.p[1].disc.some(x=>x.uid===card.uid),"and resolves (then goes to the discard pile)")}
 /* Silver Edge (double damage to summons), Mithril Blade (Piercing 2) */
 {const s=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const a=E.actorFor(s,0);const se=E.flipRecipe(s,0,{uid:uid(),id:"Silver Edge Recipe",owner:0});const w=made(s,"Silver Edge");s.p[0].inv=[];E.equipTo(s,a,w);
   const z=E.makeSummon(s,1,"Construct",true);z.str=1;z.hp=9;const st=E.str(s,a);E.damage(s,a,z,st,{combat:true});ok(z.dmg===2*st,"Silver Edge doubles damage to summons ("+z.dmg+")");

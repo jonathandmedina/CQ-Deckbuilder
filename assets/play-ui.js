@@ -298,6 +298,11 @@ html[data-skin="art"] .hk-tags .tg.good{border-color:#7be04f;color:#c9ffb0}
 #pl-menutab{display:none}
 @media (min-width:900px) and (min-height:560px){
 html[data-skin="art"]:has(#play-root .pl-game) #pl-menutab{display:flex;align-items:center;gap:6px;position:fixed;top:0;right:max(12px,env(safe-area-inset-right,0px));z-index:60;padding:2px 14px 4px;border:2px solid var(--accent,#c79028);border-top:0;border-radius:0 0 10px 10px;background:linear-gradient(180deg,rgba(80,46,34,.98),rgba(52,28,22,.98));color:#f3e6cf;font:400 15px/1.2 "Pirata One",var(--display);letter-spacing:.04em;cursor:pointer;box-shadow:0 3px 8px #0009;transition:top .25s}
+/* Nov 16: on computers, Menu and Full screen live in the game log tray (bottom right); the top tabs are hidden during a game */
+#play-root .pl-ctl[data-pa="menu"]{display:none}
+@media (min-width:900px) and (min-height:560px){html[data-skin="art"] #play-root .pl-ctl[data-pa="menu"]{display:inline-flex}}
+html.pl-tablet #play-root .pl-ctl{display:none!important}
+html.pl-has-game:not(.pl-tablet) #pl-menutab,html.pl-has-game:not(.pl-tablet) #pl-fstab{display:none!important}
 html[data-skin="art"]:has(#play-root .pl-game) #pl-menutab:hover{color:#ffd98a}
 html[data-skin="art"]:has(#play-root .pl-game) header.top{position:fixed;left:0;right:0;top:0;transform:translateY(-105%);transition:transform .25s;z-index:59}
 html[data-skin="art"].pl-menu:has(#play-root .pl-game) header.top{transform:none}
@@ -490,7 +495,7 @@ function trialsGameHTML(s,opts){const me=U.me;const helpers=E.parties(s).filter(
     ${zoneHTML(s,me,opts)}
     ${handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions"><button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Dimmed Golem = deal with your own first</span></div>
   </aside></div>`}
@@ -851,7 +856,7 @@ function byName(n){if(!n)return null;try{for(const c of BYID.values())if(c.name=
 function menuTab(){if(document.getElementById("pl-menutab"))return;const t=document.createElement("button");t.type="button";t.id="pl-menutab";t.setAttribute("aria-expanded","false");t.title="Show the site menu";t.innerHTML='<span aria-hidden="true">☰</span> Menu <span class="ar" aria-hidden="true">▾</span>';
   const set=open=>{const r=document.documentElement;r.classList.toggle("pl-menu",open);t.setAttribute("aria-expanded",String(open));const hd=document.querySelector("header.top");t.style.top=open&&hd?hd.offsetHeight+"px":"0";t.querySelector(".ar").textContent=open?"▴":"▾"};
   t.addEventListener("click",e=>{e.stopPropagation();set(!document.documentElement.classList.contains("pl-menu"))});
-  document.addEventListener("click",e=>{if(document.documentElement.classList.contains("pl-menu")&&!e.target.closest("header.top,#pl-menutab"))set(false)});
+  document.addEventListener("click",e=>{if(document.documentElement.classList.contains("pl-menu")&&!e.target.closest('header.top,#pl-menutab,[data-pa="menu"]'))set(false)});
   addEventListener("hashchange",()=>set(false));
   document.body.appendChild(t)}
 const FIT_MQ=matchMedia("(min-width:900px) and (min-height:560px)");
@@ -1011,7 +1016,7 @@ function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
     ${zoneHTML(s,me,opts)}
     ${handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions"><button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div>
   </aside></div>`}
@@ -1239,6 +1244,9 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" data-volpop="sfx" aria-label="Sound effects on or off (point at it for volume)" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" data-volpop="music" aria-label="Music on or off (point at it for volume)" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
     <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn?helpHTML(fixBtn):""}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
+/* Nov 16: Menu and Full screen buttons for the game log tray (computers; tablets use the Controls tray) */
+function ctlBtns(){const T=window.CQTablet;const fsOn=!!(document.fullscreenElement||document.webkitFullscreenElement);const fsOk=!!(T&&T.fsAvail&&T.fsAvail());
+  return`<button type="button" class="btn sm pl-ctl" data-pa="menu" aria-expanded="${document.documentElement.classList.contains("pl-menu")}" title="Show the site menu">☰ Menu</button>${fsOk?`<button type="button" class="btn sm pl-ctl" data-pa="fs" aria-pressed="${fsOn}" title="${fsOn?"Exit full screen (Esc)":"Full screen (Esc to exit)"}">⛶ ${fsOn?"Exit full screen":"Full screen"}</button>`:""}`}
 /* opponent's turn: what they have to work with */
 function oppInfoHTML(s){const op=s.trials?(s.pend[0]?s.pend[0].pid:s.phase==="town"&&s.town?s.town.order[s.town.i]:s.prio):E.opp(U.me);if(op==null||!s.p[op])return"";const pl=s.p[op];const a=s.phase==="battle"&&s.prio===op?E.actorFor(s,op):null;
   return`<div class="pl-oppinfo">${a?`<span>Acting: <b>${esc(a.name)}</b></span>`:""}<span>Hand <b>${pl.hand.length}</b></span><span>Aura <b>${pl.aura}</b></span><span>Gold <b>${pl.gold}</b></span><span>Library <b>${pl.lib.length}</b></span></div>`}
@@ -1496,6 +1504,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="drop-guest"){store2.del("cq.play.guest");render();return}
   if(k==="rules"){location.hash="rules";return}
   if(k==="export-log"){exportLog();return}
+  /* Nov 16: computers keep Menu and Full screen in the game log tray at the bottom right */
+  if(k==="menu"){const m=document.getElementById("pl-menutab");if(m){m.click();b.setAttribute("aria-expanded",String(document.documentElement.classList.contains("pl-menu")))}return}
+  if(k==="fs"){if(window.CQTablet)CQTablet.fullscreen();return}
   if(k==="banner-x"){clearTimeout(U.banT);U.banner=null;render();return}
   if(k==="eqact"){begin({type:"eqAct",uid:b.dataset.u});return}
   if(k==="up-go"){const sel=document.querySelector(`select[data-pa=up-x][data-u="${b.dataset.u}"]`);send({type:"upgrade",uid:b.dataset.u,x:+(sel?sel.value:1)});return}

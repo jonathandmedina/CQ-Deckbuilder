@@ -2,7 +2,7 @@
    - Tablet mode: on touch-first screens (iPad), or forced On/Off from the Play lobby. Bigger buttons, a bigger fanned hand,
      one opponent pop-up at a time, and the game log tucked away. Mouse-and-keyboard computers keep today's layout.
    - Tablet tray: a Controls tab at the bottom right opens Help, Log, Menu, Full screen and the Music / Sound effects controls (Nov 13).
-   - Full screen: a button (the toolbar on tablets, a small tab next to Menu on computers). On tablets, starting a game
+   - Full screen: a button (the toolbar on tablets; on computers, next to Menu in the game log tray at the bottom right, Nov 16). On tablets, starting a game
      goes full screen by itself. Leaving the Play tab exits full screen.
    - The screen is kept awake while a game is in progress, where the browser allows it.
    - Add to Home Screen: index.html links a web app manifest, so the icon opens Deck Forge without Safari's bars. */
@@ -228,6 +228,6 @@ function portrait(tab){const root=document.documentElement;const tall=tab&&inner
 function refreshPop(){const p=document.querySelector(".tb-pop");if(!p)return;const U=window.CQPlay,uid=p.dataset.u;const a=U&&U.s&&window.CQE.actorFor(U.s,U.me);
   const ob=uid&&document.querySelector(`#play-root [data-pa="obj"][data-u="${uid}"]`),src=document.querySelector("#play-root .zs-acts");
   if(!isTab()||!a||a.uid!==uid||!ob||!src||U.tgt){hidePop();return}showPop(ob,a,src)}
-window.CQTablet={after(){lobbySetting();sync();refreshPop()},sync,on:tabletOn,fullscreen:fsToggle};
+window.CQTablet={after(){lobbySetting();sync();refreshPop()},sync,on:tabletOn,fullscreen:fsToggle,fsAvail};
 setTimeout(sync,300);
 })();

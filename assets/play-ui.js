@@ -161,6 +161,7 @@ html[data-skin="art"] .pl-over-why{color:#d8c3a0}
 .pl-man select,.pl-man input{padding:4px 8px}
 .pl-man input[type=number]{width:70px}
 .pl-man .txt{font-size:.9rem;background:var(--surface);border-radius:8px;padding:6px 10px;border:1px solid var(--line)}
+.ask-card{display:flex;flex-direction:column;gap:6px}.ask-card .btn{white-space:normal}
 .pick-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
 .pick-list .pk{border:0;background:none;padding:0;text-align:left;position:relative}
 .pick-list .pk.on .card{outline:3px solid var(--ok);outline-offset:-1px}
@@ -1380,6 +1381,8 @@ function modals(s){const pr=s.pend[0];
     const m=modal(scryHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="choose"){U.pick=U.pick&&U.pick.key===key?U.pick:{key,on:[]};const m=modal(chooseHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="combo"){const m=modal(comboHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
+  else if(pr.type==="ask"&&pr.opts.some(o=>o.card)){const da=i=>`data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'`;
+    const m=modal(`<h2>${esc(pr.title||"Choose")}</h2><div class="pick-list">${pr.opts.map((o,i)=>o.card?`<div class="ask-card"><button class="pk" ${da(i)} title="${esc(o.label)}">${cardHTML(cardOf(o.card))}</button><button class="btn" ${da(i)}>${esc(o.label)}</button></div>`:"").join("")}</div><div class="actions" style="flex-direction:column;align-items:stretch;margin-top:10px">${pr.opts.map((o,i)=>o.card?"":`<button class="btn" ${da(i)}>${esc(o.label)}</button>`).join("")}</div>`,{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="ask"){const m=modal(`<h2>${esc(pr.title||"Choose")}</h2><div class="actions" style="flex-direction:column;align-items:stretch">${pr.opts.map((o,i)=>`<button class="btn${i===0?" primary":""}" data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'>${esc(o.label)}</button>`).join("")}</div>`,{dismiss:false});m.dataset.k=key}
   else if(cur&&cur.dataset.k)closeModal()}
 function cardById(s,u,pr){if(pr&&pr.show&&pr.show[u])return pr.show[u];for(const pl of s.p)for(const z of["hand","lib","disc"]){const c=pl[z].find(x=>x.uid===u);if(c&&c.id)return c.id}return null}

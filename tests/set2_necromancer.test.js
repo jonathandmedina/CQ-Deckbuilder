@@ -131,7 +131,13 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
 {const s=game();const a1=top(s,0,"Potion"),a2=top(s,0,"Raise Revenant");play(s,hand(s,0,"Grim Divination"));
   ok(s.p[0].hand.length+s.p[0].disc.filter(x=>x.uid===a1.uid||x.uid===a2.uid).length>=2,"Grim Divination resolves");ok(s.log.some(l=>/Grim Divination/.test(l.m)),"logged")}
 {const s=game();top(s,0,"Potion");top(s,0,"Potion");E.act(s,0,{type:"play",uid:hand(s,0,"Grim Divination").uid});ok(s.pend[0]&&s.pend[0].pid===1&&s.pend[0].type==="ask","the opponent chooses the mode");
-  E.act(s,1,{type:"ask",i:1});ok(s.p[0].hand.length===1&&s.p[0].t.milled.length===2,"mode 2: both to the discard pile (they can be Exhumed), draw a card")}
+  ok(s.pend[0].opts.length===3&&s.pend[0].opts.filter(o=>o.card).length===2,"the opponent sees both cards plus a Discard both button");
+  E.act(s,1,{type:"ask",i:2});ok(s.p[0].hand.length===1&&s.p[0].t.milled.length===2,"Discard both: both to the discard pile (they can be Exhumed), draw a card")}
+{const s=game();const a1=top(s,0,"Potion"),a2=top(s,0,"Raise Revenant");E.act(s,0,{type:"play",uid:hand(s,0,"Grim Divination").uid});
+  const i=s.pend[0].opts.findIndex(o=>o.v===a2.uid);ok(i>=0&&s.pend[0].opts[i].card===a2.id&&/^Discard Raise Revenant/.test(s.pend[0].opts[i].label),"each revealed card is its own pick, labeled Discard");
+  E.act(s,1,{type:"ask",i});ok(s.p[0].disc.some(x=>x.uid===a2.uid)&&s.p[0].hand.some(x=>x.uid===a1.uid)&&!s.pend.length,"one pick: the picked card is discarded, the other goes to hand")}
+{const s=game();s.p[0].lib.length=0;const a1=top(s,0,"Potion");E.act(s,0,{type:"play",uid:hand(s,0,"Grim Divination").uid});
+  ok(s.pend[0].opts.length===2&&s.pend[0].opts[0].card===a1.id,"one card left: show it, to hand or discard");E.act(s,1,{type:"ask",i:0});ok(s.p[0].hand.some(x=>x.uid===a1.uid),"one card left: goes to hand")}
 /* Retrace the Past */
 {const s=game();disc(s,1,"Potion");disc(s,1,"Potion");const l1=s.p[1].lib.length,h1=s.p[1].hand.length;E.act(s,0,{type:"play",uid:hand(s,0,"Retrace the Past").uid,targets:["P1"]});
   E.act(s,0,{type:"choose",picks:s.pend[0].cards});ok(s.p[1].disc.length===0&&s.p[1].lib.length===l1+1&&s.p[1].hand.length===h1+1,"Retrace the Past: shuffle in, that player draws")}

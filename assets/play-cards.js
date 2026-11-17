@@ -704,16 +704,17 @@ def("Bone Spur",{t:[Object.assign({},REV,{opt:true})],run(c){if(c.fromDisc){revs
   const o=c.t[0];if(o){buff(o,{str:1});log(c,`${o.name} gains +1 Strength this turn.`)}}});
 def("Reawaken",{t:[t("allyHero","target Necromancer",(s,o)=>E.heroIs(o,"Necromancer"))],run(c){const h=c.t[0];if(h&&!h.dead){h.ex=false;E.medWake(c.s,h);log(c,`${h.name} readies.`)}}});
 def("Grim Divination",{run(c){const top=c.me.lib.slice(-2).reverse();if(!top.length){log(c,"Grim Divination: the library is empty.");return}
-  log(c,`Grim Divination reveals ${top.map(x=>E.DB[x.id].name).join(" and ")}.`);const op=E.oppOf(c.s,c.pid);
-  E.ask(c.s,op,`Grim Divination (${c.me.name}): choose one`,[{label:`One revealed card of your choice goes to ${c.me.name}'s hand, the other to their discard pile`,v:1},{label:`Both go to ${c.me.name}'s discard pile, then ${c.me.name} draws a card`,v:2}],"grimMode",{owner:c.pid,cards:top.map(x=>x.uid),name:"Grim Divination"})}});
-A.grimMode=(s,pid,pr,v)=>{const o=pr.data.owner;const pl=s.p[o];const cards=pr.data.cards.map(u=>pl.lib.find(x=>x.uid===u)).filter(Boolean);const c={s,pid:o};
-  if(v===2||cards.length<2){if(v===1&&cards.length===1){const x=cards[0];pl.lib.splice(pl.lib.indexOf(x),1);pl.hand.push(x);E.log(s,`Grim Divination: ${E.DB[x.id].name} goes to ${pl.name}'s hand.`,o);return}
-    millMark(c,o,cards);E.log(s,`Grim Divination: ${cards.map(x=>E.DB[x.id].name).join(" and ")} go to ${pl.name}'s discard pile.`,o);E.draw(s,o,1);return}
-  const by=cards.slice().sort((a,b)=>(parseInt(E.DB[a.id].cost,10)||0)-(parseInt(E.DB[b.id].cost,10)||0));
-  E.ask(s,pid,`Grim Divination: which card goes to ${pl.name}'s hand? (the other goes to their discard pile)`,by.map(x=>({label:E.DB[x.id].name,v:x.uid})),"grimPick",{owner:o,cards:pr.data.cards,name:"Grim Divination"})};
-A.grimPick=(s,pid,pr,v)=>{const o=pr.data.owner;const pl=s.p[o];pr.data.cards.forEach(u=>{const x=pl.lib.find(y=>y.uid===u);if(!x)return;
-  if(u===v){pl.lib.splice(pl.lib.indexOf(x),1);pl.hand.push(x);E.log(s,`Grim Divination: ${E.DB[x.id].name} goes to ${pl.name}'s hand.`,o)}
-  else{millMark({s},o,[x]);E.log(s,`Grim Divination: ${E.DB[x.id].name} goes to ${pl.name}'s discard pile.`,o)}})};
+  log(c,`Grim Divination reveals ${top.map(x=>E.DB[x.id].name).join(" and ")}.`);const op=E.oppOf(c.s,c.pid);const nm=x=>E.DB[x.id].name;
+  /* the opponent sees both cards: pick one to discard (the other goes to the caster's hand), or discard both and the caster draws */
+  const by=top.slice().sort((a,b)=>(parseInt(E.DB[b.id].cost,10)||0)-(parseInt(E.DB[a.id].cost,10)||0));
+  const opts=top.length===2?by.map(x=>{const o=top.find(y=>y!==x);return{label:`Discard ${nm(x)} (${nm(o)} goes to ${c.me.name}'s hand)`,v:x.uid,card:x.id}})
+    :[{label:`${nm(top[0])} goes to ${c.me.name}'s hand`,v:"hand",card:top[0].id}];
+  opts.push({label:top.length===2?`Discard both, then ${c.me.name} draws a card`:`Discard it, then ${c.me.name} draws a card`,v:"both"});
+  E.ask(c.s,op,`Grim Divination (${c.me.name}): pick a card to discard, or discard both`,opts,"grimPick",{owner:c.pid,cards:top.map(x=>x.uid),name:"Grim Divination"})}});
+A.grimPick=(s,pid,pr,v)=>{const o=pr.data.owner;const pl=s.p[o];const cards=pr.data.cards.map(u=>pl.lib.find(x=>x.uid===u)).filter(Boolean);const nm=x=>E.DB[x.id].name;
+  if(v==="both"){millMark({s},o,cards);E.log(s,`Grim Divination: ${cards.map(nm).join(" and ")} ${cards.length>1?"go":"goes"} to ${pl.name}'s discard pile.`,o);E.draw(s,o,1);return}
+  cards.forEach(x=>{if(x.uid===v){millMark({s},o,[x]);E.log(s,`Grim Divination: ${nm(x)} goes to ${pl.name}'s discard pile.`,o)}
+    else{pl.lib.splice(pl.lib.indexOf(x),1);pl.hand.push(x);E.log(s,`Grim Divination: ${nm(x)} goes to ${pl.name}'s hand.`,o)}})};
 /* Mourn cards (the engine waives the Aura cost once a soul has been surrendered) */
 def("Funeral Procession",{run(c){const sm=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Summon"&&c.actor&&E.canPlayCard(c.s,c.pid,c.actor,x,true));
   if(!sm.length){log(c,"Funeral Procession: no Summon card in your discard pile that this Hero can play.");return}

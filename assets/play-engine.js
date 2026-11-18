@@ -1297,7 +1297,7 @@ function startAttack(s,pid,attUid,tgtUid,o){const f=find(s,attUid);if(!f)return;
   if(o.band)o.band.forEach(u=>{const m=find(s,u);if(m&&chained(m.o)){P(s,pid).aura=Math.max(0,P(s,pid).aura-1);log(s,`Chains of Darkness: ${m.o.name} pays 1 Aura to attack.`,pid)}});
   burdenFat(s,att);if(o.band)o.band.forEach(u=>{const m=find(s,u);if(m)burdenFat(s,m.o)});
   att.attacks=(att.atkRound===s.round?att.attacks:0)+1;att.atkRound=s.round;if(att.fl&&att.fl.forceAtk){delete att.fl.forceAtk}
-  if(o.band){const mem=o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o);mem.forEach(m=>{m.ex=true;m.attacks=(m.atkRound===s.round?m.attacks:0)+1;m.atkRound=s.round});
+  if(o.band){const mem=o.band.map(u=>find(s,u)).filter(Boolean).map(x=>x.o);mem.forEach(m=>{m.ex=true;m.attacks=(m.atkRound===s.round?m.attacks:0)+1;m.atkRound=s.round;if(m.fl&&m.fl.forceAtk)delete m.fl.forceAtk});
     const parts=[att,...mem].map(m=>`${m.name} ${dmgStr(s,m,tgt)}`);log(s,`⚔ Band attack on ${tgt.name}: ${parts.join(" + ")}${bandBonus(s,att,mem)?` + ${bandBonus(s,att,mem)} bonus`:""} = ${bandTotal(s,att,mem,tgt)} STR.`,pid)}
   else log(s,`⚔ ${att.name} attacks ${tgt.name}.`,pid);
   /* Remey the Incredible (Hero Construct): whenever it attacks, deal 3 damage to all enemies (Heroes and summons of every opposing party) */
@@ -1537,6 +1537,8 @@ function doDusk(s){
     if(any)return}
   s.duskAsked=false;
   s.phase="dusk";log(s,`— Dusk —`);
+  /* Nov 17: Arrow of Persuasion ends at Dusk: clear every forced attack so nothing carries into the next round */
+  s.p.forEach(pl=>{pl.heroes.forEach(h=>{if(h.fl&&h.fl.forceAtk)delete h.fl.forceAtk});(pl.bf||[]).forEach(o=>{if(o.fl&&o.fl.forceAtk)delete o.fl.forceAtk})});
   /* Heavy Bow: a Hero that became exhausted this round gets a Fatigue counter */
   s.p.forEach((pl,pid)=>living(pl).forEach(h=>{if(h.ex&&!h.fat&&!h.fl.fatRested&&hasEqN(h,"Heavy Bow")){if(hasUpN(s,h,"Heavy Bow")&&pl.aura>=1){pl.aura-=1;log(s,`Upgraded Heavy Bow: ${pl.name} pays 1 Aura so ${h.name} doesn't get a Fatigue counter.`,pid);return}h.fat=1;log(s,`Heavy Bow: ${h.name} gets a Fatigue counter (it won't ready at the next Dawn).`,pid)}}));
   parties(s).forEach(pid=>{const pl=P(s,pid);

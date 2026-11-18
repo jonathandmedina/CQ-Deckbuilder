@@ -2,241 +2,241 @@
  {
   "seed": 7000,
   "winner": 1,
-  "round": 16,
-  "logHash": "76342bcc394b8c3dbff3dea8ac93e1da24cb83bbefd16a25b3e624e677e40a66"
+  "round": 15,
+  "logHash": "86ecdd0a2842b2b7d96398d2f5dd64e0096ac9e2c4893594beeecc494af674ce"
  },
  {
   "seed": 7037,
   "winner": 1,
-  "round": 28,
-  "logHash": "0b0f3864ec032127bb73a02d6f00bea39d85ce5917120df2ca2d5435ea914748"
+  "round": 35,
+  "logHash": "9a60b2e41f6aa4bae569edcd1caf02eff0d69a95eebb099001214e8c50ddea32"
  },
  {
   "seed": 7074,
   "winner": 1,
   "round": 19,
-  "logHash": "b35aca9dde55aac2f0f91d7f4fcfcf2a9a82b7ff7b74dc0c43dd8a8667560739"
+  "logHash": "55f37cf73749af51112a22e501fff9d82cdeeb6c95f93416d52ff7edcd86664a"
  },
  {
   "seed": 7111,
-  "winner": 1,
-  "round": 16,
-  "logHash": "853dc00fca9c76d0088a9787c9e16dfc7a3673cc6343dfa131a85f165d882b88"
+  "winner": 0,
+  "round": 14,
+  "logHash": "71594f829eb0dabecfcc4745ea8187cadbcf21b7da607a5f6971197a05bc6fdf"
  },
  {
   "seed": 7148,
   "winner": 0,
-  "round": 13,
-  "logHash": "f6c335790c6b1cc71cc1cbfcb5d3db09aafe5e81d290ef372479c1f6aa288d88"
+  "round": 12,
+  "logHash": "2258da6f83806fc94990463c49fe7243fb4d314900a69ff3e60214e1f3d0c17c"
  },
  {
   "seed": 7185,
   "winner": 1,
-  "round": 26,
-  "logHash": "953c49a7dff51add5fce823ab3513ee38e09c55ee9a96cddf6942972cfa6d6e9"
+  "round": 27,
+  "logHash": "cd2fb5ea6fb05dc442d617e104d8a4a2d1988e1dbaf30c29a256b2ba44a247a5"
  },
  {
   "seed": 7222,
   "winner": 0,
-  "round": 10,
-  "logHash": "ab3116dff5442ab9716c7d6fd4c78d7484cb37fb6b47c4e0acd081f1ee1de520"
+  "round": 11,
+  "logHash": "a6dec9eebffd29e9e5d4c26e60b9d06c08d14d988fa6249cca2a3b2986049fb4"
  },
  {
   "seed": 7259,
   "winner": 1,
   "round": 8,
-  "logHash": "ce143d90f50640134f652e34083922006c914013cf9a1ecc639bfac23fccccce"
+  "logHash": "0ca465ffb71f67a4c01cd8d9e8f52fed6a18e9fc1676a77c3df1b646716646d8"
  },
  {
   "seed": 7296,
-  "winner": 0,
-  "round": 24,
-  "logHash": "b7564abc11ac8e38fa6ef8e1973c2e5ec8c90e097a89ccf015a9b78d375c6c1b"
+  "winner": 1,
+  "round": 17,
+  "logHash": "bfcfef29bb881cc31eb8d8f430f50d8d51cc3ef9e46d7850d47a4a987c4009c9"
  },
  {
   "seed": 7333,
   "winner": 0,
-  "round": 10,
-  "logHash": "c8b9b66c6ab6f231138206f36a7edd15c7936332aa9b2ddf3ef9801b5e8344a0"
+  "round": 8,
+  "logHash": "0d3088fa9ae9952b11091ca25a7adaa13668c16e43e4572901222ee2ccdfdfb8"
  },
  {
   "seed": 7370,
   "winner": 1,
-  "round": 14,
-  "logHash": "6bedea182f89d29be1ade573bfbff4cf176c96d7a54349037f223a5e5e394c89"
+  "round": 13,
+  "logHash": "42e146612fd283f5bc3f9f6cb496bb9a4bd1840a5d3846cb20a1d2fe33db0e2b"
  },
  {
   "seed": 7407,
-  "winner": 0,
-  "round": 14,
-  "logHash": "e71d8a215f86a269c8f19910faded100bdf4f088d563539b4a180d681028f45d"
+  "winner": 1,
+  "round": 9,
+  "logHash": "3655d29d3a09a56755a6d1b7bd58970338250d10045c732fa5e37209fb1d9586"
  },
  {
   "seed": 7444,
   "winner": 0,
-  "round": 16,
-  "logHash": "998276f2de61e1c35ac0b749422221244bbc0d77e967148fd2083bb49c254baa"
+  "round": 14,
+  "logHash": "e0c5a1282cfbef59038137b2e223b5cef584d1d077d2ab0deadb151a81dba050"
  },
  {
   "seed": 7481,
   "winner": 0,
-  "round": 15,
-  "logHash": "da01ea604806e0ee4ef29fa64131c908559984adc646dc8716918387eeb949e3"
+  "round": 14,
+  "logHash": "2f6c2e59ca1629fe304f70dcb222bab5e336f68fcdbf69ccbb7810142ef2c978"
  },
  {
   "seed": 7518,
   "winner": 0,
-  "round": 11,
-  "logHash": "c69686db24b83cffc29ba022c4bbb5c593c5eb857c88c16d5cca48f6cad9941d"
+  "round": 8,
+  "logHash": "ea4f8b779aff72b66db0ac0885192eccf69360356d790489403e6022622264f8"
  },
  {
   "seed": 7555,
   "winner": 0,
   "round": 21,
-  "logHash": "af6e95bf81421946d448accca4535e1134bb2a7b6d14fbf50b2eca6a22c65a37"
+  "logHash": "3c16bcbc61061e6bb00acaeb494e3ba777da95720ec3cab88efe9f463dc10346"
  },
  {
   "seed": 7592,
-  "winner": 1,
-  "round": 11,
-  "logHash": "90adfb19a51d9248225d522d3a3706fe7d33741f8e87a8e5d325707339d33b0e"
+  "winner": 0,
+  "round": 19,
+  "logHash": "e5720f30d9dd1ffc1d12622f657d1ffa25ba98d2ee8bb0f539dde141005082af"
  },
  {
   "seed": 7629,
   "winner": 0,
-  "round": 6,
-  "logHash": "72a979ed358ffa7fa4431c06ba34d28ae299e9fd5c1260e134a3d3ec58669404"
+  "round": 8,
+  "logHash": "47c1938704f13bbc90496e52950d859b918de7a039e67798be8d520cf23d2923"
  },
  {
   "seed": 7666,
   "winner": 1,
   "round": 9,
-  "logHash": "6f0a5e6fb52dda61728d078863295ee2cbcddf9e70c975bb01fe9670ec252464"
+  "logHash": "3f6a9cdfa8ff11b723d26154df8e407da3aab08e0d6e6cf2f9799e0c6eca41da"
  },
  {
   "seed": 7703,
   "winner": 0,
-  "round": 21,
-  "logHash": "dcecee6e6317d72807e3c1233617408c8eee9abfd355bb084e89063c330ae3e6"
+  "round": 17,
+  "logHash": "47818c690f0d023a9a5f2e7370a204a4448d390f6b229f2ea9800129bab4c960"
  },
  {
   "seed": 7740,
   "winner": 1,
-  "round": 16,
-  "logHash": "fccdc9c0bf3ac11afc29274f8ca73bc37e38c9c0a48a144fa96e829e4897c51d"
+  "round": 21,
+  "logHash": "d9a0ef5ebaa875d3d6d567fce396c6a08a05e48fdfc1dada8d8d0dc010281c5f"
  },
  {
   "seed": 7777,
   "winner": 0,
-  "round": 17,
-  "logHash": "1b1f66ac87a4bec1f3968e90bd6ce905c98dfc54f3af624a992cd234df07eee2"
+  "round": 18,
+  "logHash": "8169bce14c5c8ea1c5ea72d6fd88943e62bf0b9848507f3b0373b7acf8c92bd9"
  },
  {
   "seed": 7814,
   "winner": 0,
-  "round": 35,
-  "logHash": "cfdafef45f25c69a5a797b240f9811127857d4b98bc47ce7d9e4e0eb86d4cde1"
+  "round": 8,
+  "logHash": "02c36ba624d92cbe7ba59af9ce32f48306d824dff830fe6cf4fff33e6b3a5f40"
  },
  {
   "seed": 7851,
-  "winner": 1,
-  "round": 15,
-  "logHash": "6e67fb8757636bc10428ce20f4aa4457e9eda9654b18eea209a0e410bcf70361"
+  "winner": 0,
+  "round": 12,
+  "logHash": "b0d6668947e19fe8ff3efc4844646124aa73eb52d4ef084716fa517a3162d7bb"
  },
  {
   "seed": 7888,
   "winner": 1,
-  "round": 9,
-  "logHash": "cc38bbbb08b8cd117116556a380e69b328f08d113441a12e68875caf1d1f3cb2"
+  "round": 7,
+  "logHash": "654476d029860747d43a7d8ee6e5a20d8658ed6946a080c6176625b5c5ba0071"
  },
  {
   "seed": 7925,
   "winner": 0,
-  "round": 12,
-  "logHash": "fd5e785de94c63809c330d6f5e9e9e1c3845a039bb0fa6749bc0323b11a32fa9"
+  "round": 21,
+  "logHash": "e3dfa3af45f6761a7377e9fabaeb96a85f2ff690df337970f57ba1a04a38685d"
  },
  {
   "seed": 7962,
   "winner": 1,
   "round": 10,
-  "logHash": "e95764502efacdcdf152f2c83f4e43437e26c29d96ae0ce9c75033cf130fce24"
+  "logHash": "464a93727e178949c4ad717b66c945084d790fcd3fed2ac9ec53ebbb15211be3"
  },
  {
   "seed": 7999,
   "winner": 0,
-  "round": 19,
-  "logHash": "3161d749a1ebe2297b92c60a65732ec1d62c32f890927c0e352705c12c15f68f"
+  "round": 7,
+  "logHash": "5ca717c26b57a6ec6cab19e055c5e51b6c1c333ba60a189319ca88e7e371b94f"
  },
  {
   "seed": 8036,
   "winner": 1,
-  "round": 9,
-  "logHash": "13e8aa70df3d2c20d562d6264c350e20434592306f877d6a79cbf21a58beab5f"
+  "round": 10,
+  "logHash": "cd5b30a959b80ae8d2985d7b9420d197f9ed1c13099965998fa990cc6717cf97"
  },
  {
   "seed": 8073,
-  "winner": 0,
-  "round": 15,
-  "logHash": "62322d212b8669eb98f483846affd14670fbf35d24b29d9dea910bac62196d8d"
+  "winner": 1,
+  "round": 14,
+  "logHash": "276a0506df70dc33b757df8f58afdf0fca41f4f29243324a422b3c65f05d9369"
  },
  {
   "seed": 8110,
   "winner": 1,
-  "round": 16,
-  "logHash": "65165f3a512f86f782a956108f52e8d09be3b4498868e7da9be0e6359a89d6c0"
+  "round": 9,
+  "logHash": "2b5ae6f3c83ecf446ecaaf618df8f7d418fe11d999bba9737ba79c5e366f3b6f"
  },
  {
   "seed": 8147,
-  "winner": 0,
-  "round": 14,
-  "logHash": "8efec974d120d2d5240c253d49449d2381c41fe23b8094dfdc281814cd7adbce"
+  "winner": 1,
+  "round": 15,
+  "logHash": "696e9e6b3a51aea9ec9de9f6291c14f59aa999d8ad48d4d0f46044dead4540cb"
  },
  {
   "seed": 8184,
   "winner": 0,
-  "round": 25,
-  "logHash": "85b9004941e23530150d737567dbb63818a268341b60715c59ccd858d7a3c2a9"
+  "round": 14,
+  "logHash": "49211f5c0aec4a82ceb37e9af4ccd2b09da02a0010ef3636af4f1ebf4cf400ec"
  },
  {
   "seed": 8221,
   "winner": 1,
-  "round": 12,
-  "logHash": "ebdf1f833ce7d57954e8f8b43b0a09c4b0a49c85a27af31e7782e3bd074851e3"
+  "round": 18,
+  "logHash": "1683b1f4b5cbd32af40210688065bb6de5662120f98128763d4a3558030d8ddc"
  },
  {
   "seed": 8258,
   "winner": 0,
-  "round": 9,
-  "logHash": "aee8542cb4f90bf887d5e0794188d2ff4531ec8a60ab1f0c422fc33d0c6548ef"
+  "round": 6,
+  "logHash": "373be49ba4df9a2ec2464bcd495b98ac4d912c011de65776e542be8de5bce84d"
  },
  {
   "seed": 8295,
   "winner": 0,
-  "round": 21,
-  "logHash": "bb6056a6c2b4d10c291c07f4c3451cf2c36e92f455b5bb5f8e912bad598ee4d4"
+  "round": 12,
+  "logHash": "a14b914aa9ea9fed7cd4ee21cccb6d3c8764b3c3a96037a9e732b0ea9f64d653"
  },
  {
   "seed": 8332,
-  "winner": 1,
+  "winner": 0,
   "round": 26,
-  "logHash": "7ab1d5bd1012b857d93cb550471afea551cb09ec3e5344a4b1d6a0a27e316039"
+  "logHash": "aa4911ebd3f6eeba378797e001df50659a23e1dd90567981bbe9b6ca61cccb56"
  },
  {
   "seed": 8369,
   "winner": 1,
-  "round": 9,
-  "logHash": "42c8a4e9de458b3ca39ebbfc89620e3bc1933da491d62999a574434322e3ea26"
+  "round": 8,
+  "logHash": "6dcdd677192cde7ec01fba72128ffcdeeff435fe3fd0fc0d6a6518ccceb4cb8b"
  },
  {
   "seed": 8406,
-  "winner": 1,
-  "round": 20,
-  "logHash": "6cfaadd20fb8b26f903b120550bee193baf58ec79a1661af9f687b4808360b25"
+  "winner": 0,
+  "round": 14,
+  "logHash": "255ad7d23253bf769a45c15c3c9bbc43b5076d89068e98a8343176fdba9c5581"
  },
  {
   "seed": 8443,
   "winner": 0,
-  "round": 9,
-  "logHash": "d7767775ecfaebf0237e6337fd4d06b6ff29dd7c658760cdb466fbdb42da5a9c"
+  "round": 12,
+  "logHash": "6b59f0bd4000952127463921015d484e114f6e4d56fb195cebb4665ae9d34ab0"
  }
 ]

@@ -166,11 +166,13 @@ async function loadPublicDecks(uid){D.pub[uid]="loading";
 
 /* ---------- my profile + first-visit setup ---------- */
 async function loadMe(){if(!SB||!S.uid)return;const uid=S.uid;
-  const{data,error}=await SB.from("profiles").select("user_id,screen_name,avatar,decks_reviewed,discord_name,discord_public").eq("user_id",uid).maybeSingle();
+  let{data,error}=await SB.from("profiles").select("user_id,screen_name,avatar,decks_reviewed,discord_name,discord_public").eq("user_id",uid).maybeSingle();
+  /* Nov 18: the Discord columns (supabase/discord.sql) may not exist yet: load the profile without them */
+  if(error&&/discord/.test(error.message||"")){D.noDiscordCols=true;({data,error}=await SB.from("profiles").select("user_id,screen_name,avatar,decks_reviewed").eq("user_id",uid).maybeSingle())}
   if(uid!==S.uid)return;if(error){D.me=undefined;return}/* table missing (SQL not run yet): stay quiet */
   D.me=data||null;try{renderAcct();if(S.view==="account")render()}catch(e){}
   /* Update 30: copy the Discord name onto the profile so the Leaderboard and profile page can show it */
-  const dn=S.me&&S.me.discord||null;if(D.me&&(D.me.discord_name||null)!==dn)SB.from("profiles").update({discord_name:dn}).eq("user_id",uid).then(({error})=>{if(!error)D.at=0});
+  const dn=S.me&&S.me.discord||null;if(D.me&&!D.noDiscordCols&&(D.me.discord_name||null)!==dn)SB.from("profiles").update({discord_name:dn}).eq("user_id",uid).then(({error})=>{if(!error)D.at=0});
   if(!D.me||!D.me.decks_reviewed)setTimeout(()=>{if(S.uid===uid&&!document.getElementById("pf-setup")&&S.view!=="play")openSetup(true)},400)}
 window.CQProfDiscordPublic=async v=>{if(!SB||!S.uid)return false;const{error}=await SB.from("profiles").update({discord_public:!!v}).eq("user_id",S.uid);if(!error&&D.me){D.me.discord_public=!!v;D.at=0}return!error};
 function onSession(){D.me=undefined;D.pub={};if(S.uid)loadMe()}
@@ -199,7 +201,9 @@ async function setupNext(){F.err="";
   if(F.step===1){if(!F.avatar){F.err="Pick an avatar.";return drawSetup()}F.step=2;return drawSetup()}
   const btn=document.querySelector('#pf-setup [data-pf="next"]');if(btn)btn.disabled=true;
   const row={user_id:S.uid,screen_name:F.name,avatar:F.avatar,decks_reviewed:true,updated_at:new Date().toISOString(),...(S.me&&S.me.discord?{discord_name:S.me.discord}:{})};
-  const{error}=await SB.from("profiles").upsert(row);
+  let{error}=await SB.from("profiles").upsert(row);
+  /* Nov 18: if the Discord columns aren't in the database yet, save the profile without them */
+  if(error&&/discord_name|discord_public/.test(error.message||"")){D.noDiscordCols=true;delete row.discord_name;({error}=await SB.from("profiles").upsert(row))}
   if(error){F.err=/duplicate|unique/i.test(error.message)?"That name is taken. Try another.":"Couldn't save: "+error.message;if(/duplicate|unique/i.test(error.message))F.step=0;return drawSetup()}
   const ds=S.decks||[];const want=d=>F.priv.has(String(d.id));const ch=ds.filter(d=>!!d.priv!==want(d));
   for(const d of ch){const{error:e}=await SB.from("decks").update({is_private:want(d)}).eq("id",d.id);if(!e)d.priv=want(d)}

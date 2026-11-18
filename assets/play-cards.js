@@ -262,7 +262,7 @@ def("Blunt-Point Force",arrow(2,[EN],c=>{const d=D(c,c.t[0],3);if(d>0&&c.t[0]){c
 def("Dual Shot",arrow(1,[t("enemy","first target enemy"),t("enemy","second target enemy",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)}));
 def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"burn")}));
 def("Level Shot",arrow(1,[EN],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
-/* update 27: Arrow damage boosts (Full Draw, Spotters, Multi Bow, Longbow, Hawkeye, Mystic Quiver) make Poison Dart deal that much damage; Heavy Bow doubles it (0 stays 0) */
+/* update 27: Arrow damage boosts (Full Draw, Spotters, Multi Bow, Longbow, Hawkeye, Mystic Quiver) make Poison Dart deal that much damage; Jereth's Heavy Bow doubles it (0 stays 0) */
 def("Poison Dart",arrow(1,[t("any","target to Poison twice")],c=>{if(c.arrowBonus&&c.arrowBonus.dmg>0)D(c,c.t[0],0);st(c,c.t[0],"poison",2)}));
 def("Serrated Arrow",arrow(1,[EN],c=>{D(c,c.t[0],3,{pierce:3})}));
 def("Arrow of Devastation",arrow(4,[EN],c=>{D(c,c.t[0],5,{pierce:3})}));

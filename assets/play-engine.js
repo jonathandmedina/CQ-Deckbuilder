@@ -1052,10 +1052,10 @@ function payCraft(s,pid,actor,d){const plan=craftPlan(s,pid,actor,d);if(!plan)re
   if(actor&&hasEqN(actor,"Bellows")){eqList(actor).filter(e=>e.name==="Bellows").forEach(e=>{log(s,`Bellows: ${actor.name} Crafts, draw a card${isUp(s,e)?" and gain 1 Aura":""}.`,pid);draw(s,pid,1);if(isUp(s,e))pl.aura+=1})}
   /* Tinker's Goggles (Nov 14): whenever the equipped Hero Crafts, Scry 1 (upgraded: Scry 2) */
   if(actor&&hasEqN(actor,"Tinker's Goggles")){eqList(actor).filter(e=>e.name==="Tinker's Goggles").forEach(e=>{const n=isUp(s,e)?2:1;if(!pl.lib.length)return;log(s,`Tinker's Goggles: ${actor.name} Crafts, Scry ${n}.`,pid);pushScry(s,pid,n)})}
-  /* Set 2 JD Tinkerersmith (Nov 18, 2026): the first time this Hero Crafts each turn, return an Item from your discard pile to your inventory (Level 3: two) */
-  if(actor&&actor.name==="JD Tinkerersmith"&&!actor.dead&&!nulled(s,actor.name)&&actor.fl.jdRound!==s.round){actor.fl.jdRound=s.round;const l=pl.disc.filter(c=>(DB[c.id]||{}).type==="Item");const n=actor.lvl>=3?2:1;
-    if(l.length){log(s,`JD Tinkerersmith Crafts: ${pl.name} returns ${n===1?"an Item":"two Items"} from their discard pile to their inventory.`,pid);pushChoose(s,pid,{title:`JD Tinkerersmith: return ${n===1?"an Item":"two Items"} from your discard pile to your inventory`,cards:l.map(c=>c.uid),min:Math.min(n,l.length),max:Math.min(n,l.length),op:"discToInv"})}
-    else log(s,"JD Tinkerersmith Crafts: no Items in the discard pile.",pid)}
+  /* Set 2 JD Tinkersmith (Nov 18, 2026): the first time this Hero Crafts each turn, return a Material from your discard pile to your inventory (Level 3: two) */
+  if(actor&&actor.name==="JD Tinkersmith"&&!actor.dead&&!nulled(s,actor.name)&&actor.fl.jdRound!==s.round){actor.fl.jdRound=s.round;const l=pl.disc.filter(c=>(DB[c.id]||{}).sub==="Material");const n=actor.lvl>=3?2:1;
+    if(l.length){log(s,`JD Tinkersmith Crafts: ${pl.name} returns ${n===1?"a Material":"two Materials"} from their discard pile to their inventory.`,pid);pushChoose(s,pid,{title:`JD Tinkersmith: return ${n===1?"a Material":"two Materials"} from your discard pile to your inventory`,cards:l.map(c=>c.uid),min:Math.min(n,l.length),max:Math.min(n,l.length),op:"discToInv"})}
+    else log(s,"JD Tinkersmith Crafts: no Materials in the discard pile.",pid)}
   /* Cy the Builder (Nov 15, 2026): whenever this Hero Crafts, you may search your library for a Recipe card (then shuffle) */
   if(actor&&actor.name==="Cy the Builder"&&!actor.dead){const l=pl.lib.filter(c=>(DB[c.id]||{}).type==="Recipe");
     if(l.length){log(s,`Cy the Builder Crafts: ${pl.name} may search their library for a Recipe card.`,pid);pushChoose(s,pid,{title:"Cy the Builder: you may search your library for a Recipe card (then shuffle)",cards:l.map(c=>c.uid),min:0,max:1,op:"tutor"})}}

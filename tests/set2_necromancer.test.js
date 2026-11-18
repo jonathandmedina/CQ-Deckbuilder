@@ -31,7 +31,7 @@ ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Xlek Grave Robber","
 ok(E.DB["h:Gravecaller"].str===0&&E.DB["h:Gravecaller"].def===1&&E.DB["h:Gravecaller"].aura===1&&E.DB["h:Gravecaller"].hp===15,"0/1/1/15 (Nov 16)");
 ok(/\{L3\} Activate any number/.test(E.DB["h:Filth Scavenger"].rules),"Filth Scavenger Level 3 line");
 ok(["Grave Caller's Wand","Gravedigger's Medallion","Dagger of the Dead"].every(n=>E.DB[n]&&E.DB[n].up),"3 equipment with upgrades");
-ok(E.TOK.Revenant&&E.TOK.Abomination&&E.TOK.Remains,"3 tokens");ok(ctx.SET2_CARDS.length===100,"100 Set 2 names (Nov 18: + JD Tinkerersmith) (Nov 17d: - Silver and Platinum Ingot, now Set 1 cards) (Nov 17c: + Activate, Sands of Time, Time Ripple, Displace, Refactor) (Nov 17b: + Revenant King, Salvage, Super Satchel) (Nov 17: + 4 Recipes, 4 Construct tokens) (Nov 15: +8, then +7 names) ("+ctx.SET2_CARDS.length+")");
+ok(E.TOK.Revenant&&E.TOK.Abomination&&E.TOK.Remains,"3 tokens");ok(ctx.SET2_CARDS.length===100,"100 Set 2 names (Nov 18: + JD Tinkersmith) (Nov 17d: - Silver and Platinum Ingot, now Set 1 cards) (Nov 17c: + Activate, Sands of Time, Time Ripple, Displace, Refactor) (Nov 17b: + Revenant King, Salvage, Super Satchel) (Nov 17: + 4 Recipes, 4 Construct tokens) (Nov 15: +8, then +7 names) ("+ctx.SET2_CARDS.length+")");
 ok(!E.DB["h:Golduron"]&&!E.DB["h:Hetroll"],"Dragonborn left out");ok(E.DB["Cursed Urn"].sup==="Legendary"&&E.DB["Skeleton Key"].sup==="Legendary","Legendaries");
 ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Revenants");
 

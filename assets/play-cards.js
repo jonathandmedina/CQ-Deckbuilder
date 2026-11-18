@@ -589,7 +589,7 @@ OPS.tutor=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.
 OPS.equipFree=(s,pid,pr,picks)=>{const pl=s.p[pid];const h=E.heroByUid(s,pr.hero);if(!h||h.dead)return;picks.forEach(u=>{let i=pl.hand.findIndex(c=>c.uid===u);let o=null;
   if(i>=0){o=E.eqObjFromCard(s,pid,pl.hand.splice(i,1)[0])}else{i=pl.inv.findIndex(x=>x.uid===u);if(i>=0)o=pl.inv.splice(i,1)[0]}
   if(o){E.log(s,`${h.name} equips ${o.name} for free.`,pid);E.equipTo(s,h,o)}})};
-/* Set 2 JD Tinkerersmith: chosen Items go from the discard pile into the inventory (overflow rules apply) */
+/* Set 2 JD Tinkersmith: chosen Materials go from the discard pile into the inventory (overflow rules apply) */
 OPS.discToInv=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(c=>c.uid===u);if(i>=0){const c=pl.disc.splice(i,1)[0];E.log(s,`${E.DB[c.id].name} returns to ${pl.name}'s inventory.`,pid);E.toInv(s,pid,E.invObj(s,pid,c))}})};
 OPS.fromDisc=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(c=>c.uid===u);if(i>=0){const c=pl.disc.splice(i,1)[0];pl.hand.push(c);E.log(s,`${pl.name} returns ${E.DB[c.id].name} to hand.`,pid)}})};
 

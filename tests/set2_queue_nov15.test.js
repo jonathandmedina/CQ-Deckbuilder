@@ -22,7 +22,7 @@ const kill=(s,h)=>{h.dmg=99;E.checkDeaths(s)};
 const names=["Remey Recipe","Back in the Lab","Wellness Rod Recipe","Deflecting Shield Recipe","Crafter's Choice","Time Pearl","Aura Pearl","Undead's Choice"];
 ok(names.every(n=>E.DB[n]&&ctx.SET2_CARDS.includes(n)),"8 queued cards in the pool and Set 2 only");
 ok(E.DB["Remey Recipe"].type==="Recipe"&&E.DB["Remey Recipe"].cost==="4"&&E.DB["Remey Recipe"].sup==="Legendary"&&E.DB["Remey Recipe"].cls==="Artificer","Remey Recipe: Legendary Artificer Recipe, 4 Aura (Nov 16)");
-ok(E.DB["Time Pearl"].cls==="Generic"&&E.DB["Aura Pearl"].cls==="Generic"&&E.DB["Time Pearl"].cost==="2"&&E.DB["Aura Pearl"].cost==="2","Pearls: generic items, 2 Aura");
+ok(E.DB["Time Pearl"].cls==="Artificer"&&E.DB["Aura Pearl"].cls==="Generic"&&E.DB["Time Pearl"].cost==="2"&&E.DB["Aura Pearl"].cost==="2","Pearls: Time Pearl is Artificer (Nov 17), Aura Pearl generic, 2 Aura");
 ok(E.DB["Undead's Choice"].cls==="Necromancer"&&E.DB["Crafter's Choice"].cls==="Artificer"&&E.DB["Undead's Choice"].type==="Tactic","Choice cards: Tactics");
 ok(ctx.RAW_CARDS.filter(r=>names.includes(r[1])).every(r=>r[0]===(r[1]==="Remey Recipe"?1:2)),"2 copies each (Remey Recipe: 1, Legendary)");
 const h=E.DB["h:Remey the Incredible"];ok(h&&h.hc&&h.str===3&&h.def===2&&h.aura===1&&h.hp===10,"Remey the Incredible: 3/2/1/10 Hero Construct");

@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 15, 2026 (update 35: type lines and subtypes)*
+*Version: November 17, 2026 (update 36: Ingots and Consumables)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -79,11 +79,11 @@ A Bard card type. Songs work like spells, and many Bard cards reward you for pla
 
 Items go into your inventory slots and stay there until used or removed. Item subtypes:
 
-- **Consumable**: used once, then exiled.
+- **Consumable**: used once, then exiled (Potion, Antidote, Revitalize, Smoke Bomb, Sleeping Potion, Phoenix Down, False Cure).
 - **Relic**: stays in play and gives a lasting effect.
 - **Trap**: a Hidden item that waits face down for its trigger (see Hidden Cards).
 - **Arrow**: a Ranger item you activate for damage and an effect.
-- **Material**: a Generic item with its own use, such as the Gold, Silver and Platinum Bars and the gems Almandine, Rose Quartz and Topaz (which you may exile at Dawn, exhausting a Hero, for a one-time effect).
+- **Material**: a Generic item with its own use, such as the Gold, Silver and Platinum Ingots and the gems Almandine, Rose Quartz and Topaz (which you may exile at Dawn, exhausting a Hero, for a one-time effect).
 
 ### Equipment
 
@@ -309,7 +309,7 @@ Playing a card doesn’t exhaust the Hero unless the card says “Exhaust this H
 
 ### Activate an Arrow
 
-Arrows are Ranger items in your inventory. Activating one is an action: pay its Aura cost, exhaust the Hero activating it, then resolve it like an ability. Other items with a cost (such as Gold Bar) are activated the same way, but they only exhaust a Hero if their text says so.
+Arrows are Ranger items in your inventory. Activating one is an action: pay its Aura cost, exhaust the Hero activating it, then resolve it like an ability. Other items with a cost (such as Potion) are activated the same way, but they only exhaust a Hero if their text says so.
 
 ### Level Up
 
@@ -694,7 +694,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Relic**: Item that stays in play with a lasting effect.
 - **Trap**: A Hidden card with the subtype Trap.
 - **Arrow**: Ranger item. Activating it is an action: pay its Aura cost and exhaust the Hero.
-- **Material**: Generic item with its own use (Gold, Silver and Platinum Bars; Almandine, Rose Quartz and Topaz, which you may exile at Dawn, exhausting a Hero, for a one-time effect; that Hero sits out the Battle Phase).
+- **Material**: Generic item with its own use (Gold, Silver and Platinum Ingots; Almandine, Rose Quartz and Topaz, which you may exile at Dawn, exhausting a Hero, for a one-time effect; that Hero sits out the Battle Phase).
 - **Equipment**: Card that boosts a Hero while equipped. Its subtype names the item: Sword, Dagger, Axe, Hammer, Mace, Club, Bow, Staff, Wand, Chalice, Shield, Helm, Crown, Headband, Chestplate, Robe, Cloak, Gauntlets, Greaves, Boots, Ring, Quiver, Instrument.
 - **Type line**: Supertype - Type - Subtype, with dashes (Legendary - Equipment - Sword).
 - **Equipment region**: Where equipment is worn: Head, Chest, Arms, Hands, Legs, Feet, Accessory. One piece per region.

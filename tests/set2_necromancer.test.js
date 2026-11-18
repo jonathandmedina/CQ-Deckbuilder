@@ -5,7 +5,7 @@ function load(){const ctx={console,Math,Date,JSON};ctx.window=ctx;ctx.globalThis
   vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].map(f=>fs.readFileSync(path.join(A,f),"utf8")).join("\n;\n")+"\n;this.SET2_CARDS=SET2_CARDS;this.TOKEN_SOURCES=TOKEN_SOURCES;",ctx);return ctx}
 const ctx=load(),E=ctx.CQE;let pass=0,fail=0;
 const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
-const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Bar","Platinum Bar","Silver Bar","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
+const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Ingot","Platinum Ingot","Silver Ingot","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
 const deck=h=>({name:"T",heroes:h.map(x=>"h:"+x),cards:Object.assign({},filler)});
 let U=1000;const uid=()=>"u"+(U++);
 const NEC=["Gravecaller","Necromancer D","Necromancer E"];
@@ -31,7 +31,7 @@ ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Necromancer D","Necr
 ok(E.DB["h:Gravecaller"].str===0&&E.DB["h:Gravecaller"].def===1&&E.DB["h:Gravecaller"].aura===1&&E.DB["h:Gravecaller"].hp===15,"0/1/1/15 (Nov 16)");
 ok(/\{L3\} Activate any number/.test(E.DB["h:Filth Scavenger"].rules),"Filth Scavenger Level 3 line");
 ok(["Grave Caller's Wand","Gravedigger's Medallion","Dagger of the Dead"].every(n=>E.DB[n]&&E.DB[n].up),"3 equipment with upgrades");
-ok(E.TOK.Revenant&&E.TOK.Abomination&&E.TOK.Remains,"3 tokens");ok(ctx.SET2_CARDS.length===101,"101 Set 2 names (Nov 17c: + Activate, Sands of Time, Time Ripple, Displace, Refactor) (Nov 17b: + Revenant King, Salvage, Super Satchel) (Nov 17: + 4 Recipes, 4 Construct tokens) (Nov 15: +8, then +7 names) ("+ctx.SET2_CARDS.length+")");
+ok(E.TOK.Revenant&&E.TOK.Abomination&&E.TOK.Remains,"3 tokens");ok(ctx.SET2_CARDS.length===99,"99 Set 2 names (Nov 17d: - Silver and Platinum Ingot, now Set 1 cards) (Nov 17c: + Activate, Sands of Time, Time Ripple, Displace, Refactor) (Nov 17b: + Revenant King, Salvage, Super Satchel) (Nov 17: + 4 Recipes, 4 Construct tokens) (Nov 15: +8, then +7 names) ("+ctx.SET2_CARDS.length+")");
 ok(!E.DB["h:Golduron"]&&!E.DB["h:Hetroll"],"Dragonborn left out");ok(E.DB["Cursed Urn"].sup==="Legendary"&&E.DB["Skeleton Key"].sup==="Legendary","Legendaries");
 ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Revenants");
 

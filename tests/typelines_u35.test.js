@@ -6,7 +6,7 @@ vm.runInContext(["cards-data.js","trials-data.js","play-engine.js","play-cards.j
 const E=ctx.CQE;let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
 const card=n=>ctx.RAW_CARDS.find(r=>r[1]===n),eq=n=>ctx.RAW_EQUIP.find(r=>r[0]===n);
 /* data: subtypes */
-["Almandine","Rose Quartz","Topaz","Gold Bar","Silver Bar","Platinum Bar","Copper Ingot","Iron Ingot","Silver Ingot","Platinum Ingot","Mithril Ingot","Quicksilver","Flame Pearl","Frost Pearl","Time Pearl","Aura Pearl","Dragon Scale"].forEach(n=>ok(card(n)[5]==="Material",n+" is Material"));
+["Almandine","Rose Quartz","Topaz","Gold Ingot","Silver Ingot","Platinum Ingot","Copper Ingot","Iron Ingot","Silver Ingot","Platinum Ingot","Mithril Ingot","Quicksilver","Flame Pearl","Frost Pearl","Time Pearl","Aura Pearl","Dragon Scale"].forEach(n=>ok(card(n)[5]==="Material",n+" is Material"));
 ok(!ctx.RAW_CARDS.some(r=>/^(Gemstone|Precious Metal|Metal)$/.test(r[5])),"no Gemstone / Precious Metal / Metal left");
 ok(card("False Cure")[5]==="Consumable","Consumable kept for now (False Cure)");
 const OLD=/^(Weapon|Armor|Accessory)$/;ok(!ctx.RAW_EQUIP.some(r=>OLD.test(r[2])),"no Weapon/Armor/Accessory equipment subtypes");
@@ -23,7 +23,7 @@ ok(/Equipped Hero gains \+1 STR\./.test(eq("Gauntlets of Growth")[4])&&eq("Gaunt
 ok(!/counts as a Dagger/.test(ctx.EQUIP_UPGRADES["Feather Blade"][1]),"Feather Blade upgrade no longer says it counts as a Dagger");
 /* engine */
 ok(E.isDagger(null,{id:"Ritual Athame",name:"Ritual Athame"})&&E.isDagger(null,{id:"Feather Blade",name:"Feather Blade"})&&E.isDagger(null,{name:"Dagger",tok:true})&&!E.isDagger(null,{id:"Long Sword",name:"Long Sword"}),"Dagger by subtype");
-["Almandine","Rose Quartz","Topaz"].forEach(n=>ok(E.isDawnItem(E.DB[n]),n+" usable at Dawn"));["Gold Bar","Flame Pearl","Copper Ingot"].forEach(n=>ok(!E.isDawnItem(E.DB[n]),n+" not a Dawn item"));
+["Almandine","Rose Quartz","Topaz"].forEach(n=>ok(E.isDawnItem(E.DB[n]),n+" usable at Dawn"));["Gold Ingot","Flame Pearl","Copper Ingot"].forEach(n=>ok(!E.isDawnItem(E.DB[n]),n+" not a Dawn item"));
 /* Dynamite goes to exile when used */
 const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter","Inspiration","Level Up","Block Progress","Reclaim","Exile","Delevel","Snuff Out"].map(n=>[n,3]));
 const deck=h=>({name:"T",heroes:h.map(x=>"h:"+x),cards:Object.assign({},filler)});

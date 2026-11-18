@@ -5,7 +5,7 @@ function load(){const ctx={console,Math,Date,JSON};ctx.window=ctx;ctx.globalThis
   vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].map(f=>fs.readFileSync(path.join(A,f),"utf8")).join("\n;\n")+"\n;this.SET2_CARDS=SET2_CARDS;this.RECIPES=RECIPES;",ctx);return ctx}
 const ctx=load(),E=ctx.CQE;let pass=0,fail=0;
 const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
-const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Bar","Platinum Bar","Silver Bar","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
+const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Ingot","Platinum Ingot","Silver Ingot","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
 const deck=(heroes)=>({name:"T",heroes:heroes.map(h=>"h:"+h),cards:Object.assign({},filler)});
 let U=1000;const uid=()=>"u"+(U++);
 function game(h0,h1){const s=E.newGame({seed:42,players:[{name:"A",deck:deck(h0||["Wren Partsfinder","Material Bender","Val Craftsmith"])},{name:"B",deck:deck(h1||["Divine Knight","Arcane Scholar","Shadow Ranger"])}]});
@@ -39,11 +39,11 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok(cs.every(o=>o.str===3&&o.hp===3),"3/3 Constructs (no Artificer B bonus since Nov 15) ("+cs.map(o=>o.str+"/"+o.hp)+")");
   ok(cs.every(o=>o.ex),"Constructs enter exhausted");ok(s.p[0].disc.some(x=>x.id==="Iron Guardians"),"summon Recipe goes to the discard pile");
   ok(!a.ex,"crafting no longer exhausts the Hero")}
-/* Clockwork Pair: any two Metals; Gold Bar isn't a Metal */
-{const s=game(["Wren Partsfinder","Gadget Commander","Cy the Builder"]);const c=hand(s,0,"Clockwork Pair");inv(s,0,"Gold Bar");inv(s,0,"Copper Ingot");
-  ok(!canPlay(s,c),"Gold Bar (Precious Metal) isn't a Metal");inv(s,0,"Mithril Ingot");ok(canPlay(s,c),"any two Metals");
+/* Clockwork Pair (deprecated): any two Ingots; Topaz (Material, not an Ingot) doesn't count */
+{const s=game(["Wren Partsfinder","Gadget Commander","Cy the Builder"]);const c=hand(s,0,"Clockwork Pair");inv(s,0,"Topaz");inv(s,0,"Copper Ingot");
+  ok(!canPlay(s,c),"Topaz isn't an Ingot");inv(s,0,"Mithril Ingot");ok(canPlay(s,c),"any two Metals");
   E.act(s,0,{type:"play",uid:c.uid});resolve(s);const cs=s.p[0].bf.filter(o=>o.name==="Construct");ok(cs.length===2&&cs.every(o=>o.str===2&&o.hp===2),"two 2/2 Constructs without Artificer B");
-  ok(s.p[0].inv.map(o=>o.name).join()==="Gold Bar","Gold Bar kept")}
+  ok(s.p[0].inv.map(o=>o.name).join()==="Topaz","Topaz kept")}
 /* Quicksilver: any ingredient, used last */
 {const s=game(["Wren Partsfinder","Gadget Commander","Cy the Builder"]);const c=hand(s,0,"Blast Charge Recipe");inv(s,0,"Iron Ingot");const q=inv(s,0,"Quicksilver");
   ok(canPlay(s,c),"Quicksilver stands in for the Copper Ingot");E.act(s,0,{type:"play",uid:c.uid});resolve(s);
@@ -65,16 +65,16 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok(E.cardCost(s,0,a,E.DB["Pocket Watch Recipe"],0)===1,"Toolbelt no longer lowers Recipe costs");
   s.upg={[tb.uid]:1};ok(E.slots(s,0)===base+2,"upgraded Toolbelt: two more slots");
   const bl=E.eqObjFromCard(s,0,{uid:uid(),id:"Bellows",owner:0});E.equipTo(s,a,bl);s.upg[bl.uid]=1;
-  const c=hand(s,0,"Pocket Watch Recipe");inv(s,0,"Gold Bar");inv(s,0,"Platinum Ingot");inv(s,0,"Rose Quartz");const h0=s.p[0].hand.length,au=s.p[0].aura;
+  const c=hand(s,0,"Pocket Watch Recipe");inv(s,0,"Gold Ingot");inv(s,0,"Platinum Ingot");inv(s,0,"Rose Quartz");const h0=s.p[0].hand.length,au=s.p[0].aura;
   E.act(s,0,{type:"play",uid:c.uid});resolve(s);ok(!a.ex,"Recipes no longer exhaust the Hero (Nov 15)");ok(s.p[0].hand.length===h0-1+1,"Bellows draws a card");ok(s.p[0].aura===au-1+1,"upgraded Bellows: +1 Aura");
   a.dead=true;ok(E.slots(s,0)===base,"a dead Hero's Toolbelt adds no slot");a.dead=false}
 {const s=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const a=E.actorFor(s,0);const g=E.eqObjFromCard(s,0,{uid:uid(),id:"Tinker's Goggles",owner:0});E.equipTo(s,a,g);
   for(let i=0;i<5;i++)s.p[0].lib.push({uid:uid(),id:"Potion",owner:0});
-  const c=hand(s,0,"Pocket Watch Recipe");inv(s,0,"Gold Bar");inv(s,0,"Rose Quartz");inv(s,0,"Copper Ingot");ok(!canPlay(s,c),"Goggles are no longer a Metal wildcard");
-  s.p[0].inv=[];inv(s,0,"Gold Bar");inv(s,0,"Platinum Ingot");inv(s,0,"Rose Quartz");E.act(s,0,{type:"play",uid:c.uid});
+  const c=hand(s,0,"Pocket Watch Recipe");inv(s,0,"Gold Ingot");inv(s,0,"Rose Quartz");inv(s,0,"Copper Ingot");ok(!canPlay(s,c),"Goggles are no longer a Metal wildcard");
+  s.p[0].inv=[];inv(s,0,"Gold Ingot");inv(s,0,"Platinum Ingot");inv(s,0,"Rose Quartz");E.act(s,0,{type:"play",uid:c.uid});
   ok(s.pend.some(pr=>pr.type==="scry"&&pr.pid===0&&(pr.n||pr.count||1)>=1),"Goggles: Crafting opens a Scry");ok(s.log.some(l=>/Tinker's Goggles: .* Scry 1/.test(l.m)),"logs Scry 1");resolve(s);
   const s2=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const a2=E.actorFor(s2,0);const g2=E.eqObjFromCard(s2,0,{uid:uid(),id:"Tinker's Goggles",owner:0});E.equipTo(s2,a2,g2);s2.upg={[g2.uid]:1};
-  for(let i=0;i<5;i++)s2.p[0].lib.push({uid:uid(),id:"Potion",owner:0});const c2=hand(s2,0,"Pocket Watch Recipe");inv(s2,0,"Gold Bar");inv(s2,0,"Platinum Ingot");inv(s2,0,"Rose Quartz");
+  for(let i=0;i<5;i++)s2.p[0].lib.push({uid:uid(),id:"Potion",owner:0});const c2=hand(s2,0,"Pocket Watch Recipe");inv(s2,0,"Gold Ingot");inv(s2,0,"Platinum Ingot");inv(s2,0,"Rose Quartz");
   E.act(s2,0,{type:"play",uid:c2.uid});ok(s2.log.some(l=>/Tinker's Goggles: .* Scry 2/.test(l.m)),"upgraded Goggles: Scry 2");resolve(s2)}
 /* Artificer C: once each turn, one ingredient may be any item */
 {const s=game(["Val Craftsmith","Wren Partsfinder","Cy the Builder"]);const c=hand(s,0,"Reclamation Kit Recipe");inv(s,0,"Potion");ok(canPlay(s,c),"Artificer C: a Potion stands in for the Silver Ingot");
@@ -96,8 +96,8 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
   ok(!isTarget(spell),"opponent's spell can't target the Warded Hero");ok(isTarget(spell)||true,"");
   const atk=E.need(s,1,{type:"attack",att:s.p[1].heroes[0].uid});ok(isTarget(atk),"the Warded Hero can still be attacked")}
 /* Pocket Watch: Stall */
-{const s=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const c=hand(s,0,"Pocket Watch Recipe");inv(s,0,"Gold Bar");inv(s,0,"Platinum Ingot");inv(s,0,"Rose Quartz");
-  ok(canPlay(s,c),"Gold Bar, Platinum Ingot and Rose Quartz");E.act(s,0,{type:"play",uid:c.uid});resolve(s);const pw=s.p[0].inv.find(o=>o.name==="Pocket Watch");ok(pw,"Pocket Watch made");
+{const s=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const c=hand(s,0,"Pocket Watch Recipe");inv(s,0,"Gold Ingot");inv(s,0,"Platinum Ingot");inv(s,0,"Rose Quartz");
+  ok(canPlay(s,c),"Gold Ingot, Platinum Ingot and Rose Quartz");E.act(s,0,{type:"play",uid:c.uid});resolve(s);const pw=s.p[0].inv.find(o=>o.name==="Pocket Watch");ok(pw,"Pocket Watch made");
   s.p[0].heroes.forEach(h=>h.ex=false);s.prio=1;const card=hand(s,1,"Precognition");const aura=s.p[1].aura;
   const r=E.act(s,1,{type:"play",uid:card.uid});ok(r.ok,"opponent plays a card");const pr=s.pend[0];ok(pr&&pr.type==="window"&&pr.pid===0,"response window opens for the Pocket Watch");
   const so=opts(s,0).find(o=>o.type==="stall");ok(so,"Stall option");const ex0=s.p[0].heroes.map(h=>h.ex);E.act(s,0,so);ok(pw.exh&&s.p[0].heroes.every((h,i)=>h.ex===ex0[i]),"exhausts the Pocket Watch, not a Hero (Nov 17)");
@@ -117,10 +117,11 @@ ok(!E.DB["Makeshift Automaton"]&&!E.DB["Spare Parts"],"HELD cards not in the poo
 {const s=game(["Gadget Commander","Wren Partsfinder","Cy the Builder"]);const a=E.actorFor(s,0);
   const use=(id,tg)=>{const o=inv(s,0,id);a.ex=false;s.prio=0;const u=opts(s,0).find(x=>x.type==="use"&&x.uid===o.uid);const r=E.act(s,0,Object.assign({},u,{targets:tg||[]}));resolve(s);return r.ok&&s.p[0].exile.some(x=>x.uid===o.uid)};
   let au=s.p[0].aura;ok(use("Copper Ingot")&&s.p[0].aura===au+1,"Copper Ingot: +1 Aura, exiled");
-  const g=s.p[0].gold;ok(use("Platinum Ingot")&&s.p[0].gold===g+3,"Platinum Ingot: +3 Gold");
+  const g=s.p[0].gold;ok(use("Gold Ingot")&&s.p[0].gold===g+3,"Gold Ingot (Nov 17): +3 Gold");
+  const h1=s.p[0].hand.length;ok(use("Platinum Ingot")&&s.p[0].hand.length===h1+1,"Platinum Ingot (Nov 17): draw a card");
   const h=s.p[0].hand.length;ok(use("Mithril Ingot")&&s.p[0].hand.length===h+2,"Mithril Ingot: draw 2");
   const al=s.p[0].heroes[2];const d0=E.defn(s,al);ok(use("Iron Ingot",[al.uid])&&E.defn(s,al)===d0+2,"Iron Ingot: +2 Defense");
-  const z=E.makeSummon(s,1,"Construct",true);z.str=1;z.hp=5;ok(use("Silver Ingot",[z.uid])&&z.dmg===3,"Silver Ingot: 3 damage to a summon")}
+  const ps=s.p[0].pm.str||0;ok(use("Silver Ingot")&&(s.p[0].pm.str||0)===ps+1,"Silver Ingot (Nov 17): party +1 Strength this turn")}
 /* Artificer A (Nov 14): look at the top 3, an item into your hand, the rest on the bottom; Level 3: search your library for an item */
 {const s=game(["Wren Partsfinder","Gadget Commander","Cy the Builder"]);const pl=s.p[0];pl.lib.push({uid:uid(),id:"Disarm",owner:0},{uid:uid(),id:"Mithril Ingot",owner:0},{uid:uid(),id:"Humble",owner:0});
   const a=E.actorFor(s,0);ok(a.name==="Wren Partsfinder","acting Hero");const ab=opts(s,0).filter(o=>o.type==="ability");ok(ab.length===1,"one Artificer A ability below Level 3");E.act(s,0,ab[0]);resolve(s);

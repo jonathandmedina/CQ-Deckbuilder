@@ -4,7 +4,7 @@ const fs=require("fs"),vm=require("vm"),path=require("path");const A=path.join(_
 const ctx={console,Math,Date,JSON};ctx.window=ctx;ctx.globalThis=ctx;vm.createContext(ctx);
 vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].map(f=>fs.readFileSync(path.join(A,f),"utf8")).join("\n;\n")+"\n;this.SET2_CARDS=SET2_CARDS;",ctx);
 const E=ctx.CQE;let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
-const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Bar","Platinum Bar","Silver Bar","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
+const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Ingot","Platinum Ingot","Silver Ingot","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
 const deck=h=>({name:"T",heroes:h.map(x=>"h:"+x),cards:Object.assign({},filler)});
 let U=9000;const uid=()=>"z"+(U++);
 function game(){const s=E.newGame({seed:7,players:[{name:"A",deck:deck(["Wren Partsfinder","Gadget Commander","Cy the Builder"])},{name:"B",deck:deck(["Divine Knight","Arcane Scholar","Shadow Ranger"])}]});
@@ -36,12 +36,12 @@ ok(E.DB["Activate"].cost==="2"&&E.DB["Sands of Time"].cost==="3"&&E.DB["Time Rip
 {const s=game();const m=E.makeSummon(s,1,"Revenant");s.pend=[];const c=hand(s,0,"Displace");const o=playOpt(s,c);E.act(s,0,Object.assign({},o,{targets:[m.uid]}));let g=0;while(s.pend.length&&g++<10){const a=ctx.CQAI.choose(s,s.pend[0].pid);if(!a)break;E.act(s,s.pend[0].pid,a)}
   ok(!s.p[1].bf.includes(m)&&(s.p[1].stall||[]).some(x=>x.uid===m.uid&&x.n===3),"the summon is exiled with 3 stall counters");
   E.stallTick(s,1);E.stallTick(s,1);ok(!s.p[1].bf.includes(m),"still gone after 2 actions");E.stallTick(s,1);ok(s.p[1].bf.includes(m)&&m.ex,"returns exhausted after the 3rd");ok(!(s.p[1].stall||[]).length,"stall zone empty")}
-{const s=game();const it=inv(s,1,"Gold Bar");const c=hand(s,0,"Displace");E.act(s,0,Object.assign({},playOpt(s,c),{targets:[it.uid]}));for(let k=0;k<3;k++)E.stallTick(s,1);ok(s.p[1].inv.includes(it),"an item returns to its owner's inventory")}
+{const s=game();const it=inv(s,1,"Gold Ingot");const c=hand(s,0,"Displace");E.act(s,0,Object.assign({},playOpt(s,c),{targets:[it.uid]}));for(let k=0;k<3;k++)E.stallTick(s,1);ok(s.p[1].inv.includes(it),"an item returns to its owner's inventory")}
 {const s=game();const c=hand(s,0,"Displace");const o=playOpt(s,c);const n=o?E.need(s,0,o):null;ok(!n||!n[0]||!n[0].cands.some(u=>s.p.some(p=>p.heroes.some(h=>h.uid===u))),"Heroes can't be Displaced")}
 /* Displace + Time Ripple combo */
-{const s=game();const it=inv(s,1,"Gold Bar");E.displace(s,it,3);const x=s.p[1].stall[0];const c=hand(s,0,"Time Ripple");E.act(s,0,playOpt(s,c));E.act(s,0,{type:"ask",i:0});ok(x.n===6,"Time Ripple works on a Displaced card")}
+{const s=game();const it=inv(s,1,"Gold Ingot");E.displace(s,it,3);const x=s.p[1].stall[0];const c=hand(s,0,"Time Ripple");E.act(s,0,playOpt(s,c));E.act(s,0,{type:"ask",i:0});ok(x.n===6,"Time Ripple works on a Displaced card")}
 /* Refactor: sacrifice a 2-Aura item, fetch an Item costing 2 or less into play */
-{const s=game();const g=inv(s,0,"Tip Jar");s.p[0].lib=[{uid:"rl1",id:"Topaz",owner:0},{uid:"rl2",id:"Aura Crystal",owner:0},{uid:"rl3",id:"Humble",owner:0},{uid:"rl4",id:"Gold Bar",owner:0}];
+{const s=game();const g=inv(s,0,"Tip Jar");s.p[0].lib=[{uid:"rl1",id:"Topaz",owner:0},{uid:"rl2",id:"Aura Crystal",owner:0},{uid:"rl3",id:"Humble",owner:0},{uid:"rl4",id:"Gold Ingot",owner:0}];
   const c=hand(s,0,"Refactor");const o=playOpt(s,c);ok(o,"Refactor playable");E.act(s,0,Object.assign({},o,{targets:[g.uid]}));const pr=s.pend[0];
   const cap=parseInt(E.DB["Tip Jar"].cost,10);ok(pr&&pr.type==="choose"&&pr.cards.length===2&&!pr.cards.includes("rl2")&&pr.cards.every(u=>{const d=E.DB[s.p[0].lib.find(x=>x.uid===u).id];return d.type==="Item"&&(parseInt(d.cost,10)||0)<=cap}),"only Items with an equal or lower cost");
   ok(!s.p[0].inv.includes(g)&&s.p[0].disc.some(x=>x.uid===g.uid),"the item was sacrificed");E.act(s,0,{type:"choose",picks:[pr.cards[0]]});ok(s.p[0].inv.some(x=>x.uid===pr.cards[0]),"the found Item enters play (inventory)")}

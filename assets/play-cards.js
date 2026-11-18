@@ -347,9 +347,10 @@ song("Choices",{modes:{n:2,opts:[{label:"Mill 2"},{label:"Equip a Bard Equipment
     if(hand.length+inv.length)E.pushChoose(c.s,c.pid,{title:"Choices: equip a Bard Equipment to "+c.actor.name+" for free",cards:hand.concat(inv).map(x=>x.uid),show,min:1,max:1,op:"equipFree",hero:c.actor.uid});else log(c,"No Bard Equipment in hand or inventory that this Hero can use.")}
   if(m.includes(2)){const songs=pl.disc.filter(x=>E.DB[x.id]&&E.DB[x.id].type==="Song");if(songs.length)E.pushChoose(c.s,c.pid,{title:"Choices: return a Song to your hand",cards:songs.map(x=>x.uid),min:1,max:1,op:"fromDisc"});else log(c,"No Song in your discard pile.")}}});
 def("Phoenix Down",item(3,[t("deadAny","dead Hero")],c=>{const h=c.t[0];if(!h)return;h.dead=false;h.dmg=Math.max(0,E.maxHp(c.s,h)-3);h.ex=true;E.addMod(h,{stealth:1});log(c,`${h.name} is revived with 3 HP.`)},{exile:true,can:(s)=>s.p.some(p=>p.heroes.some(h=>h.dead&&!h.surr))}));
-def("Platinum Bar",item(2,[],c=>draw(c,1)));
-def("Gold Bar",item(3,[],c=>{c.me.pm.def=(c.me.pm.def||0)+1;log(c,"Your party gains +1 DEF this turn.")}));
-def("Silver Bar",item(3,[],c=>{c.me.pm.str=(c.me.pm.str||0)+1;log(c,"Your party gains +1 STR this turn.")}));
+/* Nov 17: the Set 1 Bars became Ingots (Material) with Exile effects; the Set 2 Silver and Platinum Ingots were deprecated for them */
+def("Gold Ingot",item(0,[],c=>{c.me.gold+=3;log(c,`${c.me.name} gains 3 Gold.`)},{exile:true}));
+def("Platinum Ingot",item(0,[],c=>draw(c,1),{exile:true}));
+def("Silver Ingot",item(0,[],c=>{c.me.pm.str=(c.me.pm.str||0)+1;log(c,"Your party gains +1 Strength this turn.")},{exile:true}));
 def("Dynamite",item(3,[t("any","first damage target"),t("any","second damage target",null,{distinct:true})],c=>{D(c,c.t[0],2);D(c,c.t[1],2)},{exile:true})); /* update 35: Exile */
 def("Sleeping Potion",item(2,[HERO],c=>{if(c.t[0])E.exhaust(c.s,c.pid,c.t[0])},{exile:true,ex:true}));
 def("Amnesia Puzzle Box",item(0,[t("player","target player")],c=>{const p=c.s.p[c.t[0].pid];p.lib.push(...p.disc.splice(0));E.shuffle(c.s,p.lib);log(c,`${p.name} shuffles their discard pile into their library.`)},{exile:true}));
@@ -592,8 +593,6 @@ OPS.fromDisc=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.d
 /* Ingots (Material, formerly the Metal subtype): generic items; each has its own use (Exile). Artificers also use them as ingredients. */
 def("Copper Ingot",item(0,[],c=>{c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{exile:true}));
 def("Iron Ingot",item(0,[AL],c=>{if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 Defense until Dusk.`)}},{exile:true}));
-def("Silver Ingot",item(0,[SUM],c=>D(c,c.t[0],3),{exile:true}));
-def("Platinum Ingot",item(0,[],c=>{c.me.gold+=3;log(c,`${c.me.name} gains 3 Gold.`)},{exile:true}));
 def("Mithril Ingot",item(0,[],c=>draw(c,2),{exile:true}));
 /* Quicksilver: no effect of its own; Craft can use it as any ingredient (E.craftPlan) */
 S["Quicksilver"]={};

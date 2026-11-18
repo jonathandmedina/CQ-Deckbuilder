@@ -5,7 +5,7 @@ function load(){const ctx={console,Math,Date,JSON};ctx.window=ctx;ctx.globalThis
   vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].map(f=>fs.readFileSync(path.join(A,f),"utf8")).join("\n;\n")+"\n;this.SET2_CARDS=SET2_CARDS;this.RECIPES=RECIPES;this.RAW_CARDS=RAW_CARDS;",ctx);return ctx}
 const ctx=load(),E=ctx.CQE;let pass=0,fail=0;
 const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
-const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Bar","Platinum Bar","Silver Bar","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
+const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Ingot","Platinum Ingot","Silver Ingot","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
 const deck=h=>({name:"T",heroes:h.map(x=>"h:"+x),cards:Object.assign({},filler)});
 let U=5000;const uid=()=>"u"+(U++);
 function game(h0,h1){const s=E.newGame({seed:7,players:[{name:"A",deck:deck(h0||["Gadget Commander","Wren Partsfinder","Cy the Builder"])},{name:"B",deck:deck(h1||["Divine Knight","Arcane Scholar","Shadow Ranger"])}]});
@@ -40,17 +40,17 @@ ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The
 /* Dragon Scale: target ally +3 Defense this turn */
 {const s=game();const c=hand(s,0,"Dragon Scale");const a=s.p[0].heroes[1];const d0=E.defn(s,a);E.act(s,0,{type:"play",uid:c.uid,targets:[a.uid]});resolve(s);ok(E.defn(s,a)===d0+3,"+3 Defense ("+d0+"→"+E.defn(s,a)+")")}
 
-/* The Archfrost: Frost Pearl + any Sword + Gold Bar */
-{const s=game();const c=hand(s,0,"The Archfrost Recipe");inv(s,0,"Frost Pearl");inv(s,0,"Gold Bar");inv(s,0,"Long Dagger");
-  ok(!canPlay(s,c),"Long Dagger isn't a Sword");inv(s,0,"Sword of Riverstead");ok(canPlay(s,c),"Frost Pearl + Sword of Riverstead + Gold Bar");
+/* The Archfrost: Frost Pearl + any Sword + Gold Ingot */
+{const s=game();const c=hand(s,0,"The Archfrost Recipe");inv(s,0,"Frost Pearl");inv(s,0,"Gold Ingot");inv(s,0,"Long Dagger");
+  ok(!canPlay(s,c),"Long Dagger isn't a Sword");inv(s,0,"Sword of Riverstead");ok(canPlay(s,c),"Frost Pearl + Sword of Riverstead + Gold Ingot");
   E.act(s,0,{type:"play",uid:c.uid});resolve(s);const w=made(s,"The Archfrost");ok(w&&w.kind==="equip","The Archfrost made");
   ok(s.p[0].inv.map(o=>o.name).sort().join()==="Long Dagger,The Archfrost","ingredients used, Long Dagger kept");
   s.prio=0;const a=E.actorFor(s,0);a.ex=false;const eo=opts(s,0).find(o=>o.type==="equipInv"&&o.uid===w.uid);ok(eo,"equip from inventory");const au=s.p[0].aura,s0=E.str(s,a);E.act(s,0,eo);
   ok(s.p[0].aura===au-5,"costs 5 Aura to equip");ok(E.str(s,a)===s0+6,"+6 Strength");
   const t=s.p[1].heroes[0];t.bon.def+=6;const d0=t.dmg||0;s.prio=0;a.ex=false;s.p[0].t.lastActor=null;/* equipping was this Hero's action */s.p[0].heroes.forEach(x=>{if(x!==a)x.ex=true});/* Nov 15: crafting no longer exhausts the crafter, so make this Hero the actor */E.act(s,0,{type:"attack",att:a.uid,targets:[t.uid]});resolve(s);
   ok((t.dmg||0)-d0===E.str(s,a),"Piercing: the attack ignores all Defense ("+((t.dmg||0)-d0)+" of "+E.str(s,a)+")");ok(t.st.stun>=1,"the enemy is Stunned");}
-/* The Archflame: Flame Pearl + Sword + Gold Bar; attacks Burn three times */
-{const s=game();const c=hand(s,0,"The Archflame Recipe");inv(s,0,"Flame Pearl");inv(s,0,"Gold Bar");inv(s,0,"Knight's Sword");ok(canPlay(s,c),"Flame Pearl + Knight's Sword + Gold Bar");
+/* The Archflame: Flame Pearl + Sword + Gold Ingot; attacks Burn three times */
+{const s=game();const c=hand(s,0,"The Archflame Recipe");inv(s,0,"Flame Pearl");inv(s,0,"Gold Ingot");inv(s,0,"Knight's Sword");ok(canPlay(s,c),"Flame Pearl + Knight's Sword + Gold Ingot");
   E.act(s,0,{type:"play",uid:c.uid});resolve(s);const w=made(s,"The Archflame");ok(w,"The Archflame made");
   const a=E.actorFor(s,0)||s.p[0].heroes[0];E.equipTo(s,a,s.p[0].inv.splice(s.p[0].inv.indexOf(w),1)[0]);const t=s.p[1].heroes[2];const b0=t.st.burn;s.prio=0;a.ex=false;
   E.act(s,0,{type:"attack",att:a.uid,targets:[t.uid]});resolve(s);ok(t.st.burn===b0+3,"Burned three times ("+b0+"→"+t.st.burn+")");ok(!(t.st.stun>0),"no Stun from The Archflame")}
@@ -63,7 +63,7 @@ ok(row("The Right Mix")[4]==="Spell"&&row("The Right Mix")[6]==="Artificer","The
   ok(s.p[0].aura===au-2&&E.str(s,h)===s0+1,"2 Aura: +1 Strength ("+s0+"→"+E.str(s,h)+")")}
 /* The Right Mix (Nov 16): top 3, Materials to hand, rest to the bottom */
 {const s=game();const c=hand(s,0,"The Right Mix");const L=s.p[0].lib;const mk=id=>({uid:uid(),id,owner:0});
-  const top=[mk("Humble"),mk("Potion"),mk("Copper Ingot"),mk("Gold Bar")];L.push(...top);const fourth=top[0];
-  E.act(s,0,{type:"play",uid:c.uid});resolve(s);const hn=s.p[0].hand.map(x=>x.id).sort().join();ok(hn==="Copper Ingot,Gold Bar","only Materials to hand ("+hn+")");
+  const top=[mk("Humble"),mk("Potion"),mk("Copper Ingot"),mk("Gold Ingot")];L.push(...top);const fourth=top[0];
+  E.act(s,0,{type:"play",uid:c.uid});resolve(s);const hn=s.p[0].hand.map(x=>x.id).sort().join();ok(hn==="Copper Ingot,Gold Ingot","only Materials to hand ("+hn+")");
   ok(L.slice(0,2).some(x=>x.id==="Potion"),"a non-Material item goes on the bottom");ok(L[L.length-1]===fourth,"only the top 3 were revealed (the 4th card is now on top)")}
 console.log(`Set 2 Pearls / Arch weapons / Dragonscale / The Right Mix: ${pass} pass, ${fail} fail`);process.exitCode=fail?1:0;

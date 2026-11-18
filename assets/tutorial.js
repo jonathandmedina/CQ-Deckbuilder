@@ -13,7 +13,7 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 /* ---------- the three tutorial decks (legal 50-card decks, one class each) ---------- */
 const DECKS={
   barbarian:{name:"My First Barbarian Deck",heroes:["h:Skullcrusher","h:Savage Raider","h:Fury Titan"],
-    cards:{"Pump":3,"Blunt Force":3,"Bloodthirst":3,"Bind":3,"Unstoppable":3,"Battered":3,"Bruised":3,"Beat Down":3,"Run It Back":2,"Great Axe":3,"Sword of Riverstead":3,"Dagger of Riverstead":2,"Chest Plate of Riverstead":3,"Potion":3,"Level Up":2,"Silver Bar":2,"Inspiration":2,"Awestruck":2,"Pummel":2},
+    cards:{"Pump":3,"Blunt Force":3,"Bloodthirst":3,"Bind":3,"Unstoppable":3,"Battered":3,"Bruised":3,"Beat Down":3,"Run It Back":2,"Great Axe":3,"Sword of Riverstead":3,"Dagger of Riverstead":2,"Chest Plate of Riverstead":3,"Potion":3,"Level Up":2,"Silver Ingot":2,"Inspiration":2,"Awestruck":2,"Pummel":2},
     hand:["Pump","Great Axe","Potion","Blunt Force"],top:["Bloodthirst","Bind","Unstoppable"]},
   druid:{name:"My First Druid Deck",heroes:["h:Warden of the Woods","h:Rootbinder","h:Wild Shifter"],
     cards:{"Elk":3,"Wolves":3,"Beast":3,"Tooth":3,"Spore Calling":3,"Heartwood Seed":3,"Rootfolk":3,"Nature's Choice":3,"Shillelagh":3,"Horn":2,"Tooth or Horn":2,"Heavy Beast":2,"Lesser Elemental":2,"Barkskin Totem":2,"Antler Crown":2,"Potion":3,"Chest Plate of Riverstead":2,"Inspiration":2,"Return to the Earth":2,"Bloom":2},

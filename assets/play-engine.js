@@ -1283,10 +1283,10 @@ ASK.loseTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t||t.
 ASK.lightningRod=(s,pid,pr,v)=>{if(v==null)return;const h=heroByUid(s,v);if(!h||h.ex)return;h.ex=true;log(s,`Lightning Rod: ${h.name} is exhausted.`,pid);makePillar(s,pid,"Spell Damage Pillar")};
 ASK.splitKick=(s,pid,pr,v)=>{if(v==null)return;copyCard(s,pid,pr.data.actor,pr.data.id,[v].concat(pr.data.rest||[]),pr.data.modes,pr.data.x)};
 function arrowBonus(s,pid,actor){const pl=P(s,pid);let b=0,ign=false,pierce=0;
-  if(actor){if(actor.name==="Hawkeye")b+=actor.lvl>=6?2:actor.lvl>=3?1:0;if(hasEqN(actor,"Longbow"))b+=hasUpN(s,actor,"Longbow")?2:1;if(hasUpN(s,actor,"Mystic Quiver")&&actor.fl.quiverRound!==s.round){actor.fl.quiverRound=s.round;b+=1}if(hasUpN(s,actor,"Jereth's Heavy Bow"))pierce+=1}
+  if(actor){if(actor.name==="Hawkeye")b+=actor.lvl>=6?2:actor.lvl>=3?1:0;if(hasEqN(actor,"Longbow"))b+=hasUpN(s,actor,"Longbow")?2:1;if(hasUpN(s,actor,"Mystic Quiver")&&actor.fl.quiverRound!==s.round){actor.fl.quiverRound=s.round;b+=1}if(hasUpN(s,actor,"Deeg's Heavy Bow"))pierce+=1}
   const n=pl.fl.arrowNext;if(n){b+=n.dmg||0;if(n.ign)ign=true}
   if(pl.fl.rapidPierce)pierce+=1;pierce+=pl.fl.multiPierce||0;b+=pl.fl.multi||0;
-  return{dmg:b,ignoreDef:ign,pierce,mult:actor&&hasEqN(actor,"Jereth's Heavy Bow")?2:1}}
+  return{dmg:b,ignoreDef:ign,pierce,mult:actor&&hasEqN(actor,"Deeg's Heavy Bow")?2:1}}
 function comboTrigger(s,pid,actor){const pl=P(s,pid);if(!actor||actor.dead)return;
   living(pl).forEach(h=>{if(h.name==="Monastery Stalwart")addMod(h,{def:1})});
   const shrine=pl.inv.find(o=>o.name==="Petal Shrine"&&!o.fd);if(shrine){shrine.ctr=shrine.ctr||{};shrine.ctr.petal=(shrine.ctr.petal||0)+1;if(shrine.ctr.petal>=3){shrine.ctr.petal=0;pl.fl.petalDisc=true;log(s,"Petal Shrine: next Combo card costs 1 less.",pid)}}
@@ -1556,8 +1556,8 @@ function doDusk(s){
   s.phase="dusk";log(s,`— Dusk —`);
   /* Nov 17: Arrow of Persuasion ends at Dusk: clear every forced attack so nothing carries into the next round */
   s.p.forEach(pl=>{pl.heroes.forEach(h=>{if(h.fl&&h.fl.forceAtk)delete h.fl.forceAtk});(pl.bf||[]).forEach(o=>{if(o.fl&&o.fl.forceAtk)delete o.fl.forceAtk})});
-  /* Jereth's Heavy Bow: a Hero that became exhausted this round gets a Fatigue counter */
-  s.p.forEach((pl,pid)=>living(pl).forEach(h=>{if(h.ex&&!h.fat&&!h.fl.fatRested&&hasEqN(h,"Jereth's Heavy Bow")){if(hasUpN(s,h,"Jereth's Heavy Bow")&&pl.aura>=1){pl.aura-=1;log(s,`Upgraded Jereth's Heavy Bow: ${pl.name} pays 1 Aura so ${h.name} doesn't get a Fatigue counter.`,pid);return}h.fat=1;log(s,`Jereth's Heavy Bow: ${h.name} gets a Fatigue counter (it won't ready at the next Dawn).`,pid)}}));
+  /* Deeg's Heavy Bow: a Hero that became exhausted this round gets a Fatigue counter */
+  s.p.forEach((pl,pid)=>living(pl).forEach(h=>{if(h.ex&&!h.fat&&!h.fl.fatRested&&hasEqN(h,"Deeg's Heavy Bow")){if(hasUpN(s,h,"Deeg's Heavy Bow")&&pl.aura>=1){pl.aura-=1;log(s,`Upgraded Deeg's Heavy Bow: ${pl.name} pays 1 Aura so ${h.name} doesn't get a Fatigue counter.`,pid);return}h.fat=1;log(s,`Deeg's Heavy Bow: ${h.name} gets a Fatigue counter (it won't ready at the next Dawn).`,pid)}}));
   parties(s).forEach(pid=>{const pl=P(s,pid);
     const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;
     if(pp){const t=autoTarget(s,pid,"enemy");if(t&&t.kind==="hero")loseHp(s,t,pp,"Pain Pillar")}

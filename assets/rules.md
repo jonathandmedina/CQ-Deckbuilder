@@ -482,7 +482,7 @@ There are five status counters. At Dawn, each Burned, Poisoned and Wounded count
 
 Some cards use other counters, such as meditation counters, Petal counters, Fury counters and Fatigue counters. These aren’t status counters, so they aren’t removed at Dawn. Each card explains how its counters work.
 
-- **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Burden puts one on its Hero whenever that Hero plays a card, activates an ability or attacks; Jereth's Heavy Bow puts one on its Hero whenever that Hero becomes exhausted; Rage Brute’s “Fatigue:” ability puts one on itself.)
+- **Fatigue counter**: A Hero with a Fatigue counter doesn’t ready at your next Dawn. Remove the counter instead of readying it. (Burden puts one on its Hero whenever that Hero plays a card, activates an ability or attacks; Deeg's Heavy Bow puts one on its Hero whenever that Hero becomes exhausted; Rage Brute’s “Fatigue:” ability puts one on itself.)
 
 ## 16. Equipment
 

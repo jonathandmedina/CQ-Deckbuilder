@@ -776,6 +776,9 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
         if(isc&&isc.act&&!isc.act.free&&!a.st.stun&&(d.cls==="Generic"||heroIs(a,d.cls)||isc.act.anyClass)&&!nulled(s,d.name)&&!((d.sub==="Consumable"||isc.act.exile||/Exile:/.test(d.rules||""))&&pl.fl.noConsum===s.round)&&(!isc.act.can||isc.act.can(s,pid,a,o))&&itemCost(s,pid,a,o)<=pl.aura)out.push({type:"use",uid:o.uid})}
       if(o.kind==="equip"&&canUseEq(s,a,o)&&eqCost(s,a,o)<=pl.aura)out.push({type:"equipInv",uid:o.uid});
       out.push({type:"clear",uid:o.uid})});
+    /* Deeg Farsight (Update 38, Nov 18, 2026): with a Bow equipped, it may activate an Arrow from your hand instead of your inventory, paying 1 more Aura */
+    if(a.name==="Deeg Farsight"&&!a.st.stun&&!nulled(s,a.name)&&eqList(a).some(e=>def(e).sub==="Bow")){const sh=new Set();pl.hand.forEach(c=>{const d=DB[c.id];if(!d||d.sub!=="Arrow"||sh.has(c.id)||nulled(s,d.name))return;const isc=SC()[d.name];
+      if(!isc||!isc.act||isc.act.free||!(d.cls==="Generic"||heroIs(a,d.cls))||(isc.act.can&&!isc.act.can(s,pid,a,c)))return;if(handArrowCost(s,pid,a,c)<=pl.aura){sh.add(c.id);out.push({type:"use",uid:c.uid,fromHand:true})}})}
     pl.heroes.forEach(h=>{if(h===a||h.dead)return;eqList(h).forEach(e=>{if(canUseEq(s,a,e)&&eqCost(s,a,e)<=pl.aura)out.push({type:"take",uid:e.uid})})});
     out.push({type:"manualAbility"});}
   }
@@ -787,6 +790,8 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
   out.push({type:"pass"});
   return out}
 function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,oppOf(s,pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0):0)}
+/* Deeg Farsight: an Arrow activated from the hand costs its activation cost + 1 */
+function handArrowCost(s,pid,a,c){return itemCost(s,pid,a,Object.assign({name:DB[c.id].name},c))+1}E.handArrowCost=handArrowCost;
 function itemCost(s,pid,a,o){if(freeAct(s,pid,a,o))return 0;if(s.bonus&&s.bonus.free&&s.bonus.pid===pid&&a&&s.bonus.uid===a.uid&&def(o).sub==="Arrow")return 0;const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);return c+(a?burden(a):0)}
 E.abilityCost=abilityCost;E.itemCost=itemCost;
 function promptOptions(s,pid,pr){
@@ -839,7 +844,7 @@ E.need=function(s,pid,a){const pl=P(s,pid);const actor=actorFor(s,pid);
     const act=a.type==="comboPlay"?(s.pend[0]?comboActor(s,s.pend[0],a.uid):null):actor;
     if(!sc||d.sup==="Hidden"||d.type==="Item"&&!sc.t)return[];return specsFor(sc,a.modes,a.x).map(sp=>mk(sp,{actor:act,card:d}))}
   if(a.type==="ability"){const ab=HS()[actor.name][a.idx];return(ab.t||[]).map(sp=>mk(sp,{actor}))}
-  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];return(isc.act?specsFor(isc.act,a.modes):[]).map(sp=>mk(sp,{actor,item:o}))}
+  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name||def(o).name];return(isc.act?specsFor(isc.act,a.modes):[]).map(sp=>mk(sp,{actor,item:o}))}
   if(a.type==="eqAct"){const f=find(s,a.uid);const x=f&&(root.CQ_EQACT||{})[f.o.name];return x?(x.t||[]).map(sp=>mk(sp,{actor,item:f.o})):[]}
   if(a.type==="soul"){if(a.ch===2||a.ch===5)return[mk({k:"ally",label:"ally"})];if(a.ch===3)return[mk({k:"any",label:"damage target"})];return[]}
   if(a.type==="inn")return[];
@@ -890,7 +895,7 @@ E.act=function(s,pid,a){CUR_S=s;
   else if(!(s.undo&&s.pend.some(p=>p.type==="manual"&&p.undoId===s.undo.id)))s.undo=null;
   return{ok:true}};
 function undoLabel(s,pid,a){try{if(a.type==="play"||a.type==="comboPlay"){const c=findCardAnywhere(s,pid,a.uid);return c?DB[c.id].name:"the card"}
-  if(a.type==="use"){const f=find(s,a.uid);return f?f.o.name:"the item"}if(a.type==="fix")return"the rules fix";if(a.type==="reveal")return"the Hidden card";return"the ability"}catch(e){return"the action"}}
+  if(a.type==="use"){const f=find(s,a.uid);return f?(f.o.name||def(f.o).name):"the item"}if(a.type==="fix")return"the rules fix";if(a.type==="reveal")return"the Hidden card";return"the ability"}catch(e){return"the action"}}
 
 function doAct(s,pid,a){const pl=P(s,pid);
   switch(a.type){
@@ -966,6 +971,11 @@ function doAct(s,pid,a){const pl=P(s,pid);
     const trig={kind:"card",ability:true,src:actor,pid,targets:a.targets||[],cost:c,cls:actor.cls,type:"Ability",idx:a.idx};
     queueResolve(s,pid,{k:"ability",actor:actor.uid,idx:a.idx,targets:a.targets||[]},trig);return}
   if(a.type==="manualAbility"){log(s,`${actor.name} uses an ability (resolved by hand). Pay its costs in the panel.`,pid);s.pend.unshift({type:"manual",pid,title:`${actor.name}: ability`,text:DB[actor.id].rules,actor:actor.uid});return}
+  if(a.type==="use"&&a.fromHand){const i=pl.hand.findIndex(x=>x.uid===a.uid);if(i<0)return;const hc=pl.hand[i];const d=DB[hc.id];const c=handArrowCost(s,pid,actor,hc);pay(s,pid,actor,c);burdenFat(s,actor);
+    if(!(s.bonus&&s.bonus.rapid&&s.bonus.uid===actor.uid))actor.ex=true;pl.hand.splice(i,1);pl.disc.push(hc);
+    log(s,`${actor.name} activates ${d.name} from ${pl.name}'s hand (Deeg Farsight, ${c} Aura).`,pid);
+    const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:c,cls:d.cls,type:"Item",name:d.name};
+    queueResolve(s,pid,{k:"item",actor:actor.uid,item:hc.uid,itemName:d.name,targets:a.targets||[],modes:a.modes||[],arrow:true,fromHand:true,refire:!!(s.bonus&&s.bonus.pid===pid&&s.bonus.refire)},trig);return}
   if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];const fa=freeAct(s,pid,actor,o);const c=itemCost(s,pid,actor,o);pay(s,pid,actor,c);if(!fa)burdenFat(s,actor);
     if(fa){log(s,`${actor.name} activates ${o.name} with Activate (no cost; it stays in the inventory).`,pid);const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:0,cls:def(o).cls,type:"Item",name:o.name};
       queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],modes:a.modes||[],arrow:false,refire:false},trig);return}
@@ -991,6 +1001,8 @@ function doAct(s,pid,a){const pl=P(s,pid);
 function townCost(s,pid,n){const pl=P(s,pid);if(pl.fl.freeTown){pl.fl.freeTown=false;log(s,`Skeleton Key: this Town action costs no Gold.`,pid);return 0}return n}
 function arrested(h){return(h.ench||[]).some(e=>e.name==="Arrested Development")}
 function levelUp(s,h,stat,announce){if(h.lvl>=6)return;if(arrested(h)){log(s,`${h.name} can't level up (Arrested Development).`,h.owner);return}h.lvl++;log(s,`${h.name} reaches Level ${h.lvl}.`,h.owner);
+  /* Jess Naturecaller (Update 38, Nov 18, 2026): at Level 3 and Level 6, summon three 2/2 Wolves */
+  if(h.name==="Jess Naturecaller"&&(h.lvl===3||h.lvl===6)&&!nulled(s,h.name)){log(s,`Jess Naturecaller reaches Level ${h.lvl}: summon three 2/2 Wolves.`,h.owner);for(let i=0;i<3;i++)makeSummon(s,h.owner,"Wolf",false)}
   if(h.name==="Thorncaller"&&h.lvl===6){const pl=P(s,h.owner);const sm=pl.bf.filter(o=>o.kind==="summon");if(sm.length)log(s,"Thorncaller: each friendly summon is duplicated.",h.owner);sm.forEach(o=>E.copySummon(s,h.owner,o))}
   if(h.lvl%2===0){const k=stat||"str";h.bon[k]++;log(s,`${h.name} gains +1 ${k.toUpperCase()}.`,h.owner)}
   if(h.ench.some(e=>e.name==="Memory Loss")){const pl=P(s,h.owner);if(pl.hand.length){const x=pl.hand.splice(ri(s,pl.hand.length),1)[0];pl.disc.push(x);log(s,`Memory Loss: ${pl.name} discards ${DB[x.id].name}.`)}}}
@@ -1040,6 +1052,10 @@ function payCraft(s,pid,actor,d){const plan=craftPlan(s,pid,actor,d);if(!plan)re
   if(actor&&hasEqN(actor,"Bellows")){eqList(actor).filter(e=>e.name==="Bellows").forEach(e=>{log(s,`Bellows: ${actor.name} Crafts, draw a card${isUp(s,e)?" and gain 1 Aura":""}.`,pid);draw(s,pid,1);if(isUp(s,e))pl.aura+=1})}
   /* Tinker's Goggles (Nov 14): whenever the equipped Hero Crafts, Scry 1 (upgraded: Scry 2) */
   if(actor&&hasEqN(actor,"Tinker's Goggles")){eqList(actor).filter(e=>e.name==="Tinker's Goggles").forEach(e=>{const n=isUp(s,e)?2:1;if(!pl.lib.length)return;log(s,`Tinker's Goggles: ${actor.name} Crafts, Scry ${n}.`,pid);pushScry(s,pid,n)})}
+  /* Set 2 JD Tinkerersmith (Nov 18, 2026): the first time this Hero Crafts each turn, return an Item from your discard pile to your inventory (Level 3: two) */
+  if(actor&&actor.name==="JD Tinkerersmith"&&!actor.dead&&!nulled(s,actor.name)&&actor.fl.jdRound!==s.round){actor.fl.jdRound=s.round;const l=pl.disc.filter(c=>(DB[c.id]||{}).type==="Item");const n=actor.lvl>=3?2:1;
+    if(l.length){log(s,`JD Tinkerersmith Crafts: ${pl.name} returns ${n===1?"an Item":"two Items"} from their discard pile to their inventory.`,pid);pushChoose(s,pid,{title:`JD Tinkerersmith: return ${n===1?"an Item":"two Items"} from your discard pile to your inventory`,cards:l.map(c=>c.uid),min:Math.min(n,l.length),max:Math.min(n,l.length),op:"discToInv"})}
+    else log(s,"JD Tinkerersmith Crafts: no Items in the discard pile.",pid)}
   /* Cy the Builder (Nov 15, 2026): whenever this Hero Crafts, you may search your library for a Recipe card (then shuffle) */
   if(actor&&actor.name==="Cy the Builder"&&!actor.dead){const l=pl.lib.filter(c=>(DB[c.id]||{}).type==="Recipe");
     if(l.length){log(s,`Cy the Builder Crafts: ${pl.name} may search their library for a Recipe card.`,pid);pushChoose(s,pid,{title:"Cy the Builder: you may search your library for a Recipe card (then shuffle)",cards:l.map(c=>c.uid),min:0,max:1,op:"tutor"})}}
@@ -1208,7 +1224,7 @@ function resolveCont(s,pid,cont,mods){
     die(s,h);checkDeaths(s);return}
   const actor=cont.actor?heroByUid(s,cont.actor):null;
   if(cont.k==="ability"){const ab=HS()[actor.name][cont.idx];withSrc(s,`${actor.name}: ${ab.label||"ability"}`,()=>ab.run(mkCtx(s,pid,actor,DB[actor.id],null,cont.targets,{mods})));checkDeaths(s);return}
-  if(cont.k==="item"){const isc=SC()[cont.itemName];const o=find(s,cont.item);const ctx=mkCtx(s,pid,actor,DB[cont.itemName],o?o.o:null,cont.targets,{mods,arrow:cont.arrow,modes:cont.modes||[],itemUid:cont.item,upg:(s.upg&&s.upg[cont.item])||0});
+  if(cont.k==="item"){const isc=SC()[cont.itemName];const o=find(s,cont.item);const ctx=mkCtx(s,pid,actor,DB[cont.itemName],o?o.o:null,cont.targets,{mods,arrow:cont.arrow,fromHand:!!cont.fromHand,modes:cont.modes||[],itemUid:cont.item,upg:(s.upg&&s.upg[cont.item])||0});
     if(cont.arrow)ctx.arrowBonus=arrowBonus(s,pid,actor);
     withSrc(s,cont.itemName,()=>isc.act.run(ctx));
     if(bend(s,pid,cont.itemName,actor))withSrc(s,cont.itemName+" (Material Bender)",()=>isc.act.run(Object.assign({},ctx)));

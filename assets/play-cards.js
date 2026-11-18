@@ -264,6 +264,8 @@ def("Flame Bolt",arrow(1,[HERO],c=>{D(c,c.t[0],3,{type:"Fire"});st(c,c.t[0],"bur
 def("Level Shot",arrow(1,[EN],c=>{D(c,c.t[0],3);if((c.me.t.arrows||0)===2)E.levelUp(c.s,c.actor,"str")}));
 /* update 27: Arrow damage boosts (Full Draw, Spotters, Multi Bow, Longbow, Hawkeye, Mystic Quiver) make Poison Dart deal that much damage; Jereth's Heavy Bow doubles it (0 stays 0) */
 def("Poison Dart",arrow(1,[t("any","target to Poison twice")],c=>{if(c.arrowBonus&&c.arrowBonus.dmg>0)D(c,c.t[0],0);st(c,c.t[0],"poison",2)}));
+/* Deeg-Arrow (Update 38): from the hand (Deeg Farsight) it ignores Defense */
+def("Deeg-Arrow",arrow(1,[EN],c=>{D(c,c.t[0],3,c.fromHand?{ignoreDef:true}:{})}));
 def("Serrated Arrow",arrow(1,[EN],c=>{D(c,c.t[0],3,{pierce:3})}));
 def("Arrow of Devastation",arrow(4,[EN],c=>{D(c,c.t[0],5,{pierce:3})}));
 /* Arrow of Craftsmanship: can't be targeted (engine); Upgrade X Gold (Town): +X damage for the rest of the game */
@@ -587,6 +589,8 @@ OPS.tutor=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.lib.
 OPS.equipFree=(s,pid,pr,picks)=>{const pl=s.p[pid];const h=E.heroByUid(s,pr.hero);if(!h||h.dead)return;picks.forEach(u=>{let i=pl.hand.findIndex(c=>c.uid===u);let o=null;
   if(i>=0){o=E.eqObjFromCard(s,pid,pl.hand.splice(i,1)[0])}else{i=pl.inv.findIndex(x=>x.uid===u);if(i>=0)o=pl.inv.splice(i,1)[0]}
   if(o){E.log(s,`${h.name} equips ${o.name} for free.`,pid);E.equipTo(s,h,o)}})};
+/* Set 2 JD Tinkerersmith: chosen Items go from the discard pile into the inventory (overflow rules apply) */
+OPS.discToInv=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(c=>c.uid===u);if(i>=0){const c=pl.disc.splice(i,1)[0];E.log(s,`${E.DB[c.id].name} returns to ${pl.name}'s inventory.`,pid);E.toInv(s,pid,E.invObj(s,pid,c))}})};
 OPS.fromDisc=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.disc.findIndex(c=>c.uid===u);if(i>=0){const c=pl.disc.splice(i,1)[0];pl.hand.push(c);E.log(s,`${pl.name} returns ${E.DB[c.id].name} to hand.`,pid)}})};
 
 /* ===== Set 2: Artificer (Set Two Rules Supplement) ===== */

@@ -1306,7 +1306,7 @@ function heroActs(s,opts,a){const out=[];const me=U.me;if(!a)return out;
   opts.filter(o=>o.type==="ability").forEach(o=>{const ab=window.CQ_HERO_SCRIPTS[a.name][o.idx];const c=E.abilityCost(s,me,a,ab);out.push(btn(o,`${ab.label}${c?` (${c} Aura)`:""}`))});
   abWhy(s,opts,a).forEach(x=>out.push(x));
   opts.filter(o=>o.type==="eqAct").forEach(o=>{const f=E.find(s,o.uid);const x=(window.CQ_EQACT||{})[f.o.name];out.push(`<button class="btn" data-pa="eqact" data-u="${o.uid}">${esc(f.o.name)}: ${esc(x?x.label:"use")}</button>`)});
-  opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
+  opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);if(o.fromHand){const nm=E.DB[f.o.id].name;out.push(btn(o,`Activate ${nm} from hand (${E.handArrowCost(s,me,a,f.o)})`));return}const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
   opts.filter(o=>o.type==="equipInv").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Equip ${f.o.name} (${E.eqCost(s,a,f.o)})`))});
   opts.filter(o=>o.type==="take").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Take ${f.o.name} from ${f.hero.name} (${E.eqCost(s,a,f.o)})`))});
   if(opts.some(o=>o.type==="manualAbility")&&/Exhaust|\{A\}:/.test(E.DB[a.id].rules)&&!window.CQ_HERO_SCRIPTS[a.name])out.push(btn({type:"manualAbility"},`Use ${a.name}'s ability (by hand)`));
@@ -1325,7 +1325,7 @@ function battleActs(s,opts){const out=[];const me=U.me;const a=E.actorFor(s,me);
   opts.filter(o=>o.type==="step").forEach(o=>out.push(btn(o,"Abide")));
   opts.filter(o=>o.type==="ability").forEach(o=>{const ab=window.CQ_HERO_SCRIPTS[a.name][o.idx];const c=E.abilityCost(s,me,a,ab);out.push(btn(o,`${ab.label}${c?` (${c} Aura)`:""}`))});
   abWhy(s,opts,a).forEach(x=>out.push(x));
-  opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
+  opts.filter(o=>o.type==="use").forEach(o=>{const f=E.find(s,o.uid);if(o.fromHand){const nm=E.DB[f.o.id].name;out.push(btn(o,`Activate ${nm} from hand (${E.handArrowCost(s,me,a,f.o)})`));return}const c=E.itemCost(s,me,a,f.o);out.push(btn(o,`Use ${f.o.name}${c?` (${c})`:""}`))});
   opts.filter(o=>o.type==="equipInv").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Equip ${f.o.name} (${E.eqCost(s,a,f.o)})`))});
   opts.filter(o=>o.type==="take").forEach(o=>{const f=E.find(s,o.uid);out.push(btn(o,`Take ${f.o.name} from ${f.hero.name} (${E.eqCost(s,a,f.o)})`))});
   out.push('<span class="sep"></span>');
@@ -1532,7 +1532,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     const ok=legal().some(o=>o.type==="play"&&s.p[U.me].hand.find(x=>x.uid===o.uid&&x.id===c.id));const d=E.DB[c.id];
     const why=ok?"":whyNot(s,c);
     modal(`${cardHTML(cardOf(c.id),{nozoom:1})}<p class="pl-note">${E.isScripted(d.name)||d.kind==="equip"?"Resolves automatically.":"Resolves by hand: after you pay, a panel opens to apply the effect."}</p>${why?`<p class="note warn">${esc(why)}</p>`:""}
-      <div class="actions">${ok?`<button class="btn primary go" data-pa="play" data-u="${c.uid}">Play${d.sup==="Hidden"?" face down":d.type==="Item"?" to inventory":""} (${E.cardCost(s,U.me,E.actorFor(s,U.me),d,0)}${d.cost==="X"?"+X":""} Aura)</button>`:""}<button class="btn" data-pa="close">Close</button></div>`);return}
+      <div class="actions">${(()=>{const ho=legal().find(o=>o.type==="use"&&o.fromHand&&o.uid===c.uid);return ho?btn(ho,`Activate from hand (${E.handArrowCost(s,U.me,E.actorFor(s,U.me),c)} Aura)`):""})()}${ok?`<button class="btn primary go" data-pa="play" data-u="${c.uid}">Play${d.sup==="Hidden"?" face down":d.type==="Item"?" to inventory":""} (${E.cardCost(s,U.me,E.actorFor(s,U.me),d,0)}${d.cost==="X"?"+X":""} Aura)</button>`:""}<button class="btn" data-pa="close">Close</button></div>`);return}
   if(k==="exhcard"){const c=s.p[U.me].disc.find(x=>x.uid===b.dataset.u);if(!c)return;if(U.tgt){toast("Finish choosing targets first, or press Cancel.");return}
     const o=legal().find(x=>x.type==="play"&&s.p[U.me].disc.some(y=>y.uid===x.uid&&y.id===c.id));const d=E.DB[c.id];const why=o?"":(exhumeOk(s,U.me,c)?(whyNot(s,c)||"You can't play it right now."):"Its Exhume window has closed.");
     modal(`${cardHTML(cardOf(c.id),{nozoom:1})}<p class="pl-note">Exhume: this card was milled this turn, so you can play it from your discard pile, paying its costs.</p>${why?`<p class="note warn">${esc(why)}</p>`:""}

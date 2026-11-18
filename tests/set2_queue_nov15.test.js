@@ -207,7 +207,7 @@ ok(/plays or activates/.test(E.DB["h:Material Bender"].rules),"Material Bender t
 /* Nov 16 (b): Dragonscale Scale Recipe, Life Seed, Hero stats, Stall auto-play */
 ok(E.DB["Dragonscale Scale Recipe"].cost==="2"&&/Mithril Ingot/.test(E.DB["Dragonscale Scale Recipe"].rules),"Dragonscale Scale Recipe: 2 Aura (Nov 17), needs a Mithril Ingot");
 ok(["Wren Partsfinder","Material Bender","Val Craftsmith","Gadget Commander","Cy the Builder"].every(n=>E.DB["h:"+n].def===1&&E.DB["h:"+n].hp===15),"every Artificer: 1 Defense, 15 Health Points");
-ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Necromancer D","Necromancer E"].every(n=>E.DB["h:"+n].hp===15),"every Necromancer: 15 Health Points");
+ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Xlek Grave Robber","Necromancer E"].every(n=>E.DB["h:"+n].hp===15),"every Necromancer: 15 Health Points");
 ok(E.DB["Life Seed"]&&E.DB["Life Seed"].cls==="Generic"&&E.DB["Life Seed"].cost==="2"&&E.DB["Life Seed"].sub==="Material"&&ctx.SET2_CARDS.includes("Life Seed"),"Life Seed: Generic, 2 Aura, Set 2");
 {const s=game();const d=s.p[0].heroes[2];kill(s,d);const l1=inv(s,0,"Life Seed");s.p[0].heroes.forEach(h=>{if(!h.dead)h.ex=false});s.prio=0;s.passed=[false,false];s.p[0].t.lastActor=null;
   ok(!opts(s,0).some(o=>o.type==="use"&&o.uid===l1.uid),"one Life Seed isn't enough");const l2=inv(s,0,"Life Seed");const u=opts(s,0).find(o=>o.type==="use"&&(o.uid===l1.uid||o.uid===l2.uid));ok(u,"two Life Seeds: can be used");

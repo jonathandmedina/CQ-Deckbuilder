@@ -750,7 +750,7 @@ A.grimPick=(s,pid,pr,v)=>{const o=pr.data.owner;const pl=s.p[o];const cards=pr.d
 def("Funeral Procession",{run(c){const sm=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Summon"&&c.actor&&E.canPlayCard(c.s,c.pid,c.actor,x,true));
   if(!sm.length){log(c,"Funeral Procession: no Summon card in your discard pile that this Hero can play.");return}
   c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:sm.map(x=>x.uid),free:true,fromDisc:true,exileAfter:true,title:"Funeral Procession: play a Summon card from your discard pile without paying its Aura cost (it's exiled after it resolves)"})}});
-def("Grieving Thoughts",{run(c){draw(c,1);if(c.me.hand.length)E.pushChoose(c.s,c.pid,{title:"Grieving Thoughts: discard a card",cards:c.me.hand.map(x=>x.uid),from:"hand",min:1,max:1,op:"discard"})}});
+def("Grieving Thoughts",{run(c){draw(c,3);const n=Math.min(2,c.me.hand.length);if(n)E.pushChoose(c.s,c.pid,{title:`Grieving Thoughts: discard ${n} card${n>1?"s":""}`,cards:c.me.hand.map(x=>x.uid),from:"hand",min:n,max:n,op:"discard"})}});
 def("Mourner's Offering",{run(c){c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)}});
 /* Undead's Choice (Nov 15, 2026): choose two. The Revenant mode exhausts this Hero. The Exhume grant: a card in your discard pile may be played from there this turn (paying its costs). */
 def("Undead's Choice",M(2,[
@@ -779,7 +779,13 @@ const discPlay=(c,h,title)=>{if(!h||h.dead)return;const l=c.me.disc.filter(x=>E.
   c.s.pend.unshift({type:"combo",pid:c.pid,actor:h.uid,cands:l.map(x=>x.uid),pay:true,fromDisc:true,title:`${title}: you may play a card from your discard pile, paying its Aura cost`})};
 def("Grave Caller's Wand",{enter(c){raise(c,1);if(c.actor&&!c.actor.dead){c.actor.ex=true;log(c,`${c.actor.name} is exhausted (Grave Caller's Wand).`)}},onUpgrade(c){raise(c,1)}});
 def("Gravedigger's Medallion",{enter(c){discPlay(c,c.actor,"Gravedigger's Medallion")},onUpgrade(c){discPlay(c,c.actor,"Upgraded Gravedigger's Medallion")}});
-S["Dagger of the Dead"]={}; /* engine strOf */
+S["Dagger of the Dead"]={};
+/* Dagger of the Dead (v3, Nov 17, 2026): Exhaust 2 ready Revenants (upgraded: 1): the equipped Hero gains +1 Strength this turn */
+{const rdy=(s,o)=>E.isRev(o)&&!o.ex;const need=(s,e)=>E.isUp(s,e)?1:2;
+EQ2["Dagger of the Dead"]={label:"Exhaust Revenants: +1 STR this turn",t:[t("allySummon","ready Revenant to exhaust",rdy,{distinct:true}),t("allySummon","second ready Revenant to exhaust",rdy,{distinct:true,opt:true})],
+  can:(s,pid,a,e)=>E.revenants(s,pid).filter(o=>!o.ex).length>=need(s,e),
+  run:c=>{const n=need(c.s,c.inst);const l=[...new Set(c.t.filter(o=>o&&!o.ex&&E.isRev(o)))];for(const r of E.revenants(c.s,c.pid))if(l.length<n&&!r.ex&&!l.includes(r))l.push(r);
+    if(l.length<n){log(c,"Dagger of the Dead: not enough ready Revenants.");return}l.slice(0,n).forEach(r=>{r.ex=true});buff(c.actor,{str:1});log(c,`${n} Revenant${n>1?"s are":" is"} exhausted; ${c.actor.name} gains +1 Strength this turn.`)}};}
 /* Heroes */
 hab("Gravecaller",[{label:"Play a Summon from your discard pile",
   /* shown on a greyed button when the ability isn't offered (Nov 13, 2026) */
@@ -788,12 +794,17 @@ hab("Gravecaller",[{label:"Play a Summon from your discard pile",
   run(c){const l=c.me.disc.filter(x=>(E.DB[x.id]||{}).type==="Summon"&&E.canPlayCard(c.s,c.pid,c.actor,x));if(!l.length){log(c,"No Summon card to play.");return}
   c.s.pend.unshift({type:"combo",pid:c.pid,actor:c.actor.uid,cands:l.map(x=>x.uid),pay:true,fromDisc:true,title:"Gravecaller: you may play a Summon card from your discard pile, paying its Aura cost"})}}]);
 /* Filth Scavenger (v2, Nov 13 2026): exhausting a ready Revenant AND exiling a card from a discard pile are both costs; it can't be activated unless a discard pile has a card */
-hab("Filth Scavenger",[{label:"Exhaust a Revenant and exile a card from a discard pile: +1 STR",ex:false,
-  why:(s,pid,a)=>!E.revenants(s,pid).some(o=>!o.ex)?"You need a ready Revenant to exhaust.":!s.p.some(p=>p.disc.length>0)?"Both discard piles are empty, so there's no card to exile.":a.lvl<3&&a.fl.necroC===s.round?"Already used this turn (any number of times at Level 3).":"",t:[t("allySummon","ready Revenant to exhaust",(s,o)=>o.name==="Revenant"&&!o.ex)],
+hab("Filth Scavenger",[{label:"Exhaust a Revenant and shuffle a card from a discard pile into its library: +1 STR",ex:false,
+  why:(s,pid,a)=>!E.revenants(s,pid).some(o=>!o.ex)?"You need a ready Revenant to exhaust.":!s.p.some(p=>p.disc.length>0)?"Both discard piles are empty, so there's no card to shuffle in.":a.lvl<3&&a.fl.necroC===s.round?"Already used this turn (any number of times at Level 3).":"",t:[t("allySummon","ready Revenant to exhaust",(s,o)=>o.name==="Revenant"&&!o.ex)],
   can:(s,pid,a)=>E.revenants(s,pid).some(o=>!o.ex)&&(a.lvl>=3||a.fl.necroC!==s.round)&&s.p.some(p=>p.disc.length>0),
-  run(c){const r=c.t[0];if(!r||r.ex)return;const all=[...c.op.disc,...c.me.disc];if(!all.length){log(c,"No card in a discard pile to exile.");return}
+  run(c){const r=c.t[0];if(!r||r.ex)return;const all=[...c.op.disc,...c.me.disc];if(!all.length){log(c,"No card in a discard pile to shuffle in.");return}
     r.ex=true;c.actor.fl.necroC=c.s.round;log(c,`${r.name} is exhausted.`);
-    E.pushChoose(c.s,c.pid,{title:"Filth Scavenger: exile a card from a discard pile",cards:all.map(x=>x.uid),min:1,max:1,op:"exileDisc",by:c.actor.uid});
+    E.pushChoose(c.s,c.pid,{title:"Filth Scavenger: shuffle a card from a discard pile into its owner's library",cards:all.map(x=>x.uid),min:1,max:1,op:"scavShuffle",by:c.actor.uid});
     buff(c.actor,{str:1});log(c,`${c.actor.name} gains +1 Strength this turn.`)}}]);
+OPS.scavShuffle=(s,pid,pr,picks)=>{picks.forEach(u=>{for(const pl of s.p){const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.lib.push(x);E.shuffle(s,pl.lib);E.log(s,`Filth Scavenger shuffles ${E.DB[x.id].name} from ${pl.name}'s discard pile into their library.`,pid);return}}})};
+/* Xlek Grave Robber (was Necromancer D, Nov 17, 2026) */
+hab("Xlek Grave Robber",[{label:"Exhaust: put the top 3 cards of an opponent's discard pile on the bottom of their library, then summon a Revenant",t:[t("enemyPlayer","opponent")],
+  run(c){const p=c.t[0];const op=c.s.p[p?p.pid:E.oppOf(c.s,c.pid)];const top=op.disc.splice(Math.max(0,op.disc.length-3));op.lib.unshift(...top.reverse());
+    log(c,top.length?`${top.map(x=>E.DB[x.id].name).join(", ")} go from ${op.name}'s discard pile to the bottom of their library.`:`${op.name}'s discard pile is empty.`);raise(c,1)}}]);
 OPS.exileDisc=(s,pid,pr,picks)=>{picks.forEach(u=>{for(const pl of s.p){const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){const x=pl.disc.splice(i,1)[0];pl.exile.push(x);E.log(s,`Filth Scavenger exiles ${E.DB[x.id].name} from ${pl.name}'s discard pile.`,pid);return}}})};
 })(typeof window!=="undefined"?window:globalThis);

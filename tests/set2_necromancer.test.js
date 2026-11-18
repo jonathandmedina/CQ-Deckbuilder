@@ -8,7 +8,7 @@ const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
 const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Gold Ingot","Platinum Ingot","Silver Ingot","Rose Quartz","Topaz","Almandine","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter"].map(n=>[n,3]));
 const deck=h=>({name:"T",heroes:h.map(x=>"h:"+x),cards:Object.assign({},filler)});
 let U=1000;const uid=()=>"u"+(U++);
-const NEC=["Gravecaller","Necromancer D","Necromancer E"];
+const NEC=["Gravecaller","Xlek Grave Robber","Necromancer E"];
 function game(h0,h1){const s=E.newGame({seed:42,players:[{name:"A",deck:deck(h0||NEC)},{name:"B",deck:deck(h1||["Divine Knight","Arcane Scholar","Shadow Ranger"])}]});
   E.act(s,0,{type:"keep"});E.act(s,1,{type:"keep"});E.act(s,0,{type:"dawnDone"});E.act(s,1,{type:"dawnDone"});
   s.p.forEach(p=>{p.aura=10;p.inv=[];p.hand=[]});s.prio=0;s.passed=[false,false];return s}
@@ -27,7 +27,7 @@ const rev=(s,n,pid)=>{for(let i=0;i<(n||1);i++)E.makeSummon(s,pid||0,"Revenant")
 /* data */
 const N=["Raise Revenant","Bone Wall","Army of Darkness","Devastating Ritual","From Darkness","Cursed Urn","Restless Dead","Grave Tide","Grave Whispers","Corpse Harvest","Dig the Grave","Dead March","Ossuary","Funeral Procession","Grieving Thoughts","Mourner's Offering","Reawaken","Grim Divination","Rise from the Grave","Consecrate","Retrace the Past","Bone Spur","Robbed Grave","Restless Echo","Soul Lantern","Skeleton Key"];
 ok(N.every(n=>E.DB[n]),"all 26 Set2_Cards rows in the engine");ok(N.every(n=>ctx.SET2_CARDS.includes(n)),"all 26 in SET2_CARDS");
-ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Necromancer D","Necromancer E"].every(n=>E.DB["h:"+n]&&ctx.SET2_CARDS.includes(n)),"Necromancer Heroes A–E");
+ok(["Gravecaller","Jorkev, the Pillager","Filth Scavenger","Xlek Grave Robber","Necromancer E"].every(n=>E.DB["h:"+n]&&ctx.SET2_CARDS.includes(n)),"Necromancer Heroes A–E");
 ok(E.DB["h:Gravecaller"].str===0&&E.DB["h:Gravecaller"].def===1&&E.DB["h:Gravecaller"].aura===1&&E.DB["h:Gravecaller"].hp===15,"0/1/1/15 (Nov 16)");
 ok(/\{L3\} Activate any number/.test(E.DB["h:Filth Scavenger"].rules),"Filth Scavenger Level 3 line");
 ok(["Grave Caller's Wand","Gravedigger's Medallion","Dagger of the Dead"].every(n=>E.DB[n]&&E.DB[n].up),"3 equipment with upgrades");
@@ -45,10 +45,10 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
   while(s.phase==="town"){const p=s.town.order[s.town.i];E.act(s,p,{type:"leave"});resolve(s)}
   ok(revs(s).length===0,"Poison (Health Point loss at Dawn) kills a Revenant")}
 /* Raise Revenant + Jorkev, the Pillager (one Mill per Revenant) */
-{const s=game(["Jorkev, the Pillager","Necromancer D","Necromancer E"]);const c=hand(s,0,"Raise Revenant");const a=E.actorFor(s,0);const ol=s.p[1].lib.length;
+{const s=game(["Jorkev, the Pillager","Xlek Grave Robber","Necromancer E"]);const c=hand(s,0,"Raise Revenant");const a=E.actorFor(s,0);const ol=s.p[1].lib.length;
   ok(play(s,c).ok,"play Raise Revenant");ok(revs(s).length===1&&revs(s)[0].str===1&&E.hp(s,revs(s)[0])===1,"a 1/1 Revenant");ok(a.ex,"Exhaust this Hero");
   ok(s.p[1].lib.length===ol-1,"Jorkev, the Pillager: opponent Mills 1")}
-{const s=game(["Jorkev, the Pillager","Necromancer D","Necromancer E"]);const c=hand(s,0,"Restless Dead");const ol=s.p[1].lib.length;play(s,c);
+{const s=game(["Jorkev, the Pillager","Xlek Grave Robber","Necromancer E"]);const c=hand(s,0,"Restless Dead");const ol=s.p[1].lib.length;play(s,c);
   ok(revs(s).length===2&&s.p[1].lib.length===ol-2,"Jorkev, the Pillager triggers once per Revenant (2)")}
 /* Grave Tide: sacrifice 3 as a cost, summon 5; Cursed Urn on sacrifice */
 {const s=game();const c=hand(s,0,"Grave Tide");rev(s,2);ok(!canPlay(s,c),"Grave Tide needs 3 Revenants");rev(s,1);ok(canPlay(s,c),"playable with 3");
@@ -105,13 +105,13 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
   const au=s.p[0].aura;E.act(s,0,o);ok(s.pend[0]&&s.pend[0].type==="combo","prompt");E.act(s,0,{type:"comboPlay",uid:s.pend[0].cands[0]});resolve(s);
   ok(revs(s).length===1&&s.p[0].aura===au-1,"plays the Summon from the discard pile, paying 1 Aura");ok(a.ex,"Gravecaller exhausted")}
 /* Filth Scavenger */
-{const s=game(["Filth Scavenger","Necromancer D","Necromancer E"]);rev(s,2);revs(s).forEach(r=>r.ex=false);disc(s,1,"Potion");const a=E.actorFor(s,0);
+{const s=game(["Filth Scavenger","Xlek Grave Robber","Necromancer E"]);rev(s,2);revs(s).forEach(r=>r.ex=false);disc(s,1,"Potion");const a=E.actorFor(s,0);
   const o=opts(s,0).find(x=>x.type==="ability");ok(o,"Filth Scavenger ability");E.act(s,0,Object.assign({},o,{targets:[revs(s)[0].uid]}));
   ok(revs(s)[0].ex&&E.str(s,a)===1&&!a.ex,"exhaust a Revenant: +1 STR, the Hero doesn't exhaust");
-  ok(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].min===1,"must exile a card from a discard pile (cost)");E.act(s,0,{type:"choose",picks:[s.pend[0].cards[0]]});ok(s.p[1].exile.length+s.p[0].exile.length===1,"exiled");
+  ok(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].min===1,"must shuffle a card from a discard pile into its library (cost)");const pk=s.pend[0].cards[0];const own=s.p.find(p=>p.disc.some(x=>x.uid===pk));const L=own.lib.length;E.act(s,0,{type:"choose",picks:[pk]});ok(own.lib.length===L+1&&own.lib.some(x=>x.uid===pk)&&!own.disc.some(x=>x.uid===pk)&&s.p[0].exile.length+s.p[1].exile.length===0,"shuffled into its owner's library, not exiled (Nov 17)");
   s.prio=0;s.p[0].t.lastActor=null;ok(!opts(s,0).some(x=>x.type==="ability"&&E.actorFor(s,0)===a),"once each turn");a.lvl=3;disc(s,0,"Antidote");ok(opts(s,0).some(x=>x.type==="ability"),"Level 3: any number of times")}
 /* Filth Scavenger v2: no card in any discard pile, so the ability can't be activated */
-{const s=game(["Filth Scavenger","Necromancer D","Necromancer E"]);rev(s,1);revs(s).forEach(r=>r.ex=false);s.p.forEach(p=>{p.disc=[]});
+{const s=game(["Filth Scavenger","Xlek Grave Robber","Necromancer E"]);rev(s,1);revs(s).forEach(r=>r.ex=false);s.p.forEach(p=>{p.disc=[]});
   ok(!opts(s,0).some(x=>x.type==="ability"),"Filth Scavenger needs a card in a discard pile to exile");disc(s,0,"Potion");ok(opts(s,0).some(x=>x.type==="ability"),"…and works once there is one")}
 
 /* Bone Wall, Army of Darkness, Dead March, Devastating Ritual, Corpse Harvest, From Darkness, Ossuary */
@@ -149,11 +149,20 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
 {const s=game();disc(s,1,"Potion");disc(s,1,"Potion");const l1=s.p[1].lib.length,h1=s.p[1].hand.length;E.act(s,0,{type:"play",uid:hand(s,0,"Retrace the Past").uid,targets:["P1"]});
   E.act(s,0,{type:"choose",picks:s.pend[0].cards});ok(s.p[1].disc.length===0&&s.p[1].lib.length===l1+1&&s.p[1].hand.length===h1+1,"Retrace the Past: shuffle in, that player draws")}
 /* Grieving Thoughts */
-{const s=game();const c=hand(s,0,"Grieving Thoughts");hand(s,0,"Potion");const h0=s.p[0].hand.length;play(s,c);ok(s.p[0].hand.length===h0-1,"draw a card, then discard a card")}
+{const s=game();const c=hand(s,0,"Grieving Thoughts");hand(s,0,"Potion");const h0=s.p[0].hand.length,d0=s.p[0].disc.length;play(s,c);ok(s.p[0].hand.length===h0-1+3-2&&s.p[0].disc.length===d0+3,"Grieving Thoughts: draw 3, then discard 2 (Nov 17)")}
 /* Grave Caller's Wand, Dagger of the Dead, Gravedigger's Medallion */
 {const s=game();const a=E.actorFor(s,0);const ol=s.p[1].lib.length;play(s,hand(s,0,"Grave Caller's Wand"));
   ok(E.hasEq(a,"Grave Caller's Wand")&&revs(s).length===1&&a.ex,"Wand: equip, summon a Revenant, exhaust the Hero");ok(s.p[1].lib.length===ol-1,"Wand: the exhaust makes a player Mill 1")}
-{const s=game();const a=E.actorFor(s,0);play(s,hand(s,0,"Dagger of the Dead"));ok(E.str(s,a)===0,"Dagger: +0 without a Revenant");rev(s,1);ok(E.str(s,a)===2,"Dagger: +2 with a Revenant")}
+{const s=game();const a=E.actorFor(s,0);play(s,hand(s,0,"Dagger of the Dead"));const dg=E.eqList(a).find(e=>e.name==="Dagger of the Dead");const nx=()=>{s.p[0].t.lastActor=null};ok(dg&&E.str(s,a)===0,"Dagger: no passive Strength (Nov 17)");
+  rev(s,1);revs(s).forEach(r=>r.ex=false);back(s);nx();ok(!opts(s,0).some(o=>o.type==="eqAct"&&o.uid===dg.uid),"needs 2 ready Revenants");
+  rev(s,1);revs(s).forEach(r=>r.ex=false);back(s);nx();const o=opts(s,0).find(o=>o.type==="eqAct"&&o.uid===dg.uid);ok(o,"usable with 2 ready Revenants");
+  const rr=revs(s);E.act(s,0,Object.assign({},o,{targets:[rr[0].uid,rr[1].uid]}));resolve(s);ok(rr.every(r=>r.ex)&&E.str(s,a)===1,"exhausts 2 Revenants: +1 Strength this turn");
+  s.upg=s.upg||{};s.upg[dg.uid]=1;rev(s,1);const r3=revs(s)[2];r3.ex=false;back(s);nx();a.ex=false;ok(opts(s,0).some(x=>x.type==="eqAct"&&x.uid===dg.uid),"upgraded: needs only 1");ok(E.DB["Dagger of the Dead"].up.cost===5,"upgrade costs 5 Gold")}
+/* Xlek Grave Robber (was Necromancer D) */
+{const s=game(["Xlek Grave Robber","Gravecaller","Necromancer E"]);const d=["Potion","Dynamite","Humble","Topaz"].map(n=>disc(s,1,n));const a=E.actorFor(s,0);ok(a.name==="Xlek Grave Robber"&&E.DB["h:Necromancer D"]===undefined||a.name==="Xlek Grave Robber","renamed Hero");
+  const o=opts(s,0).find(x=>x.type==="ability"&&x.hero===a.uid)||opts(s,0).find(x=>x.type==="ability");ok(o,"ability available");E.act(s,0,Object.assign({},o,{targets:["P1"]}));resolve(s);
+  ok(s.p[1].disc.length===1&&s.p[1].disc[0].uid===d[0].uid,"the top 3 of the opponent's discard pile leave it");ok(s.p[1].lib.slice(0,3).every(x=>d.slice(1).some(y=>y.uid===x.uid)),"they go on the bottom of the library");
+  ok(revs(s).length===1&&a.ex,"summons a Revenant; the Hero is exhausted")}
 {const s=game();const rr=disc(s,0,"Raise Revenant");const a=E.actorFor(s,0);const d0=E.defn(s,a);E.act(s,0,{type:"play",uid:hand(s,0,"Gravedigger's Medallion").uid});
   ok(E.defn(s,a)===d0+1,"Medallion +1 DEF");ok(s.pend[0]&&s.pend[0].type==="combo"&&s.pend[0].cands.includes(rr.uid),"Medallion: may play a card from the discard pile");}
 /* Skeleton Key, Soul Lantern, Town */

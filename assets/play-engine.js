@@ -207,7 +207,7 @@ function strOf(s,o,vs){
     if(heroIs(o,"Barbarian"))v+=trophies(pl);
     /* Set 2 Gadget Commander (Nov 15, 2026): Strength = Crafted items (inventory or equipped) and Constructs (summons and Hero Constructs) you control */
     if(o.name==="Gadget Commander")v+=gadgets(s,o.owner);
-    /* Set 2 Dagger of the Dead: +2 STR (upgraded +3) while you control a Revenant */if(pl.bf.some(x=>isRev(x)))eqList(o).forEach(e=>{if(e.name==="Dagger of the Dead")v+=isUp(s,e)?3:2});
+    /* Set 2 Dagger of the Dead: activated (Nov 17, 2026; see CQ_EQACT) */
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
     /* update 26: Level 3 Radiant Sentinel gets +5 instead when 5+ of its DEF comes from equipment */if(o.name==="Radiant Sentinel"){const eqd=eqList(o).reduce((n,e)=>n+(e.pdef||0),0);if(o.lvl>=3&&eqd>=5)v+=5;else if(defOf(s,o)>=5)v+=2}

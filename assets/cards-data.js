@@ -449,7 +449,7 @@ const RAW_HEROES=[
 ["Wild Shifter", "Druid", "0", "0", "2", "16", "Exhaust: Ready a summon you control.\n{L3} Exhaust: Ready up to two summons you control.", 3],
 ["Rousing Bandleader", "Bard", "1", "1", "1", "16", "Heroes you control have Banding.\n{L3} Heroes you control get +1 STR while banding.", 1],
 /* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
-["Deeg Farsight", "Ranger", "0", "1", "2", "16", "While this Hero has a Bow equipped, it may activate an Arrow from your hand instead of your inventory by paying 1 more Aura.", 1],
+["Deeg Farsight", "Ranger", "0", "1", "2", "16", "When this Hero has a Bow equipped, he may activate an Arrow from your hand instead of your inventory by paying 1 more Aura.", 1],
 ["Jess Naturecaller", "Druid", "0", "0", "2", "16", "{L3} When this Hero reaches Level 3, summon three 2/2 Wolves.\n{L6} When this Hero reaches Level 6, summon three 2/2 Wolves.", 1],
 ["Wren Partsfinder", "Artificer", "0", "1", "2", "15", "Exhaust: Look at the top 3 cards of your library. You may put an item from among them into your hand. Put the rest on the bottom of your library.\n{L3} Exhaust: Search your library for an item, put it into your hand, then shuffle your library.", 4],
 ["Material Bender", "Artificer", "0", "1", "2", "15", "Double the first ability of an item this Hero plays or activates each turn. (It resolves twice. Pay its costs once.)", 4],

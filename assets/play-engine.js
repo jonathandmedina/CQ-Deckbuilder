@@ -535,6 +535,8 @@ function destroyObj(s,o,exile,why){const f=find(s,o.uid);if(!f)return;const pl=P
     if(o.name==="Aurawing Familiar"){P(s,c).aura+=1;log(s,`${P(s,c).name} gains 1 Aura.`)}
     if(o.name==="Drawwing Familiar")draw(s,c,1);
     /* Set 2 Cursed Urn: whenever a Revenant you control dies (sacrifice included), create a Remains token in an empty inventory slot */
+    /* Set 2 Jorkev, the Pillager (v4, Nov 17, 2026): whenever a Revenant you control dies (sacrifice included), you may choose a player; that player Mills 1 (one trigger per Revenant) */
+    if(isRev(o)&&!exile)living(P(s,c)).filter(h=>h.name==="Jorkev, the Pillager").forEach(()=>ask(s,c,"Jorkev, the Pillager: a Revenant died. Choose a player to Mill 1",[{label:`${P(s,oppOf(s,c)).name} Mills 1`,v:oppOf(s,c)},{label:`${P(s,c).name} (you) Mills 1`,v:c},{label:"No one",v:null}],"millOne",{name:"Jorkev, the Pillager"}));
     if(isRev(o)&&!exile){const cp=P(s,c);for(let k=invCount(cp,"Cursed Urn");k>0;k--){if(cp.inv.length>=E.slots(s,c)){log(s,"Cursed Urn: no empty inventory slot for a Remains token.",c);break}
       cp.inv.push({uid:nid(s),id:"Remains",kind:"card",fd:false,name:"Remains",owner:c,tok:true,ctr:{}});log(s,`Cursed Urn: ${cp.name} creates a Remains token.`,c)}}
     if(o.name==="Spore"){const h=P(s,c).hand;if(h.length){const i=ri(s,h.length);const x=h.splice(i,1)[0];P(s,c).disc.push(x);log(s,`Spore: ${P(s,c).name} discards ${DB[x.id].name}.`)}}
@@ -566,8 +568,7 @@ function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};con
   /* Barkborn: gains DEF equal to its HP until Dusk; stacks */
   {const pl=P(s,pid);const n=(/Barkborn/.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
    if(n>0){addMod(o,{def:n*o.hp});log(s,`${name} has Barkborn${n>1?" ×"+n:""}: +${n*o.hp} DEF this turn.`,pid)}}
-  /* Set 2 Jorkev, the Pillager (was Necromancer B): whenever a Revenant enters under your control, you may choose a player; that player Mills 1 (one trigger per Revenant) */
-  if(name==="Revenant"||name==="Revenant King")living(P(s,pid)).filter(h=>h.name==="Jorkev, the Pillager").forEach(()=>ask(s,pid,"Jorkev, the Pillager: a Revenant entered. Choose a player to Mill 1",[{label:`${P(s,oppOf(s,pid)).name} Mills 1`,v:oppOf(s,pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid},{label:"No one",v:null}],"millOne",{name:"Jorkev, the Pillager"}));
+  /* Set 2 Jorkev, the Pillager: since Nov 17, 2026 it triggers when a Revenant dies (see destroyObj), not when one enters */
   return o}
 ASK.millOne=(s,pid,pr,v)=>{if(v==null)return;mill(s,v,1)};
 ASK.timeKat=(s,pid,pr,v)=>{for(const p2 of s.p){const c=(p2.stall||[]).find(x=>x.uid===v);if(c){c.n+=2;log(s,`Time Kat: ${DB[c.id].name} gets two more stall counters (${c.n}).`,pid);return}}};

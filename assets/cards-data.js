@@ -455,7 +455,7 @@ const RAW_HEROES=[
 ["Cy the Builder", "Artificer", "0", "1", "2", "15", "Whenever this Hero Crafts, you may search your library for a Recipe card, put it into your hand, then shuffle your library.", 3],
 /* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
 ["Gravecaller", "Necromancer", "0", "1", "1", "15", "Exhaust: You may play a Summon card from your discard pile, paying its Aura cost.", 3],
-["Jorkev, the Pillager", "Necromancer", "0", "1", "1", "15", "Whenever a Revenant enters play under your control, you may choose a player. That player Mills 1. (They move the top card of their library to their discard pile.)", 3],
+["Jorkev, the Pillager", "Necromancer", "0", "1", "1", "15", "Whenever a Revenant you control dies, you may choose a player. That player Mills 1. (They move the top card of their library to their discard pile.)", 4],
 ["Filth Scavenger", "Necromancer", "0", "1", "1", "15", "Exhaust a ready Revenant you control and shuffle a card from a discard pile into its owner's library: This Hero gains +1 Strength this turn. Activate only once each turn.\n{L3} Activate any number of times each turn.", 4],
 ["Xlek Grave Robber", "Necromancer", "0", "1", "1", "15", "Exhaust: Put the top 3 cards of target opponent's discard pile on the bottom of their library. Summon a 1/1 Revenant with Impervious. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)", 3],
 ["Necromancer E", "Necromancer", "0", "1", "1", "15", "", 2]

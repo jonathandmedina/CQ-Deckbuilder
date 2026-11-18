@@ -44,12 +44,13 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
   rev(s,1);revs(s)[0].st.poison=1;E.act(s,0,{type:"pass"});E.act(s,1,{type:"pass"});resolve(s);
   while(s.phase==="town"){const p=s.town.order[s.town.i];E.act(s,p,{type:"leave"});resolve(s)}
   ok(revs(s).length===0,"Poison (Health Point loss at Dawn) kills a Revenant")}
-/* Raise Revenant + Jorkev, the Pillager (one Mill per Revenant) */
+/* Raise Revenant; Jorkev, the Pillager (Nov 17: one Mill per Revenant that dies, not enters) */
 {const s=game(["Jorkev, the Pillager","Xlek Grave Robber","Necromancer E"]);const c=hand(s,0,"Raise Revenant");const a=E.actorFor(s,0);const ol=s.p[1].lib.length;
   ok(play(s,c).ok,"play Raise Revenant");ok(revs(s).length===1&&revs(s)[0].str===1&&E.hp(s,revs(s)[0])===1,"a 1/1 Revenant");ok(a.ex,"Exhaust this Hero");
-  ok(s.p[1].lib.length===ol-1,"Jorkev, the Pillager: opponent Mills 1")}
+  ok(s.p[1].lib.length===ol,"Jorkev: no Mill when a Revenant enters (Nov 17)");E.sacrifice(s,revs(s)[0]);resolve(s);ok(s.p[1].lib.length===ol-1,"Jorkev, the Pillager: a Revenant dies, the opponent Mills 1")}
 {const s=game(["Jorkev, the Pillager","Xlek Grave Robber","Necromancer E"]);const c=hand(s,0,"Restless Dead");const ol=s.p[1].lib.length;play(s,c);
-  ok(revs(s).length===2&&s.p[1].lib.length===ol-2,"Jorkev, the Pillager triggers once per Revenant (2)")}
+  ok(revs(s).length===2&&s.p[1].lib.length===ol,"no Mill on entering");revs(s).forEach(r=>{r.dmg=1});E.checkDeaths(s);resolve(s);ok(revs(s).length===0&&s.p[1].lib.length===ol-2,"Jorkev, the Pillager triggers once per Revenant that dies (2), including dying at 0 Health Points")}
+{const s=game(["Jorkev, the Pillager","Xlek Grave Robber","Necromancer E"]);rev(s,1,1);const ol=s.p[1].lib.length,ml=s.p[0].lib.length;E.sacrifice(s,revs(s,1)[0]);resolve(s);ok(s.p[1].lib.length===ol&&s.p[0].lib.length===ml,"an opponent's Revenant dying doesn't trigger Jorkev")}
 /* Grave Tide: sacrifice 3 as a cost, summon 5; Cursed Urn on sacrifice */
 {const s=game();const c=hand(s,0,"Grave Tide");rev(s,2);ok(!canPlay(s,c),"Grave Tide needs 3 Revenants");rev(s,1);ok(canPlay(s,c),"playable with 3");
   inv(s,0,"Cursed Urn");ok(!E.act(s,0,{type:"play",uid:c.uid}).ok,"you must pick the Revenants to sacrifice");play(s,c,{targets:revs(s).map(r=>r.uid)});ok(revs(s).length===5,"5 Revenants after sacrificing 3 ("+revs(s).length+")");

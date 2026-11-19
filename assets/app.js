@@ -128,32 +128,32 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 /* Keyword reminder text: a short, italic "(…)" after the sentence that uses a keyword. Added when cards are shown
    (tiles, the Card Art template, the Play tab), once per keyword per card, and skipped when the card already explains it. */
-const REMINDERS=[
-  [/\bBanding\b/,()=>"When one attacks, other ready allies with Banding may join it, adding their STR. Every attacker is exhausted."],
-  [/\bBarkborn\b/,()=>"It gains DEF equal to its HP this turn."],
-  [/\bCombo\b(?!\s+(?:cards?|counters?)\b)/,()=>"Reveal the top card of your library. If it's a Combo card, you may play it or a Combo card from your hand."],
-  [/\bSpell Damage Pillars?\b/,()=>"Your next spell deals 2 extra damage, then sacrifice the Pillar."],
-  [/\bPain Pillars?\b/,()=>"At Dusk, target loses 1 HP for each Pain Pillar you control."],
-  [/\bConjure\b(?![^.]*\bPillar\b)/,()=>"Create a Pillar token on the battlefield."],
-  [/\bEcho\b(?!\s+cop)/,()=>"If you played it from your hand, exile it and play it again for free at your next Dawn."],
-  [/\bEnraged\b/,()=>"At or below half its maximum HP."],
-  [/\bGuard (\d+|X)\b/,m=>`Prevents the next ${m[1]} damage to it, before DEF, until Dusk.`],
-  [/\bHarmonize (\d+|X)\b/,m=>`Exhaust ${m[1]} other ready Heroes you control.`],
-  [/\bLifelink\b/,()=>"When it deals damage, it heals that much."],
-  [/\bMeditates?\b/,()=>"Exhaust it. Each Dawn it gets a meditation counter and may stay exhausted. When it readies, remove them: gain that much Aura and +1 Strength each until Dusk."],
-  [/\bMills? (\d+|X)\b/,m=>`Move the top ${m[1]==="1"?"card":m[1]+" cards"} of the library to the discard pile.`],
-  [/\bPiercing(?: (\d+|X))?\b/,m=>m[1]?`Its damage ignores ${m[1]} of the target's DEF, and at least ${m[1]} always gets through.`:"Its damage ignores all of the target's DEF."],
-  [/\bTip\b/,()=>"Gain 1 Gold. You gain Gold from Tip only once per round."],
-  [/\bPoisonous(?: (\d+|X))?\b/,m=>m[1]?`When it deals damage, Poison the target ${m[1]==="1"?"once":m[1]+" times"}.`:"When it deals damage, Poison the target once for each damage dealt."],
-  [/\bScry (\d+|X)\b/,m=>m[1]==="1"?"Look at the top card of your library. You may put it on the bottom.":`Look at the top ${m[1]} cards of your library. Put any on the bottom and the rest back in any order.`],
+const REMINDERS=[ /* Update 43: templated wording; matched in any case, since keywords are lowercase mid-sentence */
+  [/\bBanding\b/i,()=>"When one attacks, other ready allies with banding may join it, adding their Strength. Every attacker is exhausted."],
+  [/\bBarkborn\b/i,()=>"It gains Defense equal to its Health Points until end of turn."],
+  [/\bCombo\b(?!\s+(?:cards?|counters?)\b)/i,()=>"Reveal the top card of your library. If it's a combo card, you may play it or a combo card from your hand."],
+  [/\bSpell Damage Pillars?\b/,()=>"Your next spell deals 2 extra damage, then sacrifice the pillar."],
+  [/\bPain Pillars?\b/,()=>"At dusk, target loses 1 Health Point for each Pain Pillar you control."],
+  [/\bConjure\b(?![^.]*\bPillar\b)/i,()=>"Create a pillar token on the battlefield."],
+  [/\bEcho\b(?!\s+cop)/i,()=>"If you played it from your hand, exile it and play it again for free at your next dawn."],
+  [/\bEnraged\b/i,()=>"At or below half its maximum Health Points."],
+  [/\bGuard (\d+|X)\b/i,m=>`Prevents the next ${m[1]} damage to it, before Defense, until end of turn.`],
+  [/\bHarmonize (\d+|X)\b/i,m=>`Exhaust ${m[1]} other ready heroes you control.`],
+  [/\bLifelink\b/i,()=>"When it deals damage, it heals that much."],
+  [/\bMeditates?\b/i,()=>"Exhaust it. Each dawn it gets a meditation counter and may stay exhausted. When it readies, remove them: gain that much Aura and +1 Strength each until end of turn."],
+  [/\bMills? (\d+|X)\b/i,m=>`Move the top ${m[1]==="1"?"card":m[1]+" cards"} of the library to the discard pile.`],
+  [/\bPiercing(?: (\d+|X))?\b/i,m=>m[1]?`Its damage ignores ${m[1]} of the target's Defense, and at least ${m[1]} always gets through.`:"Its damage ignores all of the target's Defense."],
+  [/\bTip\b/i,()=>"Gain 1 gold. You gain gold from tip only once per round."],
+  [/\bPoisonous(?: (\d+|X))?\b/i,m=>m[1]?`When it deals damage, poison the target ${m[1]==="1"?"once":m[1]+" times"}.`:"When it deals damage, poison the target once for each damage dealt."],
+  [/\bScry (\d+|X)\b/i,m=>m[1]==="1"?"Look at the top card of your library. You may put it on the bottom.":`Look at the top ${m[1]} cards of your library. Put any on the bottom and the rest back in any order.`],
   [/\bSpell Damage \+(\d+|X)\b/,m=>`Your spells deal ${m[1]} extra damage.`],
-  [/\bStealth\b/,()=>"It can't be targeted by enemy cards or abilities, but it can be attacked."],
-  [/\bStun\b/,()=>"It can't play cards or activate abilities."],
-  [/\bConfuse\b/,()=>"Its attacks and targets are chosen at random."],
-  [/\bBurn\b(?! counters?)/,()=>"It loses 1 Health Point at Dawn."],
-  [/\bPoison\b(?! counters?)/,()=>"It loses 1 Health Point at Dawn."],
-  [/\bWound\b(?! counters?)/,()=>"It loses 1 Health Point at Dawn."],
-  [/\bFatigue\b(?! counters?)/,()=>"It doesn't ready at the next Dawn."]
+  [/\bStealth\b/i,()=>"It can't be targeted by enemy cards or abilities, but it can be attacked."],
+  [/\bStun\b/i,()=>"It can't play cards or activate abilities."],
+  [/\bConfuse\b/i,()=>"Its attacks and targets are chosen at random."],
+  [/\bBurn\b(?! counters?)/i,()=>"It loses 1 Health Point at dawn."],
+  [/\bPoison\b(?! counters?)/i,()=>"It loses 1 Health Point at dawn."],
+  [/\bWound\b(?! counters?)/i,()=>"It loses 1 Health Point at dawn."],
+  [/\bFatigue\b(?! counters?)/i,()=>"It doesn't ready at the next dawn."]
 ];
 function withReminders(text){
   return String(text||"").split("\n").map(line=>{
@@ -168,7 +168,8 @@ function withReminders(text){
     const byEnd={};adds.forEach(([e,t])=>{(byEnd[e]=byEnd[e]||[]).unshift(t)});
     Object.keys(byEnd).map(Number).sort((a,b)=>b-a).forEach(e=>{line=line.slice(0,e)+` {R:${byEnd[e].join(" ")}}`+line.slice(e)});
     return line}).join("\n")}
-const remHTML=h=>h.replace(/\{R:(.*?)\}/g,'<i class="rem">($1)</i>');
+/* reminder text, written on the card in ( … ) or added by the site, is italic Arial (Update 43) */
+const remHTML=h=>h.replace(/\(([^()]*)\)/g,'<i class="rem">($1)</i>').replace(/\{R:(.*?)\}/g,'<i class="rem">($1)</i>');
 /* stat words on cards: STR, DEF and HP (or the spelled-out words, as newer cards are written) are spelled out (Strength, Defense, Health Points) and they and Aura take the colour of their icons; a number right before the word is coloured with it */
 const STAT_WORDS=[[/((?:[+\u2212-]?\d+|X) )?\b(?:STR|Strength)\b/g,"str","Strength"],[/((?:[+\u2212-]?\d+|X) )?\b(?:DEF|Defense)\b/g,"def","Defense"],[/((?:[+\u2212-]?\d+|X) )?\b(?:HP|Health Points)\b/g,"hp","Health Points"],[/((?:[+\u2212-]?\d+|X) )?\bHealth Point\b(?!s)/g,"hp","Health Point"],[/((?:[+\u2212-]?\d+|X) )?\bAura\b/g,"aura","Aura"]];
 const statWords=h=>STAT_WORDS.reduce((t,[re,k,w])=>t.replace(re,(m,n)=>`<b class="kw kw-${k}">${n||""}${w}</b>`),h);

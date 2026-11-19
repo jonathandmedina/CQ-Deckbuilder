@@ -13,7 +13,7 @@ const play=(s,c,extra)=>{const r=E.act(s,0,Object.assign({type:"play",uid:c.uid}
 /* data */
 ok(D["Exhausting Wave"]&&!ctx.RAW_CARDS.some(r=>r[1]==="Curse of Exhaustion")&&ctx.REN["Curse of Exhaustion"]==="Exhausting Wave","Curse of Exhaustion is now Exhausting Wave");
 ok(D["h:Bar-Bear Ian"]&&ctx.REN["Bloodhowl"]==="Bar-Bear Ian","Bloodhowl is now Bar-Bear Ian");
-ok(/Duplicate it/.test(D["h:Songweaver"].rules)&&/has Echo/.test(D["h:Echo Performer"].rules),"Songweaver and Echo Performer swapped names");
+ok(/Duplicate it/.test(D["h:Songweaver"].rules)&&/has echo/i.test(D["h:Echo Performer"].rules),"Songweaver and Echo Performer swapped names");
 ok(D["Pummel"].cost==="4","Pummel 4 Aura");
 ok(["Energizing Ale","Fireball Flask","Harmonic Flask"].every(n=>D[n].sub==="Consumable"),"three Bard flasks are Consumable");
 ok(D["Deeg's Choice"]&&D["Jess' Choice"]&&ctx.REN["Sure Fire Choice"]==="Deeg's Choice"&&ctx.REN["Nature's Choice"]==="Jess' Choice","Deeg's Choice / Jess' Choice renames");

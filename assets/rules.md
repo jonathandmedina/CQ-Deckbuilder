@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 19, 2026 (update 42: Surrender Your Soul now offers three choices: 2 Aura, +2 STR or +2 DEF)*
+*Version: November 19, 2026 (update 43: card text templating; “until end of turn”)*
 
 ## 1. Welcome to Riverstead
 
@@ -250,7 +250,7 @@ This is where the fighting happens. Set the Position marker to **Lead**.
 All players do these steps together:
 
 1. **At Dusk effects.** Resolve abilities that happen “At Dusk”, such as Pain Pillars, using the stack.
-2. **End effects.** Effects that last “until Dusk”, “this turn” or “for the rest of the turn” end.
+2. **End effects.** Effects that last “until end of turn” end.
 3. **Lose Aura.** Remove all unspent Aura from your pool.
 4. **Collect Gold.** Gain 1 Gold for each of your Heroes that isn’t dead.
 5. **Hand size.** The maximum hand size is 5. If you have more than 5 cards in hand, discard cards of your choice until you have 5.
@@ -430,8 +430,8 @@ Party order stays the same while a Hero is dead.
 A dead Hero’s soul can still help your party. When you have priority during the Battle Phase, instead of taking a Hero’s action, you may **surrender the soul** of one of your dead Heroes. Choose one:
 
 - Gain 2 Aura.
-- Target ally gains +2 STR this turn.
-- Target ally gains +2 DEF this turn.
+- Target ally gets +2 Strength until end of turn.
+- Target ally gets +2 Defense until end of turn.
 
 **If you surrender a Hero’s soul, it can’t be revived.** Leave it face down and turn it sideways to show its soul is gone. It stays in its position, so party order doesn’t change, and it’s skipped like any dead Hero.
 
@@ -553,14 +553,14 @@ At the Blacksmith in Town, you may upgrade any of them:
 | Keyword | Meaning |
 |---|---|
 | **Banding** | Lets Heroes and summons group together for one attack. When you declare an attack with a Hero or summon that has Banding, you may band it with any number of other ready allies that have Banding. Add the STR of every banded attacker together for the attack, then exhaust all of them. Nothing has Banding naturally; only cards grant it. |
-| **Barkborn** | When a summon with Barkborn enters, it gains DEF equal to its HP until Dusk. Barkborn stacks: each time a summon has Barkborn, add that DEF again. Cards and abilities can give the next summon (or every summon) that enters this turn Barkborn. |
+| **Barkborn** | When a summon with Barkborn enters, it gains Defense equal to its Health Points until end of turn. Barkborn stacks: each time a summon has Barkborn, add that DEF again. Cards and abilities can give the next summon (or every summon) that enters this turn Barkborn. |
 | **Combo** | When a card with Combo finishes resolving (including any Scry it makes), reveal the top card of your library. If its subtype is Combo, you may play it, or a Combo card from your hand, by paying its Aura cost. This doesn’t use another action. A Hidden card with Combo triggers it when revealed. A **Combo card** is a card with the Combo subtype; only those count as “Combo cards you have played this turn.” |
 | **Conjure** | Create a Pillar token on the battlefield. |
 | **Echo** | If you played this card from your hand, you may exile it as it resolves. If you do, play it again at your next Dawn without paying its costs again: no Aura, and no additional cost such as Harmonize (it keeps the mode and X chosen the first time, and no Heroes are exhausted for it). Any of your Heroes that can play it does, and you may choose new targets, then put it in your discard pile. A card played any other way (at Dawn, from your discard pile or library, or as a copy or duplicate) can’t Echo, so a card repeats only once. Cards that give Echo (Echo Performer, Sing Along) follow the same rule. The Dawn replay counts as playing the card, so it triggers abilities like Tip Jar and The Forbidden Tuner. |
 | **Enraged** | A Hero is Enraged while it is at or below half its maximum HP. |
 | **Harmonize X** | Exhaust X other ready Heroes you control (not the Hero playing the card) to gain the effect after the colon. |
 | **Lifelink** | When this Hero deals damage, heal it that much. |
-| **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, it gets a meditation counter, then you may keep it exhausted. When it readies (at Dawn or any other way), it stops Meditating: remove all its meditation counters (including any from Monk Tactics), your party gains that much Aura, and the Hero gains +1 Strength for each one removed until Dusk. |
+| **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, it gets a meditation counter, then you may keep it exhausted. When it readies (at Dawn or any other way), it stops Meditating: remove all its meditation counters (including any from Monk Tactics), your party gains that much Aura, and the Hero gains +1 Strength for each one removed until end of turn. |
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. |
 | **Piercing X** | Damage from this ignores X points of the target’s DEF (attacks, spells, abilities and any other damage), and at least X of it always gets through. Piercing with no number ignores all of the target’s DEF. |
@@ -570,7 +570,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Spell Damage Pillar** | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. |
 | **Tip** | Gain 1 Gold. You gain Gold from Tip only once per round (see Tip in Other Rules). |
 | **Stealth** | This Hero can’t be targeted by enemy cards or abilities. It can still be attacked. |
-| **Meditation counter** | No effect on stats. When the Meditating Hero readies, each one becomes 1 Aura and +1 STR until Dusk. |
+| **Meditation counter** | No effect on stats. When the Meditating Hero readies, each one becomes 1 Aura and +1 Strength until end of turn. |
 
 **Damage types.** Fire, Ice, Lightning, Light and Dark damage work like normal damage for now. They will matter in a future update.
 
@@ -582,7 +582,10 @@ If you need to draw a card and your library is empty, you lose the game. Your di
 
 ### Card Text Terms
 
-- **“This turn”** and **“for the rest of the turn”** mean until Dusk this round.
+- **“Until end of turn”** means until the End effects step of this round’s Dusk Phase. Older printings may say “until Dusk” or “this turn” for the same thing.
+- **“This turn”** means during this round. Cards use it for counts and limits, such as “the first card you play this turn”.
+- **Reminder text** is the *(italic text in parentheses)* that explains a keyword. It never changes what a card does.
+- **Capital letters.** Card names and class names are capitalized. Game words such as hero, item, equipment, spell, summon, stun and gold are lowercase in the middle of a sentence; Strength, Defense, Health Points and Aura stay capitalized.
 - **“Ally”** and **“friendly”** mean anything you control, including summons. **“Enemy”** and **“opposing”** mean anything an opponent controls.
 - **“Destroy”** puts a card in play into its owner’s discard pile. **“Exile”** removes it to the exile zone.
 - **“Sacrifice”** means destroy one of your own cards as a cost.
@@ -611,7 +614,7 @@ A face-down card in an opponent’s inventory can be targeted by effects that ta
 
 **Dawn.** Both players ready their cards. Ava’s Heroes have 1, 2 and 1 Aura, so her pool is 4. Ben’s Ranger has a Poison counter, so it loses 1 Health Point, and the counter comes off. Both players draw.
 
-**Battle, Lead.** The marker is on Lead. Ava’s Paladin plays Extra Protection (+1 DEF until Dusk) and stays ready. Ben’s Barbarian makes a basic attack on Ava’s Mage: 4 STR − 1 DEF = 3 damage. The Barbarian exhausts.
+**Battle, Lead.** The marker is on Lead. Ava’s Paladin plays Extra Protection (+1 Defense until end of turn) and stays ready. Ben’s Barbarian makes a basic attack on Ava’s Mage: 4 STR − 1 DEF = 3 damage. The Barbarian exhausts.
 
 **Battle, Center.** The marker moves to Center. Ava’s Mage casts a spell that deals 4 damage to Ben’s Barbarian, which has 1 DEF, so it takes 3. Ben’s Cleric heals his Barbarian for 3.
 
@@ -629,7 +632,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 
 ### Game structure
 
-- **Round**: One full cycle of play: Dawn, Battle, Dusk, Town. On cards, “turn” means round. Effects that last “this turn” end at Dusk.
+- **Round**: One full cycle of play: Dawn, Battle, Dusk, Town. On cards, “turn” means round. Effects that last “until end of turn” end at Dusk.
 - **Phase**: One part of a round: Dawn, Battle, Dusk, Town.
 - **Dawn Phase**: First phase of a round. Ready cards, refresh Aura, lose Health Points from status counters, resolve “At Dawn” effects, draw a card.
 - **Battle Phase**: Second phase. Heroes act in position order, using the Position marker, until every player passes.
@@ -757,7 +760,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Dies / Dead**: At 0 HP a Hero dies and is turned face down. Its equipment goes to your inventory. It can’t act, make Aura, earn Gold or be healed until revived.
 - **Heal**: Restore HP, never above max. Only from cards, abilities or the Inn. A heal turned into damage or HP loss (such as by Inversion Stone) isn’t a heal.
 - **Revive**: Bring a dead Hero back to life. The card says how much HP and whether it is ready. It returns with no equipment. A surrendered Hero can’t be revived.
-- **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: gain 2 Aura; target ally +2 STR this turn; or target ally +2 DEF this turn. That Hero can’t be revived. Once per dead Hero.
+- **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: gain 2 Aura; target ally +2 Strength until end of turn; or target ally +2 Defense until end of turn. That Hero can’t be revived. Once per dead Hero.
 - **Surrendered**: A dead Hero whose soul was surrendered. Face down and sideways. Still counts as dead.
 - **Adjacent**: Heroes next to each other in party order. The Lead and the Closer are adjacent to the Center; the Center is adjacent to both.
 - **STR/HP (e.g. 3/3)**: Shorthand for a summon's Strength and Health.
@@ -769,8 +772,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Combo (Monk, Set 2)**: When a card with Combo finishes resolving (after any Scry), reveal the top card of your library. If it’s a Combo card, you may play it or a Combo card from your hand, paying its Aura cost. A Combo card is a card with the Combo subtype.
 - **Mill X**: Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.)
 - **Petal counter (Monk, Set 2)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
-- **Meditate / Meditating (Monk, Set 2)**: Exhaust the Hero; it’s Meditating. At each Dawn it gets a meditation counter, then you may keep it exhausted. When it readies, remove its counters: your party gains that much Aura, and it gets +1 STR per counter until Dusk.
-- **Meditation counter (Monk, Set 2)**: Builds up on a Meditating Hero (some Monk Tactics add more). It does nothing until the Hero readies, then each one becomes 1 Aura and +1 STR until Dusk.
+- **Meditate / Meditating (Monk, Set 2)**: Exhaust the Hero; it’s Meditating. At each Dawn it gets a meditation counter, then you may keep it exhausted. When it readies, remove its counters: your party gains that much Aura, and it gets +1 Strength per counter until end of turn.
+- **Meditation counter (Monk, Set 2)**: Builds up on a Meditating Hero (some Monk Tactics add more). It does nothing until the Hero readies, then each one becomes 1 Aura and +1 Strength until end of turn.
 - **Piercing X (Monk)**: Damage from this ignores X points of the target's DEF, and at least X always gets through. Piercing with no number ignores all DEF.
 - **Echo (Bard)**: If you played it from your hand, exile it and play it again for free at your next Dawn (no Aura, and Harmonize isn't paid again; you may choose new targets), then discard it. A card only repeats once.
 - **Tip (Bard)**: Gain 1 Gold, only once per round.
@@ -781,7 +784,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.
 - **Conjure (Mage, Warlock)**: Create a Pillar token in play.
 - **Banding (Druid, Bard)**: Granted by cards only. Heroes and summons with Banding can attack together: add their STR, then exhaust them all.
-- **Barkborn (Druid)**: When a summon with Barkborn enters, it gains DEF equal to its HP until Dusk. Barkborn stacks: a summon with Barkborn twice gains twice that DEF.
+- **Barkborn (Druid)**: When a summon with Barkborn enters, it gains Defense equal to its Health Points until end of turn. Barkborn stacks: a summon with Barkborn twice gains twice that DEF.
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Your next spell has +2 Spell Damage; sacrifice the Pillar after that spell resolves.

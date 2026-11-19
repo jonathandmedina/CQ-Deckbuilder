@@ -5,7 +5,7 @@ const ctx={console,Math,Date,JSON};ctx.window=ctx;ctx.globalThis=ctx;vm.createCo
 vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].map(f=>fs.readFileSync(path.join(A,f),"utf8")).join("\n;\n")+"\n;this.RAW_CARDS=RAW_CARDS;this.SET2_CARDS=SET2_CARDS;this.CARD_RENAMES=CARD_RENAMES;this.RECIPES=RECIPES;",ctx);
 const E=ctx.CQE;let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
 const row=n=>ctx.RAW_CARDS.find(r=>r[1]===n);
-[["Gold Ingot","2","Exile: Gain 3 Gold."],["Platinum Ingot","2","Exile: Draw a card."],["Silver Ingot","1","Exile: Your party gains +1 Strength this turn."]].forEach(([n,c,t])=>{const r=row(n);
+[["Gold Ingot","2","Exile: Gain 3 gold."],["Platinum Ingot","2","Exile: Draw a card."],["Silver Ingot","1","Exile: Your party gets +1 Strength until end of turn."]].forEach(([n,c,t])=>{const r=row(n);
   ok(r&&r[2]===c&&r[4]==="Item"&&r[5]==="Material"&&r[6]==="Generic"&&r[7]===t&&r[8]===3,n+": "+c+" Aura, Material, v3");ok(ctx.SET2_CARDS.includes(n),n+" is a Set 2 card (moved in Update 40)")});
 ok(ctx.RAW_CARDS.filter(r=>/ Ingot$/.test(r[1])&&/^(Silver|Platinum)/.test(r[1])).length===2,"one Silver Ingot and one Platinum Ingot");
 ["Gold Bar","Silver Bar","Platinum Bar"].forEach(n=>ok(!row(n)&&ctx.CARD_RENAMES[n]===n.replace("Bar","Ingot"),n+" renamed"));

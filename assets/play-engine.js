@@ -55,7 +55,7 @@ E.isUp=isUp;E.hasUp=hasUpN;
 /* Nov 15 (update 35): the Dagger subtype decides what counts as a Dagger (Feather Blade, Ritual Athame and the Dagger tokens included) */
 E.isDagger=(s,e)=>!!e&&((DB[e.id]||{}).sub==="Dagger"||(TOK[e.name]||{}).sub==="Dagger");
 /* Dawn items (Almandine, Rose Quartz, Topaz): Material items that say "At Dawn, you may exile this". Before update 35 these were the Gemstone subtype. */
-const isDawnItem=d=>!!d&&d.type==="Item"&&/^At Dawn, you may exile this/.test(d.rules||"");E.isDawnItem=isDawnItem;
+const isDawnItem=d=>!!d&&d.type==="Item"&&/^At dawn, you may exile this/i.test(d.rules||"");E.isDawnItem=isDawnItem;
 /* Ingots (Set 2): the old Metal subtype, now Material */
 const isIngot=d=>!!d&&d.type==="Item"&&/ Ingot$/.test(d.name||"");
 function upgradeCost(o){const d=DB[o.id]||{};if(d.up)return{cost:d.up.cost,weapon:true};const m=/Upgrade[^:]*?(\d+|X) Gold/i.exec((DB[o.id]||{}).rules||"");if(!m)return null;return m[1]==="X"?{x:true}:{cost:+m[1]}}
@@ -570,11 +570,11 @@ function checkWin(s){if(s.over)return;
 
 /* ---------- tokens / summons ---------- */
 function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};const o={uid:nid(s),kind:"summon",name,str:t.str,hp:t.hp,bdef:t.def||0,sub:t.sub||"",dmg:0,ex:!ready,ctrl:pid,owner:pid,tok:true,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},mods:[],fl:{}};
-  if(/\bStealth\b/.test(t.rules||""))o.stealth=true;
-  if(/^Impervious\b/.test(t.rules||""))o.imp=true; /* Set 2 Revenant */ /* update 29: summons that enter with Stealth (Woods Beast, Great Rootfolk) */
+  if(/\bStealth\b/i.test(t.rules||""))o.stealth=true;
+  if(/^Impervious\b/i.test(t.rules||""))o.imp=true; /* Set 2 Revenant */ /* update 29: summons that enter with Stealth (Woods Beast, Great Rootfolk) */
   P(s,pid).bf.push(o);log(s,`${P(s,pid).name} summons ${/^[AEIOU]/.test(name)?"an":"a"} ${name} (${t.str}/${t.hp}).`,pid);
   /* Barkborn: gains DEF equal to its HP until Dusk; stacks */
-  {const pl=P(s,pid);const n=(/Barkborn/.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
+  {const pl=P(s,pid);const n=(/Barkborn/i.test(t.rules||"")?1:0)+(pl.t.nextBark||0)+(pl.t.allBark||0);pl.t.nextBark=0;
    if(n>0){addMod(o,{def:n*o.hp});log(s,`${name} has Barkborn${n>1?" ×"+n:""}: +${n*o.hp} DEF this turn.`,pid)}}
   /* Set 2 Jorkev, the Pillager: since Nov 17, 2026 it triggers when a Revenant dies (see destroyObj), not when one enters */
   return o}
@@ -592,7 +592,7 @@ function eqObjFromCard(s,pid,card){const d=DB[card.id];const up=d.up&&s.upg&&s.u
 E.eqObjFromCard=eqObjFromCard;
 function canUseEq(s,h,e){if(!h||h.kind!=="hero"||h.dead)return false;
   const cls=e.cls;if(cls!=="Generic"&&!heroIs(h,cls))return false;
-  const r=def(e).rules||"";{const lm=/Must be Level (\d)/.exec(r);if(lm&&h.lvl<+lm[1])return false}if(/1 or more STR/.test(r)&&strOf(s,h)<1)return false;return true}
+  const r=def(e).rules||"";{const lm=/Must be Level (\d)/i.exec(r);if(lm&&h.lvl<+lm[1])return false}if(/1 or more (STR|Strength)/i.test(r)&&strOf(s,h)<1)return false;return true}
 E.canUseEq=canUseEq;
 function heroIs(h,cls){if(h.cls===cls)return true;if(h.cls==="Omni"&&cls!=="Generic")return true; /* Set 2 Hero Construct (Remey): Omni = every Hero type */return eqList(h).some(e=>e.name==="Ring of Vocation"&&e.x&&e.x.cls===cls)}
 E.heroIs=heroIs;

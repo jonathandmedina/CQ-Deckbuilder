@@ -17,9 +17,9 @@ ok(ctx.RAW_EQUIP.filter(r=>r[5]==="Artificer"||r[3]==="Artificer").every(r=>r[2]
 [["Knight's Sword","Sword"],["Tower Shield","Shield"],["Longbow","Bow"],["Ritual Athame","Dagger"],["Feather Blade","Dagger"],["Sacred Vestments","Robe"],["Gravedigger's Medallion","Amulet"]].forEach(([n,s])=>ok(eq(n)[2]===s,n+" is "+s));
 ok(ctx.RAW_TOKENS.filter(r=>/Dagger/.test(r[0])).every(r=>r[2]==="Dagger"),"Dagger tokens are Dagger");
 /* card fixes */
-ok(card("Frailty")[7]==="Set a Hero's DEF to 0 until Dusk."&&card("Frailty")[8]===2,"Frailty until Dusk, v2");
+ok(card("Frailty")[7]==="Set a hero's Defense to 0 until end of turn."&&card("Frailty")[8]===2,"Frailty until Dusk, v2");
 ok(/^3\{A\}, Exile: /.test(card("Dynamite")[7])&&card("Dynamite")[8]===3,"Dynamite exiles, v3");
-ok(/Equipped Hero gains \+1 STR\./.test(eq("Gauntlets of Growth")[4])&&eq("Gauntlets of Growth")[7]==="1"&&eq("Gauntlets of Growth")[9]===5,"Gauntlets of Growth +1 STR in text, v5");
+ok(/Equipped hero gets \+1 Strength\./.test(eq("Gauntlets of Growth")[4])&&eq("Gauntlets of Growth")[7]==="1"&&eq("Gauntlets of Growth")[9]===5,"Gauntlets of Growth +1 STR in text, v5");
 ok(!/counts as a Dagger/.test(ctx.EQUIP_UPGRADES["Feather Blade"][1]),"Feather Blade upgrade no longer says it counts as a Dagger");
 /* engine */
 ok(E.isDagger(null,{id:"Ritual Athame",name:"Ritual Athame"})&&E.isDagger(null,{id:"Feather Blade",name:"Feather Blade"})&&E.isDagger(null,{name:"Dagger",tok:true})&&!E.isDagger(null,{id:"Long Sword",name:"Long Sword"}),"Dagger by subtype");

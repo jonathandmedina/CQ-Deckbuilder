@@ -184,7 +184,7 @@ ok(E.DB["h:Artificer A"].name==="Wren Partsfinder"&&E.DB["h:Artificer B"].name==
 {const s=game(["Wren Partsfinder","Cy the Builder","Gadget Commander"]);const c=hand(s,0,"The Archfrost Recipe");inv(s,0,"Frost Pearl");inv(s,0,"Gold Ingot");inv(s,0,"Quicksilver");
   ok(!canPlay(s,c),"Quicksilver can't stand in for a Sword")}
 {const s=game(["Wren Partsfinder","Cy the Builder","Gadget Commander"]);const c=hand(s,0,"Wellness Rod Recipe");inv(s,0,"Antidote");inv(s,0,"Silver Ingot");inv(s,0,"Quicksilver");
-  ok(!canPlay(s,c),"Quicksilver can't stand in for a Potion");ok(/any Material/.test(E.DB["Quicksilver"].rules),"Quicksilver text")}
+  ok(!canPlay(s,c),"Quicksilver can't stand in for a Potion");ok(/any material/i.test(E.DB["Quicksilver"].rules),"Quicksilver text")}
 ok(/plays or activates/.test(E.DB["h:Material Bender"].rules),"Material Bender text (Nov 16)");
 
 /* Nov 16: Time Pearl answers equipment being played (from hand or equipped from inventory) */

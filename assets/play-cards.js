@@ -99,7 +99,7 @@ curse("Mark of Doom",t("enemyHero","target enemy Hero"));
 def("Healing Beam",{t:[t("any","heal target")],run(c){heal(c,c.t[0],5)}});
 def("Healing Touch",{t:[t("hero","Hero to heal")],run(c){heal(c,c.t[0],2)}});
 def("Full Heal",{run(c){living(c.me).forEach(h=>heal(c,h,3))}});
-def("All Play",{run(c){c.s.p.forEach(pl=>living(pl).forEach(h=>heal(c,h,2)));const f=c.actor&&c.actor.lvl>=3?5:2;living(c.me).forEach(h=>heal(c,h,f))}});
+def("All Play",{run(c){const f=c.actor&&c.actor.lvl>=3?5:3; /* Update 43: each hero heals 3 (5 at Level 3) */c.s.p.forEach(pl=>living(pl).forEach(h=>heal(c,h,f)))}});
 def("Light Blast",dmgCard(2,{type:"Light",pierce:2}));
 def("Light Helix",{t:[t("hero","Hero to heal"),t("any","damage target")],run(c){heal(c,c.t[0],2);D(c,c.t[1],2,{type:"Light"})}});
 def("Healing Blast",{t:[t("any","heal target"),t("any","damage target")],run(c){const x=c.x||0;heal(c,c.t[0],x);D(c,c.t[1],Math.ceil(x/2),{type:"Light"});exMe(c)}});
@@ -609,7 +609,7 @@ S["Quicksilver"]={};
    a made item or weapon goes into your inventory. "Exhaust this Hero." */
 const recipe=n=>def(n,{run(c){const keep=E.flipRecipe(c.s,c.pid,c.inst,c.actor);
   /* Nov 15, 2026: crafting doesn't exhaust the Hero by rule; only a Recipe whose text says "Exhaust this Hero." does */
-  if(c.actor&&!c.actor.dead&&/Exhaust this Hero\./.test((c.def&&c.def.rules)||""))exMe(c);
+  if(c.actor&&!c.actor.dead&&/Exhaust this hero\./i.test((c.def&&c.def.rules)||""))exMe(c);
   return keep?"stay":undefined}});
 Object.keys(E.RECIPES||{}).forEach(recipe);
 /* made items */

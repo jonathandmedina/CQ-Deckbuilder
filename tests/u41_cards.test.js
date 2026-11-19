@@ -11,7 +11,7 @@ function game(h0,h1){const s=E.newGame({seed:11,players:[{name:"A",deck:{name:"A
 const hand=(s,pid,id)=>{const c={uid:uid(),id,owner:pid};s.p[pid].hand.push(c);return c};
 /* data */
 const row=n=>ctx.RAW_CARDS.find(r=>r[1]===n);
-ok(/summon or Construct with 3 or less HP/.test(row("Snuff Out")[7])&&row("Snuff Out")[8]===2,"Snuff Out text and v2");
+ok(/summon or Construct with 3 or less Health Points/.test(row("Snuff Out")[7])&&row("Snuff Out")[8]===2,"Snuff Out text and v2");
 ok(row("Feather of Zaawa")&&!row("Phoenix Down")&&ctx.REN["Phoenix Down"]==="Feather of Zaawa"&&row("Feather of Zaawa")[3]==="Legendary"&&row("Feather of Zaawa")[5]==="Consumable","Phoenix Down is now Feather of Zaawa");
 ok(row("Xakro's War Horn")[3]==="Legendary"&&row("Xakro's War Horn")[0]===1&&row("Xakro's War Horn")[8]===3,"Xakro's War Horn is Legendary (1 copy, v3)");
 ["Disarm","Ice Bath","Pitfall"].forEach(n=>ok(!row(n)&&ctx.DEP.some(r=>r[1]===n)&&D[n]&&D[n].dep,n+" is deprecated (kept in the engine DB)"));

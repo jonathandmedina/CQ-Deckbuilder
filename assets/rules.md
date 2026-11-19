@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 19, 2026 (update 43: card text templating; “until end of turn”)*
+*Version: November 19, 2026 (update 44: face-down cards can’t be chosen by effects that check Aura cost)*
 
 ## 1. Welcome to Riverstead
 
@@ -606,7 +606,7 @@ Tip: gain 1 Gold. You gain Gold from Tip only once per round. Undeniable Perform
 
 ### Targeting Face-Down Cards
 
-A face-down card in an opponent’s inventory can be targeted by effects that target items or non-Hero objects, without being revealed first.
+A face-down card in an opponent’s inventory can be targeted by effects that target items or non-Hero objects, without being revealed first. The exception is an effect that checks the card’s Aura cost (such as Dissipate): a face-down card’s cost is hidden, so it can’t be chosen.
 
 ## 19. Example Round
 

@@ -310,6 +310,7 @@ function costHp(s,pid,h,n,why){if(!h||n<=0)return;loseHp(s,h,n,why);const pl=P(s
   const at=living(pl).find(x=>hasEqN(x,"Ritual Athame")&&x.fl.athameRound!==s.round);
   if(at&&!s.over){at.fl.athameRound=s.round;const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);{const an=eqList(at).some(e=>e.name==="Ritual Athame"&&isUp(s,e))?2:1;ask(s,pid,`Ritual Athame: deal ${an} Dark damage to any target`,targetOpts(s,pid,ts,an).concat([{label:"No damage",v:null}]),"dmgTo",{n:an,name:"Ritual Athame",type:"Dark",src:at.uid})}}}
 E.costHp=costHp;
+ASK.healTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t)return;const hh=pr.data.healer?heroByUid(s,pr.data.healer):null;heal(s,hh||{name:pr.data.name||"Heal",ctrl:pid},t,pr.data.n,pid)};
 ASK.dmgTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t)return;const src=pr.data.src?find(s,pr.data.src):null;damage(s,src?src.o:{name:pr.data.name,ctrl:pid},t,pr.data.n,{card:true,type:pr.data.type,pierce:pr.data.pierce,srcName:pr.data.name,noTrig:!src})};
 /* Trophy Rack: a Barbarian you control destroyed an item or Equipment */
 function trophy(s,byUid){const h=heroByUid(s,byUid);if(!h||!heroIs(h,"Barbarian"))return;const pl=P(s,h.owner);
@@ -387,13 +388,13 @@ function heal(s,healer,o,n,pid){
   const src=pid!=null?pid:(healer&&healer.kind==="hero"?healer.owner:(healer&&healer.ctrl!=null?healer.ctrl:null));
   const oc=ctrl(s,o);
   if(src!=null&&!sameTeam(s,oc,src)&&invHas(P(s,src),"Inversion Stone")){log(s,`Inversion Stone turns the heal on ${o.name} into ${n} Light damage.`);damage(s,{name:"Inversion Stone"},o,n,{card:true,type:"Light",noTrig:true});return 0}
-  if(o.fl&&o.fl.falseCure===s.round){o.fl.falseCure=null;log(s,`False Cure: the heal on ${o.name} becomes HP loss.`);loseHp(s,o,n,"False Cure");return 0}
+  if(o.fl&&o.fl.falseCure===s.round){/* Update 44: lasts until end of turn, every heal (like Inversion Stone) */log(s,`False Cure: the heal on ${o.name} becomes HP loss.`);loseHp(s,o,n,"False Cure");return 0}
   const h=Math.min(n,o.dmg||0);o.dmg-=h;if(h>0)log(s,`${o.name} heals ${h} HP.${hpTag(s,o)}`);
   if(h>0&&src!=null){const sp=P(s,src);sp.t.healed=(sp.t.healed||0)+h;stat(s,"heal",src,CUR_SRC||(healer&&healer.name)||"Heal",h)}
   if(h>0&&healer&&healer.kind==="hero"&&!healer.dead&&healer.name==="Radiant Oracle"&&h>=3)draw(s,healer.owner,1);
   /* Lightbringer L6: whenever you heal (any heal your side makes, not the Inn), deal that much Light damage */
   if(h>0&&src!=null&&!s._lb){const lb=living(P(s,src)).find(x=>x.name==="Lightbringer"&&x.lvl>=6);
-    if(lb){const t=bestDamageTarget(s,src,h,{type:"Light"});if(t){s._lb=true;try{damage(s,lb,t,h,{type:"Light",card:true,noTrig:true,srcName:"Lightbringer"})}finally{s._lb=false}}else log(s,"Lightbringer: no enemy it can hurt.",src)}}
+    if(lb){/* Update 44: you choose the target */const ts=inPlayTargets(s).filter(o2=>(!stealth(s,o2)&&!cardProof(s,o2))||ctrl(s,o2)===src);if(ts.length)ask(s,src,`Lightbringer: deal ${h} Light damage to any target`,targetOpts(s,src,ts,h).concat([{label:"No damage",v:null}]),"dmgTo",{n:h,name:"Lightbringer",type:"Light"});else log(s,"Lightbringer: no target.",src)}}
   return h}
 /* picks the enemy the damage hurts most (skips targets Guard/DEF would block, Stealth, Cloak); prefers kills */
 function bestDamageTarget(s,pid,n,o){o=o||{};const op=P(s,oppOf(s,pid));let best=null,bv=0;
@@ -1539,7 +1540,7 @@ function doDawn(s){
       /* Update 40: if there's a tie, you choose */
       if(top.length>1)ask(s,pid,`Brute's Banner: which Barbarian gets +${2*n} STR this turn?`,top.map(h=>({label:h.name,v:h.uid})),"bruteBanner",{n});
       else if(top[0]){const b=top[0];b.fl.bannerRound=s.round;b.fl.bannerN=n;log(s,`Brute's Banner: ${b.name} +${2*n} STR this turn.`,pid)}} /* Nov 17: each copy triggers */
-    living(pl).forEach(h=>{if(h.name==="Lightbringer"){const lt=living(pl).filter(o=>o!==h&&o.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(lt)heal(s,h,lt,1)}
+    living(pl).forEach(h=>{if(h.name==="Lightbringer"){/* Update 44: you choose which other friendly hero heals */const lt=living(pl).filter(o=>o!==h).sort((a,b)=>(b.dmg||0)-(a.dmg||0));if(lt.length)ask(s,pid,"Lightbringer: heal another friendly hero for 1 Health Point",lt.map(o=>({label:`${o.name} (${Math.max(0,maxHp(s,o)-(o.dmg||0))}/${maxHp(s,o)} HP)`,v:o.uid})),"healTo",{n:1,healer:h.uid})}
       if(hasEqN(h,"Chalice of Life")){living(pl).forEach(o=>heal(s,h,o,1));if(hasUpN(s,h,"Chalice of Life")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,h,t,2)}}
       h.ench.forEach(e=>{if(e.name==="Sanctuary")heal(s,null,h,1,e.owner)})});
     /* Echo */

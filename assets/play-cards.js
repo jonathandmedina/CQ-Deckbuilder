@@ -98,8 +98,8 @@ curse("Mark of Doom",t("enemyHero","target enemy Hero"));
 /* ===== Cleric ===== */
 def("Healing Beam",{t:[t("any","heal target")],run(c){heal(c,c.t[0],5)}});
 def("Healing Touch",{t:[t("hero","Hero to heal")],run(c){heal(c,c.t[0],2)}});
-def("Full Heal",{run(c){living(c.me).forEach(h=>heal(c,h,3))}});
-def("All Play",{run(c){const f=c.actor&&c.actor.lvl>=3?5:3; /* Update 43: each hero heals 3 (5 at Level 3) */c.s.p.forEach(pl=>living(pl).forEach(h=>heal(c,h,f)))}});
+def("Full Heal",{t:[t("any","heal target to full")],run(c){const o=c.t[0];if(o)heal(c,o,E.maxHp(c.s,o))}}); /* Update 44: X = its maximum Health Points */
+def("All Play",{run(c){const f=c.actor&&c.actor.lvl>=3?5:2; /* Update 44: each hero heals 2 (5 at Level 3) */c.s.p.forEach(pl=>living(pl).forEach(h=>heal(c,h,f)))}});
 def("Light Blast",dmgCard(2,{type:"Light",pierce:2}));
 def("Light Helix",{t:[t("hero","Hero to heal"),t("any","damage target")],run(c){heal(c,c.t[0],2);D(c,c.t[1],2,{type:"Light"})}});
 def("Healing Blast",{t:[t("any","heal target"),t("any","damage target")],run(c){const x=c.x||0;heal(c,c.t[0],x);D(c,c.t[1],Math.ceil(x/2),{type:"Light"});exMe(c)}});
@@ -322,7 +322,7 @@ def("Disenchant",{t:[t("ench","enchantment")],run(c){destroy(c,c.t[0])}});
 def("Naturalize",{t:[ITEM],run(c){destroy(c,c.t[0])}});
 def("Vandalize",{t:[PIL],run(c){destroy(c,c.t[0])}});
 def("Exile",{t:[t("nonHero")],run(c){destroy(c,c.t[0],true)}});
-def("Dissipate",{t:[t("nonHero","non-Hero object (cost 3 or less)",(s,o)=>o.tok||(parseInt((E.DB[o.id]||{}).cost,10)||0)<=3)],run(c){destroy(c,c.t[0])}});
+def("Dissipate",{t:[t("nonHero","non-Hero object (cost 3 or less)",(s,o)=>!o.fd&&(o.tok||(parseInt((E.DB[o.id]||{}).cost,10)||0)<=3))],run(c){destroy(c,c.t[0])}}); /* Update 44: a face-down card's cost is hidden, so it can't be chosen */
 def("Snuff Out",{t:[t("any","summon or Construct with 3 or less HP",(s,o)=>(o.kind==="summon"||!!o.hc)&&E.hp(s,o)<=3)],run(c){const o=c.t[0];if(!o)return;
   /* Update 41: a Hero Construct is destroyed by taking it to 0 HP (it then dies like any Hero, and can't be revived) */
   if(o.kind==="hero"){o.dmg=E.maxHp(c.s,o);log(c,`${o.name} is destroyed (Snuff Out).`);return}destroy(c,o)}});
@@ -465,7 +465,7 @@ def("Blood Price",{x:{label:"X (HP the Barbarian loses)",max:(s,pid)=>Math.max(0
   run(c){const b=c.actor;if(!b)return;const n=Math.max(0,Math.min(c.x||0,E.hp(c.s,b)-1));if(!n){log(c,"Blood Price: X is 0.");return} /* Update 40: this Barbarian (the Hero playing it); no longer readies */
     E.costHp(c.s,c.pid,b,n,"Blood Price");buff(b,{str:n});log(c,`${b.name} gains +${n} STR this turn.`)}});
 def("Scrap Metal",{run(c){c.actor.fl.scrapRound=c.s.round;log(c,`This turn, whenever ${c.actor.name} damages an enemy Hero, destroy one of its equipment.`)}});
-def("Smash and Grab",{t:[t("item","item to destroy",(s,o,x)=>o.kind!=="card"||o.fd||x.actor.lvl>=3||(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2,{opt:true}),t("item","second item to destroy",(s,o,x)=>o.kind!=="card"||o.fd||x.actor.lvl>=3||(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2,{opt:true,distinct:true})],
+def("Smash and Grab",{t:[t("item","item to destroy",(s,o,x)=>o.kind!=="card"||x.actor.lvl>=3||(!o.fd&&(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2),{opt:true}),t("item","second item to destroy",(s,o,x)=>o.kind!=="card"||x.actor.lvl>=3||(!o.fd&&(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2),{opt:true,distinct:true})],
   run(c){c.t.filter(Boolean).forEach(o=>{destroy(c,o);E.trophy(c.s,c.actor.uid)});exMe(c)}});
 hid("Die Swinging","dying",(s,pid,tr)=>{const f=E.find(s,tr.hero);return f&&f.pid===pid&&E.heroIs(f.o,"Barbarian")},c=>{const h=E.find(c.s,c.trig.hero).o;
   const cs=E.candidates(c.s,c.pid,{k:"enemy"},{attack:true,actor:h}).map(u=>E.resolveTarget(c.s,u)).filter(Boolean);
@@ -501,7 +501,7 @@ def("Sonic Recall",{t:[HERO],x:{label:"X: Songs to shuffle from your discard pil
 OPS.sonicRecall=(s,pid,pr,picks)=>{const pl=s.p[pid];let n=0;picks.forEach(u=>{const i=pl.disc.findIndex(x=>x.uid===u);if(i>=0){pl.lib.push(pl.disc.splice(i,1)[0]);n++}});if(n)E.shuffle(s,pl.lib);E.log(s,`${pl.name} shuffles ${n} Song${n===1?"":"s"} into their library.`,pid);
   const t2=pr.tgt&&E.resolveTarget(s,pr.tgt);const a=E.find(s,pr.actor);if(t2&&n)E.damage(s,a?a.o:{name:"Sonic Recall"},t2,n,{card:true,srcName:"Sonic Recall"})};
 /* Cleric */
-def("False Cure",item(1,[HERO],c=>{const h=c.t[0];if(!h)return;h.fl.falseCure=c.s.round;log(c,`The next heal on ${h.name} this turn becomes HP loss.`)},{exile:true}));
+def("False Cure",item(1,[HERO],c=>{const h=c.t[0];if(!h)return;h.fl.falseCure=c.s.round;log(c,`Until end of turn, heals on ${h.name} become HP loss.`)},{exile:true}));
 hid("Second Chances","dusk",(s,pid)=>(s.p[pid].t.died||[]).some(u=>{const h=E.heroByUid(s,u);return h&&h.dead&&!h.surr&&h.owner===pid&&!E.heroIs(h,"Cleric")}),c=>{
   const hs=(c.me.t.died||[]).map(u=>E.heroByUid(c.s,u)).filter(h=>h&&h.dead&&!h.surr&&h.owner===c.pid&&!E.heroIs(h,"Cleric")).filter((h,i,a)=>a.indexOf(h)===i);
   if(hs.length===1)A.secondChance(c.s,c.pid,{},hs[0].uid);else E.ask(c.s,c.pid,"Second Chances: revive which Hero?",hs.map(h=>({label:h.name,v:h.uid})),"secondChance",{name:"Second Chances"})});

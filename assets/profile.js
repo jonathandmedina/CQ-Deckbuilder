@@ -101,7 +101,7 @@ function players(){const P=new Map();if(!D.rows)return[];
     let p=P.get(r.user_id);if(!p){p={uid:r.user_id,name:r.player_name||"Player",games:0,gids:new Set(),classes:new Set(),cards:new Set(),byCls:{},wins:0,last:null};P.set(r.user_id,p)}
     if(p.gids.has(r.game_id))continue;p.gids.add(r.game_id);p.games++;if(r.result==="win")p.wins++;
     if(!p.last||r.created_at>p.last){p.last=r.created_at;p.name=r.player_name||p.name}
-    const seen=new Set();(r.heroes||[]).forEach(id=>{const h=BYID.get(id)||BYID.get("h:"+id);if(!h||!CLASSES.includes(h.cls))return;p.classes.add(h.cls);seen.add(h.cls)});
+    const seen=new Set();(r.heroes||[]).forEach(id=>{const h=BYID.get(id)||BYID.get("h:"+id);if(!h)return;if(CLASSES.includes(h.cls))p.classes.add(h.cls); /* Nov 19: Set 2 classes earn badges too (shown only to Set 2 viewers) */if(CLASSES.includes(h.cls)||SET2_CLASSES.includes(h.cls))seen.add(h.cls)});
     seen.forEach(c=>p.byCls[c]=(p.byCls[c]||0)+1);
     Object.entries(r.cards||{}).forEach(([k,q])=>{if(q>0&&BYID.has(k)&&BYID.get(k).kind!=="hero")p.cards.add(k)})}
   const out=[...P.values()];out.forEach(p=>{const pr=D.profiles&&D.profiles.get(p.uid);if(pr){p.name=pr.screen_name;p.avatar=pr.avatar;p.hasProfile=true;p.discord=pr.discord_public!==false?pr.discord_name||null:null}p.score=score(p)});
@@ -113,7 +113,7 @@ function mount(v){injectCSS();if(!v)return;
   if(!SB){v.innerHTML='<h1>Leaderboard</h1><p class="lede">Player accounts aren\'t switched on for this site yet.</p>';return}
   if(!D.rows&&!D.loading&&!D.err)load();
   v.innerHTML=S.view==="player"?viewPlayer():viewBoard()}
-function topBadges(p,n){return Object.entries(p.byCls).map(([c,g])=>[c,g,badgeLevel(g)]).filter(x=>x[2]).sort((a,b)=>b[1]-a[1]).slice(0,n)
+function topBadges(p,n){const vis=visClasses();return Object.entries(p.byCls).filter(([c])=>vis.includes(c)).map(([c,g])=>[c,g,badgeLevel(g)]).filter(x=>x[2]).sort((a,b)=>b[1]-a[1]).slice(0,n)
   .map(([c,g,b])=>`<img src="${badgeSrc(c,b[0])}" alt="${c} ${b[0]}" title="${c} ${b[0]} · ${g} games" width="72" height="72" loading="lazy">`).join("")}
 function viewBoard(){
   const head=`<h1>Playtester Leaderboard</h1>
@@ -155,7 +155,7 @@ function viewPlayer(){
   <div class="pf-kpis"><div class="pf-kpi"><b>${fmt(Math.round(p.score*100)/100)}</b><span>Playtester score</span></div><div class="pf-kpi"><b>${fmt(p.games)}</b><span>Complete games</span></div>
     <div class="pf-kpi"><b>${p.classes.size}/${CLASSES.length}</b><span>Classes tested</span></div><div class="pf-kpi"><b>${fmt(p.cards.size)}</b><span>Cards tested</span></div>
     <div class="pf-kpi"><b>${p.games?Math.round(100*p.wins/p.games)+"%":"–"}</b><span>Wins</span></div></div>
-  ${mine&&window.CQVol?CQVol.panel("Sound"):""}<h2>Class badges</h2><div class="pf-cls">${CLASSES.map(c=>{const g=p.byCls[c]||0,b=badgeLevel(g),nb=BADGES.find(x=>g<x[1]);
+  <h2>Class badges</h2><div class="pf-cls">${visClasses().map(c=>{const g=p.byCls[c]||0,b=badgeLevel(g),nb=BADGES.find(x=>g<x[1]);
     return`<div class="pf-cl${b?"":" off"}"><img src="${badgeSrc(c,(b||BADGES[0])[0])}" alt="${c} ${b?b[0]:"badge (locked)"}" width="72" height="72" loading="lazy"><b>${c}${b?" "+b[0]:""}</b><span>${fmt(g)} game${g===1?"":"s"}${nb?` · ${nb[1]-g} to ${nb[0]}`:""}</span></div>`}).join("")}</div>
   <h2>Public decks</h2>${decks===undefined||decks==="loading"?'<p class="pf-note">Loading decks…</p>':decks.err?`<p class="pf-note">Couldn't load decks: ${E(decks.err)}</p>`:!decks.length?'<p class="pf-note">No public decks.</p>':
   `<div class="pf-decks">${decks.map(d=>`<div class="pf-deck"><h3>${E(d.name)}</h3>${deckFacesHTML(d.heroes.map(h=>BYID.get(h)).filter(Boolean))}

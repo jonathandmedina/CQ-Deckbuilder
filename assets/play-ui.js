@@ -264,6 +264,17 @@ html[data-skin="art"] .ph.hk.cand{outline-offset:-1px}
 .ph.hk .ph-card.hk-card{width:100%;max-width:none;margin:0;perspective:1100px;container-type:inline-size}
 .ph.hk .ph-face{overflow:visible;border-radius:7px;background:#120c08;border:2px solid #b8743a;display:flex;flex-direction:column}
 .ph.hk .ph-back{border-radius:7px}
+.ph.hk .ph-back.sb{background:#0b0710 url("assets/art/ui/soul-bg.webp") center/cover no-repeat;border:2px solid #b8743a;outline:none;justify-content:flex-start;gap:4cqw;padding:0 0 4cqw;image-rendering:pixelated}
+.ph.hk .ph-back.sb .sb-nb{width:100%;flex:none;box-sizing:border-box}
+.ph.hk .ph-back.sb .sb-opts{display:flex;flex-direction:column;align-items:center;gap:2.5cqw;width:100%;margin-top:1cqw}
+.ph.hk .ph-back.sb .sb-opt{background:none;border:0;padding:0;line-height:0;width:60%;cursor:default;filter:grayscale(1) brightness(.55);opacity:.7;transition:filter .2s,opacity .2s,transform .12s}
+.ph.hk .ph-back.sb .sb-opt img{width:100%;height:auto;image-rendering:pixelated;pointer-events:none}
+.ph.hk .ph-back.sb .sb-opt.on{filter:none;opacity:1;cursor:pointer;animation:sbglow 1.6s ease-in-out infinite alternate}
+.ph.hk .ph-back.sb .sb-opt.on:hover,.ph.hk .ph-back.sb .sb-opt.on:focus-visible{transform:scale(1.05);outline:none}
+@keyframes sbglow{from{filter:drop-shadow(0 0 1.5cqw rgba(160,120,240,.45))}to{filter:drop-shadow(0 0 4cqw rgba(170,130,255,.95))}}
+@media (prefers-reduced-motion:reduce){.ph.hk .ph-back.sb .sb-opt.on{animation:none;filter:drop-shadow(0 0 3cqw rgba(170,130,255,.8))}}
+.ph.hk .ph-back.sb .sb-who{margin-top:auto;font:400 6cqw/1.1 "Pirata One",var(--display);color:#cfc6e6;text-shadow:0 .5cqw 0 #000;text-align:center;padding:0 4cqw}
+.ph.hk .ph-back.sb.sb-done .sb-nb{filter:grayscale(.85) brightness(.8)}
 .ph.hk .ph-back .btn.soul-btn{position:absolute;left:6%;right:6%;bottom:30%;width:auto;margin:0;font-size:max(11px,5.5cqw);padding:3px 6px}
 .hk-nb{display:flex;align-items:center;gap:2.5cqw;height:13.5cqw;padding:0 2.5cqw;background:linear-gradient(#0000,#0006),var(--cc);border-bottom:2px solid #b8743a;border-radius:5px 5px 0 0}
 .hk-ci{height:76%;width:auto;flex:none;filter:drop-shadow(0 1px 0 #000);image-rendering:pixelated}
@@ -1192,7 +1203,7 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
   const top=`<span class="ph-top"><span>${h.hc?"Last · Hero Construct":(s.trials?["Lead","Closer"]:E.POS)[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
   const extra=`${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}`;
   if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart hk" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
-    ${top}${heroCardHTML(s,h,d,st,extra,soul,"")}
+    ${top}${heroCardHTML(s,h,d,st,extra,soul,"",h.dead&&h.owner===U.me?soulBackHTML(h,(opts||[]).filter(o=>o.type==="soul"&&o.hero===h.uid)):"")}
   </div>`;
   return`<div role="button" tabindex="0" class="${cls}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
     ${top}
@@ -1206,7 +1217,16 @@ const STAT_NAME={str:"Strength",def:"Defense",aura:"Aura",hp:"Health Points"};
 /* Compact Hero Card (Card Art theme): pixel art in the action area, name bar with class icon,
    STR / Life / DEF squares and an Ability tab that shows the rules on hover */
 const HK_COL={str:"#b3121a",hp:"#7f7fd8",def:"#3f9b3f"};
-function heroCardHTML(s,h,d,st,extra,soul,hacts){
+/* Nov 19: a dead Hero's card back (your own Heroes): the starfield, a "Surrender Soul" name band with the class icon,
+   and the three soul buttons, which light up only when you can surrender (your priority in the Battle Phase) */
+const SOUL_BTNS=[[1,"soul-aura","+2 Aura: your party gains 2 Aura"],[2,"soul-str","+2 STR: target ally gains +2 Strength this turn"],[5,"soul-def","+2 DEF: target ally gains +2 Defense this turn"]];
+function soulBackHTML(h,sopts){const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";
+  const ico=`${base}ico-${String(h.cls||"generic").toLowerCase()}.png`;
+  const btns=h.surr?"":SOUL_BTNS.map(([ch,img,lbl])=>{const o=sopts.find(x=>x.ch===ch);
+    return`<button type="button" class="sb-opt${o?" on":""}"${o?` data-pa="do" data-a='${esc(JSON.stringify(o))}'`:" disabled"} title="${esc(lbl)}${o?"":" (when you have priority)"}" aria-label="${esc(lbl)}"><img src="${base}art/ui/${img}.webp" alt="" draggable="false"></button>`}).join("");
+  return`<div class="hk-nb sb-nb"><img class="hk-ci" src="${ico}" alt="${esc(h.cls)}"><span class="hk-nm">${h.surr?"Soul Surrendered":"Surrender Soul"}</span></div>
+    <div class="sb-opts">${btns}</div><span class="sb-who">${esc(h.name)}${h.surr?" · can't be revived":""}</span>`}
+function heroCardHTML(s,h,d,st,extra,soul,hacts,sback){
   const src=`${typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/"}art/hero-pix/${artKey(d.name)}-pix.png?v=${typeof ART_VER!=="undefined"?ART_VER:1}`;
   const ico=`${typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/"}ico-${String(h.cls||d.cls||"generic").toLowerCase()}.png`;
   /* remember what was on screen last render: newly changed numbers pulse, a Hero that just died flips over */
@@ -1234,7 +1254,7 @@ function heroCardHTML(s,h,d,st,extra,soul,hacts){
       <div class="hk-st">${h.dead?"":num("str","STR")+num("hp","HP")+num("def","DEF")}<span class="hk-ab" tabindex="0" aria-label="Ability: ${esc(rulesPlainSafe(d.rules))}">Ability<span class="hk-tip" role="tooltip"><span class="hk-tt">${esc(d.name)} <small>${esc(h.cls)} Hero</small></span>${rules}</span></span></div>
       ${pop}
     </div>
-    <div class="ph-back" aria-hidden="${h.dead?"false":"true"}"><span class="gemb"></span><span class="cqt">Crystal<br>Quest</span><span class="rib">${h.surr?"Surrendered":"Dead"}<small>${esc(d.name)}</small></span>${soul||""}</div>
+    ${sback?`<div class="ph-back sb${h.surr?" sb-done":""}" aria-hidden="${h.dead?"false":"true"}">${sback}</div>`:`<div class="ph-back" aria-hidden="${h.dead?"false":"true"}"><span class="gemb"></span><span class="cqt">River<br>stead</span><span class="rib">${h.surr?"Surrendered":"Dead"}<small>${esc(d.name)}</small></span>${soul||""}</div>`}
   </div></div>`}
 function rulesPlainSafe(t){try{return typeof rulesPlain==="function"?rulesPlain(t||""):String(t||"")}catch(e){return String(t||"")}}
 function statPopHTML(s,h,st,f){const pl=s.p[h.owner];const rows=[];const r=(l,v,sign)=>rows.push(`<div><span>${esc(l)}</span><b>${sign&&v>0?"+":""}${v}</b></div>`);

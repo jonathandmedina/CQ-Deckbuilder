@@ -87,7 +87,7 @@ def("Ritual of Pain",{run(c){pillar(c,"Pain Pillar");exMe(c)}});
 def("Dark Insight",{run(c){draw(c,1);pillar(c,"Pain Pillar");exMe(c)}});
 def("Splitting Ritual",{t:[t("allyPillar","your Pillar")],run(c){const p=c.t[0];if(!p)return;destroy(c,p);pillar(c,p.name,2);exMe(c)}});
 def("Doubling Ritual",{run(c){const ps=c.me.bf.filter(o=>o.kind==="pillar");ps.forEach(p=>destroy(c,p));ps.forEach(p=>pillar(c,p.name,2));exMe(c)}});
-def("Curse of Exhaustion",{t:[t("player","target party")],run(c){const p=c.t[0];if(p)living(c.s.p[p.pid]).forEach(h=>{if(!E.cantExhaust(c.s,h,c.pid))h.ex=true});log(c,`${p?p.name:"?"}'s party is exhausted.`);exMe(c)}});
+def("Exhausting Wave",{t:[t("player","target party")],run(c){const p=c.t[0];if(p)living(c.s.p[p.pid]).forEach(h=>{if(!E.cantExhaust(c.s,h,c.pid))h.ex=true});log(c,`${p?p.name:"?"}'s party is exhausted.`);exMe(c)}});
 def("Power Vacuum",{t:[t("enemyPlayer","target party")],run(c){const pl=c.op;const r=Math.min(pl.aura,c.x||0);pl.aura-=r;log(c,`${pl.name} loses ${r} Aura.`);exMe(c)}});
 def("Bewilder",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Bewilder: you may discard one card from their hand",cards:c.op.hand.map(x=>x.uid),min:0,max:1,op:"opDiscard",target:E.oppOf(c.s,c.pid)})}});
 def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic, Spell or Song",cards:c.op.hand.filter(x=>/Tactic|Spell|Song/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:E.oppOf(c.s,c.pid)})}});
@@ -143,7 +143,7 @@ def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buf
 def("Battered",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
 /* Nov 12, 2026: double this Hero's Strength (was Strength times the number of Barbarians) */
 def("Pummel",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0])*2);exMe(c)}});
-def("Awestruck",{t:[t("any","Hero or summon with less STR",(s,o,x)=>x.actor&&E.str(s,o)<E.str(s,x.actor))],run(c){st(c,c.t[0],"stun")}});
+def("Awestruck",{t:[t("hero","Hero with less STR",(s,o,x)=>x.actor&&E.str(s,o)<E.str(s,x.actor))],run(c){st(c,c.t[0],"stun")}});
 def("Bloodthirst",{t:[EN],run(c){c.actor.ex=false;attack(c,c.actor,c.t[0],{after:"readyIfKill"})}});
 def("Unstoppable",{t:[EN],run(c){attack(c,c.actor,c.t[0],{noHidden:true})}});
 def("Beat Down",{run(c){buff(c.actor,{str:2});const tg=rand(c,enemies(c).filter(e=>!E.stealth(c.s,e)&&!E.noAttack(c.s,e)));attack(c,c.actor,tg,{after:"exhaustTarget"})}});
@@ -297,7 +297,7 @@ def("Mass Populate",{run(c){summons(c.me).slice().forEach(o=>E.copySummon(c.s,c.
 def("Evolve",{run(c){summons(c.me).slice(0,2).forEach(o=>{destroy(c,o,true);E.copySummon(c.s,c.pid,o,1)});exMe(c)}});
 def("Return to the Earth",{t:[t("allySummon","summon to sacrifice")],run(c){destroy(c,c.t[0]);draw(c,1)}});
 def("Primal Energy",{t:[HERO],can:(s,pid)=>s.p[pid].bf.filter(o=>o.kind==="summon"&&!o.ex).length>=2,run(c){summons(c.me).filter(o=>!o.ex).slice(0,2).forEach(o=>o.ex=true);if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}});
-def("Nature's Choice",M(2,[{label:"Summon a 2/3 Elk",run:c=>{summon(c,"Elk");exMe(c)}},{label:"A summon gains +2 STR",t:[t("summon")],run:c=>buff(c.t[0],{str:2})},{label:"Ready a summon",t:[t("allySummon","your summon")],run:c=>{if(c.t[0])c.t[0].ex=false}}]));
+def("Jess' Choice",M(2,[{label:"Summon a 2/2 Wolf",run:c=>{summon(c,"Wolf")}},{label:"Summons you control gain +1 Strength this turn",run:c=>{c.me.bf.filter(o=>o.kind==="summon"&&!o.dead).forEach(o=>buff(o,{str:1}));log(c,"Your summons gain +1 STR this turn.")}},{label:"Summons you control gain +1 Defense this turn",run:c=>{c.me.bf.filter(o=>o.kind==="summon"&&!o.dead).forEach(o=>buff(o,{def:1}));log(c,"Your summons gain +1 DEF this turn.")}}]));
 def("Stampede",{run(c){summons(c.me).forEach(o=>{o.ex=false;const tg=rand(c,enemies(c).filter(e=>!E.stealth(c.s,e)&&!E.noAttack(c.s,e)));if(tg)E.damage(c.s,o,tg,str(c,o,tg),{combat:true})});summons(c.me).forEach(o=>o.ex=false)}});
 /* ===== Generic ===== */
 def("Inspiration",{run(c){draw(c,2)}});
@@ -314,6 +314,9 @@ def("Block Progress",{t:[HERO],run(c){if(c.t[0])c.t[0].fl.noLevel=c.s.round}});
 def("Humble",{t:[t("any","Hero or summon")],run(c){buff(c.t[0],{zeroStr:1})}});
 def("Enfeeble",{t:[t("any","Hero or summon")],run(c){buff(c.t[0],{zeroDef:1})}});
 def("Disarm",{t:[EQ],run(c){if(c.t[0])E.unequip(c.s,c.t[0])}});
+/* Update 40 (Nov 19, 2026): Brutality's Choice (Barbarian) and Vonugutt's Choice (Mage) */
+def("Brutality's Choice",M(2,[{label:"This Hero gains +2 Strength this turn",run:c=>{if(c.actor){buff(c.actor,{str:2});log(c,`${c.actor.name} gains +2 STR this turn.`)}}},{label:"Destroy target equipment",t:[EQ],run:c=>{if(c.t[0])destroy(c,c.t[0])}},{label:"The next time this Hero deals damage, Wound that enemy twice",run:c=>{if(c.actor){c.actor.fl.brutalWound=true;log(c,`The next time ${c.actor.name} deals damage, that enemy is Wounded twice.`)}}}]));
+def("Vonugutt's Choice",M(2,[{label:"Conjure a Spell Damage Pillar",run:c=>pillar(c,"Spell Damage Pillar")},{label:"Burn any target twice",t:[ANY],run:c=>st(c,c.t[0],"burn",2)},{label:"Stun any target twice",t:[ANY],run:c=>st(c,c.t[0],"stun",2)}]));
 def("Shatter",{t:[EQ],run(c){destroy(c,c.t[0])}});
 def("Disenchant",{t:[t("ench","enchantment")],run(c){destroy(c,c.t[0])}});
 def("Naturalize",{t:[ITEM],run(c){destroy(c,c.t[0])}});
@@ -334,7 +337,7 @@ def("Potion",item(2,[t("hero","Hero to heal")],c=>heal(c,c.t[0],3),{exile:true})
 def("Revitalize",item(2,[],c=>{c.me.aura+=4;log(c,`${c.me.name} gains 4 Aura.`)},{exile:true}));
 def("Smoke Bomb",item(1,[AHERO],c=>buff(c.t[0],{stealth:1}),{exile:true}));
 def("Vial of Venom",item(1,[ANY],c=>st(c,c.t[0],"poison",2),{exile:true}));
-def("Energizing Ale",item(2,[t("ally","another ally",(s,o,x)=>!x||!x.actor||o!==x.actor)],c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}},{exile:true}));
+def("Energizing Ale",item(2,[t("ally","ally to ready")],c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}},{exile:true}));
 def("Meditation Shrine",item(0,[],c=>E.meditate(c.s,c.actor),{ex:true,anyClass:true}));
 def("Fireball Flask",item(2,[AL],c=>{if(c.t[0]){buff(c.t[0],{str:3});log(c,`${c.t[0].name} gets +3 STR this turn.`)}},{exile:true}));
 def("Undeniable Performance",{run(c){c.me.fl.tipFromRound=c.s.round;log(c,"Tips you get this turn come out of an opposing party's Gold.")}});
@@ -422,7 +425,7 @@ hab("Trainee Vincent",[{label:"Meditate",run:c=>E.meditate(c.s,c.actor)}]);
 hab("Inspiration Herald",[{label:"Ready another ally",t:[t("ally","another ally",(s,o,x)=>o.uid!==x.actor.uid&&o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}}]);
 hab("Rage Brute",[{label:"Fatigue: +STR equal to its STR this turn",ex:false,can:(s,pid,a)=>!a.fat,run:c=>{const n=E.str(c.s,c.actor);c.actor.fat=1;buff(c.actor,{str:n});log(c,`${c.actor.name} gets a Fatigue counter and gains +${n} STR this turn (it won't ready at the next Dawn).`)}}]);
 hab("Rootbinder",[{label:"Summons +1 STR this turn",run:c=>{c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}}]);
-/* Songweaver (Nov 12, 2026): passive, the first Song it plays from your hand each turn has Echo; Level 3: every Song it plays from your hand (engine) */
+/* Echo Performer (Nov 12, 2026): passive, the first Song it plays from your hand each turn has Echo; Level 3: every Song it plays from your hand (engine) */
 hab("Storm Caller",[{label:"Deal 2 damage to each enemy Hero",cost:2,can:(s,pid,a)=>a.lvl<3,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,2,{card:true}))},{label:"Deal 3 damage to each enemy Hero",lvl:3,cost:2,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,3,{card:true}))}]);
 hab("Wild Shifter",[{label:"Ready a summon you control",can:(s,pid,a)=>a.lvl<3&&s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}},{label:"Ready up to two summons you control",lvl:3,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex),t("allySummon","second exhausted summon (optional)",(s,o)=>o.ex,{opt:true,distinct:true})],run:c=>{c.t.filter(Boolean).forEach(o=>{if(o.ex){o.ex=false;log(c,`${o.name} readies.`)}})}}]);
 hab("Rootfolk Elder",[{label:"Next summon this turn has Barkborn",can:(s,pid,a)=>a.lvl<3,run:c=>{c.me.t.nextBark=(c.me.t.nextBark||0)+1;log(c,"The next summon that enters this turn has Barkborn.")}},{label:"All summons that enter this turn have Barkborn",lvl:3,run:c=>{c.me.t.allBark=(c.me.t.allBark||0)+1;log(c,"All summons that enter this turn have Barkborn.")}}]);
@@ -456,9 +459,9 @@ HARM.understanding=c=>{scry(c,3,{draw:1})};
 HARM.soloAct=c=>{c.me.fl.songDisc=true;log(c,"Songs cost 2 less this turn.")};
 const rogueEx=t("allyHero","exhausted Rogue",(s,o)=>o.ex&&E.heroIs(o,"Rogue"));
 /* Barbarian */
-def("Blood Price",{t:[t("allyHero","Barbarian",(s,o)=>E.heroIs(o,"Barbarian"))],x:{label:"X (HP the Barbarian loses)",max:(s,pid)=>Math.max(0,...s.p[pid].heroes.filter(h=>!h.dead&&E.heroIs(h,"Barbarian")).map(h=>E.hp(s,h)-1)),free:true},
-  run(c){const b=c.t[0];if(!b)return;const n=Math.max(0,Math.min(c.x||0,E.hp(c.s,b)-1));if(!n){log(c,"Blood Price: X is 0.");return}const was=E.enraged(c.s,b);
-    E.costHp(c.s,c.pid,b,n,"Blood Price");buff(b,{str:n});log(c,`${b.name} gains +${n} STR this turn.`);if(!was&&E.enraged(c.s,b)&&b.ex){b.ex=false;log(c,`${b.name} is now Enraged and readies.`)}}});
+def("Blood Price",{x:{label:"X (HP the Barbarian loses)",max:(s,pid)=>Math.max(0,...s.p[pid].heroes.filter(h=>!h.dead&&E.heroIs(h,"Barbarian")).map(h=>E.hp(s,h)-1)),free:true},
+  run(c){const b=c.actor;if(!b)return;const n=Math.max(0,Math.min(c.x||0,E.hp(c.s,b)-1));if(!n){log(c,"Blood Price: X is 0.");return} /* Update 40: this Barbarian (the Hero playing it); no longer readies */
+    E.costHp(c.s,c.pid,b,n,"Blood Price");buff(b,{str:n});log(c,`${b.name} gains +${n} STR this turn.`)}});
 def("Scrap Metal",{run(c){c.actor.fl.scrapRound=c.s.round;log(c,`This turn, whenever ${c.actor.name} damages an enemy Hero, destroy one of its equipment.`)}});
 def("Smash and Grab",{t:[t("item","item to destroy",(s,o,x)=>o.kind!=="card"||o.fd||x.actor.lvl>=3||(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2,{opt:true}),t("item","second item to destroy",(s,o,x)=>o.kind!=="card"||o.fd||x.actor.lvl>=3||(parseInt((E.DB[o.id]||{}).cost,10)||0)<=2,{opt:true,distinct:true})],
   run(c){c.t.filter(Boolean).forEach(o=>{destroy(c,o);E.trophy(c.s,c.actor.uid)});exMe(c)}});
@@ -559,9 +562,9 @@ def("Line It Up",{can:(s,pid)=>s.p[pid].inv.some(o=>!o.fd&&(E.DB[o.id]||{}).sub=
   log(c,`Line It Up: ${rs.map(h=>h.name).join(", ")} may each fire an Arrow for free (skip any to keep it ready).`)}});
 def("Rapid Shot",{can:(s,pid,a)=>!!a&&s.p[pid].inv.some(o=>!o.fd&&(E.DB[o.id]||{}).sub==="Arrow"&&E.itemCost(s,pid,a,o)<=s.p[pid].aura),run(c){c.s.bonus={pid:c.pid,uid:c.actor.uid,n:3,only:"arrow",rapid:true};c.me.fl.rapidPierce=true;
   log(c,`Rapid Shot: ${c.actor.name} may activate two Arrows now (Piercing 1), then it's exhausted.`)}});
-def("Sure Fire Choice",M(2,[{label:"Return a non-Legendary Arrow from your discard pile to your hand",run:c=>{const ar=c.me.disc.filter(x=>{const d=E.DB[x.id];return d.sub==="Arrow"&&d.sup!=="Legendary"});if(ar.length)E.pushChoose(c.s,c.pid,{title:"Sure Fire Choice: return an Arrow to your hand",cards:ar.map(x=>x.uid),min:1,max:1,op:"fromDisc"});else log(c,"No non-Legendary Arrow in your discard pile.")}},
-  {label:"Set a Trap from your hand",run:c=>{const tr=c.me.hand.filter(x=>(E.DB[x.id]||{}).sub==="Trap");if(tr.length&&c.me.inv.length<E.slots(c.s,c.pid))E.pushChoose(c.s,c.pid,{title:"Sure Fire Choice: set a Trap",cards:tr.map(x=>x.uid),min:1,max:1,op:"setTrap"});else log(c,"No Trap in hand (or no empty inventory slot).")}},
-  {label:"Ready a Ranger",t:[t("allyHero","Ranger to ready",(s,o)=>E.heroIs(o,"Ranger"))],run:c=>{const h=c.t[0];if(h&&h.ex){h.ex=false;log(c,`${h.name} readies.`)}}}]));
+def("Deeg's Choice",M(2,[{label:"Return a non-Legendary Arrow from your discard pile to your hand",run:c=>{const ar=c.me.disc.filter(x=>{const d=E.DB[x.id];return d.sub==="Arrow"&&d.sup!=="Legendary"});if(ar.length)E.pushChoose(c.s,c.pid,{title:"Deeg's Choice: return an Arrow to your hand",cards:ar.map(x=>x.uid),min:1,max:1,op:"fromDisc"});else log(c,"No non-Legendary Arrow in your discard pile.")}},
+  {label:"You may activate an Arrow from your hand this turn",run:c=>{c.me.fl.handArrow=c.s.round;log(c,"This turn, one of your Rangers may activate an Arrow from your hand.")}},
+  {label:"The next Arrow you activate costs 1 less Aura",run:c=>{c.me.fl.arrowDisc=(c.me.fl.arrowDisc||0)+1;log(c,"The next Arrow you activate costs 1 less Aura.")}}]));
 OPS.setTrap=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.hand.findIndex(x=>x.uid===u);if(i>=0){const c=pl.hand.splice(i,1)[0];pl.inv.push(Object.assign({kind:"card",fd:true,name:E.DB[c.id].name},c));E.log(s,`${pl.name} sets a Trap face down.`,pid)}})};
 /* Rogue */
 def("Hack and Slash",{run(c){if(daggers(c.actor,c.s).length>=2){c.actor.fl.hackRound=c.s.round;log(c,`${c.actor.name}'s next attack this turn hits two targets.`)}else log(c,`${c.actor.name} doesn't have two Daggers equipped.`)}});
@@ -574,8 +577,8 @@ hab("Dr. Vonugutt",[{label:"Add another counter of a type on a Hero",t:[HERO],ru
     if(!o.length){log(c,`${h.name} has no counters.`);return}E.ask(c.s,c.pid,`Dr. Vonugutt: add another counter to ${h.name}`,o,"vonu",{h:h.uid,name:"Dr. Vonugutt"})}},
   {label:"Double the status counters on a Hero",lvl:3,t:[HERO],run:c=>{const h=c.t[0];if(!h)return;E.STATUS.forEach(k=>{if(h.st[k]>0)E.addStatus(c.s,h,k,h.st[k])})}}]);
 A.vonu=(s,pid,pr,v)=>{const h=E.heroByUid(s,pr.data.h);if(!h||h.dead)return;if(v==="plus"){h.plus++;E.log(s,`${h.name} gets another meditation counter.`,pid)}else if(v==="fat"){h.fat=(h.fat||0)+1;E.log(s,`${h.name} gets another Fatigue counter.`,pid)}else if(v==="lvl")E.levelUp(s,h,"str");else E.addStatus(s,h,v,1)};
-/* Echo Performer: restored to its activated ability (Nov 12, 2026; the brief passive version was meant for Songweaver) */
-hab("Echo Performer",[{label:"Play a Bard Tactic or Song, then duplicate it",cost:2,can:(s,pid,a)=>s.p[pid].hand.some(x=>{const d=E.DB[x.id];return d&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)&&E.cardCost(s,pid,a,d,0)+2<=s.p[pid].aura}),
+/* Songweaver: restored to its activated ability (Nov 12, 2026; the brief passive version was meant for Echo Performer) */
+hab("Songweaver",[{label:"Play a Bard Tactic or Song, then duplicate it",cost:2,can:(s,pid,a)=>s.p[pid].hand.some(x=>{const d=E.DB[x.id];return d&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)&&E.cardCost(s,pid,a,d,0)+2<=s.p[pid].aura}),
   run:c=>{c.s.bonus={pid:c.pid,uid:c.actor.uid,n:2,only:"bard",dup:true,allowEx:true};log(c,`${c.actor.name} may now play a Bard Tactic or Song (paying its Aura cost); it will be duplicated.`)}}]);
 hab("Hexcaster",[{label:"Lose 2 HP: opponents can't use Consumable items this turn",can:(s,pid,a)=>E.hp(s,a)>2,run:c=>{E.costHp(c.s,c.pid,c.actor,2,"Hexcaster");c.op.fl.noConsum=c.s.round;log(c,`${c.op.name} can't use Consumable items this turn.`)}}]);
 /* Equipment with a colon ability (uses the Hero's action) */

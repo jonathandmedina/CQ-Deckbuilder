@@ -66,7 +66,6 @@ An **exhausted** Hero (turned sideways) can’t act again until the next Dawn. W
 Cards explain their keywords in *(italic reminder text)*. A few you’ll see a lot:
 
 - **Piercing X**: its damage ignores X of the target’s DEF, and at least X always gets through (no number: ignores all of it).
-- **Combo**: after the card resolves, reveal your top card. If it’s a Combo card, you may play it.
 - **Stun**: the target can’t play cards or activate abilities.
 - **Burn, Poison, Wound**: the target loses 1 Health Point at Dawn.
 - **Hidden** cards are set face down and spring when their trigger happens.

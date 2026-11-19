@@ -12,7 +12,7 @@ ok(card("False Cure")[5]==="Consumable","Consumable kept for now (False Cure)");
 const OLD=/^(Weapon|Armor|Accessory)$/;ok(!ctx.RAW_EQUIP.some(r=>OLD.test(r[2])),"no Weapon/Armor/Accessory equipment subtypes");
 ok(!ctx.TRIALS_LOOT.some(r=>OLD.test(r[2])),"Trials loot uses item subtypes");
 ok(!Object.values(ctx.RECIPES).some(r=>r.back.type==="Equipment"&&OLD.test(r.back.sub)),"Recipe backs use item subtypes");
-ok(ctx.RAW_EQUIP.filter(r=>r[2]==="Instrument").length===4,"4 Bard Instruments keep Instrument");
+ok(ctx.RAW_EQUIP.filter(r=>r[2]==="Instrument").length===3,"3 Bard Instruments keep Instrument (Drums of War deprecated in Update 40)");
 ok(ctx.RAW_EQUIP.filter(r=>r[5]==="Artificer"||r[3]==="Artificer").every(r=>r[2]==="Tool"),"Artificer gear is Tool");
 [["Knight's Sword","Sword"],["Tower Shield","Shield"],["Longbow","Bow"],["Ritual Athame","Dagger"],["Feather Blade","Dagger"],["Sacred Vestments","Robe"],["Gravedigger's Medallion","Amulet"]].forEach(([n,s])=>ok(eq(n)[2]===s,n+" is "+s));
 ok(ctx.RAW_TOKENS.filter(r=>/Dagger/.test(r[0])).every(r=>r[2]==="Dagger"),"Dagger tokens are Dagger");

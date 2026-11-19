@@ -17,6 +17,11 @@ These changes apply only in games that include Set Two cards. They are queued an
 2. **Descale needs damage dealt.** Descale triggers whenever damage is dealt to the Hero, even if its Defense prevents all of that damage.
 3. **Revenants and Health Point loss.** Impervious stops damage and destroy effects, but a Revenant still dies when it loses all its Health Points, including from Poison.
 
+## Cards Moved to Set Two (Update 40, Nov 19, 2026)
+
+- **Monk** is now a Set Two class: all Monk Heroes, cards and equipment. Its keywords (Combo, Meditate, meditation counters, Petal counters) are still explained in the main rules.
+- **Gold Ingot, Silver Ingot, Platinum Ingot and Almandine** are now Set Two cards.
+
 ## Necromancer
 
 Necromancers raise an army of Revenants, then choose between growing it and cashing it in for Aura, cards or bigger summons. They also use their discard pile as a resource and Mill cards to fuel it.

@@ -14,6 +14,10 @@ const _RC=typeof RAW_CARDS!=="undefined"?RAW_CARDS:root.RAW_CARDS,_RE=typeof RAW
 {const _DC=typeof DEPRECATED_CARDS!=="undefined"?DEPRECATED_CARDS:(root.DEPRECATED_CARDS||[]);_DC.forEach(r=>{if(!DB[r[1]])DB[r[1]]={id:r[1],name:r[1],cost:r[2],sup:r[3],type:r[4],sub:r[5],cls:r[6],rules:r[7],kind:"card",dep:true}})}
 (_RE||[]).forEach(r=>{DB[r[0]]={id:r[0],name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:num(r[7]),pdef:num(r[8]),kind:"equip"}});
 (_RH||[]).forEach(r=>{DB["h:"+r[0]]={id:"h:"+r[0],name:r[0],cls:r[1],str:num(r[2]),def:num(r[3]),aura:num(r[4]),hp:num(r[5]),rules:r[6],type:"Hero",kind:"hero"}});
+/* Update 40: deprecated Heroes and equipment stay in the DB (old games, links) but are out of the card pool */
+{const _DH=typeof DEPRECATED_HEROES!=="undefined"?DEPRECATED_HEROES:(root.DEPRECATED_HEROES||[]),_DE=typeof DEPRECATED_EQUIP!=="undefined"?DEPRECATED_EQUIP:(root.DEPRECATED_EQUIP||[]);
+  _DE.forEach(r=>{if(!DB[r[0]])DB[r[0]]={id:r[0],name:r[0],sup:r[1],type:"Equipment",sub:r[2],cls:r[3],rules:r[4],cost:r[5],region:r[6],pstr:num(r[7]),pdef:num(r[8]),kind:"equip",dep:true}});
+  _DH.forEach(r=>{if(!DB["h:"+r[0]])DB["h:"+r[0]]={id:"h:"+r[0],name:r[0],cls:r[1],str:num(r[2]),def:num(r[3]),aura:num(r[4]),hp:num(r[5]),rules:r[6],type:"Hero",kind:"hero",dep:true}})}
 {const RN=typeof CARD_RENAMES!=="undefined"?CARD_RENAMES:(root.CARD_RENAMES||{});for(const o in RN){if(DB[RN[o]]&&!DB[o])DB[o]=DB[RN[o]];if(DB["h:"+RN[o]]&&!DB["h:"+o])DB["h:"+o]=DB["h:"+RN[o]]}}
 (_RT||[]).forEach(r=>{TOK[r[0]]={name:r[0],tkind:r[1],sub:r[2],cls:r[3],str:num(r[4]),def:num(r[5]),hp:num(r[6]),cost:num(r[7]),region:r[8],rules:r[9]}});
 /* Set 2 Artificer (Set Two Rules Supplement): two-sided Recipe cards. DB[recipe].recipe = {ing, back}. What a Recipe makes gets its own DB entry
@@ -146,6 +150,7 @@ function mkBossHero(s,name,hp,defn,str){const id="boss:"+name;if(!DB[id])DB[id]=
 E.mkBossHero=mkBossHero;
 E.validateDeck=function(d,opt){const tr=!!(opt&&opt.trials);
   const out=[];const nh=d&&d.heroes?d.heroes.filter(Boolean).length:0;if(tr?nh!==2:(!d||!d.heroes||d.heroes.length!==3))out.push(tr?"Trials parties need 2 Heroes.":"Needs 3 Heroes.");
+  (d&&d.heroes||[]).filter(Boolean).forEach(h=>{const x=DB[h];if(x&&x.dep)out.push(`${x.name} is deprecated (removed from play).`)}); /* Update 40 */
   let t=0;for(const[id,q]of Object.entries(d.cards||{})){if(!DB[id])out.push(`Unknown card ${id}`);else if(DB[id].dep)out.push(`${id} is deprecated (removed from play).`);t+=q}
   for(const[id,q]of Object.entries(d.cards||{})){const c=DB[id];if(c&&q>(c.sup==="Legendary"?1:3))out.push(`${id}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`)}
   if(t<50)out.push(`Deck has ${t} cards (needs at least 50).`);return out};
@@ -209,7 +214,7 @@ function strOf(s,o,vs){
     if(o.name==="Gadget Commander")v+=gadgets(s,o.owner);
     /* Set 2 Dagger of the Dead: activated (Nov 17, 2026; see CQ_EQACT) */
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
-    if(o.name==="Bloodhowl"&&enraged(s,o))v+=o.lvl>=3?4:2;
+    if(o.name==="Bar-Bear Ian"&&enraged(s,o))v+=o.lvl>=3?4:2;
     /* update 26: Level 3 Radiant Sentinel gets +5 instead when 5+ of its DEF comes from equipment */if(o.name==="Radiant Sentinel"){const eqd=eqList(o).reduce((n,e)=>n+(e.pdef||0),0);if(o.lvl>=3&&eqd>=5)v+=5;else if(defOf(s,o)>=5)v+=2}
     if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2*(o.fl.bannerN||1); /* Nov 17: +2 per Brute's Banner */
     if(heroIs(o,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre")v+=(x.ctr&&x.ctr.fury)||0});
@@ -315,7 +320,7 @@ E.silence=(s,h)=>{if(!h||h.kind!=="hero"||h.dead)return;if(!h.fl.frogName){h.fl.
 /* Null Stone: named card's activated abilities can't be activated */
 function nulled(s,name){const n=String(name||"").replace(/ \(silenced\)$/,"");return s.p.some(pl=>pl.inv.some(o=>o.name==="Null Stone"&&!o.fd&&o.x&&o.x.name===n))}
 E.nulled=nulled;
-/* a copy of a Spell/Tactic/Song (Mirrored Chant, Echo Performer, Split Kick): resolves without being played or discarded */
+/* a copy of a Spell/Tactic/Song (Mirrored Chant, Songweaver, Split Kick): resolves without being played or discarded */
 function copyCard(s,pid,actorUid,id,targets,modes,x){log(s,`A copy of ${DB[id].name} resolves.`,pid);
   resolveCont(s,pid,{k:"card",actor:actorUid,card:{uid:nid(s),id,owner:pid},targets:targets||[],modes:modes||[],x:x||0,copy:true},{})}
 E.copyCard=copyCard;
@@ -335,7 +340,7 @@ ASK.pillage=(s,pid,pr,v)=>{const e=s.limbo&&s.limbo[pr.data.uid];if(!e)return;de
   if(v==="inv"){toInv(s,pid,e);log(s,`${e.name} goes to ${P(s,pid).name}'s inventory.`,pid)}
   else if(v==="disc"){log(s,`${e.name} is discarded (to its owner's discard pile).`,pid);toDisc(s,e)}
   else{const h=heroByUid(s,v);if(h&&!h.dead){log(s,`Pillage the Dead: ${h.name} equips ${e.name} for free.`,pid);equipTo(s,h,e)}else toInv(s,pid,e)}};
-/* Rapid Shot / Line It Up / Echo Performer bonus bookkeeping */
+/* Rapid Shot / Line It Up / Songweaver bonus bookkeeping */
 /* Set 2 Activate (Nov 17, 2026): this Hero activates the chosen item with no costs (no Aura, no exile or sacrifice, no exhaust); the item stays */
 function freeAct(s,pid,a,o){const b=s.bonus;return!!(b&&b.only==="activate"&&b.pid===pid&&a&&b.uid===a.uid&&o&&b.item===o.uid)}E.freeAct=freeAct;
 function endBonus(s){const b=s.bonus;s.bonus=null;if(b&&b.rapid){const h=heroByUid(s,b.uid);if(h&&!h.dead){h.ex=true;log(s,`${h.name} is exhausted (Rapid Shot).`,b.pid)}P(s,b.pid).fl.rapidPierce=false}}
@@ -430,7 +435,8 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
     if(src.kind==="hero"){
       if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
       if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,1)}
-      if(src.fl.bruisedRound===s.round&&dealt>0&&tgt.st)addStatus(s,tgt,"wound",1);
+      if(src.fl.brutalWound&&dealt>0&&tgt.st&&ctrl(s,tgt)!==src.owner){src.fl.brutalWound=false;addStatus(s,tgt,"wound",2);log(s,`Brutality's Choice: ${tgt.name} is Wounded twice.`)} /* Update 40 */
+      if(src.fl.bruisedRound===s.round&&dealt>0&&tgt.st&&ctrl(s,tgt)!==src.owner)addStatus(s,tgt,"wound",1); /* Update 40: enemies only */
       /* Mind Rend (update 21): the damaged party discards a card (its owner chooses) */
       if(src.fl.rendRound===s.round&&dealt>0){const dp=ctrl(s,tgt);const dpl=P(s,dp);if(dpl.hand.length){log(s,`Mind Rend: ${dpl.name} discards a card.`);pushChoose(s,dp,{title:"Mind Rend: discard a card",cards:dpl.hand.map(c=>c.uid),min:1,max:1,op:"discard"})}}
       if(o.combat&&dealt>0){const th=eqList(src).filter(e=>e.name==="Thief's Dagger").reduce((n,e)=>n+(isUp(s,e)?2:1),0);if(th)stealGold(s,src.owner,ctrl(s,tgt),th,"Thief's Dagger")} /* update 18 */
@@ -570,6 +576,7 @@ function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};con
    if(n>0){addMod(o,{def:n*o.hp});log(s,`${name} has Barkborn${n>1?" ×"+n:""}: +${n*o.hp} DEF this turn.`,pid)}}
   /* Set 2 Jorkev, the Pillager: since Nov 17, 2026 it triggers when a Revenant dies (see destroyObj), not when one enters */
   return o}
+ASK.bruteBanner=(s,pid,pr,v)=>{const b=heroByUid(s,v);if(!b)return;b.fl.bannerRound=s.round;b.fl.bannerN=pr.data.n;log(s,`Brute's Banner: ${b.name} +${2*pr.data.n} STR this turn.`,pid)};
 ASK.millOne=(s,pid,pr,v)=>{if(v==null)return;mill(s,v,1)};
 ASK.timeKat=(s,pid,pr,v)=>{for(const p2 of s.p){const c=(p2.stall||[]).find(x=>x.uid===v);if(c){c.n+=2;log(s,`Time Kat: ${DB[c.id].name} gets two more stall counters (${c.n}).`,pid);return}}};
 function makePillar(s,pid,name){const o={uid:nid(s),kind:"pillar",name,ctrl:pid,owner:pid,tok:true};P(s,pid).bf.push(o);log(s,`${P(s,pid).name} conjures a ${name}.`,pid);return o}
@@ -745,7 +752,7 @@ function battleOptions(s,pid){const out0=battleOptions0(s,pid);
   /* Refire: the bonus action may only activate an Arrow (or be skipped) */
   if(s.bonus&&s.bonus.pid===pid&&s.bonus.only==="activate"){const r=out0.filter(o=>o.type==="use"&&o.uid===s.bonus.item);r.push({type:"skipBonus"});return r}
   if(s.bonus&&s.bonus.pid===pid&&s.bonus.only==="arrow"){const r=out0.filter(o=>o.type==="use"&&def(find(s,o.uid).o).sub==="Arrow");r.push({type:"skipBonus"});return r}
-  /* Echo Performer: the extra action may only play a Bard Tactic or Song */
+  /* Songweaver: the extra action may only play a Bard Tactic or Song */
   if(s.bonus&&s.bonus.pid===pid&&s.bonus.only==="bard"){const r=out0.filter(o=>{if(o.type!=="play")return false;const c=findCardAnywhere(s,pid,o.uid);const d=c&&DB[c.id];return d&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)});r.push({type:"skipBonus"});return r}
   return out0}
 function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s,pid);
@@ -777,7 +784,7 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
       if(o.kind==="equip"&&canUseEq(s,a,o)&&eqCost(s,a,o)<=pl.aura)out.push({type:"equipInv",uid:o.uid});
       out.push({type:"clear",uid:o.uid})});
     /* Deeg Farsight (Update 38, Nov 18, 2026): with a Bow equipped, it may activate an Arrow from your hand instead of your inventory, paying 1 more Aura */
-    if(a.name==="Deeg Farsight"&&!a.st.stun&&!nulled(s,a.name)&&eqList(a).some(e=>def(e).sub==="Bow")){const sh=new Set();pl.hand.forEach(c=>{const d=DB[c.id];if(!d||d.sub!=="Arrow"||sh.has(c.id)||nulled(s,d.name))return;const isc=SC()[d.name];
+    if(!a.st.stun&&((a.name==="Deeg Farsight"&&!nulled(s,a.name)&&eqList(a).some(e=>def(e).sub==="Bow"))||(pl.fl.handArrow===s.round&&heroIs(a,"Ranger")))){const sh=new Set();pl.hand.forEach(c=>{const d=DB[c.id];if(!d||d.sub!=="Arrow"||sh.has(c.id)||nulled(s,d.name))return;const isc=SC()[d.name];
       if(!isc||!isc.act||isc.act.free||!(d.cls==="Generic"||heroIs(a,d.cls))||(isc.act.can&&!isc.act.can(s,pid,a,c)))return;if(handArrowCost(s,pid,a,c)<=pl.aura){sh.add(c.id);out.push({type:"use",uid:c.uid,fromHand:true})}})}
     pl.heroes.forEach(h=>{if(h===a||h.dead)return;eqList(h).forEach(e=>{if(canUseEq(s,a,e)&&eqCost(s,a,e)<=pl.aura)out.push({type:"take",uid:e.uid})})});
     out.push({type:"manualAbility"});}
@@ -791,8 +798,8 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
   return out}
 function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,oppOf(s,pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0):0)}
 /* Deeg Farsight: an Arrow activated from the hand costs its activation cost + 1 */
-function handArrowCost(s,pid,a,c){return itemCost(s,pid,a,Object.assign({name:DB[c.id].name},c))+1}E.handArrowCost=handArrowCost;
-function itemCost(s,pid,a,o){if(freeAct(s,pid,a,o))return 0;if(s.bonus&&s.bonus.free&&s.bonus.pid===pid&&a&&s.bonus.uid===a.uid&&def(o).sub==="Arrow")return 0;const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);return c+(a?burden(a):0)}
+function handArrowCost(s,pid,a,c){return itemCost(s,pid,a,Object.assign({name:DB[c.id].name},c))+(P(s,pid).fl.handArrow===s.round?0:1)} /* Deeg's Choice: this turn, an Arrow from the hand at its normal cost */E.handArrowCost=handArrowCost;
+function itemCost(s,pid,a,o){if(freeAct(s,pid,a,o))return 0;if(s.bonus&&s.bonus.free&&s.bonus.pid===pid&&a&&s.bonus.uid===a.uid&&def(o).sub==="Arrow")return 0;const isc=SC()[o.name];let c=(isc&&isc.act&&isc.act.cost)||0;if(a&&def(o).sub==="Arrow"&&hasEqN(a,"Mystic Quiver"))c=Math.max(0,c-1);if(def(o).sub==="Arrow"&&P(s,pid).fl.arrowDisc)c=Math.max(0,c-P(s,pid).fl.arrowDisc); /* Deeg's Choice */return c+(a?burden(a):0)}
 E.abilityCost=abilityCost;E.itemCost=itemCost;
 function promptOptions(s,pid,pr){
   if(pr.type==="window"){const out=[{type:"decline"}];
@@ -971,12 +978,12 @@ function doAct(s,pid,a){const pl=P(s,pid);
     const trig={kind:"card",ability:true,src:actor,pid,targets:a.targets||[],cost:c,cls:actor.cls,type:"Ability",idx:a.idx};
     queueResolve(s,pid,{k:"ability",actor:actor.uid,idx:a.idx,targets:a.targets||[]},trig);return}
   if(a.type==="manualAbility"){log(s,`${actor.name} uses an ability (resolved by hand). Pay its costs in the panel.`,pid);s.pend.unshift({type:"manual",pid,title:`${actor.name}: ability`,text:DB[actor.id].rules,actor:actor.uid});return}
-  if(a.type==="use"&&a.fromHand){const i=pl.hand.findIndex(x=>x.uid===a.uid);if(i<0)return;const hc=pl.hand[i];const d=DB[hc.id];const c=handArrowCost(s,pid,actor,hc);pay(s,pid,actor,c);burdenFat(s,actor);
+  if(a.type==="use"&&a.fromHand){const i=pl.hand.findIndex(x=>x.uid===a.uid);if(i<0)return;const hc=pl.hand[i];const d=DB[hc.id];const c=handArrowCost(s,pid,actor,hc);pay(s,pid,actor,c);burdenFat(s,actor);if(pl.fl.handArrow===s.round)pl.fl.handArrow=0;pl.fl.arrowDisc=0;
     if(!(s.bonus&&s.bonus.rapid&&s.bonus.uid===actor.uid))actor.ex=true;pl.hand.splice(i,1);pl.disc.push(hc);
-    log(s,`${actor.name} activates ${d.name} from ${pl.name}'s hand (Deeg Farsight, ${c} Aura).`,pid);
+    log(s,`${actor.name} activates ${d.name} from ${pl.name}'s hand (${c} Aura).`,pid);
     const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:c,cls:d.cls,type:"Item",name:d.name};
     queueResolve(s,pid,{k:"item",actor:actor.uid,item:hc.uid,itemName:d.name,targets:a.targets||[],modes:a.modes||[],arrow:true,fromHand:true,refire:!!(s.bonus&&s.bonus.pid===pid&&s.bonus.refire)},trig);return}
-  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];const fa=freeAct(s,pid,actor,o);const c=itemCost(s,pid,actor,o);pay(s,pid,actor,c);if(!fa)burdenFat(s,actor);
+  if(a.type==="use"){const o=find(s,a.uid).o;const isc=SC()[o.name];const fa=freeAct(s,pid,actor,o);const c=itemCost(s,pid,actor,o);pay(s,pid,actor,c);if(!fa)burdenFat(s,actor);if(def(o).sub==="Arrow"&&!fa)pl.fl.arrowDisc=0;
     if(fa){log(s,`${actor.name} activates ${o.name} with Activate (no cost; it stays in the inventory).`,pid);const trig={kind:"card",item:true,src:actor,pid,targets:a.targets||[],cost:0,cls:def(o).cls,type:"Item",name:o.name};
       queueResolve(s,pid,{k:"item",actor:actor.uid,item:o.uid,itemName:o.name,targets:a.targets||[],modes:a.modes||[],arrow:false,refire:false},trig);return}
     if((def(o).sub==="Arrow"&&!(s.bonus&&s.bonus.rapid&&s.bonus.uid===actor.uid))||isc.act.ex)actor.ex=true;
@@ -1173,8 +1180,8 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
     if(sc&&sc.enter){sc.enter(mkCtx(s,pid,actor,d,it,targets));if(bend(s,pid,d.name,actor))sc.enter(mkCtx(s,pid,actor,d,it,targets))}return}
   /* update 29: playing a Summon card no longer exhausts the Hero by rule; the card text says so when it does ("Exhaust this Hero") */
   const trig={kind:"card",src:actor,pid,card:d,cardUid:c.uid,targets,cost,cls:d.cls,type:d.type,name:d.name};
-  /* update 23 Echo: only a card played from your hand can Echo; Songweaver gives its Songs Echo; Sing Along gives the ally's next Tactic or Song Echo */
-  let grant=false;if(actor&&actor.kind==="hero"&&/Tactic|Song/.test(d.type)){if(d.type==="Song"&&actor.name==="Songweaver"&&!actor.dead&&fromHand){/* Nov 12, 2026: first Song from your hand each turn; every one at Level 3 */actor.fl=actor.fl||{};if(actor.lvl>=3||actor.fl.swRound!==s.round){actor.fl.swRound=s.round;grant=true}}if(actor.fl.singRound===s.round){actor.fl.singRound=null;grant=true;log(s,`Sing Along: ${d.name} gains Echo.`,pid)}}
+  /* update 23 Echo: only a card played from your hand can Echo; Echo Performer gives its Songs Echo; Sing Along gives the ally's next Tactic or Song Echo */
+  let grant=false;if(actor&&actor.kind==="hero"&&/Tactic|Song/.test(d.type)){if(d.type==="Song"&&actor.name==="Echo Performer"&&!actor.dead&&fromHand){/* Nov 12, 2026: first Song from your hand each turn; every one at Level 3 */actor.fl=actor.fl||{};if(actor.lvl>=3||actor.fl.swRound!==s.round){actor.fl.swRound=s.round;grant=true}}if(actor.fl.singRound===s.round){actor.fl.singRound=null;grant=true;log(s,`Sing Along: ${d.name} gains Echo.`,pid)}}
   queueResolve(s,pid,{k:"card",actor:actor&&actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},targets,modes:a.modes||[],x,combo:!!o.combo,echo:!!o.echo,hand:fromHand,grant,fromDisc:zone===pl.disc,exileAfter:!!o.exileAfter},trig);
 }
 E.playCard=playCard;
@@ -1253,8 +1260,8 @@ function resolveCont(s,pid,cont,mods){
   if(d.sub==="Combo"&&pl.fl.splitKick&&sc&&(cont.targets||[]).length){const t0=resolveTarget(s,cont.targets[0]);const sp=specsFor(sc,cont.modes)[0];
     if(t0&&t0.kind==="hero"&&sp){pl.fl.splitKick=false;const cs=candidates(s,pid,sp,{actor,card:d}).map(u=>resolveTarget(s,u)).filter(o=>o&&o.kind==="hero"&&o.uid!==t0.uid);
       if(cs.length)ask(s,pid,`Split Kick: second Hero for ${d.name}`,targetOpts(s,pid,cs,1).concat([{label:"No second target",v:null}]),"splitKick",{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,rest:cont.targets.slice(1),name:"Split Kick"})}}
-  /* Echo Performer: duplicate the Bard Tactic or Song it played */
-  if(s.bonus&&s.bonus.pid===pid&&s.bonus.dup&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)){s.bonus.dup=false;log(s,`Echo Performer duplicates ${d.name}.`,pid);copyTargets(s,pid,{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,picked:[],orig:cont.targets||[]})}
+  /* Songweaver: duplicate the Bard Tactic or Song it played */
+  if(s.bonus&&s.bonus.pid===pid&&s.bonus.dup&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)){s.bonus.dup=false;log(s,`Songweaver duplicates ${d.name}.`,pid);copyTargets(s,pid,{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,picked:[],orig:cont.targets||[]})}
   /* triggers on card played */
   if(d.type==="Spell"){living(pl).forEach(h=>{if(h.name==="Diviner Mage")pushScry(s,pid,1)})}
   /* Staff of Doom (update 21): the first Spell the equipped Hero plays each turn (every Spell when upgraded): target Hero loses HP equal to its Aura cost */
@@ -1526,7 +1533,10 @@ function doDawn(s){
     if(invHas(pl,"Ley Grove")){const g=Math.floor(pl.bf.filter(o=>o.kind==="summon").length/2)*invCount(pl,"Ley Grove");if(g){pl.aura+=g;log(s,`Ley Grove: ${pl.name} gains ${g} Aura.`,pid)}}
     {const sp=pl.bf.filter(o=>o.kind==="summon"&&o.name==="Sapling").length;if(sp){pl.aura+=sp;log(s,`Sapling: ${pl.name} gains ${sp} Aura.`,pid)}}
     pl.inv.filter(o=>o.name==="Campfire"&&!o.fd).forEach(o=>{o.ctr=o.ctr||{};if(o.ctr.camp==null)o.ctr.camp=3;o.ctr.camp--;log(s,"Campfire burns down (heals the party 1 HP).",pid);living(pl).forEach(h=>heal(s,null,h,1,pid));if(o.ctr.camp<=0){pl.inv.splice(pl.inv.indexOf(o),1);pl.exile.push({uid:o.uid,id:o.id,owner:o.owner});log(s,"Campfire is exiled.",pid)}});
-    if(invHas(pl,"Brute's Banner")){const n=invCount(pl,"Brute's Banner");const b=living(pl).filter(h=>h.cls==="Barbarian").sort((a,b)=>strOf(s,b)-strOf(s,a))[0];if(b){b.fl.bannerRound=s.round;b.fl.bannerN=n;log(s,`Brute's Banner: ${b.name} +${2*n} STR this turn.`,pid)}} /* Nov 17: each copy triggers */
+    if(invHas(pl,"Brute's Banner")){const n=invCount(pl,"Brute's Banner");const bs=living(pl).filter(h=>h.cls==="Barbarian").sort((a,b)=>strOf(s,b)-strOf(s,a));const top=bs.filter(h=>bs.length&&strOf(s,h)===strOf(s,bs[0]));
+      /* Update 40: if there's a tie, you choose */
+      if(top.length>1)ask(s,pid,`Brute's Banner: which Barbarian gets +${2*n} STR this turn?`,top.map(h=>({label:h.name,v:h.uid})),"bruteBanner",{n});
+      else if(top[0]){const b=top[0];b.fl.bannerRound=s.round;b.fl.bannerN=n;log(s,`Brute's Banner: ${b.name} +${2*n} STR this turn.`,pid)}} /* Nov 17: each copy triggers */
     living(pl).forEach(h=>{if(h.name==="Lightbringer"){const lt=living(pl).filter(o=>o!==h&&o.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(lt)heal(s,h,lt,1)}
       if(hasEqN(h,"Chalice of Life")){living(pl).forEach(o=>heal(s,h,o,1));if(hasUpN(s,h,"Chalice of Life")){const t=autoTarget(s,pid,"healAlly");if(t)heal(s,h,t,2)}}
       h.ench.forEach(e=>{if(e.name==="Sanctuary")heal(s,null,h,1,e.owner)})});

@@ -4,7 +4,7 @@ const ctx={console,Math,Date,JSON};ctx.window=ctx;ctx.globalThis=ctx;vm.createCo
 vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].map(f=>fs.readFileSync(path.join(A,f),"utf8")).join("\n;\n"),ctx);
 const E=ctx.CQE;
 const filler=Object.fromEntries(["Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter","Inspiration","Level Up","Block Progress","Reclaim","Exile","Delevel","Snuff Out","Search for Knowledge","Dissipate","Potion","Antidote"].map(n=>[n,3]));
-const d0={name:"A",heroes:["h:Shadow Ranger","h:Beast Tracker","h:Divine Knight"],cards:filler},d1={name:"B",heroes:["h:Divine Knight","h:Arcane Scholar","h:Bloodhowl"],cards:filler};
+const d0={name:"A",heroes:["h:Shadow Ranger","h:Beast Tracker","h:Divine Knight"],cards:filler},d1={name:"B",heroes:["h:Divine Knight","h:Arcane Scholar","h:Bar-Bear Ian"],cards:filler};
 const s=E.newGame({seed:3,players:[{name:"A",deck:d0},{name:"B",deck:d1}]});
 E.act(s,0,{type:"keep"});E.act(s,1,{type:"keep"});E.act(s,0,{type:"dawnDone"});E.act(s,1,{type:"dawnDone"});
 s.p.forEach(p=>{p.aura=20});s.prio=0;s.passed=[false,false];

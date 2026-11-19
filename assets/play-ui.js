@@ -28,6 +28,7 @@ html[data-skin="art"] .pl-over-why{color:#d8c3a0}
 @media (prefers-reduced-motion:reduce){.pl-over{animation:none}}
 #play-root{--hero-w:minmax(0,1fr)}
 .pl-lobby{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:18px}
+.pl-plist{list-style:none;margin:8px 0;padding:0;max-height:260px;overflow-y:auto;border:1px solid var(--line,#3334);border-radius:8px}.pl-plist li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line,#3332)}.pl-plist li:last-child{border-bottom:0}.pl-pn{display:flex;flex-direction:column;min-width:0}.pl-pn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pl-pn small{opacity:.7}
 .pl-lobby .panel{margin-top:0}
 .pl-lobby label{display:flex;flex-direction:column;gap:4px;font-size:.9rem;color:var(--muted)}
 .pl-lobby select,.pl-lobby input{width:100%}
@@ -425,15 +426,15 @@ function injectCSS(){if(document.getElementById("pl-css"))return;const st=docume
 /* ---------- decks ---------- */
 const STARTERS=[
   {name:"Ember & Steel (starter)",heroes:["Ember Mage","Divine Knight","Arnett Lifebinder"]},
-  {name:"Wild Hunt (starter)",heroes:["Warden of the Woods","Hawkeye","Bloodhowl"]},
-  {name:"Shadow Pact (starter)",heroes:["Dark Fang","Dark Channeler","Sage Monk"]},
-  {name:"Grand Stage (starter)",heroes:["Songweaver","Storm Caller","Sun Paladin"]},
+  {name:"Wild Hunt (starter)",heroes:["Warden of the Woods","Hawkeye","Bar-Bear Ian"]},
+  {name:"Shadow Pact (starter)",heroes:["Dark Fang","Dark Channeler","Venom Dancer"]},
+  {name:"Grand Stage (starter)",heroes:["Echo Performer","Storm Caller","Sun Paladin"]},
   {name:"Iron Vanguard (starter)",heroes:["Rage Brute","Radiant Sentinel","Dawn Priest"]}];
 const STARTER_LISTS=[
- {"Flame Jab":3,"Lightning Bolt":3,"Volt Jab":3,"Flame Lance":3,"Ice Jab":3,"Arcane Study":3,"Power Thrust":3,"Conscript":3,"Protect":3,"Knight's Sword":2,"Bronze Chest Plate":2,"Shield Bash":3,"Healing Touch":3,"Light Helix":3,"Inspiration":3,"Potion":3,"Healing Beam":2,"Ice Lance":2},
- {"Beast":3,"Wolves":3,"Elk":3,"Tooth":3,"Serrated Arrow":3,"Flame Bolt":3,"Poison Dart":2,"Dual Shot":3,"Full Draw":2,"Longbow":2,"Spike Pit":3,"Pump":3,"Great Axe":2,"Bloodthirst":3,"Battered":3,"Potion":3,"Sword of Riverstead":3,"Heavy Beast":2,"Blunt Force":1},
- {"Armed":3,"Toxic Cloud":3,"Surprise Attack":3,"Long Dagger":2,"Thief's Dagger":2,"Envenom":2,"Dark Jab":3,"Dark Lance":3,"Ritual of Pain":3,"Siphon Life":3,"Weaken":3,"Jab":3,"Roundhouse":3,"Lunge":3,"Flurry of Blows":3,"Inspiration":2,"Potion":3,"Mark of Doom":2,"Finisher":1},
- {"\"Ballad of Blades\"":3,"Embolden":3,"\"Rousing Chorus\"":3,"\"Song of Healing\"":3,"Strong Stance":3,"War Lute":2,"Flame Jab":3,"Ice Lance":3,"Lightning Bolt":3,"Boost Ritual":3,"Power Thrust":3,"Tower Shield":2,"Conscript":3,"Radiant Strike":3,"Potion":3,"Sword of Riverstead":3,"Shield Bash":2,"Volt Jab":2},
+ {"Flame Jab":3,"Lightning Bolt":3,"Volt Jab":3,"Flame Lance":3,"Ice Jab":3,"Arcane Study":3,"Power Thrust":3,"Conscript":3,"Shield Wall":3,"Knight's Sword":2,"Bronze Chest Plate":2,"Shield Bash":3,"Healing Touch":3,"Light Helix":3,"Inspiration":3,"Potion":3,"Healing Beam":2,"Ice Lance":2},
+ {"Rootfolk":3,"Wolves":3,"Elk":3,"Jess' Choice":3,"Serrated Arrow":3,"Flame Bolt":3,"Deeg-Arrow":2,"Dual Shot":3,"Full Draw":2,"Longbow":2,"Spike Pit":3,"Pump":3,"Great Axe":2,"Bloodthirst":3,"Battered":3,"Potion":3,"Sword of Riverstead":3,"Heavy Beast":2,"Blunt Force":1},
+ {"Armed":3,"Toxic Cloud":3,"Surprise Attack":3,"Long Dagger":2,"Thief's Dagger":2,"Envenom":2,"Dark Jab":3,"Dark Lance":3,"Ritual of Pain":3,"Siphon Life":3,"Weaken":3,"Shadow Strike":3,"Ritual of Fang":3,"Blademaster's Choice":3,"Inspiration":2,"Potion":3,"Mark of Doom":2,"Frailty":2,"Flick Dagger":2},
+ {"\"Ballad of Blades\"":3,"Embolden":3,"\"Sing Along\"":3,"\"Song of Healing\"":3,"\"Call and Response\"":3,"War Lute":2,"Flame Jab":3,"Ice Lance":3,"Lightning Bolt":3,"Boost Ritual":3,"Power Thrust":3,"Tower Shield":2,"Conscript":3,"Radiant Strike":3,"Potion":3,"Sword of Riverstead":3,"Shield Bash":2,"Volt Jab":2},
  {"Pump":3,"Blunt Force":3,"Great Axe":2,"Bloodthirst":3,"Battered":3,"Unstoppable":3,"Blockade":3,"Bronze Chest Plate":2,"Tower Shield":2,"Power Thrust":3,"Rally the Troops":2,"Healing Beam":3,"Mace of Dawn":2,"Light Blast":3,"Healing Touch":3,"Long Sword":2,"Potion":3,"Inspiration":3,"Pummel":2}];
 function starterDeck(i){const st=STARTERS[i];return{id:"starter:"+i,name:st.name,heroes:st.heroes.map(n=>"h:"+n),cards:Object.assign({},STARTER_LISTS[i])}}
 U.starterDeck=starterDeck;
@@ -567,6 +568,40 @@ function recStats(s,side){try{const g=E.gameStats(s);const sd=g.sides[side],od=g
   const o={v:1,rounds:g.rounds,lineup:{start:sd.start,final:sd.final},opp:{start:od.start,final:od.final},dmg:sd.dmg,prev:sd.prev,healer:sd.healer,tot:{dmg:sd.totDmg,prev:sd.totPrev,heal:sd.totHeal},end:s.conceded!=null?"concede":(s.deckedOut!=null?"deckout":(s.winner<0?"draw":"party"))};
   return JSON.stringify(o).length<5500?o:null}catch(e){return null}}
 function myName(){return(AS()&&S.me&&S.me.name)||store2.get("cq.play.name","")||"Player"}
+window.CQMyName=myName;
+/* ---------- Update 40: players online + challenges (presence channel in online.js) ---------- */
+function onlineListHTML(){const O=window.CQOnline;if(!O)return"";const L=O.list();const ok=deckChoices().some(d=>d.id===U.lobby.deck&&d.ok);
+  const st={idle:"Online",ai:"In a game vs AI",online:"In an online game"};
+  return`<section class="panel pl-players"><h2>Players online <span class="pl-note">(${L.length})</span></h2>
+    ${L.length?`<ul class="pl-plist">${L.map(p=>`<li><span class="pl-pn"><b>${esc(p.name)}</b><small>${st[p.status]}</small></span>${p.status==="online"?`<button class="btn" disabled title="They're already in an online game">Busy</button>`:`<button class="btn" data-pa="challenge" data-k="${esc(p.key)}" data-n="${esc(p.name)}"${ok?"":" disabled title=\"Choose a legal deck first\""}>Challenge</button>`}</li>`).join("")}</ul>`:`<p class="pl-note">Nobody else is online right now.</p>`}
+    <p class="pl-note">Challenging someone opens a room with the deck chosen above. They pick their deck when they accept.</p></section>`}
+function hookOnline(){const O=window.CQOnline;if(U.onlineHooked||!O)return;U.onlineHooked=true;
+  O.onChange(()=>{if(U.mode==="lobby"&&!U.s)render()});
+  O.on("challenge",p=>{
+    if(U.net){O.send("challenge-reply",{to:p.from,ok:false,busy:true});return}
+    const inAI=!!(U.vsAI&&U.s&&!U.s.over);U.challenge=p;
+    const ch=deckChoices();if(!ch.some(d=>d.id===U.lobby.deck&&d.ok))U.lobby.deck=(ch.find(d=>d.ok)||{}).id||"";
+    const opts=ch.map(d=>`<option value="${esc(d.id)}" ${d.id===U.lobby.deck?"selected":""} ${!d.ok?"disabled":""}>${esc(d.name)}</option>`).join("");
+    /* its own pop-up (not the game's modal), so it shows on any page of the site and a game prompt can't replace it */
+    document.getElementById("pl-chal")?.remove();const m=document.createElement("div");m.className="modal";m.id="pl-chal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
+    m.innerHTML=`<div class="box"><h2>${esc(p.fromName||"A player")} challenges you!</h2>${inAI?`<p class="note warn">Your current game will be saved if you accept. You can resume it from the Play tab later.</p>`:""}
+      <label>Your deck<select class="ch-deck">${opts}</select></label>
+      <div class="actions"><button class="btn primary go ch-acc">Accept</button><button class="btn ch-dec">Decline</button></div></div>`;
+    m.querySelector(".ch-deck").addEventListener("change",e=>{U.lobby.deck=e.target.value});
+    m.querySelector(".ch-acc").addEventListener("click",()=>acceptChallenge());m.querySelector(".ch-dec").addEventListener("click",()=>declineChallenge());
+    (document.getElementById("layer")||document.body).appendChild(m)});
+  O.on("reply",p=>{const n=U.net;if(!n||n.role!=="host"||!n.challenge||n.challenge.to!==p.from)return;
+    if(p.ok){toast(`${n.challenge.name} accepted. Joining…`);return}
+    toast(p.busy?`${n.challenge.name} is busy in another game.`:`${n.challenge.name} declined your challenge.`);if(!U.s)leaveGame()})}
+function sendChallenge(to,name){const O=window.CQOnline;if(!O)return;if(U.s&&!U.s.over&&U.vsAI)saveLocal();hostRoom();if(!U.net)return;
+  U.net.challenge={to,name};O.send("challenge",{to,code:U.net.code});toast(`Challenge sent to ${name}. Waiting for an answer…`)}
+function acceptChallenge(){const p=U.challenge,O=window.CQOnline;document.getElementById("pl-chal")?.remove();if(!p||!O)return;U.challenge=null;
+  if(!deckChoices().some(d=>d.id===U.lobby.deck&&d.ok)){toast("Choose a legal deck first.");return}
+  /* an AI game in progress stays saved (cq.play.local) and can be resumed from the lobby */
+  if(U.vsAI&&U.s&&!U.s.over){saveLocal();clearTimeout(U.aiT)}U.s=null;U.vsAI=false;
+  O.send("challenge-reply",{to:p.from,ok:true});if(location.hash!=="#play")location.hash="play";joinRoom(p.code)}
+function declineChallenge(){const p=U.challenge,O=window.CQOnline;document.getElementById("pl-chal")?.remove();U.challenge=null;if(p&&O)O.send("challenge-reply",{to:p.from,ok:false})}
+setTimeout(function hk(){hookOnline();if(!U.onlineHooked)setTimeout(hk,1000)},500);
 
 /* ---------- game control ---------- */
 function startAI(){U.lastTrial=null;U.trialsWatch=false;const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, at least 50 cards) for yourself.");return}
@@ -1001,6 +1036,7 @@ function lobbyHTML1(tabs){const ch=deckChoices();const resL=store2.get("cq.play.
       <p class="pl-note">The host's browser runs the rules and keeps the game. Each player only receives what they're allowed to see. Keep this tab open while you play.</p>`
       :`<p class="pl-note">Online rooms need the site's account service, which isn't reachable right now.</p>`}
     </section>
+    ${online?onlineListHTML():""}
   </div>`}
 function roomHTML(){const n=U.net;if(!n)return"";
   return`<h1>${n.role==="host"?"Your room":"Joining room"}</h1>
@@ -1234,7 +1270,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
     prompt=`Town: you have ${s.p[me].gold} Gold. Choose in the Town window.`;acts=U.townHide?'<button class="btn go" data-pa="town-show">Open Town</button>':""}}
   else if(s.phase==="battle"){if(s.prio!==me){wait=true;prompt=`${esc(s.p[s.prio].name)} is acting…`}else{const a=E.actorFor(s,me);const refire=s.bonus&&s.bonus.pid===me&&s.bonus.only==="arrow";const fz=a&&E.forcedTarget(s,a);
       const bb=s.bonus&&s.bonus.pid===me?s.bonus:null;
-      prompt=bb&&bb.only==="bard"?`Echo Performer: <b>${esc(a?a.name:"")}</b> plays a Bard Tactic or Song (pay its Aura cost); it will be duplicated.`:bb&&bb.rapid?`Rapid Shot: <b>${esc(a?a.name:"")}</b> activates Arrows (Piercing 1), then it's exhausted.`:bb&&bb.free?`Line It Up: <b>${esc(a?a.name:"")}</b> may fire an Arrow for free.`:refire?`Refire: <b>${esc(a?a.name:"")}</b> activates an Arrow (pay its Aura). If it resolves, it returns to your inventory.`:a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}${fz?` — it <b>must attack ${esc(nameOf(fz))}</b> (Arrow of Persuasion)`:""}. ${fz?"It must attack now.":"Play a highlighted card, or choose an action:"}`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
+      prompt=bb&&bb.only==="bard"?`Songweaver: <b>${esc(a?a.name:"")}</b> plays a Bard Tactic or Song (pay its Aura cost); it will be duplicated.`:bb&&bb.rapid?`Rapid Shot: <b>${esc(a?a.name:"")}</b> activates Arrows (Piercing 1), then it's exhausted.`:bb&&bb.free?`Line It Up: <b>${esc(a?a.name:"")}</b> may fire an Arrow for free.`:refire?`Refire: <b>${esc(a?a.name:"")}</b> activates an Arrow (pay its Aura). If it resolves, it returns to your inventory.`:a?`Your action with <b>${esc(a.name)}</b>${s.bonus&&s.bonus.pid===me?" (bonus action)":""}${fz?` — it <b>must attack ${esc(nameOf(fz))}</b> (Arrow of Persuasion)`:""}. ${fz?"It must attack now.":"Play a highlighted card, or choose an action:"}`:"None of your Heroes are ready. You can attack with a summon, surrender a soul, or pass.";
       acts=battleActs(s,opts);fixBtn=FIX_BTN}}
   if(U.busy){wait=true;prompt="Sending…"}
   const oppActing=!s.over&&wait&&!U.busy&&(pr?pr.pid!==me:(s.phase==="battle"&&s.prio!==me)||(s.phase==="town"&&s.town&&s.town.order[s.town.i]!==me));
@@ -1489,6 +1525,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="over-hide"){U.overHide=true;render();return}
   if(k==="over-show"){U.overHide=false;render();return}
   if(k==="host"){hostRoom();return}
+  if(k==="challenge"){sendChallenge(b.dataset.k,b.dataset.n);return}
+  if(k==="ch-accept"){acceptChallenge();return}
+  if(k==="ch-decline"){declineChallenge();return}
   if(k==="join"){joinRoom(U.lobby.code);return}
   if(k==="leave"){leaveGame();return}
   if(k==="abwhy"){toast(b.dataset.w);return}

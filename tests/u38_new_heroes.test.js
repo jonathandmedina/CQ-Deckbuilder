@@ -5,7 +5,7 @@ vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].
 const E=ctx.CQE;let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
 const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter","Gold Ingot","Silver Ingot"].map(n=>[n,3]));
 let U=1;const uid=()=>"t"+(U++);
-function game(h0,h1){const s=E.newGame({seed:7,players:[{name:"A",deck:{name:"A",heroes:h0.map(h=>"h:"+h),cards:filler}},{name:"B",deck:{name:"B",heroes:(h1||["Divine Knight","Arcane Scholar","Bloodhowl"]).map(h=>"h:"+h),cards:filler}}]});
+function game(h0,h1){const s=E.newGame({seed:7,players:[{name:"A",deck:{name:"A",heroes:h0.map(h=>"h:"+h),cards:filler}},{name:"B",deck:{name:"B",heroes:(h1||["Divine Knight","Arcane Scholar","Bar-Bear Ian"]).map(h=>"h:"+h),cards:filler}}]});
   E.act(s,0,{type:"keep"});E.act(s,1,{type:"keep"});E.act(s,0,{type:"dawnDone"});E.act(s,1,{type:"dawnDone"});s.p.forEach(p=>{p.aura=10;p.inv=[];p.hand=[]});s.prio=0;s.passed=[false,false];return s}
 function resolve(s){let g=0;while(s.pend.length&&g++<20){const pr=s.pend[0];const a=ctx.CQAI.choose(s,pr.pid);if(!a)break;E.act(s,pr.pid,a)}}
 const hand=(s,pid,id)=>{const c={uid:uid(),id,owner:pid};s.p[pid].hand.push(c);return c};

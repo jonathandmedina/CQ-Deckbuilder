@@ -9,7 +9,7 @@
 "use strict";
 const METALS=[["Copper",1],["Bronze",25],["Silver",75],["Gold",200],["Platinum",500],["Rhodium",1000]];
 const BADGES=[["Apprentice",10],["Adept",50],["Master",250]];
-const KEY_HERO={Barbarian:"Savage Raider",Bard:"Songweaver",Cleric:"Arnett Lifebinder",Druid:"Rootfolk Elder",Mage:"Arcane Scholar",Monk:"Sage Monk",Paladin:"Divine Knight",Ranger:"Shadow Ranger",Rogue:"Whisper Knife",Warlock:"Essence Reaper"};
+const KEY_HERO={Barbarian:"Savage Raider",Bard:"Songweaver",Cleric:"Arnett Lifebinder",Druid:"Jess Naturecaller",Mage:"Arcane Scholar",Monk:"Sage Monk",Paladin:"Divine Knight",Ranger:"Deeg Farsight",Rogue:"Whisper Knife",Warlock:"Essence Reaper"};
 const MIN_ROUNDS=3, W_GAMES=10, W_CLASS=8, CARD_DIV=4;
 const RANK=ICON_BASE+"art/rank/", HEAD=ICON_BASE+"art/hero-head/";
 const NAME_RE=/^[A-Za-z0-9][A-Za-z0-9 _.\-]{1,18}[A-Za-z0-9]$/;

@@ -12,17 +12,17 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 
 /* ---------- the three tutorial decks (legal 50-card decks, one class each) ---------- */
 const DECKS={
-  barbarian:{name:"My First Barbarian Deck",heroes:["h:Skullcrusher","h:Savage Raider","h:Fury Titan"],
-    cards:{"Pump":3,"Blunt Force":3,"Bloodthirst":3,"Bind":3,"Unstoppable":3,"Battered":3,"Bruised":3,"Beat Down":3,"Run It Back":2,"Great Axe":3,"Sword of Riverstead":3,"Dagger of Riverstead":2,"Chest Plate of Riverstead":3,"Potion":3,"Level Up":2,"Silver Ingot":2,"Inspiration":2,"Awestruck":2,"Pummel":2},
+  barbarian:{name:"My First Barbarian Deck",heroes:["h:Bar-Bear Ian","h:Savage Raider","h:Fury Titan"],
+    cards:{"Pump":3,"Blunt Force":3,"Bloodthirst":3,"Bind":3,"Unstoppable":3,"Battered":3,"Bruised":3,"Beat Down":3,"Run It Back":2,"Great Axe":3,"Sword of Riverstead":3,"Dagger of Riverstead":2,"Chest Plate of Riverstead":3,"Potion":3,"Level Up":2,"Brutality's Choice":2,"Inspiration":2,"Awestruck":2,"Pummel":2},
     hand:["Pump","Great Axe","Potion","Blunt Force"],top:["Bloodthirst","Bind","Unstoppable"]},
   druid:{name:"My First Druid Deck",heroes:["h:Warden of the Woods","h:Rootbinder","h:Wild Shifter"],
-    cards:{"Elk":3,"Wolves":3,"Beast":3,"Tooth":3,"Spore Calling":3,"Heartwood Seed":3,"Rootfolk":3,"Nature's Choice":3,"Shillelagh":3,"Horn":2,"Tooth or Horn":2,"Heavy Beast":2,"Lesser Elemental":2,"Barkskin Totem":2,"Antler Crown":2,"Potion":3,"Chest Plate of Riverstead":2,"Inspiration":2,"Return to the Earth":2,"Bloom":2},
-    hand:["Elk","Spore Calling","Shillelagh","Tooth"],top:["Wolves","Elk","Beast"]},
+    cards:{"Elk":3,"Wolves":3,"Aurawing":3,"Bark Blessing":3,"Call to Companions":3,"Heartwood Seed":3,"Rootfolk":3,"Jess' Choice":3,"Shillelagh":3,"Horn":2,"Tooth or Horn":2,"Heavy Beast":2,"Lesser Elemental":2,"Barkskin Totem":2,"Antler Crown":2,"Potion":3,"Chest Plate of Riverstead":2,"Inspiration":2,"Tangle Rod":2,"Bloom":2},
+    hand:["Elk","Bark Blessing","Shillelagh","Wolves"],top:["Wolves","Elk","Aurawing"]},
   mage:{name:"My First Mage Deck",heroes:["h:Ember Mage","h:Storm Caller","h:Arcane Scholar"],
-    cards:{"Lightning Bolt":3,"Flame Jab":3,"Ice Jab":3,"Flame Lance":3,"Ice Lance":3,"Arcane Study":3,"Frostbite":3,"Spark":3,"Heat Wave":2,"Ice Ray":2,"Levitate":2,"Volt Jab":3,"Boost Ritual":2,"Apprentice's Wand":3,"Ring of Power":2,"Potion":3,"Inspiration":3,"Chest Plate of Riverstead":2,"Precognition":2},
+    cards:{"Lightning Bolt":3,"Flame Jab":3,"Ice Jab":3,"Flame Lance":3,"Ice Lance":3,"Arcane Study":3,"Frostbite":3,"Spark":3,"Heat Wave":2,"Ice Ray":2,"Vonugutt's Choice":2,"Volt Jab":3,"Boost Ritual":2,"Apprentice's Wand":3,"Ring of Power":2,"Potion":3,"Inspiration":3,"Chest Plate of Riverstead":2,"Precognition":2},
     hand:["Lightning Bolt","Apprentice's Wand","Ice Jab","Arcane Study"],top:["Flame Jab","Frostbite","Spark"]}};
 const STYLES=[
-  {k:"barbarian",btn:"ATTACK!",cls:"Barbarian",hero:"Skullcrusher",line:"Pump your Strength and hit hard. Simple, fast and loud."},
+  {k:"barbarian",btn:"ATTACK!",cls:"Barbarian",hero:"Bar-Bear Ian",line:"Pump your Strength and hit hard. Simple, fast and loud."},
   {k:"druid",btn:"Lead a Herd",cls:"Druid",hero:"Warden of the Woods",line:"Summon beasts and let them fight for you."},
   {k:"mage",btn:"Cast Spells",cls:"Mage",hero:"Ember Mage",line:"Blast enemies from a distance with fire, ice and lightning."}];
 const OPP=3; /* AI plays the Grand Stage starter (the friendliest matchup for all three tutorial decks in AI-vs-AI sims) */
@@ -35,10 +35,10 @@ const TIPS={
     {id:"Bloodthirst",t:()=>`<b>Bloodthirst</b> attacks with this Hero. If the enemy dies, your Hero readies and can act again.`,when:"low"},
     {id:"Blunt Force",t:()=>`<b>Blunt Force</b> gives a Barbarian +4 Strength this turn. Play it, then attack.`,once:true}],
   druid:[
-    {id:"Spore Calling",t:()=>`<b>Spore Calling</b> costs 0 Aura: it summons a 0/2 Spore and draws you a card. Free cards are always worth playing.`},
+    {id:"Bark Blessing",t:()=>`<b>Bark Blessing</b> costs 0 Aura: the next summon that enters this turn has Barkborn, so it gains Defense equal to its Health Points this turn. Play it right before a summon.`},
     {id:"Elk",t:()=>`Play <b>Elk</b> (1 Aura). It summons a 2/3 Elk: 2 Strength and 3 Health Points. Summons fight for you. The card says “Exhaust this Hero,” so this Hero is done for the round.`},
     {id:"Shillelagh",t:a=>`Equip the <b>Shillelagh</b> on ${esc(a.name)} (1 Aura). Equipment stays on the Hero for the whole game.`},
-    {id:"Tooth",t:()=>`<b>Tooth</b> gives all your summons +1 Strength this turn. Play it before your summons attack.`,when:"summonReady"},
+    {id:"Jess' Choice",t:()=>`<b>Jess' Choice</b>: choose two. Summon a 2/2 Wolf, give your summons +1 Strength this turn, or give them +1 Defense this turn. Play it before your summons attack.`,when:"summonReady"},
     {id:"Wolves",t:()=>`<b>Wolves</b> summons two 2/2 Wolves. More summons, more attacks.`}],
   mage:[
     {id:"Lightning Bolt",t:()=>`Play <b>Lightning Bolt</b> (1 Aura): 3 Lightning damage to an enemy Hero. Spells don't use your Strength, which is why Mages have 0.`},
@@ -123,7 +123,7 @@ const head=name=>typeof ICON_BASE!=="undefined"&&typeof artKey==="function"?`${I
 const T={step:0,cls:null,seen:{},hint:null,hidden:false,ended:false};
 const SCREENS=[
   ()=>({h:"Welcome to Crystal Quest",p:[`You lead a party of <b>three Heroes</b>. Defeat all of your opponent's Heroes to win.`,`This takes about 15 minutes: a few quick screens, then a real game with a coach at your side.`],
-    pic:`<div class="tut-pic">${cardH("h:Skullcrusher")}<span class="tut-vs">vs</span>${cardH("h:Ember Mage")}</div>`}),
+    pic:`<div class="tut-pic">${cardH("h:Bar-Bear Ian")}<span class="tut-vs">vs</span>${cardH("h:Ember Mage")}</div>`}),
   ()=>({h:"Your Heroes",p:[`Every Hero has four stats:`,`<div class="tut-stats"><div data-stat="str"><b class="k-str">Strength</b>attack damage</div><div data-stat="def"><b class="k-def">Defense</b>damage it ignores when hit</div><div data-stat="aura"><b class="k-aura">Aura</b>adds to your Aura each round</div><div data-stat="hp"><b class="k-hp">Health Points</b>at 0 it dies</div></div><p class="tm-tip" style="font-size:.9rem;color:#c99566;margin:-6px 0 10px">Point at a stat to see it on the card.</p>`,`Left to right your Heroes are your <b>Lead</b>, <b>Center</b> and <b>Closer</b>. That order decides who acts first.`],
     pic:`<div class="tut-mag" data-stat="str"><div class="tm-card">${cardH("h:Savage Raider")}</div><svg aria-hidden="true"><defs><marker id="tmArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ffc100"/></marker></defs><circle class="tm-dot" r="20" fill="none" stroke="#ffc100" stroke-width="5"/><path class="tm-arr" fill="none" stroke="#ffc100" stroke-width="5" stroke-linecap="round" marker-end="url(#tmArrow)"/></svg><div class="tm-lens"><div class="tm-in">${cardH("h:Savage Raider")}</div></div></div>`}),
   ()=>({h:"Aura and Gold",p:[`<b class="k-aura">Aura</b> pays for cards. It refills every Dawn, and whatever you don't spend is lost at Dusk, so spend it.`,`<b class="k-gold">Gold</b> is earned at Dusk, 1 for each living Hero. Gold carries over from turn to turn, and you can spend it in Town.`],

@@ -300,8 +300,8 @@ function view(){
   if(!S.access)return`<h1>Admin</h1><p class="ad-empty">Checking access…</p>`;
   if(!S.access.admin)return`<h1>Admin</h1><div class="empty">This page is only for admins.</div>`;
   return`<h1>Admin</h1><p class="lede">Only you and other admins can see this page.</p>
-  <div class="chips ad-tabs" role="tablist">${[["play","Playtesting"],["users","Users"]].map(([v,l])=>`<button type="button" class="chip" role="tab" data-ad-tab="${v}" aria-selected="${st.tab===v}" aria-pressed="${st.tab===v}">${l}</button>`).join("")}</div>
-  ${st.tab==="users"?usersTab():playTab()}`}
+  <div class="chips ad-tabs" role="tablist">${[["play","Playtesting"],["users","Users"],["dep","Deprecated cards"]].map(([v,l])=>`<button type="button" class="chip" role="tab" data-ad-tab="${v}" aria-selected="${st.tab===v}" aria-pressed="${st.tab===v}">${l}</button>`).join("")}</div>
+  ${st.tab==="users"?usersTab():st.tab==="dep"?(window.CQDeprecatedHTML?window.CQDeprecatedHTML():""):playTab()}`}
 function mount(el){injectCSS();root=el;
   if(SB&&S.uid&&S.access&&S.access.admin){
     if(st.tab==="play"){if(!D.rows&&!D.loading||Date.now()-D.at>120000&&!D.loading)loadRows();if(!D.watch)loadWatch()}

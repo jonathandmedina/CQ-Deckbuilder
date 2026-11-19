@@ -1,7 +1,7 @@
 # Crystal Quest
 *Official Rules*
 
-*Version: November 17, 2026 (update 36: Ingots and Consumables)*
+*Version: November 19, 2026 (update 40: card fixes, new Choice cards, deprecations; Monk, Ingots and Almandine move to Set 2)*
 
 ## 1. Welcome to Crystal Quest
 
@@ -79,11 +79,11 @@ A Bard card type. Songs work like spells, and many Bard cards reward you for pla
 
 Items go into your inventory slots and stay there until used or removed. Item subtypes:
 
-- **Consumable**: used once, then exiled (Potion, Antidote, Revitalize, Smoke Bomb, Sleeping Potion, Phoenix Down, False Cure).
+- **Consumable**: used once, then exiled (Potion, Antidote, Revitalize, Smoke Bomb, Sleeping Potion, Phoenix Down, False Cure, Energizing Ale, Fireball Flask, Harmonic Flask).
 - **Relic**: stays in play and gives a lasting effect.
 - **Trap**: a Hidden item that waits face down for its trigger (see Hidden Cards).
 - **Arrow**: a Ranger item you activate for damage and an effect.
-- **Material**: a Generic item with its own use, such as the Gold, Silver and Platinum Ingots and the gems Almandine, Rose Quartz and Topaz (which you may exile at Dawn, exhausting a Hero, for a one-time effect).
+- **Material**: a Generic item with its own use, such as the gems Rose Quartz and Topaz (which you may exile at Dawn, exhausting a Hero, for a one-time effect). The Ingots and Almandine are Set 2 cards.
 
 ### Equipment
 
@@ -116,16 +116,13 @@ Tokens are cards created by effects rather than drawn from your library, such as
 | Doll | Item | 0 STR, 0 DEF, 5 HP | — | Takes an inventory slot. It can be targeted and dealt damage like a Hero. At 0 HP it is destroyed. | Mocking Doll |
 | Soldier | Summon | 2/3 | — | | Conscript, Noble Choice, Rally the Troops |
 | Eliazar | Summon (Soldier) | 3/5 | — | | Sword of Eliazar |
-| Beast | Summon | 3/4 | — | | Beast, Out of the Woods |
+| Beast | Summon | 3/4 | — | | Out of the Woods |
 | Heavy Beast | Summon (Beast) | 4/5 | — | | Heavy Beast |
 | Woods Beast | Summon (Beast) | 3/5 | — | When this deals damage, draw a card. | Elk of the Woods |
 | Elk | Summon | 2/3 | — | | Elk, Nature’s Choice |
-| Wolf | Summon | 2/2 | — | | Wolves, Call to Companions |
+| Wolf | Summon | 2/2 | — | | Wolves, Call to Companions, Jess' Choice, Jess Naturecaller |
 | Aurawing Familiar | Summon (Familiar) | 2/3 | — | When this is destroyed, gain 1 Aura. | Aurawing |
-| Drawwing Familiar | Summon (Familiar) | 2/4 | — | When this is destroyed, draw a card. | Drawwing |
-| Spore | Summon | 0/2 | — | When this is destroyed, discard a card. | Spore Calling |
 | Squirrel | Summon | 1/3 | — | | Warden of the Woods |
-| Spectral Elk | Summon (Spirit) | 4/5 | — | | Verdant Sage |
 | Sapling | Summon | 0/3 | — | At Dawn, gain 1 Aura. | Heartwood Seed |
 | Rootfolk | Summon | 3/3 | — | Barkborn. | Rootfolk |
 | Great Rootfolk | Summon (Rootfolk) | 6/6 | — | Barkborn. | Great Rootfolk |
@@ -226,7 +223,7 @@ All players do these steps together:
 1. **Ready.** Ready all your exhausted cards. A Meditating Hero first gets a meditation counter; then you may choose to keep it exhausted (see Meditate). A Hero with a Fatigue counter doesn’t ready; remove the counter instead.
 2. **Refresh Aura.** Your Aura pool becomes the total Aura of your Heroes that aren’t dead.
 3. **Status Health Point loss.** Each Burned, Poisoned or Wounded counter makes its Hero or summon lose 1 Health Point. Then remove one of each status counter from each Hero and summon.
-4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when exiled Echo cards are played again and items like Almandine, Rose Quartz and Topaz can be used.
+4. **At Dawn effects.** Resolve abilities that happen “At Dawn”, using the stack (see Triggers and the Stack). This is when exiled Echo cards are played again and items like Rose Quartz and Topaz can be used.
 5. **Draw.** Each player draws a card.
 
 A Hero exhausted during Dawn, for example by Topaz, stays exhausted for the whole Battle Phase.
@@ -242,7 +239,7 @@ This is where the fighting happens. Set the Position marker to **Lead**.
 
 **Stand-ins.** If the Hero in the marked position is exhausted, dead or Abiding, the next ready Hero to its right acts instead. After the Closer, this wraps around to the Lead. An Abiding Hero acts at Last; it stands in earlier only if none of your other Heroes are ready. If none of your Heroes are ready, you may still attack with a ready summon or surrender a dead Hero’s soul; otherwise you have no action this time.
 
-**No Hero acts twice in a row.** A Hero can’t take two of your actions in a row while another of your Heroes is ready. If the Hero that took your last action would act again (for example, it stood in for an exhausted Lead and the marker has now reached its own position), your next ready Hero acts instead. A Hero may act again right away only if it’s your only ready Hero, or if a card gives it extra actions (such as Tempo Change or Refire). This resets at Dusk.
+**No Hero acts twice in a row.** A Hero can’t take two of your actions in a row while another of your Heroes is ready. If the Hero that took your last action would act again (for example, it stood in for an exhausted Lead and the marker has now reached its own position), your next ready Hero acts instead. A Hero may act again right away only if it’s your only ready Hero, or if a card gives it extra actions (such as Refire). This resets at Dusk.
 
 **Summons.** When you have priority, you may attack with a ready summon instead of taking your Hero’s action.
 
@@ -563,7 +560,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Barkborn** | When a summon with Barkborn enters, it gains DEF equal to its HP until Dusk. Barkborn stacks: each time a summon has Barkborn, add that DEF again. Cards and abilities can give the next summon (or every summon) that enters this turn Barkborn. |
 | **Combo** | When a card with Combo finishes resolving (including any Scry it makes), reveal the top card of your library. If its subtype is Combo, you may play it, or a Combo card from your hand, by paying its Aura cost. This doesn’t use another action. A Hidden card with Combo triggers it when revealed. A **Combo card** is a card with the Combo subtype; only those count as “Combo cards you have played this turn.” |
 | **Conjure** | Create a Pillar token on the battlefield. |
-| **Echo** | If you played this card from your hand, you may exile it as it resolves. If you do, play it again at your next Dawn without paying its costs again: no Aura, and no additional cost such as Harmonize (it keeps the mode and X chosen the first time, and no Heroes are exhausted for it). Any of your Heroes that can play it does, and you may choose new targets, then put it in your discard pile. A card played any other way (at Dawn, from your discard pile or library, or as a copy or duplicate) can’t Echo, so a card repeats only once. Cards that give Echo (Songweaver, Sing Along) follow the same rule. The Dawn replay counts as playing the card, so it triggers abilities like Tip Jar and The Forbidden Tuner. |
+| **Echo** | If you played this card from your hand, you may exile it as it resolves. If you do, play it again at your next Dawn without paying its costs again: no Aura, and no additional cost such as Harmonize (it keeps the mode and X chosen the first time, and no Heroes are exhausted for it). Any of your Heroes that can play it does, and you may choose new targets, then put it in your discard pile. A card played any other way (at Dawn, from your discard pile or library, or as a copy or duplicate) can’t Echo, so a card repeats only once. Cards that give Echo (Echo Performer, Sing Along) follow the same rule. The Dawn replay counts as playing the card, so it triggers abilities like Tip Jar and The Forbidden Tuner. |
 | **Enraged** | A Hero is Enraged while it is at or below half its maximum HP. |
 | **Harmonize X** | Exhaust X other ready Heroes you control (not the Hero playing the card) to gain the effect after the colon. |
 | **Lifelink** | When this Hero deals damage, heal it that much. |
@@ -606,7 +603,7 @@ When an effect lets you steal or take control of an object, it stays under your 
 
 ### Tip
 
-Tip: gain 1 Gold. You gain Gold from Tip only once per round. Undeniable Performance makes Tips come out of an opposing party’s Gold, and Dazzling Melody counts as your Tip for the round.
+Tip: gain 1 Gold. You gain Gold from Tip only once per round. Undeniable Performance makes Tips come out of an opposing party’s Gold.
 
 ### Targeting Face-Down Cards
 
@@ -662,7 +659,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Hero**: One of your three characters, and the card type.
 - **Party**: Your three Heroes together.
 - **Ally / Friendly**: Anything you control, including summons. “Enemy” and “opposing” mean controlled by an opponent.
-- **Class**: A Hero’s role: Barbarian, Bard, Cleric, Druid, Mage, Monk, Paladin, Ranger, Rogue, Warlock. A Hero plays only Generic cards and cards of its class.
+- **Class**: A Hero’s role: Barbarian, Bard, Cleric, Druid, Mage, Paladin, Ranger, Rogue, Warlock. (Monk, Artificer and Necromancer are Set 2 playtest classes.) A Hero plays only Generic cards and cards of its class.
 - **Generic**: A card or equipment any class can use.
 - **Strength (STR)**: Attack power.
 - **Defense (DEF)**: Reduces incoming damage.
@@ -694,7 +691,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Relic**: Item that stays in play with a lasting effect.
 - **Trap**: A Hidden card with the subtype Trap.
 - **Arrow**: Ranger item. Activating it is an action: pay its Aura cost and exhaust the Hero.
-- **Material**: Generic item with its own use (Gold, Silver and Platinum Ingots; Almandine, Rose Quartz and Topaz, which you may exile at Dawn, exhausting a Hero, for a one-time effect; that Hero sits out the Battle Phase).
+- **Material**: Generic item with its own use (Rose Quartz and Topaz, which you may exile at Dawn, exhausting a Hero, for a one-time effect; that Hero sits out the Battle Phase). The Ingots and Almandine are Set 2 cards.
 - **Equipment**: Card that boosts a Hero while equipped. Its subtype names the item: Sword, Dagger, Axe, Hammer, Mace, Club, Bow, Staff, Wand, Chalice, Shield, Helm, Crown, Headband, Chestplate, Robe, Cloak, Gauntlets, Greaves, Boots, Ring, Quiver, Instrument.
 - **Type line**: Supertype - Type - Subtype, with dashes (Legendary - Equipment - Sword).
 - **Equipment region**: Where equipment is worn: Head, Chest, Arms, Hands, Legs, Feet, Accessory. One piece per region.
@@ -744,7 +741,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Reveal**: Show cards from your library to all players.
 - **Mill X**: Move the top X cards of your library to your discard pile.
 - **Scry X**: Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order.
-- **Duplicate**: Make a copy of a card or summon. Copying a Spell, Tactic or Song (Mirrored Chant, Echo Performer): the copy is made after all of the original’s costs were paid and is exactly as it was played. X keeps the value that was paid, and additional costs (losing HP, exhausting, sacrificing) aren’t paid again. A copy isn’t played from your hand, so it never gets Echo.
+- **Duplicate**: Make a copy of a card or summon. Copying a Spell, Tactic or Song (Songweaver): the copy is made after all of the original’s costs were paid and is exactly as it was played. X keeps the value that was paid, and additional costs (losing HP, exhausting, sacrificing) aren’t paid again. A copy isn’t played from your hand, so it never gets Echo.
 - **Choose two**: Pick two of the listed effects.
 - **X**: A number chosen by the player or set by the card.
 - **Trigger window**: Opens after an action is announced and paid for. Triggered abilities and Hidden cards resolve here, before the action.
@@ -768,16 +765,16 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Surrendered**: A dead Hero whose soul was surrendered. Face down and sideways. Still counts as dead.
 - **Adjacent**: Heroes next to each other in party order. The Lead and the Closer are adjacent to the Center; the Center is adjacent to both.
 - **STR/HP (e.g. 3/3)**: Shorthand for a summon's Strength and Health.
-- **Summon types**: Named creatures from cards: Beast, Elemental, Elk, Familiar, Rootfolk, Sapling, Soldier, Spirit, Spore, Squirrel, Wolf. See the token list in The Cards for every summon’s STR/HP.
+- **Summon types**: Named creatures from cards: Beast, Elemental, Elk, Familiar, Rootfolk, Sapling, Soldier, Squirrel, Wolf. See the token list in The Cards for every summon’s STR/HP.
 - **Damage types**: Fire, Ice, Lightning, Light and Dark appear on cards. They have no rules effect yet but will later.
 
 ### Card keywords
 
-- **Combo (Monk)**: When a card with Combo finishes resolving (after any Scry), reveal the top card of your library. If it’s a Combo card, you may play it or a Combo card from your hand, paying its Aura cost. A Combo card is a card with the Combo subtype.
+- **Combo (Monk, Set 2)**: When a card with Combo finishes resolving (after any Scry), reveal the top card of your library. If it’s a Combo card, you may play it or a Combo card from your hand, paying its Aura cost. A Combo card is a card with the Combo subtype.
 - **Mill X**: Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.)
-- **Petal counter (Monk)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
-- **Meditate / Meditating (Monk)**: Exhaust the Hero; it’s Meditating. At each Dawn it gets a meditation counter, then you may keep it exhausted. When it readies, remove its counters: your party gains that much Aura, and it gets +1 STR per counter until Dusk.
-- **Meditation counter (Monk)**: Builds up on a Meditating Hero (some Monk Tactics add more). It does nothing until the Hero readies, then each one becomes 1 Aura and +1 STR until Dusk.
+- **Petal counter (Monk, Set 2)**: Added to Petal Shrine each time Combo triggers. At 3, the next Combo card you play that costs 1 or more Aura costs 1 less.
+- **Meditate / Meditating (Monk, Set 2)**: Exhaust the Hero; it’s Meditating. At each Dawn it gets a meditation counter, then you may keep it exhausted. When it readies, remove its counters: your party gains that much Aura, and it gets +1 STR per counter until Dusk.
+- **Meditation counter (Monk, Set 2)**: Builds up on a Meditating Hero (some Monk Tactics add more). It does nothing until the Hero readies, then each one becomes 1 Aura and +1 STR until Dusk.
 - **Piercing X (Monk)**: Damage from this ignores X points of the target's DEF, and at least X always gets through. Piercing with no number ignores all DEF.
 - **Echo (Bard)**: If you played it from your hand, exile it and play it again for free at your next Dawn (no Aura, and Harmonize isn't paid again; you may choose new targets), then discard it. A card only repeats once.
 - **Tip (Bard)**: Gain 1 Gold, only once per round.
@@ -792,5 +789,5 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Your next spell has +2 Spell Damage; sacrifice the Pillar after that spell resolves.
-- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026), Fortify and Pull Together (Nov 9, 2026, update 26), Campfire (Nov 10, 2026, update 28).
+- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026), Fortify and Pull Together (Nov 9, 2026, update 26), Campfire (Nov 10, 2026, update 28). Update 40 (Nov 19, 2026): Sanctuary, Line It Up, Quickdraw, Blunt-Point Force, Poison Dart, Rapid Shot, Call of Nature, Drawwing, Energy Stone, Entangling Roots, Evolve, Hand of the Protector, Primal Energy, Populate, Return to the Earth, Spore Calling, Tooth, Beast, Broken Blade, Cut Off, Pillage the Dead, Vigil, Protect, Take a Stand, Noble Promotion, Self Sacrifice, Brain Rot, Disorient, Mind Rend, Night Terror, Fog of Darkness, Distract, "Dazzling Melody", Drums of War, Frog in the Throat, "Lullaby", "Marching Cadence", Mirrored Chant, "Peace", "Duet", Strong Stance, Tempo Change, "Rousing Chorus", Levitate; Heroes Shadow Ranger, Beast Tracker, Verdant Sage, Rootfolk Elder, Demon Pactist, Battle Minstrel and Skullcrusher.
 - **Pain Pillar (Warlock)**: At Dusk, target loses X HP, where X is the number of Pain Pillars you control.

@@ -51,7 +51,6 @@ const CLS=[
   ["Cleric","Heals, revives and turns the light on anyone who threatens the party."],
   ["Druid","Calls beasts and Rootfolk to the field and grows huge pools of Aura."],
   ["Mage","Raw spell damage, boosted by one-shot Pillars of power."],
-  ["Monk","Combos that chain card into card, and Meditation that stores up power."],
   ["Paladin","Heavy armor and Defense that turns into crushing blows."],
   ["Ranger","Arrows, bows and Traps that strike from a distance."],
   ["Rogue","Stealth, poison and a quick hand for other people's Gold."],
@@ -81,7 +80,7 @@ function view(){
       <p>Every deck starts with three Heroes standing in a row: your <b>Lead</b>, <b>Center</b> and <b>Closer</b>. That order decides who acts first each round, so a fast Lead and a heavy hitter at the end can swing a fight.</p>
       <p>Each Hero brings four stats: <span class="kw-str">Strength</span> for attacks, <span class="kw-def">Defense</span> to blunt hits, <span class="kw-aura">Aura</span> to fuel your cards, and <span class="kw-hp">Health Points</span> to stay standing. Their classes decide which cards your deck can hold.</p>
       <a class="btn" href="#catalog">Browse the Heroes</a></div>
-    <div class="hm-cards hm-three">${card("Divine Knight")}${card("Arcane Scholar")}${card("Shadow Ranger")}</div>
+    <div class="hm-cards hm-three">${card("Divine Knight")}${card("Arcane Scholar")}${card("Deeg Farsight")}</div>
   </section>
 
   <section class="hm-sec">

@@ -787,7 +787,7 @@ async function exportDeckPNG(d){warnHidden(d);
     host.innerHTML=`<div class="ps-top"><div><h2>${esc(d.name||"Untitled deck")}</h2><p>Riverstead · ${deckTotal(d)} cards · Deck Forge</p></div>
       <div class="ps-me"><img src="${ICON_BASE}art/hero-head/${artKey(me.hero.name)}.png?v=${ART_VER}" alt=""><div><b>${esc(me.name)}</b><small>Deck by</small></div></div></div>
       <div class="party ps-party">${hs.map((h,i)=>`<div class="slot full hero-full hero-dig" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${heroDigitalHTML(h,(i+1)+" · "+["LEAD","CENTER","CLOSER"][i])}</div>`).join("")}</div>
-      ${groups}<p class="ps-foot">jonathandmedina.github.io/CQ-Deckbuilder</p>`;
+      ${groups}<p class="ps-foot">playriverstead.com</p>`;
     document.body.appendChild(host);
     await Promise.all([...host.querySelectorAll("img")].map(im=>im.complete?0:new Promise(r=>{im.onload=im.onerror=r})));
     if(SKIN==="art")fitArt(host);await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));

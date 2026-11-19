@@ -119,7 +119,7 @@ Tokens are cards created by effects rather than drawn from your library, such as
 | Beast | Summon | 3/4 | — | | Out of the Woods |
 | Heavy Beast | Summon (Beast) | 4/5 | — | | Heavy Beast |
 | Woods Beast | Summon (Beast) | 3/5 | — | When this deals damage, draw a card. | Elk of the Woods |
-| Elk | Summon | 2/3 | — | | Elk, Nature’s Choice |
+| Elk | Summon | 2/3 | — | | Elk |
 | Wolf | Summon | 2/2 | — | | Wolves, Call to Companions, Jess' Choice, Jess Naturecaller |
 | Aurawing Familiar | Summon (Familiar) | 2/3 | — | When this is destroyed, gain 1 Aura. | Aurawing |
 | Squirrel | Summon | 1/3 | — | | Warden of the Woods |

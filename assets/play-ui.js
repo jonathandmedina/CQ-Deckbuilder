@@ -406,6 +406,23 @@ html[data-skin="art"] #play-root .pl-hand .hc{flex-basis:var(--hcw,150px)}
 @media (prefers-reduced-motion:reduce){#pl-fx .fxc{animation:fxIn .2s both, fxOut .4s 1s forwards}#pl-fx .fxc::after{animation:none}}
 .pl-snd{display:inline-flex;align-items:center;gap:5px;margin-left:auto}
 /* Rules fix stacked above Concede at the right */
+/* Nov 19: view-board tab, Echo glow and order, spectating */
+.pl-viewboard{float:right;margin:-4px -4px 6px 8px}
+#pl-modtab{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:75;display:flex;align-items:center;gap:10px;max-width:min(620px,94vw);padding:8px 16px 10px;border-radius:12px 12px 0 0;border:2px solid #f2c14e;border-bottom:0;background:#1d1209;color:#f6e7c8;font:inherit;cursor:pointer;box-shadow:0 -4px 18px #000a;animation:mtPulse 1.6s ease-in-out infinite}
+#pl-modtab .mt-k{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#f2c14e}
+#pl-modtab b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px}
+#pl-modtab .mt-o{margin-left:auto;font-weight:800;color:#f2c14e}
+@keyframes mtPulse{0%,100%{box-shadow:0 -4px 18px #000a}50%{box-shadow:0 -4px 22px #f2c14e88}}
+.res.echo-z{opacity:.55}
+.res.echo-z.on{opacity:1;border-color:#9fd3ff!important;background:#123a5c!important;color:#dff1ff!important;box-shadow:0 0 0 2px #4aa8ff66,0 0 14px #4aa8ffaa;animation:echoGlow 1.8s ease-in-out infinite}
+@keyframes echoGlow{0%,100%{box-shadow:0 0 0 2px #4aa8ff55,0 0 8px #4aa8ff77}50%{box-shadow:0 0 0 2px #4aa8ffaa,0 0 18px #4aa8ffdd}}
+.echo-list{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.echo-list li{display:grid;grid-template-columns:42px 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+.echo-list .eo-n{font-size:1.4rem;font-weight:900;text-align:center;color:#4aa8ff}
+.echo-list .eo-c .card{transform:scale(.5);transform-origin:top left;width:240px;height:160px}
+.echo-list .eo-c{width:120px;height:168px;overflow:hidden}
+.echo-list .eo-b{display:flex;flex-direction:column;gap:4px}
+.pl-specbar .pl-prompt{font-weight:700}
 /* Nov 19: target pop-up and picked targets */
 .pl-tpop{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:70;min-width:260px;max-width:min(560px,92vw);background:#1d1209;color:#f6e7c8;border:2px solid #f2c14e;border-radius:12px;padding:8px 14px;box-shadow:0 6px 24px #000a;text-align:center;animation:tpIn .18s ease-out}
 .pl-tpop .tp-h{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:#f2c14e}
@@ -529,11 +546,11 @@ function trialsGameHTML(s,opts){const me=U.me;const helpers=E.parties(s).filter(
   return`<div class="pl-game trials${U.logHidden?" nolog":""}"><button class="btn sm pl-logshow" data-pa="log-toggle" title="Show the game log">Show log</button><div class="pl-board">
     ${bossHTML(s)}
     <div class="tr-helpers n${helpers.length}">${helpers.map(p=>`<div class="tr-helper">${zoneHTML(s,p,opts)}</div>`).join("")}</div>
-    ${midHTML(s,opts)}
+    ${U.spec?specMidHTML(s):midHTML(s,opts)}
     ${zoneHTML(s,me,opts)}
-    ${handHTML(s,opts)}
+    ${U.spec?"":handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button>${s.over?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button>${s.over||U.spec?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}${U.spec?`<button class="btn sm danger" data-pa="spec-leave">Stop watching</button>`:`<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button>`}</span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Dimmed Golem = deal with your own first</span></div>
   </aside></div>`}
@@ -652,7 +669,7 @@ U.startTutorial=function(dm,da,fix){clearTimeout(U.aiT);
   U.meta=null;U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.net=null;U.mode="game";U.tgt=null;U.man=null;U.overHide=false};
 U.pumpAI=()=>pumpAI();U.render=()=>render();U.leave=()=>leaveGame();U.save=()=>saveLocal();
 function view(){return U.s}
-function send(a){
+function send(a){if(U.spec)return;
   if(U.net&&U.net.role==="guest"){U.net.ch.send({type:"broadcast",event:"act",payload:{a,cid}});U.busy=true;U.tgt=null;render();return}
   const r=E.act(U.s,U.me,a);if(!r.ok){toast(r.err||"Not legal.");render();return}
   U.tgt=null;afterChange()}
@@ -695,9 +712,54 @@ function broadcast(err){if(!U.net||!U.net.ch||!U.s||!U.net.guest)return;U.net.ch
 const claimed=new Set();
 async function claimResult(gid){const c=sb(),st=AS();if(!c||!st||!st.uid||!gid||claimed.has(gid))return;claimed.add(gid);
   for(let i=0;i<6;i++){await new Promise(r=>setTimeout(r,i?4000:2500));try{const{data,error}=await c.rpc("claim_result",{gid});if(error)return;if(data>0){toast("Result saved to your profile.");return}}catch(e){return}}}
-function leaveGame(){U.gameKey=null;clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
+function leaveGame(){specHostStop();leaveSpec();U.gameKey=null;clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
   if(U.net&&U.net.role==="guest")store2.del("cq.play.guest");if(U.net&&U.net.role==="host")store2.del("cq.play.host");
   if(U.vsAI)store2.del(U.s&&U.s.trials?TKEY:"cq.play.local");U.net=null;U.s=null;U.vsAI=false;U.trialsWatch=false;U.tut=null;U.mode="lobby";U.tgt=null;U.man=null;render()}
+
+/* ---------- Nov 19: spectate mode ----------
+   The player who runs a game (the room host, or the player in a vs-AI game) opens a watch channel "cq-spec-<game id>".
+   Watchers join it; while any watcher is there, the runner sends the state with both hands and libraries hidden. */
+function specGameId(){const s=U.s;if(!s||U.spec||U.tut)return null;if(s.trials)return null;
+  if(U.net&&U.net.role==="host"&&U.net.code)return"room:"+U.net.code;if(U.vsAI&&window.CQOnline)return"ai:"+window.CQOnline.me();return null}
+function specHost(){const c=sb();const id=specGameId();
+  if(!c||!id||(U.s&&U.s.over&&!U.specTx)){if(U.specTx&&U.specTx.id!==id)specHostStop();return}
+  if(U.specTx&&U.specTx.id===id)return;specHostStop();
+  const ch=c.channel("cq-spec-"+String(id).replace(/[^A-Za-z0-9_-]/g,"-"),{config:{broadcast:{self:false},presence:{key:"run-"+cid}}});const tx={id,ch,n:0,t:null};U.specTx=tx;
+  ch.on("presence",{event:"sync"},()=>{const st=ch.presenceState();const n=Object.keys(st).filter(k=>k.startsWith("w-")).length;const more=n>tx.n;tx.n=n;if(more)specSend(true);render()});
+  ch.on("broadcast",{event:"want"},()=>specSend(true));
+  ch.subscribe(st=>{if(st==="SUBSCRIBED")ch.track({role:"run"})})}
+function specHostStop(){const tx=U.specTx;if(!tx)return;clearTimeout(tx.t);try{sb().removeChannel(tx.ch)}catch(e){}U.specTx=null}
+function specSend(now){const tx=U.specTx;if(!tx||!tx.n||!U.s)return;clearTimeout(tx.t);
+  const go=()=>{if(!U.s||!U.specTx)return;tx.ch.send({type:"broadcast",event:"spec",payload:{s:E.redact(U.s,-1)}})};if(now)go();else tx.t=setTimeout(go,250)}
+function spectate(g){const c=sb();if(!c){toast("Watching games needs the site's account service.");return}if(!g)return;
+  leaveSpec();U.gameKey="g"+Date.now();U.spec={g,ch:null,names:null};U.s=null;U.me=0;U.vsAI=false;U.net=null;U.mode="spec-wait";
+  const ch=c.channel("cq-spec-"+String(g).replace(/[^A-Za-z0-9_-]/g,"-"),{config:{broadcast:{self:false},presence:{key:"w-"+cid}}});U.spec.ch=ch;
+  ch.on("broadcast",{event:"spec"},({payload})=>{if(!U.spec||!payload||!payload.s)return;U.s=payload.s;U.mode="game";render()});
+  ch.subscribe(st=>{if(st==="SUBSCRIBED"){ch.track({role:"watch",name:myName()});setTimeout(()=>{if(U.spec&&U.spec.ch===ch)ch.send({type:"broadcast",event:"want",payload:{}})},600);
+      setTimeout(()=>{if(U.spec&&U.spec.ch===ch&&!U.s){toast("That game isn't sending yet. It may have just ended.")}},6000)}
+    else if(st==="CHANNEL_ERROR"||st==="TIMED_OUT")toast("Couldn't reach the game server.")});render()}
+function leaveSpec(){if(!U.spec)return;try{sb().removeChannel(U.spec.ch)}catch(e){}U.spec=null}
+function specGamesHTML(){const O=window.CQOnline;if(!O||!O.games)return"";const G=O.games();
+  return`<section class="panel pl-players pl-watch"><h2>Watch a game <span class="pl-note">(${G.length})</span></h2>
+    ${G.length?`<ul class="pl-plist">${G.map(g=>`<li><span class="pl-pn"><b>${esc(g.ai?`${g.names[0]||"Player"} vs AI`:g.names.join(" vs ")||"Online game")}</b><small>${g.ai?"Game vs AI":"Online game"}</small></span><button class="btn" data-pa="spec" data-g="${esc(g.g)}">Watch</button></li>`).join("")}</ul>`:`<p class="pl-note">No games are being played right now.</p>`}
+    <p class="pl-note">Spectators see the board, the log and both players' hand sizes, never the cards in hand.</p></section>`}
+function specMidHTML(s){const pr=s.pend[0];const pn=p=>esc(s.p[p]?s.p[p].name:"");
+  let st=s.over?(s.winner<0?"The game is a draw.":`🏆 ${pn(s.winner)} wins.`):s.phase==="mull"?"Players are choosing their opening hands.":s.phase==="town"?"Town: the players are shopping.":pr&&pr.pid!=null&&pr.pid>=0?`${pn(pr.pid)} is choosing…`:s.phase==="battle"?`${pn(s.prio)} to act.`:`${esc(s.phase||"")}`;
+  return`<section class="pl-mid pl-specbar"><div class="pl-round"><b>Round ${s.round||"–"}</b> · ${esc(({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase||"")}</div>
+    <div class="pl-prompt">👁 Watching ${pn(0)} vs ${pn(1)} · ${st}</div><div class="pl-acts"><button class="btn" data-pa="spec-leave">Stop watching</button></div></section>`}
+/* Nov 19: any choice pop-up can be tucked into a tab at the bottom center so you can check the board, then reopened */
+function modalMinTab(s,pr,key){let tab=document.getElementById("pl-modtab");
+  if(U.modalMin!==key||!pr){if(tab)tab.remove();return false}
+  if(document.getElementById("pl-modal")&&document.getElementById("pl-modal").dataset.k)closeModal();
+  if(!tab){tab=document.createElement("button");tab.id="pl-modtab";tab.type="button";tab.dataset.pa="modal-max";(document.getElementById("layer")||document.body).appendChild(tab)}
+  tab.innerHTML=`<span class="mt-k">Choice waiting</span><b>${esc(pr.title||({scry:"Scry",choose:"Choose cards",combo:"Combo"})[pr.type]||"Make your choice")}</b><span class="mt-o">Open ▴</span>`;return true}
+function addViewBoard(){const m=document.getElementById("pl-modal");if(!m||!m.dataset.k||m.querySelector(".pl-viewboard"))return;const box=m.querySelector(".box");if(!box)return;
+  box.insertAdjacentHTML("afterbegin",`<button type="button" class="btn sm pl-viewboard" data-pa="modal-min" title="Hide this choice to look at the board and your hand. Reopen it from the tab at the bottom.">👁 View board</button>`)}
+/* Nov 19: the Echo zone lists its cards in the order they replay at Dawn; you can reorder your own */
+function showEcho(pid){const s=view();if(!s)return;const pl=s.p[pid];const mine=pid===U.me&&!U.spec&&!s.over&&U.mode==="game";
+  const rows=pl.echo.map((e,i)=>{const d=cardOf((e.card||{}).id)||{};const tg=(e.targets||[]).filter(Boolean).map(nameOf).map(esc).join(", ");
+    return`<li><span class="eo-n">${i+1}</span><span><b>${esc(d.name||"Card")}</b> <span class="pl-note">${esc(d.cls||"")}${i===0?" · plays first":""}</span>${tg?`<br><span class="pl-note">Targets when it was played: ${tg}</span>`:""}</span>${mine?`<span class="eo-b"><button class="btn sm" data-pa="echo-mv" data-i="${i}" data-d="-1" ${i?"":"disabled"} aria-label="Move up">▲</button><button class="btn sm" data-pa="echo-mv" data-i="${i}" data-d="1" ${i<pl.echo.length-1?"":"disabled"} aria-label="Move down">▼</button></span>`:""}</li>`}).join("");
+  const m=modal(`<h2>${esc(pl.name)} · Echo (${pl.echo.length})</h2><p class="pl-note">These cards are played again at the next Dawn, for free, from top to bottom.${mine&&pl.echo.length>1?" Use the arrows to change the order.":""}</p>${rows?`<ol class="echo-list">${rows}</ol>`:'<p class="pl-note">No Echo cards right now.</p>'}<div class="actions"><button class="btn" data-pa="close">Close</button></div>`);m.dataset.echo=String(pid)}
 
 /* ---------- helpers ---------- */
 const nameOf=u=>{const s=view();if(!s||!u)return"?";if(u[0]==="P")return s.p[+u.slice(1)].name;const f=E.find(s,u);return f?f.o.name:"?"};
@@ -706,7 +768,7 @@ function scriptOfCard(id){const d=E.DB[id];return d?SCR()[d.name]:null}
 function autoTag(id){const d=E.DB[id];if(!d)return"";if(d.kind==="equip")return MANUAL_EQ.has(d.name)?'<span class="auto m">PART BY HAND</span>':'<span class="auto">AUTO</span>';
   return E.isScripted(d.name)?'<span class="auto">AUTO</span>':'<span class="auto m">BY HAND</span>'}
 const MANUAL_EQ=new Set(["Ritual Athame","Shillelagh","Helm of Aura","Ring of Vocation","Gauntlets of Growth"]);
-function legal(){const s=view();if(!s)return[];if(s.trials&&U.trialsWatch)return[];if(U.net&&U.net.role==="guest"&&U.busy)return[];try{return E.options(s,U.me)}catch(e){return[]}}
+function legal(){const s=view();if(!s||U.spec)return[];if(s.trials&&U.trialsWatch)return[];if(U.net&&U.net.role==="guest"&&U.busy)return[];try{return E.options(s,U.me)}catch(e){return[]}}
 
 /* ---------- rendering ---------- */
 function mergeLog(s){if(!s)return;if(U.logFor!==U.gameKey){U.logFor=U.gameKey;U.logAll=new Map()}
@@ -956,6 +1018,7 @@ function regLoot(){if(trialsAccess()&&typeof TRIALS_LOOT!=="undefined"&&E.addEqu
 function render(){const root=ROOT();if(!root)return;injectCSS();regLoot();
   if(U.mode==="lobby"){MUS.sync(false);if(window.CQPop)CQPop.clear();root.innerHTML=lobbyHTML();try{window.CQTablet&&CQTablet.after()}catch(e){}return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
+  if(U.mode==="spec-wait"){root.innerHTML=`<section class="panel"><h2>Joining the game…</h2><p class="pl-note">Waiting for the player's browser to send the board.</p><div class="actions"><button class="btn" data-pa="spec-leave">Cancel</button></div></section>`;return}
   const s=view();if(!s){root.innerHTML=roomHTML();return}
   if(!U.gameKey)U.gameKey="g"+Date.now();mergeLog(s);try{trackBanner(s)}catch(e){console.warn(e)}
   const keepScroll=root.querySelector(".pl-log");const atBottom=!keepScroll||keepScroll.scrollTop+keepScroll.clientHeight>=keepScroll.scrollHeight-20;
@@ -974,6 +1037,8 @@ function render(){const root=ROOT();if(!root)return;injectCSS();regLoot();
   try{if(typeof fitArt==="function")fitArt(root)}catch(e){}
   try{fitPlay(root)}catch(e){console.warn(e)}
   modals(s);
+  try{const em=document.getElementById("pl-modal");if(em&&em.dataset.echo!=null&&!em.dataset.k)showEcho(+em.dataset.echo)}catch(e){}
+  if(!U.spec){try{specHost();if(U.specTx)specSend()}catch(e){console.warn(e)}}
   try{if(window.CQTut&&U.tut)CQTut.after(s,root)}catch(e){console.warn(e)}
   preloadArt();try{window.CQTablet&&CQTablet.after()}catch(e){}}
 /* when a game starts, load and decode the art of every card in both decks, so nothing pops in while you play or drag */
@@ -985,7 +1050,7 @@ function preloadArt(){const s=U.s;if(!s||typeof BYID==="undefined"||typeof artSr
   let i=0;const next=()=>{const batch=srcs.slice(i,i+6);i+=6;if(!batch.length)return;Promise.all(batch.map(src=>{const im=new Image();im.decoding="async";im.src=src;return(im.decode?im.decode():Promise.resolve()).catch(()=>{})})).then(()=>setTimeout(next,30))};next()}
 /* Waiting pop-up (Nov 12, 2026): when the game is waiting for the opponent to respond (a Hidden-card window, a choice, a card resolved by hand),
    a small notice shows in the middle of the screen. It appears after a short delay so instant AI answers don't flash it. */
-function waitPop(s){let el=document.getElementById("pl-waitpop");const pr=s&&s.pend&&s.pend[0];
+function waitPop(s){if(U.spec){const e0=document.getElementById("pl-waitpop");if(e0)e0.remove();return}let el=document.getElementById("pl-waitpop");const pr=s&&s.pend&&s.pend[0];
   const on=U.mode==="game"&&location.hash==="#play"&&s&&!s.over&&pr&&pr.pid!==U.me&&pr.pid!=null&&pr.pid>=0;
   if(!on){if(el)el.remove();return}
   const who=esc(s.p[pr.pid].name),what=pr.type==="window"?"They may respond with a Hidden card.":pr.type==="manual"?"They're resolving a card by hand.":"They're making a choice.";
@@ -1073,7 +1138,7 @@ function lobbyHTML1(tabs){const ch=deckChoices();const resL=store2.get("cq.play.
       <p class="pl-note">The host's browser runs the rules and keeps the game. Each player only receives what they're allowed to see. Keep this tab open while you play.</p>`
       :`<p class="pl-note">Online rooms need the site's account service, which isn't reachable right now.</p>`}
     </section>
-    ${online?onlineListHTML():""}
+    ${online?onlineListHTML()+specGamesHTML():""}
   </div>`}
 function roomHTML(){const n=U.net;if(!n)return"";
   return`<h1>${n.role==="host"?"Your room":"Joining room"}</h1>
@@ -1086,11 +1151,11 @@ function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
   if(s.trials)return trialsGameHTML(s,opts);
   return`<div class="pl-game${U.logHidden?" nolog":""}"><button class="btn sm pl-logshow" data-pa="log-toggle" title="Show the game log">Show log</button><div class="pl-board">
     ${zoneHTML(s,op,opts)}
-    ${midHTML(s,opts)}
+    ${U.spec?specMidHTML(s):midHTML(s,opts)}
     ${zoneHTML(s,me,opts)}
-    ${handHTML(s,opts)}
+    ${U.spec?"":handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button>${s.over?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button>${s.over||U.spec?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}${U.spec?`<button class="btn sm danger" data-pa="spec-leave">Stop watching</button>`:`<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button>`}</span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div>
   </aside></div>`}
@@ -1129,11 +1194,11 @@ function zoneHTML(s,pid,opts){const pl=s.p[pid];const mine=pid===U.me;arrSync(s)
   const pc=[0,1].map(p=>`P${p}`).filter(u=>cands.has(u)&&u==="P"+pid).length;
   return`<section class="pl-zone${mine?"":" op"}" aria-label="${esc(pl.name)}'s side">
     <div class="pl-heroes">${heroes}</div>
-    <div class="pl-zside"><div class="pl-zsin"><div class="pl-bar"><span class="nm">${esc(pl.name)}${mine?" (you)":""}</span>${isInit?'<span class="res init" title="Has initiative">Initiative</span>':""}${turnTag}
+    <div class="pl-zside"><div class="pl-zsin"><div class="pl-bar"><span class="nm">${esc(pl.name)}${mine&&!U.spec?" (you)":""}</span>${isInit?'<span class="res init" title="Has initiative">Initiative</span>':""}${turnTag}
       ${auraBarHTML(s,pl)}<span class="res gold" title="Gold: earned at Dusk, spent in Town"><i class="coin" aria-hidden="true"></i> <b>${pl.gold}</b> Gold</span>
       ${mine?"":turnCounts(s,pid).join("")}${s.passed[pid]&&s.phase==="battle"?'<span class="res">Passed</span>':""}
       ${pc?`<button class="btn sm" data-pa="pick" data-u="P${pid}" style="outline:3px solid var(--warn)">Target ${esc(pl.name)}'s party</button>`:""}
-      <span class="pl-piles">${(pl.stall||[]).length?`<span class="res" title="Set aside with stall counters: ${esc(pl.stall.map(c=>E.stName(c)+(c.n>0?` (${c.n} stall counter${c.n>1?"s":""})`:" (ready to play free)")).join(", "))}">Stalled <b>${pl.stall.length}</b></span>`:""}${pl.echo.length?`<button class="res" data-pa="echo" data-p="${pid}" title="Cards waiting to be played again at the next Dawn">Echo <b>${pl.echo.length}</b></button>`:""}<span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
+      <span class="pl-piles">${(pl.stall||[]).length?`<span class="res" title="Set aside with stall counters: ${esc(pl.stall.map(c=>E.stName(c)+(c.n>0?` (${c.n} stall counter${c.n>1?"s":""})`:" (ready to play free)")).join(", "))}">Stalled <b>${pl.stall.length}</b></span>`:""}<button class="res echo-z${pl.echo.length?" on":""}" data-pa="echo" data-p="${pid}" title="${pl.echo.length?"Echo cards replay at the next Dawn. Click to see the order.":"No Echo cards"}">Echo <b>${pl.echo.length}</b></button><span class="res">Hand <b>${pl.hand.length}</b></span><span class="res">Library <b>${pl.lib.length}</b></span>
       <button class="res" data-pa="disc" data-p="${pid}">Discard <b>${pl.disc.length}</b></button>${pl.exile.length?`<button class="res" data-pa="exile" data-p="${pid}">Exile <b>${pl.exile.length}</b></button>`:""}</span></div>
     <div class="pl-row"><span class="lbl">Battlefield</span>${bf}</div>
     <div class="pl-row"><span class="lbl">Inventory ${pl.inv.length}/${slots}</span>${inv.join("")}</div>${zacts}</div></div>
@@ -1361,7 +1426,7 @@ function trialsOverHTML(s){const T=window.CQT;const P=s.trials.parties;const win
     <div class="tr-loot">${cards}</div><div class="tr-loot-pick">${rows}</div>
     ${U.lootPick.kept?`<p class="pl-note">Loot kept for your run.</p>`:err?`<p class="pl-note">${esc(err)}</p>`:""}
     <div class="pl-over-acts">${U.lootPick.kept?`<button class="btn go" data-pa="trial-again">Play Trial ${s.trials.trial} again with your loot</button>`:`<button class="btn go" data-pa="keep-loot" ${err?"disabled":""}>Keep this loot</button>`}<button class="btn primary" data-pa="leave">Return to Lobby</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
-function overHTML(s){if(!s.over||U.overHide||U.tut)return"";if(s.trials)return trialsOverHTML(s);const me=U.me;
+function overHTML(s){if(!s.over||U.overHide||U.tut)return"";if(U.spec)return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${s.winner<0?"The game is a draw.":`🏆 ${esc(s.p[s.winner].name)} wins.`}</h2>${statsHTML(s)}<div class="pl-over-acts"><button class="btn primary" data-pa="spec-leave">Back to the lobby</button><button class="btn" data-pa="export-log">Export log</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`;if(s.trials)return trialsOverHTML(s);const me=U.me;
   const head=s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`;
   const why=(s.conceded!=null?(s.conceded===me?"You conceded.":`${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");
   return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${head}</h2>${why?`<p class="pl-over-why">${why.trim()}</p>`:""}${statsHTML(s)}
@@ -1462,8 +1527,8 @@ function askN(s,pr,key){const title=pr.title||"";const r=U.askRun;let n=1;
   const left=s.pend.filter(p=>p.type==="ask"&&p.pid===U.me&&p.title===title).length;const tot=n-1+left;
   if(tot<2)return"";const src=(pr.data&&pr.data.name)||title.split(":")[0];return`<span class="ask-n">${esc(src)} trigger ${n} of ${tot}</span>`}
 function modals(s){const pr=s.pend[0];
-  if(!pr||pr.pid!==U.me||s.over||U.tgt){if(document.getElementById("pl-modal")&&document.getElementById("pl-modal").dataset.k)closeModal();return}
-  const key=pr.type+":"+s.seq;const cur=document.getElementById("pl-modal");if(cur&&cur.dataset.k===key)return;
+  if(!pr||pr.pid!==U.me||s.over||U.tgt||U.spec){modalMinTab(s,null,null);if(document.getElementById("pl-modal")&&document.getElementById("pl-modal").dataset.k)closeModal();return}
+  const key=pr.type+":"+s.seq;if(modalMinTab(s,pr,key))return;const cur=document.getElementById("pl-modal");if(cur&&cur.dataset.k===key)return;
   if(pr.type==="scry"){const pl=s.p[U.me];U.scry=U.scry&&U.scry.key===key?U.scry:{key,order:pr.cards.slice(),bottom:[]};
     const m=modal(scryHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="choose"){U.pick=U.pick&&U.pick.key===key?U.pick:{key,on:[]};const m=modal(chooseHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
@@ -1471,7 +1536,7 @@ function modals(s){const pr=s.pend[0];
   else if(pr.type==="ask"&&pr.opts.some(o=>o.card)){const da=i=>`data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'`;
     const m=modal(`<div class="ask-box"><h2>${esc(pr.title||"Choose")}</h2><div class="pick-list">${pr.opts.map((o,i)=>o.card?`<div class="ask-card"><button class="pk" ${da(i)} title="${esc(o.label)}">${cardHTML(cardOf(o.card))}</button><button class="btn" ${da(i)}>${esc(o.label)}</button></div>`:"").join("")}</div><div class="actions" style="flex-direction:column;align-items:stretch;margin-top:10px">${pr.opts.map((o,i)=>o.card?"":`<button class="btn" ${da(i)}>${esc(o.label)}</button>`).join("")}</div>${askN(s,pr,key)}</div>`,{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="ask"){const m=modal(`<div class="ask-box"><h2>${esc(pr.title||"Choose")}</h2><div class="actions" style="flex-direction:column;align-items:stretch">${pr.opts.map((o,i)=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'>${esc(o.label)}</button>`).join("")}</div>${askN(s,pr,key)}</div>`,{dismiss:false});m.dataset.k=key;try{document.activeElement&&document.activeElement.blur()}catch(e){}}
-  else if(cur&&cur.dataset.k)closeModal()}
+  else if(cur&&cur.dataset.k)closeModal();addViewBoard()}
 function cardById(s,u,pr){if(pr&&pr.show&&pr.show[u])return pr.show[u];for(const pl of s.p)for(const z of["hand","lib","disc"]){const c=pl[z].find(x=>x.uid===u);if(c&&c.id)return c.id}return null}
 function scryHTML(s,pr){const sc=U.scry;
   return`<h2>Scry ${pr.cards.length}</h2><p class="pl-note">The first card listed is the top of your library. Send cards to the bottom or reorder them.</p>
@@ -1500,7 +1565,7 @@ function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f
     ${o.kind==="hero"?`<p class="pl-note">Level ${o.lvl}${o.bon.str||o.bon.def||o.bon.aura?` · level bonuses: ${["str","def","aura"].filter(k=>o.bon[k]).map(k=>`+${o.bon[k]} ${k.toUpperCase()}`).join(", ")}`:""}${o.dmg?` · ${o.dmg} damage taken`:""}</p>`:""}
     ${o.kind==="hero"&&o.ench.length?`<p class="pl-note">Enchantments: ${o.ench.map(e=>esc(e.name)).join(", ")}</p>`:""}
     <div class="actions">${acts.join("")}<button class="btn" data-pa="close">Close</button></div>`)}
-function showPile(pid,z){const s=view();const pl=s.p[pid];const list=z==="echo"?pl.echo.map(e=>e.card||{}):pl[z];
+function showPile(pid,z){if(z==="echo")return showEcho(pid);const s=view();const pl=s.p[pid];const list=z==="echo"?pl.echo.map(e=>e.card||{}):pl[z];
   const mine=z==="disc"&&pid===U.me&&U.mode==="game";const ex=mine?list.filter(c=>exhumeOk(s,pid,c)):[];
   const one=c=>{if(!c.id)return"";if(!ex.includes(c))return cardHTML(cardOf(c.id));
     return`<div class="pl-exh" role="button" tabindex="0" data-pa="exhcard" data-u="${c.uid}" title="Exhume: tap to play it from your discard pile">${cardHTML(cardOf(c.id),{nozoom:1})}<span class="pl-exh-tag">Exhume · tap to play</span></div>`};
@@ -1560,7 +1625,7 @@ function pickX(a,d,sc){const s=view();const pl=s.p[U.me];const actor=E.actorFor(
   U.xCtx={a,max}}
 
 /* ---------- events ---------- */
-document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!b)return;if(!b.closest("#play-root")&&!b.closest("#pl-modal"))return;
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!b)return;if(!b.closest("#play-root")&&!b.closest("#pl-modal")&&!b.closest("#pl-modtab"))return;
   let k=b.dataset.pa;const s=view();
   if(k==="town-hide"){U.townHide=true;render();return}if(k==="town-show"){U.townHide=false;render();return}
   if(k==="stat"&&(U.tgt||(s&&s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===U.me))){k="obj"}
@@ -1621,6 +1686,11 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="do"){let a;try{a=JSON.parse(b.dataset.a)}catch(err){return}closeModal();
     if(a.type==="fix"||a.type==="manDone"||a.type==="decline"){U.man=null;U.manT=null}
     begin(a);return}
+  if(k==="modal-min"){const s2=view();const pr2=s2&&s2.pend[0];if(pr2)U.modalMin=pr2.type+":"+s2.seq;closeModal();render();return}
+  if(k==="modal-max"){U.modalMin=null;render();return}
+  if(k==="spec"){spectate(b.dataset.g);return}
+  if(k==="spec-leave"){leaveSpec();U.s=null;U.mode="lobby";U.overHide=false;closeModal();render();return}
+  if(k==="echo-mv"){send({type:"echoOrder",i:+b.dataset.i,d:+b.dataset.d});return}
   if(k==="cancel"){U.tgt=null;render();return}
   if(k==="skip"){const t=U.tgt;if(!t)return;t.picks.push(null);t.i++;if(t.i>=t.slots.length){const a=Object.assign({},t.a,{targets:t.picks});U.tgt=null;send(a)}else{skipEmpty();render()}return}
   if(k==="pick"){pickTarget(b.dataset.u);return}

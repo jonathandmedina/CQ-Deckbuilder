@@ -875,11 +875,13 @@ E.act=function(s,pid,a){CUR_S=s;
   const opts=E.options(s,pid);
   if(a.type==="play"&&P(s,pid).disc.some(c=>c.uid===a.uid)&&!opts.some(o=>o.type==="play"&&o.uid===a.uid))return{ok:false,err:"You can't play that card from your discard pile now."};
   if(a.type==="play"){const ok=opts.some(o=>o.type==="play"&&findCardAnywhere(s,pid,o.uid)&&findCardAnywhere(s,pid,o.uid).id===(findCardAnywhere(s,pid,a.uid)||{}).id);if(!ok)return{ok:false,err:"You can't play that card now."}}
-  else if(!["fix","man","fixPlay","manDone","manCancel","scry","choose","wake","giveAction"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
+  else if(!["fix","man","fixPlay","manDone","manCancel","scry","choose","wake","giveAction","echoOrder"].includes(a.type)&&!opts.some(o=>same(o,a)))return{ok:false,err:"That action isn't legal right now."};
   if(a.type==="fix"&&!(s.phase==="battle"&&s.prio===pid&&!s.pend.length))return{ok:false,err:"Rules fixes are made on your priority."};
   if(["man","fixPlay","manDone"].includes(a.type)&&!(s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===pid))return{ok:false,err:"No manual resolution open."};
   if(a.type==="scry"&&!(s.pend[0]&&s.pend[0].type==="scry"&&s.pend[0].pid===pid))return{ok:false,err:"No scry open."};
   if(a.type==="choose"&&!(s.pend[0]&&s.pend[0].type==="choose"&&s.pend[0].pid===pid))return{ok:false,err:"Nothing to choose."};
+  /* Nov 19: reorder your own Echo cards (they replay at Dawn in list order); any time, no priority needed */
+  if(a.type==="echoOrder"){const pl=P(s,pid);const i=a.i|0,j=i+(a.d<0?-1:1);if(!pl||!pl.echo[i]||!pl.echo[j])return{ok:false,err:"Can't move that Echo card."};s.seq++;const t=pl.echo[i];pl.echo[i]=pl.echo[j];pl.echo[j]=t;return{ok:true}}
   if(a.type==="wake"){const wh=heroByUid(s,a.hero);if(!wh||wh.owner!==pid||!wh.med)return{ok:false,err:"That Hero isn't Meditating."}}
   if(a.type==="giveAction"&&s.trials)return{ok:false,err:"There's no opponent to give an action to in a Trial."};
   if(a.type==="giveAction"&&!(s.phase==="battle"&&(pid===0||pid===1)&&(s.pend.length?(s.pend[0].type==="manual"&&s.pend[0].pid===pid):s.prio===pid)))return{ok:false,err:"You can give an action on your priority or from your resolve-by-hand panel."};

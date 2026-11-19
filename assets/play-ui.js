@@ -1203,7 +1203,7 @@ function heroHTML(s,h,i,actor,cands,opts){const st=E.heroStats(s,h);const d=E.DB
   const top=`<span class="ph-top"><span>${h.hc?"Last · Hero Construct":(s.trials?["Lead","Closer"]:E.POS)[i]||""}${isActor?' <span class="mark">· acting</span>':""}</span><span>Lv ${h.lvl}</span></span>`;
   const extra=`${tags.length?`<span class="tags">${tags.join("")}</span>`:""}${gear?`<span class="tags">${gear}</span>`:""}`;
   if(heroArt(d))return`<div role="button" tabindex="0" class="${cls} hasart hk" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}" aria-label="${esc(d.name)}, ${esc(h.cls)} Hero${h.dead?", dead":""}">
-    ${top}${heroCardHTML(s,h,d,st,extra,soul,"",h.dead&&h.owner===U.me?soulBackHTML(h,(opts||[]).filter(o=>o.type==="soul"&&o.hero===h.uid)):"")}
+    ${top}${heroCardHTML(s,h,d,st,extra,soul,"",h.dead?soulBackHTML(h,h.owner===U.me?(opts||[]).filter(o=>o.type==="soul"&&o.hero===h.uid):[],h.owner!==U.me):"" /* Nov 19: opponents' dead heroes show the starfield back too (buttons stay unlit) */)}
   </div>`;
   return`<div role="button" tabindex="0" class="${cls}" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}" data-pa="obj" data-u="${h.uid}">
     ${top}
@@ -1220,10 +1220,10 @@ const HK_COL={str:"#b3121a",hp:"#7f7fd8",def:"#3f9b3f"};
 /* Nov 19: a dead Hero's card back (your own Heroes): the starfield, a "Surrender Soul" name band with the class icon,
    and the three soul buttons, which light up only when you can surrender (your priority in the Battle Phase) */
 const SOUL_BTNS=[[1,"soul-aura","+2 Aura: your party gains 2 Aura"],[2,"soul-str","+2 STR: target ally gains +2 Strength this turn"],[5,"soul-def","+2 DEF: target ally gains +2 Defense this turn"]];
-function soulBackHTML(h,sopts){const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";
+function soulBackHTML(h,sopts,theirs){const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";
   const ico=`${base}ico-${String(h.cls||"generic").toLowerCase()}.png`;
   const btns=h.surr?"":SOUL_BTNS.map(([ch,img,lbl])=>{const o=sopts.find(x=>x.ch===ch);
-    return`<button type="button" class="sb-opt${o?" on":""}"${o?` data-pa="do" data-a='${esc(JSON.stringify(o))}'`:" disabled"} title="${esc(lbl)}${o?"":" (when you have priority)"}" aria-label="${esc(lbl)}"><img src="${base}art/ui/${img}.webp" alt="" draggable="false"></button>`}).join("");
+    return`<button type="button" class="sb-opt${o?" on":""}"${o?` data-pa="do" data-a='${esc(JSON.stringify(o))}'`:" disabled"} title="${esc(lbl)}${o?"":theirs?" (opponent's soul)":" (when you have priority)"}" aria-label="${esc(lbl)}"><img src="${base}art/ui/${img}.webp" alt="" draggable="false"></button>`}).join("");
   return`<div class="hk-nb sb-nb"><img class="hk-ci" src="${ico}" alt="${esc(h.cls)}"><span class="hk-nm">${h.surr?"Soul Surrendered":"Surrender Soul"}</span></div>
     <div class="sb-opts">${btns}</div><span class="sb-who">${esc(h.name)}${h.surr?" · can't be revived":""}</span>`}
 function heroCardHTML(s,h,d,st,extra,soul,hacts,sback){

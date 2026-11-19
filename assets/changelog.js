@@ -1,4 +1,4 @@
-/* Crystal Quest Deck Forge: Changelog tab (Cards Change Log + Website Log). Data in changelog-data.js. */
+/* Riverstead Deck Forge: Changelog tab (Cards Change Log + Website Log). Data in changelog-data.js. */
 (function(){
 
 const CSS=`.cl-tabs{margin:6px 0 16px}

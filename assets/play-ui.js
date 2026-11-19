@@ -1,4 +1,4 @@
-/* Crystal Quest Play tab: board UI, vs-AI games, and online rooms over Supabase Realtime.
+/* Riverstead Play tab: board UI, vs-AI games, and online rooms over Supabase Realtime.
    Online play is host-authoritative: the host's browser runs the rules engine and sends each player
    a redacted copy of the state (no peeking at the other hand or library). */
 "use strict";
@@ -593,7 +593,7 @@ function hookOnline(){const O=window.CQOnline;if(U.onlineHooked||!O)return;U.onl
   O.on("reply",p=>{const n=U.net;if(!n||n.role!=="host"||!n.challenge||n.challenge.to!==p.from)return;
     if(p.ok){toast(`${n.challenge.name} accepted. Joining…`);return}
     toast(p.busy?`${n.challenge.name} is busy in another game.`:`${n.challenge.name} declined your challenge.`);if(!U.s)leaveGame()})}
-function sendChallenge(to,name){const O=window.CQOnline;if(!O)return;if(U.s&&!U.s.over&&U.vsAI)saveLocal();hostRoom();if(!U.net)return;
+function sendChallenge(to,name){const O=window.CQOnline;if(!O)return;if(O.isMe&&O.isMe(to)){toast("You can't challenge yourself.");return}if(U.s&&!U.s.over&&U.vsAI)saveLocal();hostRoom();if(!U.net)return;
   U.net.challenge={to,name};O.send("challenge",{to,code:U.net.code});toast(`Challenge sent to ${name}. Waiting for an answer…`)}
 function acceptChallenge(){const p=U.challenge,O=window.CQOnline;document.getElementById("pl-chal")?.remove();if(!p||!O)return;U.challenge=null;
   if(!deckChoices().some(d=>d.id===U.lobby.deck&&d.ok)){toast("Choose a legal deck first.");return}
@@ -679,7 +679,7 @@ function exportLog(){const s=view();if(!s)return;mergeLog(s);
   const lines=[...U.logAll.values()].sort((a,b)=>(a.n||0)-(b.n||0));
   const pdesc=pl=>`${pl.name}${pl.deckName?` — deck "${pl.deckName}"`:""} — party: ${pl.heroes.map(h=>h.name+" ("+h.cls+")").join(", ")}`;
   const res=s.over?(s.winner<0?"Draw":`${s.p[s.winner].name} won`):`In progress (round ${s.round}, ${phaseLabel(s)})`;
-  let out=`Crystal Quest — game log\nExported: ${new Date().toLocaleString()}\nMode: ${U.vsAI?"vs AI":U.net?"online room "+U.net.code:"local"}\nPlayer 1: ${pdesc(s.p[0])}\nPlayer 2: ${pdesc(s.p[1])}\nResult: ${res}\n\n`;
+  let out=`Riverstead — game log\nExported: ${new Date().toLocaleString()}\nMode: ${U.vsAI?"vs AI":U.net?"online room "+U.net.code:"local"}\nPlayer 1: ${pdesc(s.p[0])}\nPlayer 2: ${pdesc(s.p[1])}\nResult: ${res}\n\n`;
   let lastR=null;lines.forEach(l=>{if(l.r!==lastR&&!/^—/.test(l.m)){lastR=l.r}out+=(/^—/.test(l.m)?"\n":"")+`[R${l.r}] ${l.m}\n`});
   if(s.over)out+=statsText(s);
   if(lines.length&&lines[0].n>1)out+=`\n(Note: the first ${lines[0].n-1} log lines happened before this browser joined and aren't included.)\n`;
@@ -1007,14 +1007,14 @@ function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.t
 @media (prefers-reduced-motion:reduce){.pl-town-box,.wp-spin{animation:none}#pl-waitpop{animation:none;opacity:1}}`;document.head.appendChild(st)}
 function lobbyHTML(){const tOn=trialsAccess();if(!tOn&&U.lobby.tab==="trials")U.lobby.tab="ai";
   const tabs=tOn?`<nav class="subtabs pl-ltabs" aria-label="Play modes"><a href="#play" data-pa="ltab" data-t="ai"${U.lobby.tab!=="trials"?' aria-current="page"':""}>Play</a><a href="#play" data-pa="ltab" data-t="trials"${U.lobby.tab==="trials"?' aria-current="page"':""}>Trials</a></nav>`:"";
-  if(tOn&&U.lobby.tab==="trials")return`<h1>Play Crystal Quest</h1>${tabs}<p class="lede">Trials: team up with AI helper parties against a boss that runs itself from its own deck. Each party has 2 Heroes. See the Trials rules for how bosses, spawns and loot work.</p>${trialsLobbyHTML()}`;
+  if(tOn&&U.lobby.tab==="trials")return`<h1>Play Riverstead</h1>${tabs}<p class="lede">Trials: team up with AI helper parties against a boss that runs itself from its own deck. Each party has 2 Heroes. See the Trials rules for how bosses, spawns and loot work.</p>${trialsLobbyHTML()}`;
   return lobbyHTML1(tabs)}
 function lobbyHTML1(tabs){const ch=deckChoices();const resL=store2.get("cq.play.local",null),resH=store2.get("cq.play.host",null),resG=store2.get("cq.play.guest",null);
   if(!U.lobby.deck||!ch.some(d=>d.id===U.lobby.deck&&d.ok))U.lobby.deck=(ch.find(d=>d.ok)||{}).id||"";
   if(U.lobby.ai===U.lobby.deck&&!U.lobby.aiPicked)U.lobby.ai=U.lobby.deck==="starter:1"?"starter:0":"starter:1";
   const opts=(sel,onlyOk)=>ch.map(d=>`<option value="${esc(d.id)}" ${d.id===sel?"selected":""} ${!d.ok?"disabled":""}>${esc(d.name)}</option>`).join("");
   const online=!!sb();
-  return`<h1>Play Crystal Quest</h1>${tabs||""}<p class="lede">Play a full game with the rules enforced: phases, priority by position, Aura, attacks, Hidden cards, Town and Gold. Cards marked <b>AUTO</b> resolve themselves; the few marked <b>BY HAND</b> open a panel where you apply the effect.</p>
+  return`<h1>Play Riverstead</h1>${tabs||""}<p class="lede">Play a full game with the rules enforced: phases, priority by position, Aura, attacks, Hidden cards, Town and Gold. Cards marked <b>AUTO</b> resolve themselves; the few marked <b>BY HAND</b> open a panel where you apply the effect.</p>
   ${resL&&resL.s&&!resL.s.over?`<div class="panel"><b>Game in progress vs AI</b> · Round ${resL.s.round}<div class="actions"><button class="btn primary" data-pa="resume-local">Resume</button><button class="btn" data-pa="drop-local">Discard it</button></div></div>`:""}
   ${resH&&resH.s&&!resH.s.over?`<div class="panel"><b>Online room ${esc(resH.code)}</b> (you're the host) · Round ${resH.s.round}<div class="actions"><button class="btn primary" data-pa="resume-host">Reopen room</button><button class="btn" data-pa="drop-host">Close it</button></div></div>`:""}
   ${resG&&resG.code?`<div class="panel"><b>Online room ${esc(resG.code)}</b> (joined)<div class="actions"><button class="btn primary" data-pa="resume-guest">Rejoin</button><button class="btn" data-pa="drop-guest">Forget it</button></div></div>`:""}

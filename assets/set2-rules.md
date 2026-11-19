@@ -1,5 +1,5 @@
 # Set Two Rules Supplement
-*Every rule and term that exists only in Set Two. It adds to the full Crystal Quest Rules; nothing here is defined in the main rules, so players without Set Two access never see it.*
+*Every rule and term that exists only in Set Two. It adds to the full Riverstead Rules; nothing here is defined in the main rules, so players without Set Two access never see it.*
 
 *Playtest · updated Nov 15, 2026*
 

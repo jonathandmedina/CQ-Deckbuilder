@@ -1,4 +1,4 @@
-/* Crystal Quest Deck Forge: player profiles + Playtester Leaderboard (#leaderboard, #player/<name>).
+/* Riverstead Deck Forge: player profiles + Playtester Leaderboard (#leaderboard, #player/<name>).
    Profile = screen name + avatar (pixel head of a Hero) + public decks (decks are public unless marked Private).
    Playtest level (metal crest) comes only from complete games (3+ rounds, ended in a win, loss or draw); class badges count
    complete games with a Hero of that class. Score = 10 x games + 8 x classes tested + cards tested / 4.

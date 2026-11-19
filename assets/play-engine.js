@@ -1,4 +1,4 @@
-/* Crystal Quest rules engine (Play tab).
+/* Riverstead rules engine (Play tab).
    Pure state machine: CQE.newGame() -> state; CQE.options(s,pid) -> legal actions; CQE.need(s,pid,a) -> target slots;
    CQE.act(s,pid,a) applies an action. State is plain JSON so it can be cloned (AI) and sent over the network (online play).
    Card effects live in play-cards.js (SCRIPTS). Cards without a script resolve through the manual panel. */

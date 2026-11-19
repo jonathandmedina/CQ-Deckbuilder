@@ -1,4 +1,4 @@
-/* Crystal Quest AI opponent: one-ply search over legal actions with a board evaluation. */
+/* Riverstead AI opponent: one-ply search over legal actions with a board evaluation. */
 "use strict";
 (function(root){
 const E=root.CQE;const AI={};root.CQAI=AI;

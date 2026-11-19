@@ -1,4 +1,4 @@
-// Deck Forge: add a player to the Crystal Quest Discord server after they sign in with (or connect) Discord.
+// Deck Forge: add a player to the Riverstead Discord server after they sign in with (or connect) Discord.
 // Secrets (Supabase → Edge Functions → Secrets): DISCORD_BOT_TOKEN, DISCORD_GUILD_ID.
 // The bot must be in the server with the "Create Invite" permission. Discord's rule: PUT /guilds/{guild}/members/{user}
 // needs the player's OAuth token with the guilds.join scope plus a bot token from the same Discord application.

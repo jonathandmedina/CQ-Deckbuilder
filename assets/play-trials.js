@@ -1,4 +1,4 @@
-/* Crystal Quest Trials boss runtime (co-op boss module, Trials Plan B+C).
+/* Riverstead Trials boss runtime (co-op boss module, Trials Plan B+C).
    Loaded after play-engine.js and before play-cards.js. Registers itself on CQE.hooks; the engine calls it only in Trials games (s.trials),
    so 1-on-1 games never touch this file. Every number comes from trials-data.js (TRIALS_BOSSES, TRIALS_BOSS_CARDS, TRIALS_SPAWNS, TRIALS_LOOT).
    Boss state lives in s.trials: {deck, disc, plates, rage, rageAt, winded, skin, skipNext, lastFlip, events, dealt}.

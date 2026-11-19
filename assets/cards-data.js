@@ -1,4 +1,4 @@
-/* Crystal Quest card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-17 (update 36: Gold/Silver/Platinum Bars became Ingots, Set 2 Silver/Platinum Ingots deprecated, six Consumables; update 35: type lines Supertype - Type - Subtype, Material subtype, item-named equipment subtypes, Frailty, Dynamite, Gauntlets of Growth; update 27: card fixes, Hidden privacy, Arrow of Persuasion, Siphon Life, Sphere of Hindrance; update 26: Paladin retune; update 25: Arrows target enemies; update 24: Monk meditation rework; update 23: Bard rework, Poisonous stacking, Dark Fang, Generic fixes; update 22: 50-card decks, Ranger DEF, Dark Fang, Guard → DEF).
+/* Riverstead card data. Snapshot of Cards_New, Heroes_New, Equipment_New, Tokens_New (Google Drive), 2026-11-17 (update 36: Gold/Silver/Platinum Bars became Ingots, Set 2 Silver/Platinum Ingots deprecated, six Consumables; update 35: type lines Supertype - Type - Subtype, Material subtype, item-named equipment subtypes, Frailty, Dynamite, Gauntlets of Growth; update 27: card fixes, Hidden privacy, Arrow of Persuasion, Siphon Life, Sphere of Hindrance; update 26: Paladin retune; update 25: Arrows target enemies; update 24: Monk meditation rework; update 23: Bard rework, Poisonous stacking, Dark Fang, Generic fixes; update 22: 50-card decks, Ranger DEF, Dark Fang, Guard → DEF).
    Cards: [quantity, name, aura cost, supertype, type, subtype, class, rules, version]
    Heroes: [name, class, STR, DEF, Aura, HP, rules, version]  (Heroes marked Hidden in the sheet are left out)
    Equipment: [name, supertype, subtype, class, rules, aura cost, region, +STR, +DEF, version]
@@ -26,7 +26,7 @@ const RAW_CARDS=[
 [2, "Balanced Choice", "3", "", "Tactic", "", "Monk", "Choose two: Scry 2; target Hero gains +2 STR this turn; or this Hero Meditates.", 1],
 [2, "\"Ballad of Blades\"", "2", "", "Song", "", "Bard", "Another target ally gains +2 Strength this turn. If you played another Song this turn, it gains +3 Strength instead.", 3],
 [2, "Battered", "3", "", "Tactic", "", "Barbarian", "Deal damage equal to this Hero's STR to target Hero. If \"Bruised\" is in your discard pile, you may Wound it.", 3],
-[2, "Xakro's War Horn", "2", "", "Item", "", "Barbarian", "Whenever a Barbarian attacks, you may discard a card at random. If you do, Barbarians gain +X Strength this turn, where X is the discarded card's Aura cost.", 2],
+[1, "Xakro's War Horn", "2", "Legendary", "Item", "", "Barbarian", "Whenever a Barbarian attacks, you may discard a card at random. If you do, Barbarians gain +X Strength this turn, where X is the discarded card's Aura cost.", 3],
 [2, "Bear Trap", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: When an enemy Hero or summon attacks, deal 3 damage to it.", 2],
 [2, "Beat Down", "2", "", "Tactic", "", "Barbarian", "This Hero gains +2 STR this turn, then attacks a random enemy. Exhaust that enemy.", 1],
 [2, "Bewilder", "2", "", "Spell", "", "Warlock", "Target player reveals their hand. You may choose a card from it and discard it.", 1],
@@ -67,7 +67,6 @@ const RAW_CARDS=[
 [2, "Deep Contemplation", "2", "", "Tactic", "", "Monk", "Draw a card. Put a meditation counter on target Meditating Hero. If no Hero you control is Meditating, this Hero may Meditate.", 2],
 [2, "Defend Prayer", "1", "", "Tactic", "", "Monk", "Deal 2 damage. Put a meditation counter on target Meditating Hero. If no Hero you control is Meditating, this Hero may Meditate.", 2],
 [2, "Delevel", "3", "", "Tactic", "", "Generic", "Target Hero loses 1 level. If this leaves it on an odd level, it also loses a stat point of its owner's choice.", 2],
-[2, "Disarm", "2", "", "Tactic", "", "Generic", "Unequip target Equipment. It goes to its owner's inventory. (If there's no open inventory slot, it is discarded.)", 2],
 [2, "Disenchant", "2", "", "Tactic", "", "Generic", "Destroy target Enchantment.", 1],
 [2, "Dissipate", "2", "", "Tactic", "", "Generic", "Destroy target non-Hero object that cost 3 Aura or less.", 1],
 [2, "Divine Judgment", "5", "", "Tactic", "", "Paladin", "Deal damage equal to this Hero's DEF to each enemy. Exhaust this Hero.", 1],
@@ -120,7 +119,6 @@ const RAW_CARDS=[
 [2, "Horn", "2", "", "Tactic", "", "Druid", "Friendly summons gain +1 DEF this turn.", 1],
 [1, "Horn Crystal", "3", "Legendary", "Item", "", "Generic", "Summons you control have +1 DEF.", 1],
 [2, "Humble", "1", "", "Tactic", "", "Generic", "Set a Hero's STR to 0 until Dusk.", 1],
-[2, "Ice Bath", "3", "", "Tactic", "", "Generic", "Remove all Burn counters from all Heroes and summons.", 1],
 [2, "Ice Jab", "3", "", "Spell", "", "Mage", "Deal 3 Ice damage to any target and Stun it.", 2],
 [2, "Ice Lance", "4", "", "Spell", "", "Mage", "Deal 4 Ice damage to any target and Stun it.", 2],
 [2, "Ice Ray", "1", "", "Spell", "", "Mage", "Stun any target.", 2],
@@ -163,8 +161,7 @@ const RAW_CARDS=[
 [2, "Palm Strike", "1", "", "Tactic", "Combo", "Monk", "Deal 1 damage to any target. If this card was Comboed, Stun it. Combo.", 2],
 [1, "Petal Shrine", "2", "Legendary", "Item", "", "Monk", "Whenever Combo triggers, add a Petal counter to Petal Shrine. When it has three or more Petal counters, remove them all, and your next Combo card costs 1 less Aura.", 2],
 [2, "Petty Theft", "0", "", "Tactic", "", "Rogue", "Gain control of target Consumable item.", 1],
-[1, "Phoenix Down", "0", "Legendary", "Item", "Consumable", "Generic", "3{A}, Exile: Revive a Hero, exhaust it and heal it 3 HP. It gains Stealth this turn.", 2],
-[2, "Pitfall", "0", "Hidden", "Item", "Trap", "Ranger", "4{A}: When an enemy Hero attacks, cancel that attack. Unequip all of the attacker's equipment.", 2],
+[1, "Feather of Zaawa", "0", "Legendary", "Item", "Consumable", "Generic", "3{A}, Exile: Revive a Hero, exhaust it and heal it 3 HP. It gains Stealth this turn.", 3],
 [2, "Platinum Ingot", "2", "", "Item", "Material", "Generic", "Exile: Draw a card.", 3],
 [2, "Potion", "0", "", "Item", "Consumable", "Generic", "2{A}, Exile: Heal target Hero for 3 HP.", 3],
 [2, "Power Thrust", "3", "", "Tactic", "", "Paladin", "Deal damage equal to this Hero's STR +2. Exhaust this Hero.", 2],
@@ -212,7 +209,7 @@ const RAW_CARDS=[
 [2, "Smoke Bomb", "0", "", "Item", "Consumable", "Generic", "1{A}, Exile: Target Hero gains Stealth this turn.", 2],
 [2, "Smoke Trail Arrow", "0", "", "Item", "Arrow", "Ranger", "1{A}: Deal 3 damage to target enemy. Prevent all damage from the next source that would target a Hero in your party.", 3],
 [2, "Snare", "0", "Hidden", "Item", "Trap", "Ranger", "2{A}: When an enemy Hero attacks, it gets -3 STR for that attack.", 1],
-[2, "Snuff Out", "1", "", "Tactic", "", "Generic", "Destroy target summon with 3 or less HP.", 1],
+[2, "Snuff Out", "1", "", "Tactic", "", "Generic", "Destroy target summon or Construct with 3 or less HP.", 2],
 [2, "\"Solo Act\"", "5", "", "Song", "", "Bard", "Exhaust two other ready Heroes you control. Song cards you play cost 2 less Aura this turn.", 1],
 [1, "Song Book", "0", "Legendary", "Item", "", "Bard", "1{A}, Exhaust Song Book: Search your library for a Song and put it into your hand.", 1],
 [2, "\"Song of Healing\"", "3", "", "Song", "", "Bard", "Heal all Heroes 2 Health Points.", 3],
@@ -518,7 +515,7 @@ const RAW_TOKENS=[
 const TOKEN_SOURCES={"Revenant King": [["Revenant King", 1]], "Frost Kat Recipe": [["Frost Kat", 1]], "Time Kat Recipe": [["Time Kat", 1]], "Flame Kat Recipe": [["Flame Kat", 1]], "Z Recipe": [["Z", 1]], "Heartwood Seed": [["Sapling", 1]], "Armed": [["Dagger", 1]], "Blademaster's Choice": [["Dagger", 1]], "Ritual of Fang": [["Viper Fang Dagger", 1]], "Mocking Doll": [["Doll", 1]], "Conscript": [["Soldier", 1]], "Noble Choice": [["Soldier", 1]], "Rally the Troops": [["Soldier", 2]], "Beast": [["Beast", 1]], "Out of the Woods": [["Beast", 1]], "Heavy Beast": [["Heavy Beast", 1]], "Elk of the Woods": [["Woods Beast", 1]], "Elk": [["Elk", 1]], "Nature's Choice": [["Elk", 1]], "Wolves": [["Wolf", 2]], "Call to Companions": [["Wolf", 3]], "Rootfolk": [["Rootfolk", 1]], "Great Rootfolk": [["Great Rootfolk", 1]], "Lesser Elemental": [["Elemental", 1]], "Greater Elemental": [["Greater Elemental", 1]], "Aurawing": [["Aurawing Familiar", 1]], "Drawwing": [["Drawwing Familiar", 1]], "Spore Calling": [["Spore", 1]], "Warden of the Woods": [["Squirrel", 3]], "Verdant Sage": [["Spectral Elk", 1]], "Sword of Eliazar": [["Eliazar", 1]], "Boost Ritual": [["Spell Damage Pillar", 1]], "Volt Jab": [["Spell Damage Pillar", 1]], "Lightning Lance": [["Spell Damage Pillar", 1]], "Lightning Rod": [["Spell Damage Pillar", 2]], "Ritual of Power": [["Spell Damage Pillar", 3]], "Dark Insight": [["Pain Pillar", 1]], "Ritual of Pain": [["Pain Pillar", 1]], "Splitting Ritual": [["Spell Damage Pillar", 1], ["Pain Pillar", 1]], "Doubling Ritual": [["Spell Damage Pillar", 2], ["Pain Pillar", 2]], "Clockwork Pair": [["Construct", 2]], "Iron Guardians": [["Construct", 2]], "Raise Revenant": [["Revenant", 1]], "Restless Dead": [["Revenant", 2]], "Grave Tide": [["Revenant", 5]], "Grave Whispers": [["Revenant", 1]], "Rise from the Grave": [["Revenant", 3]], "Grave Caller's Wand": [["Revenant", 2]], "From Darkness": [["Abomination", 1]], "Cursed Urn": [["Remains", 2]]};
 
 /* Renamed cards: old name -> new name. Saved decks, share links, imports and saved games use this to find the card. */
-const CARD_RENAMES={"Bloodhowl":"Bar-Bear Ian","Curse of Exhaustion":"Exhausting Wave","Sure Fire Choice":"Deeg's Choice","Nature's Choice":"Jess' Choice","Heavy Bow":"Deeg's Heavy Bow","Necromancer D":"Xlek Grave Robber","Gold Bar":"Gold Ingot","Platinum Bar":"Platinum Ingot","Silver Bar":"Silver Ingot","Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness","Sphere of Resistance":"Sphere of Hindrance","Battle Horn":"Xakro's War Horn","Necromancer A":"Gravecaller","Necromancer B":"Jorkev, the Pillager","Necromancer C":"Filth Scavenger","Artificer A":"Wren Partsfinder","Artificer B":"Material Bender","Artificer C":"Val Craftsmith","Artificer D":"Gadget Commander","Artificer E":"Cy the Builder"};
+const CARD_RENAMES={"Bloodhowl":"Bar-Bear Ian","Curse of Exhaustion":"Exhausting Wave","Sure Fire Choice":"Deeg's Choice","Nature's Choice":"Jess' Choice","Heavy Bow":"Deeg's Heavy Bow","Necromancer D":"Xlek Grave Robber","Gold Bar":"Gold Ingot","Platinum Bar":"Platinum Ingot","Silver Bar":"Silver Ingot","Wild Defense":"Shield Wall","Hammer":"Hammer of Ruin","Wolf":"Wolves","Cloak of Shadow":"Cloak of Protection","Resistance Shield":"Chains of Darkness","Sphere of Resistance":"Sphere of Hindrance","Battle Horn":"Xakro's War Horn","Phoenix Down":"Feather of Zaawa","Necromancer A":"Gravecaller","Necromancer B":"Jorkev, the Pillager","Necromancer C":"Filth Scavenger","Artificer A":"Wren Partsfinder","Artificer B":"Material Bender","Artificer C":"Val Craftsmith","Artificer D":"Gadget Commander","Artificer E":"Cy the Builder"};
 
 /* Deprecated cards: removed from play, kept for the record and so old saved games still load. Same row format as RAW_CARDS.
    Decks that contain one are flagged as not legal; they don't appear in the card list, deck builder or prints. */
@@ -539,6 +536,9 @@ const DEPRECATED_EQUIP=[
 ["Drums of War", "", "Instrument", "Bard", "Other Heroes in your party gain +1 STR while this Hero is ready.", "1", "Two-Handed", "0", "0", 2]
 ];
 const DEPRECATED_CARDS=[
+[2, "Disarm", "2", "", "Tactic", "", "Generic", "Unequip target Equipment. It goes to its owner's inventory. (If there's no open inventory slot, it is discarded.)", 2],
+[2, "Ice Bath", "3", "", "Tactic", "", "Generic", "Remove all Burn counters from all Heroes and summons.", 1],
+[2, "Pitfall", "0", "Hidden", "Item", "Trap", "Ranger", "4{A}: When an enemy Hero attacks, cancel that attack. Unequip all of the attacker's equipment.", 2],
 [2, "Fortify", "0", "Hidden", "Tactic", "", "Paladin", "1{A}: The next attack deals no damage.", 1],
 [2, "Pull Together", "X", "", "Tactic", "", "Paladin", "Your party gains +X DEF this turn. Exhaust this Hero.", 2],
 [2, "Pop Rocks", "6", "", "Spell", "", "Mage", "Deal 1 damage to all enemies three times. Exhaust this Hero.", 1],

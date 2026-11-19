@@ -1,11 +1,11 @@
-# Crystal Quest
+# Riverstead
 *Official Rules*
 
-*Version: November 19, 2026 (update 40: card fixes, new Choice cards, deprecations; Monk, Ingots and Almandine move to Set 2)*
+*Version: November 19, 2026 (update 41: the game is now called Riverstead; Phoenix Down is now Feather of Zaawa)*
 
-## 1. Welcome to Crystal Quest
+## 1. Welcome to Riverstead
 
-Crystal Quest is a tactical RPG trading card game. Each player leads a party of three Heroes into battle against rival parties to defend the realm from calamity. You build a deck of spells, tactics, songs, items and equipment, then fight in rounds that move from Dawn to Dusk before your party rests in Town to heal, shop and upgrade gear.
+Riverstead is a tactical RPG trading card game. Each player leads a party of three Heroes into battle against rival parties to defend the realm from calamity. You build a deck of spells, tactics, songs, items and equipment, then fight in rounds that move from Dawn to Dusk before your party rests in Town to heal, shop and upgrade gear.
 
 Winning takes careful positioning, smart use of your Aura each round, and good timing with hidden cards your opponents can’t see.
 
@@ -79,7 +79,7 @@ A Bard card type. Songs work like spells, and many Bard cards reward you for pla
 
 Items go into your inventory slots and stay there until used or removed. Item subtypes:
 
-- **Consumable**: used once, then exiled (Potion, Antidote, Revitalize, Smoke Bomb, Sleeping Potion, Phoenix Down, False Cure, Energizing Ale, Fireball Flask, Harmonic Flask).
+- **Consumable**: used once, then exiled (Potion, Antidote, Revitalize, Smoke Bomb, Sleeping Potion, Feather of Zaawa, False Cure, Energizing Ale, Fireball Flask, Harmonic Flask).
 - **Relic**: stays in play and gives a lasting effect.
 - **Trap**: a Hidden item that waits face down for its trigger (see Hidden Cards).
 - **Arrow**: a Ranger item you activate for damage and an effect.
@@ -195,7 +195,7 @@ Gold is the treasure your party earns by surviving each round.
 
 ## 8. The Round
 
-Crystal Quest is played in rounds. Every player goes through each round together. Cards that say “turn” mean the round. A round has four phases:
+Riverstead is played in rounds. Every player goes through each round together. Cards that say “turn” mean the round. A round has four phases:
 
 | Phase | What happens |
 |---|---|
@@ -532,7 +532,7 @@ If the region is already filled, the old piece moves to your inventory when the 
 
 ### Unequipping
 
-Unequipped equipment goes to your inventory. This happens when a card unequips it (such as Disarm or Hand to Hand Combat), when it’s replaced, or when its Hero dies. Equipment in your inventory gives no bonus until it’s equipped again, at its full Aura cost.
+Unequipped equipment goes to your inventory. This happens when it’s replaced, when its Hero dies, or when a card unequips it. Equipment in your inventory gives no bonus until it’s equipped again, at its full Aura cost.
 
 ### Inventory Overflow
 

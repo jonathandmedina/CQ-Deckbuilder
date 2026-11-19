@@ -9,8 +9,8 @@ const row=n=>ctx.RAW_CARDS.find(r=>r[1]===n);
   ok(r&&r[2]===c&&r[4]==="Item"&&r[5]==="Material"&&r[6]==="Generic"&&r[7]===t&&r[8]===3,n+": "+c+" Aura, Material, v3");ok(ctx.SET2_CARDS.includes(n),n+" is a Set 2 card (moved in Update 40)")});
 ok(ctx.RAW_CARDS.filter(r=>/ Ingot$/.test(r[1])&&/^(Silver|Platinum)/.test(r[1])).length===2,"one Silver Ingot and one Platinum Ingot");
 ["Gold Bar","Silver Bar","Platinum Bar"].forEach(n=>ok(!row(n)&&ctx.CARD_RENAMES[n]===n.replace("Bar","Ingot"),n+" renamed"));
-["Antidote","Smoke Bomb","Revitalize","Sleeping Potion","Potion","Phoenix Down","False Cure"].forEach(n=>ok(row(n)[5]==="Consumable",n+" is Consumable"));
-ok(row("Phoenix Down")[3]==="Legendary","Phoenix Down stays Legendary");
+["Antidote","Smoke Bomb","Revitalize","Sleeping Potion","Potion","Feather of Zaawa","False Cure"].forEach(n=>ok(row(n)[5]==="Consumable",n+" is Consumable"));
+ok(row("Feather of Zaawa")[3]==="Legendary","Feather of Zaawa stays Legendary");
 ok(!JSON.stringify(ctx.RECIPES).match(/(Gold|Silver|Platinum) Bar/)&&!ctx.RAW_CARDS.some(r=>/(Gold|Silver|Platinum) Bar/.test(r[7])),"no card or Recipe mentions a Bar");
 /* play */
 const filler=Object.fromEntries(["Precognition","Humble","Vandalize","Disarm","Naturalize","Shatter","Inspiration","Level Up","Block Progress","Reclaim","Exile","Delevel","Snuff Out","Search for Knowledge","Dissipate","Potion","Antidote"].map(n=>[n,3]));

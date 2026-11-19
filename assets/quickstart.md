@@ -1,5 +1,5 @@
 # Quick Start
-*New to Crystal Quest? Start here. This page gets you playing your first game. The full Rules cover every detail.*
+*New to Riverstead? Start here. This page gets you playing your first game. The full Rules cover every detail.*
 
 *Rather learn by playing? Try [Learn to Play](#learn): a few quick screens, then a coached game against the AI. You can keep the deck afterwards.*
 

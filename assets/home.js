@@ -1,4 +1,4 @@
-/* Crystal Quest Deck Forge: Home page (#home, the site's landing page) and Learn to Play (#learn).
+/* Riverstead Deck Forge: Home page (#home, the site's landing page) and Learn to Play (#learn).
    Banner: Riverstead (Dawn) or Draven Temple (Dusk), with its own music.
    Music on/off lives in the bottom bar (#sbMusic) and shares the cq.music setting with the Play tab.
    Uses app.js globals: ICON_BASE, HEROES, CARDS, cardHTML, esc, cc, S. */
@@ -61,13 +61,13 @@ const PHASES=[
   ["Dusk","Gold_Bar","Unspent Aura fades. Every Hero still standing earns a Gold."],
   ["Town","Potion","Spend Gold at the Inn, Shop, Blacksmith or Church."]];
 function banner(){const s=SCENES[mode];
-  return`<section class="hm-hero hm-${mode}" aria-label="Crystal Quest">
+  return`<section class="hm-hero hm-${mode}" aria-label="Riverstead">
   <div class="hm-bg" role="img" aria-label="${esc(s.alt)}"></div>
   <div class="hm-toggle" role="group" aria-label="Time of day">
     <button type="button" class="hm-tg hm-day" data-hm="day" aria-pressed="${mode==="day"}"><span aria-hidden="true">☀</span> Dawn</button><button type="button" class="hm-tg hm-night" data-hm="night" aria-pressed="${mode==="night"}"><span aria-hidden="true">☾</span> Dusk</button>
   </div>
   <div class="hm-copy">
-    <h1 class="hm-title">Crystal Quest</h1>
+    <h1 class="hm-title">Riverstead</h1>
     <p class="hm-lede">Riverstead is calling for heroes! Gather your party of three heroes, build your deck, and take on rival parties in tactical, turn-based battles for the fate of Riverstead. Combine spells, gear and tactics, earn Gold to upgrade and level your heroes into something unstoppable. Ready to start your quest?</p>
   </div>
   <a class="btn primary hm-cta" href="#learn">Learn to Play</a>
@@ -114,7 +114,7 @@ function view(){
 
   <section class="hm-sec hm-end">
     <h2>Join the adventure</h2>
-    <p class="hm-sub">Crystal Quest is in open playtesting. Tell us what you find, share decks and meet other players.</p>
+    <p class="hm-sub">Riverstead is in open playtesting. Tell us what you find, share decks and meet other players.</p>
     <div class="hm-btns"><a class="btn primary" href="#learn">Learn to Play</a><a class="btn" href="#play">Start a Game</a><a class="btn discord-btn" href="https://discord.gg/wErfNbug5e" target="_blank" rel="noopener">Join the Discord</a></div>
   </section>
 </div>`}

@@ -11,8 +11,8 @@
 <meta name="apple-mobile-web-app-title" content="Deck Forge">
 <meta name="theme-color" content="#1b130c">
 <link rel="apple-touch-icon" href="assets/app/icon-180.png">
-<title>Crystal Quest Deck Forge</title>
-<meta name="description" content="Browse every Crystal Quest card, build decks, save them to your account, export print-and-play PDFs or Tabletop Simulator decks, and play games against the AI or friends online.">
+<title>Riverstead Deck Forge</title>
+<meta name="description" content="Browse every Riverstead card, build decks, save them to your account, export print-and-play PDFs or Tabletop Simulator decks, and play games against the AI or friends online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <script>/* theme: Card Art is the only theme (Update 30). Retro and Clean are deprecated: retro.css stays in the repo but is not loaded. */document.documentElement.dataset.skin="art";try{localStorage.removeItem("cq.skin")}catch(e){}</script>
@@ -371,6 +371,7 @@ html:not([data-skin="art"]) .vs-card .card{height:calc(var(--w)*1.4);overflow:hi
 
 /* modal + toast */
 .modal{position:fixed;inset:0;z-index:50;background:rgba(10,14,20,.55);display:grid;place-items:center;padding:20px}
+#pl-chal{z-index:2100} /* Update 41: a challenge sits above every other pop-up on any page */
 .modal .box{background:var(--surface);border-radius:16px;padding:18px;max-width:420px;width:100%;max-height:90vh;overflow:auto;display:flex;flex-direction:column;gap:12px}
 .modal .card{box-shadow:none}
 .modal .c-rules{font-size:1rem}
@@ -472,12 +473,12 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 .sitebar .sb-fb{display:inline-flex;align-items:center;gap:7px}.sb-fb-i{width:20px;height:20px;flex:none}
 .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/art.css?v=20261119a">
-<link rel="stylesheet" href="assets/home.css?v=20261119a">
+<link rel="stylesheet" href="assets/art.css?v=20261119b">
+<link rel="stylesheet" href="assets/home.css?v=20261119b">
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="#home" title="Home">Crystal Quest <small>Deck Forge</small></a>
+  <a class="brand" href="#home" title="Home">Riverstead <small>Deck Forge</small></a>
   <button type="button" class="nav-burger" id="navBurger" aria-expanded="false" aria-controls="navPanel" aria-label="Menu"><span></span><span></span><span></span></button>
   <div class="nav-panel" id="navPanel">
   <nav class="tabs" id="tabs">
@@ -495,7 +496,7 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 </div></header>
 <main><div class="wrap" id="view"></div></main>
 <footer class="sitebar" id="sitebar"><div class="wrap">
-  <span class="sb-links"><a href="#changelog" data-view="changelog" class="sb-link">Changelog</a><a href="#admin" data-view="admin" id="adminTab" class="sb-link" hidden>Admin</a><a href="https://www.facebook.com/groups/1152569287102321/" class="sb-link sb-fb" target="_blank" rel="noopener" title="Crystal Quest on Facebook (opens in a new tab)"><svg class="sb-fb-i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.4 19.5v-6.1h2.1l.3-2.4h-2.4V9.5c0-.7.2-1.2 1.2-1.2h1.3V6.2c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.2-3.2 3.3V11H8.7v2.4h2.1v6.1h2.6z"/></svg>Facebook</a></span>
+  <span class="sb-links"><a href="#changelog" data-view="changelog" class="sb-link">Changelog</a><a href="#admin" data-view="admin" id="adminTab" class="sb-link" hidden>Admin</a><a href="https://www.facebook.com/groups/1152569287102321/" class="sb-link sb-fb" target="_blank" rel="noopener" title="Riverstead on Facebook (opens in a new tab)"><svg class="sb-fb-i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.4 19.5v-6.1h2.1l.3-2.4h-2.4V9.5c0-.7.2-1.2 1.2-1.2h1.3V6.2c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.2-3.2 3.3V11H8.7v2.4h2.1v6.1h2.6z"/></svg>Facebook</a></span>
   <button type="button" class="sb-link sb-music" id="sbMusic" aria-pressed="true" title="Turn the music on or off"><span aria-hidden="true">🎵</span> Music on</button>
 </div></footer>
 <div id="layer"></div>
@@ -504,24 +505,24 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261119a"></script>
-<script src="assets/trials-data.js?v=20261119a"></script>
-<script src="assets/audio-prefs.js?v=20261119a"></script>
-<script src="assets/app.js?v=20261119a"></script>
-<script src="assets/home.js?v=20261119a"></script>
-<script src="assets/play-engine.js?v=20261119a"></script>
-<script src="assets/play-trials.js?v=20261119a"></script>
-<script src="assets/play-cards.js?v=20261119a"></script>
-<script src="assets/play-ai.js?v=20261119a"></script>
-<script src="assets/play-ui.js?v=20261119a"></script>
-<script src="assets/changelog-data.js?v=20261119a"></script>
-<script src="assets/changelog.js?v=20261119a"></script>
-<script src="assets/admin.js?v=20261119a"></script>
-<script src="assets/profile.js?v=20261119a"></script>
-<script src="assets/action-pop.js?v=20261119a"></script>
-<script src="assets/online.js?v=20261119a"></script>
-<script src="assets/tutorial.js?v=20261119a"></script>
-<script src="assets/play-tablet.js?v=20261119a"></script>
+<script src="assets/cards-data.js?v=20261119b"></script>
+<script src="assets/trials-data.js?v=20261119b"></script>
+<script src="assets/audio-prefs.js?v=20261119b"></script>
+<script src="assets/app.js?v=20261119b"></script>
+<script src="assets/home.js?v=20261119b"></script>
+<script src="assets/play-engine.js?v=20261119b"></script>
+<script src="assets/play-trials.js?v=20261119b"></script>
+<script src="assets/play-cards.js?v=20261119b"></script>
+<script src="assets/play-ai.js?v=20261119b"></script>
+<script src="assets/play-ui.js?v=20261119b"></script>
+<script src="assets/changelog-data.js?v=20261119b"></script>
+<script src="assets/changelog.js?v=20261119b"></script>
+<script src="assets/admin.js?v=20261119b"></script>
+<script src="assets/profile.js?v=20261119b"></script>
+<script src="assets/action-pop.js?v=20261119b"></script>
+<script src="assets/online.js?v=20261119b"></script>
+<script src="assets/tutorial.js?v=20261119b"></script>
+<script src="assets/play-tablet.js?v=20261119b"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>
 <script>if(location.hash==="#play"&&window.CQPlay)window.CQPlay.mount(document.getElementById("view"))</script>

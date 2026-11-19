@@ -122,7 +122,7 @@ const head=name=>typeof ICON_BASE!=="undefined"&&typeof artKey==="function"?`${I
 /* ---------- #learn: explainer screens + style pick ---------- */
 const T={step:0,cls:null,seen:{},hint:null,hidden:false,ended:false};
 const SCREENS=[
-  ()=>({h:"Welcome to Crystal Quest",p:[`You lead a party of <b>three Heroes</b>. Defeat all of your opponent's Heroes to win.`,`This takes about 15 minutes: a few quick screens, then a real game with a coach at your side.`],
+  ()=>({h:"Welcome to Riverstead",p:[`You lead a party of <b>three Heroes</b>. Defeat all of your opponent's Heroes to win.`,`This takes about 15 minutes: a few quick screens, then a real game with a coach at your side.`],
     pic:`<div class="tut-pic">${cardH("h:Bar-Bear Ian")}<span class="tut-vs">vs</span>${cardH("h:Ember Mage")}</div>`}),
   ()=>({h:"Your Heroes",p:[`Every Hero has four stats:`,`<div class="tut-stats"><div data-stat="str"><b class="k-str">Strength</b>attack damage</div><div data-stat="def"><b class="k-def">Defense</b>damage it ignores when hit</div><div data-stat="aura"><b class="k-aura">Aura</b>adds to your Aura each round</div><div data-stat="hp"><b class="k-hp">Health Points</b>at 0 it dies</div></div><p class="tm-tip" style="font-size:.9rem;color:#c99566;margin:-6px 0 10px">Point at a stat to see it on the card.</p>`,`Left to right your Heroes are your <b>Lead</b>, <b>Center</b> and <b>Closer</b>. That order decides who acts first.`],
     pic:`<div class="tut-mag" data-stat="str"><div class="tm-card">${cardH("h:Savage Raider")}</div><svg aria-hidden="true"><defs><marker id="tmArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#ffc100"/></marker></defs><circle class="tm-dot" r="20" fill="none" stroke="#ffc100" stroke-width="5"/><path class="tm-arr" fill="none" stroke="#ffc100" stroke-width="5" stroke-linecap="round" marker-end="url(#tmArrow)"/></svg><div class="tm-lens"><div class="tm-in">${cardH("h:Savage Raider")}</div></div></div>`}),
@@ -318,7 +318,7 @@ function onAccount(){const p=ls.get(PENDING,null);if(!p||!p.deck)return;
 function firstVisit(){const h=location.hash.replace("#","");if(ls.get(SEEN,0)||h===""||h==="home"||h==="learn"||h==="play")return;
   if(typeof S!=="undefined"&&S.mode==="account")return;
   ls.set(SEEN,1);
-  const m=modal(`<h2>New to Crystal Quest?</h2><p>Learn to play in about 15 minutes: a few quick screens, then a coached game. Keep the deck when you're done.</p><div class="actions"><button class="btn primary" data-fv="y">Learn to Play</button><button class="btn" data-fv="n">I know how to play</button></div>`);
+  const m=modal(`<h2>New to Riverstead?</h2><p>Learn to play in about 15 minutes: a few quick screens, then a coached game. Keep the deck when you're done.</p><div class="actions"><button class="btn primary" data-fv="y">Learn to Play</button><button class="btn" data-fv="n">I know how to play</button></div>`);
   m.addEventListener("click",e=>{const b=e.target.closest("[data-fv]");if(!b)return;m.remove();if(b.dataset.fv==="y")location.hash="learn"})}
 setTimeout(firstVisit,1500);
 

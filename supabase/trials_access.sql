@@ -1,4 +1,4 @@
--- Crystal Quest Deck Forge: Trials module access (Nov 12, 2026)
+-- Riverstead Deck Forge: Trials module access (Nov 12, 2026)
 -- Run once in the Supabase SQL editor (project usrxpbefgmdovbqroymv), after the Admin Panel SQL. Safe to run again.
 -- Trials access is a row in public.set_access with set_id = 3 (Set 2 uses set_id = 2). Admins always have it.
 

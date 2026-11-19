@@ -1,5 +1,5 @@
 # Trials Module Supplement
-*Co-op boss Trials for Crystal Quest. These rules add to the full rules and only apply in a Trial. If this supplement disagrees with the full rules during a Trial, this supplement wins.*
+*Co-op boss Trials for Riverstead. These rules add to the full rules and only apply in a Trial. If this supplement disagrees with the full rules during a Trial, this supplement wins.*
 
 *Version 1.1 · Nov 13, 2026 · Module 1: Trial 1, the Rock Mammoth*
 

@@ -1,4 +1,4 @@
-/* Crystal Quest card scripts for the Play tab. Each entry automates one card; anything missing here
+/* Riverstead card scripts for the Play tab. Each entry automates one card; anything missing here
    resolves by hand through the manual panel. ctx (c): {s,pid,me,op,actor,def,t:[targets],x,modes,comboed,mods,trig,E} */
 "use strict";
 (function(root){
@@ -323,7 +323,9 @@ def("Naturalize",{t:[ITEM],run(c){destroy(c,c.t[0])}});
 def("Vandalize",{t:[PIL],run(c){destroy(c,c.t[0])}});
 def("Exile",{t:[t("nonHero")],run(c){destroy(c,c.t[0],true)}});
 def("Dissipate",{t:[t("nonHero","non-Hero object (cost 3 or less)",(s,o)=>o.tok||(parseInt((E.DB[o.id]||{}).cost,10)||0)<=3)],run(c){destroy(c,c.t[0])}});
-def("Snuff Out",{t:[t("summon","summon with 3 or less HP",(s,o)=>E.hp(s,o)<=3)],run(c){destroy(c,c.t[0])}});
+def("Snuff Out",{t:[t("any","summon or Construct with 3 or less HP",(s,o)=>(o.kind==="summon"||!!o.hc)&&E.hp(s,o)<=3)],run(c){const o=c.t[0];if(!o)return;
+  /* Update 41: a Hero Construct is destroyed by taking it to 0 HP (it then dies like any Hero, and can't be revived) */
+  if(o.kind==="hero"){o.dmg=E.maxHp(c.s,o);log(c,`${o.name} is destroyed (Snuff Out).`);return}destroy(c,o)}});
 def("Smash to Smithereens",{run(c){c.s.p.forEach(pl=>pl.bf.filter(o=>o.kind==="pillar").forEach(o=>destroy(c,o)));exMe(c)}});
 def("Farewell",{run(c){E.allObjs(c.s).filter(o=>o.kind!=="hero"&&!o.fd).forEach(o=>destroy(c,o));living(c.me).forEach(h=>h.ex=true)}});
 def("Ice Bath",{run(c){c.s.p.forEach(pl=>[...pl.heroes,...summons(pl)].forEach(o=>{if(o.st)o.st.burn=0}));log(c,"All Burn counters are removed.")}});
@@ -351,7 +353,7 @@ song("Choices",{modes:{n:2,opts:[{label:"Mill 2"},{label:"Equip a Bard Equipment
     const show={};hand.forEach(x=>show[x.uid]=x.id);inv.forEach(o=>show[o.uid]=o.id);
     if(hand.length+inv.length)E.pushChoose(c.s,c.pid,{title:"Choices: equip a Bard Equipment to "+c.actor.name+" for free",cards:hand.concat(inv).map(x=>x.uid),show,min:1,max:1,op:"equipFree",hero:c.actor.uid});else log(c,"No Bard Equipment in hand or inventory that this Hero can use.")}
   if(m.includes(2)){const songs=pl.disc.filter(x=>E.DB[x.id]&&E.DB[x.id].type==="Song");if(songs.length)E.pushChoose(c.s,c.pid,{title:"Choices: return a Song to your hand",cards:songs.map(x=>x.uid),min:1,max:1,op:"fromDisc"});else log(c,"No Song in your discard pile.")}}});
-def("Phoenix Down",item(3,[t("deadAny","dead Hero")],c=>{const h=c.t[0];if(!h)return;h.dead=false;h.dmg=Math.max(0,E.maxHp(c.s,h)-3);h.ex=true;E.addMod(h,{stealth:1});log(c,`${h.name} is revived with 3 HP.`)},{exile:true,can:(s)=>s.p.some(p=>p.heroes.some(h=>h.dead&&!h.surr))}));
+def("Feather of Zaawa",item(3,[t("deadAny","dead Hero")],c=>{const h=c.t[0];if(!h)return;h.dead=false;h.dmg=Math.max(0,E.maxHp(c.s,h)-3);h.ex=true;E.addMod(h,{stealth:1});log(c,`${h.name} is revived with 3 HP.`)},{exile:true,can:(s)=>s.p.some(p=>p.heroes.some(h=>h.dead&&!h.surr))}));
 /* Nov 17: the Set 1 Bars became Ingots (Material) with Exile effects; the Set 2 Silver and Platinum Ingots were deprecated for them */
 def("Gold Ingot",item(0,[],c=>{c.me.gold+=3;log(c,`${c.me.name} gains 3 Gold.`)},{exile:true}));
 def("Platinum Ingot",item(0,[],c=>draw(c,1),{exile:true}));

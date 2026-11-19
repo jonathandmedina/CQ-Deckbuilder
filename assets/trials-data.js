@@ -1,4 +1,4 @@
-/* Crystal Quest Trials module data (co-op boss Trials). Snapshot of the Drive sheets Trials_Bosses, Trials_BossCards, Trials_Spawns, Trials_Loot, 2026-11-12.
+/* Riverstead Trials module data (co-op boss Trials). Snapshot of the Drive sheets Trials_Bosses, Trials_BossCards, Trials_Spawns, Trials_Loot, 2026-11-12.
    Hidden like Set 2: the site shows these only to admins and accounts with Trials access (Admin > Users). Never merged into RAW_* tables.
    Bosses:     [name, trial, Health Points per party, base Defense, Stone Plates per party, Golems per party at start, ability, version]
    Boss cards: [name, boss, copies, target, effect, version]

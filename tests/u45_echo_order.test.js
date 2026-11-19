@@ -5,6 +5,7 @@ vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].
 const E=ctx.CQE;let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
 const filler=Object.fromEntries(["Potion","Antidote","Dynamite","Precognition","Humble","Inspiration","Snuff Out","Level Up","Naturalize","Shatter","Vandalize","Smoke Bomb","Revitalize"].map(n=>[n,3]));
 const s=E.newGame({seed:3,players:[{name:"A",deck:{name:"A",heroes:["h:Rage Brute","h:Savage Raider","h:Fury Titan"],cards:filler}},{name:"B",deck:{name:"B",heroes:["h:Divine Knight","h:Arcane Scholar","h:Savage Raider"],cards:filler}}]});
+ok(!E.act(s,0,{type:"echoOrder",i:0,d:1}).ok,"reordering is locked by default");E.ECHO_REORDER=true;
 const id=n=>Object.keys(E.DB).find(k=>E.DB[k].name===n);
 s.p[0].echo=[{card:{uid:"a",id:id("Inspiration"),owner:0},targets:[]},{card:{uid:"b",id:id("Precognition"),owner:0},targets:[]},{card:{uid:"c",id:id("Humble"),owner:0},targets:[]}];
 ok(E.act(s,0,{type:"echoOrder",i:2,d:-1}).ok&&s.p[0].echo.map(e=>e.card.uid).join()==="a,c,b","move up");
@@ -13,5 +14,7 @@ ok(!E.act(s,0,{type:"echoOrder",i:0,d:-1}).ok,"can't move the first card up");
 ok(!E.act(s,0,{type:"echoOrder",i:5,d:1}).ok,"bad index refused");
 ok(!E.act(s,1,{type:"echoOrder",i:0,d:1}).ok,"you can't reorder the other player's Echo cards (they have none)");
 const ui=fs.readFileSync(path.join(A,"play-ui.js"),"utf8");["function showEcho","echo-z","modal-min","pl-modtab","function spectate","cq-spec-"].forEach(k=>ok(ui.includes(k),"UI has "+k));
+ok(fs.readFileSync(path.join(A,"play-engine.js"),"utf8").includes("const ech=pl.echo.splice(0);ech.forEach("),"Dawn replays the Echo list in order (first in, first out)");
+E.ECHO_REORDER=false;
 const r=E.redact(s,-1);ok(r.p.every(p=>p.hand.every(c=>c.id===null)),"spectator state hides both hands");
 console.log(`Update 45 echo order: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

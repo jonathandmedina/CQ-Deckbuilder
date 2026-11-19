@@ -64,6 +64,8 @@ function upgradables(s,pid){const pl=s.p[pid];const objs=[...pl.inv.filter(o=>!o
   return objs.filter(o=>upgradeCost(o)&&!(s.upg&&s.upg[o.uid]!=null))}
 E.upgradables=upgradables;
 const SOULS=["Draw a card","Gain 2 Aura","Ally +2 STR this turn","Deal 2 damage","Gain 3 Gold","Ally +2 DEF this turn"];E.SOULS=SOULS;
+/* Update 42: surrendering a soul offers only Gain 2 Aura, +2 Strength or +2 Defense (indexes kept so old logs and saved games still read) */
+const SOUL_OPTS=[1,2,5];E.SOUL_OPTS=SOUL_OPTS;
 const SC=()=>root.CQ_SCRIPTS||{};
 const HS=()=>root.CQ_HERO_SCRIPTS||{};
 E.isScripted=name=>!!SC()[name];
@@ -793,7 +795,7 @@ function battleOptions0(s,pid){const pl=P(s,pid);const out=[];const a=actorFor(s
   {const bm=bandMembers(s,pid);if(bm.length>=2){if(a&&bm.includes(a)&&!(chained(a)&&pl.aura<1))out.push({type:"band",att:a.uid});bm.forEach(o=>{if(o.kind==="summon")out.push({type:"band",att:o.uid})})}}
   /* item abilities with no Hero cost (Energy Stone): any time you have priority, no action used */
   pl.inv.forEach(o=>{if(o.kind!=="card"||o.fd)return;const isc=SC()[def(o).name];if(isc&&isc.act&&isc.act.free&&!nulled(s,o.name)&&(!isc.act.can||isc.act.can(s,pid,null,o))&&(isc.act.cost||0)<=pl.aura)out.push({type:"useFree",uid:o.uid})});
-  pl.heroes.forEach(h=>{if(h.dead&&!h.surr)SOULS.forEach((_,i)=>out.push({type:"soul",hero:h.uid,ch:i}))});
+  pl.heroes.forEach(h=>{if(h.dead&&!h.surr)SOUL_OPTS.forEach(i=>out.push({type:"soul",hero:h.uid,ch:i}))});
   out.push({type:"pass"});
   return out}
 function abilityCost(s,pid,a,ab){return(ab.cost||0)+2*invCount(P(s,oppOf(s,pid)),"Tangle Rod")+burden(a)+(s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0)&&a.cls!=="Warlock"?s.p.reduce((n,p2)=>n+invCount(p2,"Sphere of Hindrance"),0):0)}

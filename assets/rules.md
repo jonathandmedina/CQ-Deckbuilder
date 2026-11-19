@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 19, 2026 (update 41: the game is now called Riverstead; Phoenix Down is now Feather of Zaawa)*
+*Version: November 19, 2026 (update 42: Surrender Your Soul now offers three choices: 2 Aura, +2 STR or +2 DEF)*
 
 ## 1. Welcome to Riverstead
 
@@ -429,20 +429,16 @@ Party order stays the same while a Hero is dead.
 
 A dead Hero’s soul can still help your party. When you have priority during the Battle Phase, instead of taking a Hero’s action, you may **surrender the soul** of one of your dead Heroes. Choose one:
 
-- Draw a card.
 - Gain 2 Aura.
 - Target ally gains +2 STR this turn.
-- Deal 2 damage to any target.
-- Gain 3 Gold.
 - Target ally gains +2 DEF this turn.
 
 **If you surrender a Hero’s soul, it can’t be revived.** Leave it face down and turn it sideways to show its soul is gone. It stays in its position, so party order doesn’t change, and it’s skipped like any dead Hero.
 
 - Surrendering a soul uses your priority like an action, but no Hero takes it and no one is exhausted. A trigger window opens as usual.
-- Surrendering a soul isn’t a card or ability, so it can’t be canceled. Its effect can still be prevented like any other (for example, damage prevention).
+- Surrendering a soul isn’t a card or ability, so it can’t be canceled. Its effect can still be prevented like any other.
 - Each dead Hero’s soul can be surrendered only once.
-- The 2 damage works like card damage: the target’s DEF applies.
-- Aura gained this way is lost at Dusk like any other Aura. Gold gained this way can be spent in the next Town Phase.
+- Aura gained this way is lost at Dusk like any other Aura.
 - A surrendered Hero still counts as dead for winning and losing.
 
 ### Revival
@@ -761,7 +757,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Dies / Dead**: At 0 HP a Hero dies and is turned face down. Its equipment goes to your inventory. It can’t act, make Aura, earn Gold or be healed until revived.
 - **Heal**: Restore HP, never above max. Only from cards, abilities or the Inn. A heal turned into damage or HP loss (such as by Inversion Stone) isn’t a heal.
 - **Revive**: Bring a dead Hero back to life. The card says how much HP and whether it is ready. It returns with no equipment. A surrendered Hero can’t be revived.
-- **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: draw a card; gain 2 Aura; target ally +2 STR this turn; deal 2 damage; gain 3 Gold; or target ally +2 DEF this turn. That Hero can’t be revived. Once per dead Hero.
+- **Surrender your soul**: Instead of a Hero’s action, turn a dead Hero sideways to choose one: gain 2 Aura; target ally +2 STR this turn; or target ally +2 DEF this turn. That Hero can’t be revived. Once per dead Hero.
 - **Surrendered**: A dead Hero whose soul was surrendered. Face down and sideways. Still counts as dead.
 - **Adjacent**: Heroes next to each other in party order. The Lead and the Closer are adjacent to the Center; the Center is adjacent to both.
 - **STR/HP (e.g. 3/3)**: Shorthand for a summon's Strength and Health.

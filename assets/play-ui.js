@@ -227,6 +227,16 @@ html[data-skin="art"] .pl-over-why{color:#d8c3a0}
 html .ph .btn.soul-btn{margin-top:4px;width:100%;justify-content:center;font-family:inherit;font-size:.85rem;padding:5px 8px;color:#cfc6e6!important;letter-spacing:.04em;border:1px solid #3b3150!important;border-radius:6px!important;
   background:radial-gradient(120% 140% at 50% 0%,#3a2f52 0%,#1b1626 55%,#0c0a12 100%)!important;box-shadow:inset 0 0 10px rgba(0,0,0,.85),0 0 8px rgba(90,60,140,.35)!important;text-shadow:0 0 6px rgba(160,120,255,.5)!important}
 html .ph .btn.soul-btn::before,html .ph .btn.soul-btn::after{display:none!important}
+/* Update 42: Surrender a soul pop-up (starfield background, image buttons) */
+html .modal .box.soul-box{width:min(380px,88vw);aspect-ratio:825/1125;max-height:92vh;background:#0b0710 url("assets/art/ui/soul-bg.webp") center/cover no-repeat!important;border:2px solid #3b3150!important;border-radius:8px;box-shadow:0 0 28px rgba(110,70,190,.45);color:#e9e2ff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:22px 18px;image-rendering:pixelated;overflow:auto}
+html .modal .box.soul-box>h2:first-child{background:none!important;border:0!important;box-shadow:none!important;margin:0;color:#efe8ff;text-shadow:0 2px 0 #000,0 0 12px rgba(150,110,230,.7);text-align:center}
+.soul-box .soul-note{font-size:.82rem;color:#cfc6e6;text-align:center;margin:0 4px 6px;text-shadow:0 1px 0 #000}
+.soul-box .soul-who,.soul-box h3{margin:4px 0 0;color:#cfc6e6;font-size:.9rem;text-align:center;text-shadow:0 1px 0 #000}
+.soul-box .soul-opts{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.soul-box .soul-opt{background:none;border:0;padding:0;cursor:pointer;width:min(240px,70%);line-height:0;transition:transform .12s,filter .12s}
+.soul-box .soul-opt img{width:100%;height:auto;image-rendering:pixelated;display:block}
+.soul-box .soul-opt:hover,.soul-box .soul-opt:focus-visible{transform:scale(1.05);filter:drop-shadow(0 0 8px rgba(160,120,240,.85));outline:none}
+.soul-box .actions{margin-top:6px}
 html .ph .btn.soul-btn:hover,html .ph .btn.soul-btn:focus-visible{color:#efe8ff!important;border-color:#6d55a3!important;box-shadow:inset 0 0 10px rgba(0,0,0,.85),0 0 14px rgba(130,90,210,.65)!important;filter:none}
 /* a surrendered soul is greyed out for good */
 .ph.surr{filter:grayscale(1);opacity:.45}
@@ -1408,7 +1418,7 @@ function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1
 
 /* ---------- modals ---------- */
 function modal(html,o){o=o||{};closeModal();const m=document.createElement("div");m.className="modal";m.id="pl-modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
-  m.innerHTML=`<div class="box${o.wide?" wide":""}">${html}</div>`;if(o.dismiss!==false)m.addEventListener("click",e=>{if(e.target===m)m.remove()});document.getElementById("layer").appendChild(m);return m}
+  m.innerHTML=`<div class="box${o.wide?" wide":""}${o.cls?" "+o.cls:""}">${html}</div>`;if(o.dismiss!==false)m.addEventListener("click",e=>{if(e.target===m)m.remove()});document.getElementById("layer").appendChild(m);return m}
 function closeModal(){const m=document.getElementById("pl-modal");if(m)m.remove()}
 function modals(s){const pr=s.pend[0];
   if(!pr||pr.pid!==U.me||s.over||U.tgt){if(document.getElementById("pl-modal")&&document.getElementById("pl-modal").dataset.k)closeModal();return}
@@ -1579,7 +1589,10 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="play"){closeModal();begin({type:"play",uid:b.dataset.u});return}
   if(k==="disc"||k==="exile"||k==="echo"){showPile(+b.dataset.p,k);return}
   if(k==="soul"){const opts=legal().filter(o=>o.type==="soul"&&(!b.dataset.h||o.hero===b.dataset.h));const heroes=[...new Set(opts.map(o=>o.hero))];
-    modal(`<h2>Surrender a soul</h2><p class="pl-note">A surrendered Hero can never be revived. Uses your priority; no Hero is exhausted.</p>${heroes.map(h=>`<h3>${esc(nameOf(h))}</h3><div class="actions" style="flex-direction:column;align-items:stretch">${opts.filter(o=>o.hero===h).map(o=>btn(o,E.SOULS[o.ch])).join("")}</div>`).join("")}<div class="actions"><button class="btn" data-pa="close">Cancel</button></div>`);return}
+    /* Update 42: three choices, drawn as image buttons on the starfield background */
+    const SIMG={1:["soul-aura","+2 Aura: your party gains 2 Aura"],2:["soul-str","+2 STR: target ally gains +2 Strength this turn"],5:["soul-def","+2 DEF: target ally gains +2 Defense this turn"]};
+    const ib=o=>{const im=SIMG[o.ch];return im?`<button type="button" class="soul-opt" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="${esc(im[1])}" aria-label="${esc(im[1])}"><img src="assets/art/ui/${im[0]}.webp" alt="${esc(im[1])}" draggable="false"></button>`:btn(o,E.SOULS[o.ch])};
+    modal(`<h2>Surrender a soul</h2><p class="soul-note">A surrendered Hero can never be revived. Uses your priority; no Hero is exhausted.</p>${heroes.map(h=>`${heroes.length>1?`<h3>${esc(nameOf(h))}</h3>`:`<p class="soul-who">${esc(nameOf(h))}</p>`}<div class="soul-opts">${opts.filter(o=>o.hero===h).map(ib).join("")}</div>`).join("")}<div class="actions"><button class="btn" data-pa="close">Cancel</button></div>`,{cls:"soul-box"});return}
   if(k==="mode"){const i=+b.dataset.i;const c=U.modeCtx;const n=Math.min(c.sc.modes.n,c.sc.modes.opts.length);if(U.modeSel.includes(i))U.modeSel=U.modeSel.filter(x=>x!==i);else{if(n===1)U.modeSel=[i];else if(U.modeSel.length<n)U.modeSel.push(i)}c.draw();return}
   if(k==="band-t"){const u=b.dataset.u;U.bandSel=U.bandSel.includes(u)?U.bandSel.filter(x=>x!==u):U.bandSel.concat([u]);U.bandCtx.draw();return}
   if(k==="band-sums"){const c=U.bandCtx;U.bandSel=c.all.filter(o=>o.kind==="summon"||o.uid===c.a.att).map(o=>o.uid);c.draw();return}

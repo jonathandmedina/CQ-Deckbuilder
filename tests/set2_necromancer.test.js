@@ -66,7 +66,7 @@ ok(ctx.TOKEN_SOURCES["Grave Tide"][0][1]===5,"token list: Grave Tide makes 5 Rev
   play(s,r);ok(revs(s).length===1&&!s.p[0].t.sAura,"spent on Raise Revenant")}
 /* Mourn */
 {const s=game();const c=hand(s,0,"Mourner's Offering");s.p[0].aura=1;ok(!canPlay(s,c),"Mourn: costs 2 before a soul is surrendered");
-  const h=s.p[0].heroes[2];h.dead=true;h.dmg=99;const so=opts(s,0).find(o=>o.type==="soul"&&o.ch===0);E.act(s,0,so);resolve(s);back(s);
+  const h=s.p[0].heroes[2];h.dead=true;h.dmg=99;const so=opts(s,0).find(o=>o.type==="soul"&&o.ch===1);E.act(s,0,so);resolve(s);back(s);
   ok(canPlay(s,c),"Mourn: free after surrendering a soul");const au=s.p[0].aura;play(s,c);ok(s.p[0].aura===au+2,"Gain 2 Aura, no Aura paid")}
 {const s=game();const r=revs(s);rev(s,1);E.sacrifice(s,revs(s)[0]);const c=hand(s,0,"Mourner's Offering");s.p[0].aura=1;ok(!canPlay(s,c),"a summon dying is not a surrendered soul")}
 /* Exhume, Dig the Grave, Restless Echo, Rise from the Grave from the discard pile */

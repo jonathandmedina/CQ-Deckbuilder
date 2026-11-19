@@ -90,8 +90,8 @@ html[data-skin="art"] .pl-over-why{color:#d8c3a0}
 .pl-counts{display:flex;flex-wrap:wrap;gap:6px;font-size:.78rem}
 .pl-counts .res{font-variant-numeric:tabular-nums}
 .pl-concede{margin-left:auto}
-.pl-acts .btn.pl-concede,.btn[data-pa=concede-yes]{background:#C0392B;border-color:#C0392B;color:#fff;font-weight:700}
-.pl-acts .btn.pl-concede:hover,.btn[data-pa=concede-yes]:hover{filter:brightness(1.1)}
+.btn.pl-concede,.btn[data-pa=concede-yes]{background:#C0392B;border-color:#C0392B;color:#fff;font-weight:700}
+.btn.pl-concede:hover,.btn[data-pa=concede-yes]:hover{filter:brightness(1.1)}
 .pl-hand .hc .cb{position:absolute;left:8px;right:8px;bottom:36px;display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end}
 .pl-hand .hc .cb span{font-size:.65rem;font-weight:700;padding:1px 6px;border-radius:999px;background:var(--surface);color:var(--accent);border:1px solid var(--accent);font-variant-numeric:tabular-nums}
 .pl-hand .hc .cb span.cost{color:var(--ok);border-color:var(--ok)} .tg.good{border-color:var(--ok);color:var(--ok)}
@@ -406,6 +406,21 @@ html[data-skin="art"] #play-root .pl-hand .hc{flex-basis:var(--hcw,150px)}
 @media (prefers-reduced-motion:reduce){#pl-fx .fxc{animation:fxIn .2s both, fxOut .4s 1s forwards}#pl-fx .fxc::after{animation:none}}
 .pl-snd{display:inline-flex;align-items:center;gap:5px;margin-left:auto}
 /* Rules fix stacked above Concede at the right */
+/* Nov 19: target pop-up and picked targets */
+.pl-tpop{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:70;min-width:260px;max-width:min(560px,92vw);background:#1d1209;color:#f6e7c8;border:2px solid #f2c14e;border-radius:12px;padding:8px 14px;box-shadow:0 6px 24px #000a;text-align:center;animation:tpIn .18s ease-out}
+.pl-tpop .tp-h{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:#f2c14e}
+.pl-tpop .tp-w{font-size:1.02rem;font-weight:700;margin:2px 0}
+.pl-tpop .tp-n{display:inline-block;min-width:2.4em;margin-left:6px;padding:0 6px;border-radius:8px;background:#f2c14e;color:#1d1209}
+.pl-tpop .tp-s{font-size:.8rem;color:#c9b38a}
+.pl-tpop .tp-a{display:flex;gap:6px;justify-content:center;margin-top:4px}
+@keyframes tpIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+.tpicked{outline:3px solid #f2c14e!important;outline-offset:2px;box-shadow:0 0 0 6px #f2c14e55,0 0 18px #f2c14e!important}
+.tpicked::after{content:"✓ " attr(data-pn);position:absolute;top:38px;right:10px;z-index:5;background:#f2c14e;color:#1d1209;font:800 .8rem/1 system-ui,sans-serif;padding:3px 6px;border-radius:9px;pointer-events:none}
+/* Nov 19: repeated trigger prompts */
+.ask-box{position:relative;padding-bottom:18px;animation:askIn .25s ease-out}
+.ask-n{position:absolute;right:0;bottom:0;font-size:.75rem;font-weight:700;opacity:.85}
+@keyframes askIn{from{opacity:.15;transform:translateY(4px)}to{opacity:1;transform:none}}
+
 .pl-acts{align-items:center}
 .pl-endcol{margin-left:auto;display:inline-flex;flex-direction:column;align-items:stretch;gap:4px}
 .pl-endcol .pl-concede{margin-left:0}
@@ -518,7 +533,7 @@ function trialsGameHTML(s,opts){const me=U.me;const helpers=E.parties(s).filter(
     ${zoneHTML(s,me,opts)}
     ${handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button>${s.over?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Dimmed Golem = deal with your own first</span></div>
   </aside></div>`}
@@ -947,7 +962,8 @@ function render(){const root=ROOT();if(!root)return;injectCSS();regLoot();
   const handEl=root.querySelector(".pl-hand");const hs=handEl?handEl.scrollLeft:0;
   if(U.overFor!==U.gameKey){U.overFor=U.gameKey;U.overHide=false}
   if(s.phase!=="town"||!s.town||s.town.order[s.town.i]!==U.me)U.townHide=false;
-  root.innerHTML=gameHTML(s)+overHTML(s)+townHTML(s);
+  root.innerHTML=gameHTML(s)+overHTML(s)+townHTML(s)+tgtPopHTML();
+  try{markPicks(root)}catch(e){console.warn(e)}
   try{waitPop(s)}catch(e){console.warn(e)}
   const lg=root.querySelector(".pl-log");if(lg&&atBottom)lg.scrollTop=lg.scrollHeight;
   const he=root.querySelector(".pl-hand");if(he){he.scrollLeft=hs;handOvf(he);he.addEventListener("scroll",()=>handOvf(he),{passive:true})}
@@ -1074,7 +1090,7 @@ function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
     ${zoneHTML(s,me,opts)}
     ${handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button><button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button>${s.over?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button></span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div>
   </aside></div>`}
@@ -1277,7 +1293,7 @@ function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tag
 function phaseLabel(s){return({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase}
 function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",wait=false,fixBtn="";
   const mineTurn=opts.length>0;
-  if(s.over){prompt=(s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`)+(s.conceded!=null?(s.conceded===me?" You conceded.":` ${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");acts=`<button class="btn primary" data-pa="leave">Return to Lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="over-show">Game summary</button>`}
+  if(s.over){prompt=(s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`)+(s.conceded!=null?(s.conceded===me?" You conceded.":` ${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");acts=`<button class="btn primary" data-pa="leave">Return to Lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="over-show">Game summary</button><button class="btn" data-pa="export-log" title="Download the full game log as a text file">Export log</button>`}
   else if(U.tgt){const sl=U.tgt.slots[U.tgt.i];prompt=`Choose ${esc(sl.label)} for ${esc(U.tgt.label)}${U.tgt.slots.length>1?` (${U.tgt.i+1}/${U.tgt.slots.length})`:""}. Click a highlighted ${sl.k==="player"||sl.k==="enemyPlayer"?"party button":"target"}.`;
     acts=`${sl.opt?'<button class="btn" data-pa="skip">Skip</button>':""}<button class="btn" data-pa="cancel">Cancel</button>`}
   else if(pr&&pr.pid===me){
@@ -1310,7 +1326,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const posm=`<span class="posm" title="Position marker">${posL.map(([i,p])=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="An Abiding Hero acts here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" data-volpop="sfx" aria-label="Sound effects on or off (point at it for volume)" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" data-volpop="music" aria-label="Music on or off (point at it for volume)" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
-    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over?"":`<span class="pl-endcol">${fixBtn?helpHTML(fixBtn):""}<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button></span>`}</div>`:""}${ban?"":man}</section>`}
+    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over||!fixBtn?"":`<span class="pl-endcol">${helpHTML(fixBtn)}</span>`}</div>`:""}${ban?"":man}</section>`}
 /* Nov 16: Menu and Full screen buttons for the game log tray (computers; tablets use the Controls tray) */
 function ctlBtns(){const T=window.CQTablet;const fsOn=!!(document.fullscreenElement||document.webkitFullscreenElement);const fsOk=!!(T&&T.fsAvail&&T.fsAvail());
   return`<button type="button" class="btn sm pl-ctl" data-pa="menu" aria-expanded="${document.documentElement.classList.contains("pl-menu")}" title="Show the site menu">☰ Menu</button>${fsOk?`<button type="button" class="btn sm pl-ctl" data-pa="fs" aria-pressed="${fsOn}" title="${fsOn?"Exit full screen (Esc)":"Full screen (Esc to exit)"}">⛶ ${fsOn?"Exit full screen":"Full screen"}</button>`:""}`}
@@ -1335,7 +1351,7 @@ function bannerHTML(){const b=U.banner;return`<div class="pl-banner" role="statu
 function trialsOverHTML(s){const T=window.CQT;const P=s.trials.parties;const win=s.winner===0;
   if(!win){store2.del("cq.trials.run");return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Trial lost"><div class="pl-over-box"><h2>Your run ended at Trial ${s.trials.trial}</h2>
     <p class="pl-over-why">${s.conceded!=null?"You conceded.":"Every party was wiped out."} Loot from this run is gone.</p>
-    <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button><button class="btn go" data-pa="rematch">Try again</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
+    <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button><button class="btn go" data-pa="rematch">Try again</button><button class="btn" data-pa="export-log">Export log</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
   const rev=T.lootReveal(s);if(!U.lootPick||U.lootPick.g!==U.gameKey)U.lootPick={g:U.gameKey,p:{},kept:false};const pk=U.lootPick.p;
   const cards=rev.map(n=>{const c=byName(n);return`<div class="lc">${c?cardHTML(c,{nozoom:false}):`<b>${esc(n)}</b>`}</div>`}).join("");
   const rows=E.parties(s).slice().sort((a,b)=>a-b).map(p=>`<label>${esc(p===U.me?"You":s.p[p].name)}<select data-pa="t-loot" data-p="${p}"><option value="">Choose loot…</option>${rev.map(n=>`<option value="${esc(n)}" ${pk[p]===n?"selected":""}>${esc(n)}</option>`).join("")}</select></label>`).join("");
@@ -1349,7 +1365,7 @@ function overHTML(s){if(!s.over||U.overHide||U.tut)return"";if(s.trials)return t
   const head=s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`;
   const why=(s.conceded!=null?(s.conceded===me?"You conceded.":`${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");
   return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${head}</h2>${why?`<p class="pl-over-why">${why.trim()}</p>`:""}${statsHTML(s)}
-  <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
+  <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
 /* end-of-game summary */
 function statsHTML(s){if(!E.gameStats)return"";const g=E.gameStats(s);const me=U.me;
   const li=a=>a.length?`<ol>${a.map(x=>`<li>${esc(x.name)} — <b>${x.v}</b>${x.side!=null?` <span class="pl-note">(${esc(s.p[x.side].name)})</span>`:""}</li>`).join("")}</ol>`:'<p class="pl-note">None.</p>';
@@ -1440,6 +1456,11 @@ function manualHTML(s,pr){const pl=s.p[U.me];const m=U.man||(U.man={op:"dmg",n:1
 function modal(html,o){o=o||{};closeModal();const m=document.createElement("div");m.className="modal";m.id="pl-modal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
   m.innerHTML=`<div class="box${o.wide?" wide":""}${o.cls?" "+o.cls:""}">${html}</div>`;if(o.dismiss!==false)m.addEventListener("click",e=>{if(e.target===m)m.remove()});document.getElementById("layer").appendChild(m);return m}
 function closeModal(){const m=document.getElementById("pl-modal");if(m)m.remove()}
+/* Nov 19: "Jorkev, the Pillager trigger 3 of 5" so back-to-back prompts of the same trigger read as new ones */
+function askN(s,pr,key){const title=pr.title||"";const r=U.askRun;let n=1;
+  if(r&&r.key===key)n=r.n;else if(r&&r.title===title)n=r.n+1;U.askRun={title,n,key};
+  const left=s.pend.filter(p=>p.type==="ask"&&p.pid===U.me&&p.title===title).length;const tot=n-1+left;
+  if(tot<2)return"";const src=(pr.data&&pr.data.name)||title.split(":")[0];return`<span class="ask-n">${esc(src)} trigger ${n} of ${tot}</span>`}
 function modals(s){const pr=s.pend[0];
   if(!pr||pr.pid!==U.me||s.over||U.tgt){if(document.getElementById("pl-modal")&&document.getElementById("pl-modal").dataset.k)closeModal();return}
   const key=pr.type+":"+s.seq;const cur=document.getElementById("pl-modal");if(cur&&cur.dataset.k===key)return;
@@ -1448,8 +1469,8 @@ function modals(s){const pr=s.pend[0];
   else if(pr.type==="choose"){U.pick=U.pick&&U.pick.key===key?U.pick:{key,on:[]};const m=modal(chooseHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="combo"){const m=modal(comboHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="ask"&&pr.opts.some(o=>o.card)){const da=i=>`data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'`;
-    const m=modal(`<h2>${esc(pr.title||"Choose")}</h2><div class="pick-list">${pr.opts.map((o,i)=>o.card?`<div class="ask-card"><button class="pk" ${da(i)} title="${esc(o.label)}">${cardHTML(cardOf(o.card))}</button><button class="btn" ${da(i)}>${esc(o.label)}</button></div>`:"").join("")}</div><div class="actions" style="flex-direction:column;align-items:stretch;margin-top:10px">${pr.opts.map((o,i)=>o.card?"":`<button class="btn" ${da(i)}>${esc(o.label)}</button>`).join("")}</div>`,{wide:true,dismiss:false});m.dataset.k=key}
-  else if(pr.type==="ask"){const m=modal(`<h2>${esc(pr.title||"Choose")}</h2><div class="actions" style="flex-direction:column;align-items:stretch">${pr.opts.map((o,i)=>`<button class="btn${i===0?" primary":""}" data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'>${esc(o.label)}</button>`).join("")}</div>`,{dismiss:false});m.dataset.k=key}
+    const m=modal(`<div class="ask-box"><h2>${esc(pr.title||"Choose")}</h2><div class="pick-list">${pr.opts.map((o,i)=>o.card?`<div class="ask-card"><button class="pk" ${da(i)} title="${esc(o.label)}">${cardHTML(cardOf(o.card))}</button><button class="btn" ${da(i)}>${esc(o.label)}</button></div>`:"").join("")}</div><div class="actions" style="flex-direction:column;align-items:stretch;margin-top:10px">${pr.opts.map((o,i)=>o.card?"":`<button class="btn" ${da(i)}>${esc(o.label)}</button>`).join("")}</div>${askN(s,pr,key)}</div>`,{wide:true,dismiss:false});m.dataset.k=key}
+  else if(pr.type==="ask"){const m=modal(`<div class="ask-box"><h2>${esc(pr.title||"Choose")}</h2><div class="actions" style="flex-direction:column;align-items:stretch">${pr.opts.map((o,i)=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'>${esc(o.label)}</button>`).join("")}</div>${askN(s,pr,key)}</div>`,{dismiss:false});m.dataset.k=key;try{document.activeElement&&document.activeElement.blur()}catch(e){}}
   else if(cur&&cur.dataset.k)closeModal()}
 function cardById(s,u,pr){if(pr&&pr.show&&pr.show[u])return pr.show[u];for(const pl of s.p)for(const z of["hand","lib","disc"]){const c=pl[z].find(x=>x.uid===u);if(c&&c.id)return c.id}return null}
 function scryHTML(s,pr){const sc=U.scry;
@@ -1503,6 +1524,15 @@ function begin(a){const s=view();
     U.tgt={a,slots,i:0,picks:[],label:a.type==="attack"?"the attack":a.type==="soul"?"the soul":a.type==="fixPlay"?(E.DB[(s.p[U.me].hand.find(x=>x.uid===a.uid)||{}).id]||{name:"the card"}).name+" (free)":E.labelAction(s,U.me,a).replace(/^Play /,"")};
     skipEmpty();render();return}
   send(a)}
+/* Nov 19: target pop-up (bottom center) says what to select; slots with the same label count up ("Revenant to sacrifice 1/3") */
+function tgtBase(l){return String(l||"").replace(/\s*\(\d+ of \d+\)\s*$/,"")}
+function tgtPopHTML(){const t=U.tgt;if(!t||t.i>=t.slots.length)return"";const sl=t.slots[t.i];const base=tgtBase(sl.label);
+  let a=t.i,b=t.i;while(a>0&&tgtBase(t.slots[a-1].label)===base)a--;while(b<t.slots.length-1&&tgtBase(t.slots[b+1].label)===base)b++;
+  const tot=b-a+1,done=t.i-a;const party=sl.k==="player"||sl.k==="enemyPlayer";
+  const what=tot>1?`Select ${esc(base)} <b class="tp-n">${done}/${tot}</b>`:`Select ${party?"a party":"a target"}: ${esc(base)}`;
+  const picked=t.picks.filter(Boolean).length;
+  return`<div class="pl-tpop" role="status" aria-live="polite"><div class="tp-h">${esc(t.label)}</div><div class="tp-w">${what}</div>${picked?`<div class="tp-s">${picked} selected</div>`:""}<div class="tp-a">${sl.opt?'<button class="btn sm" data-pa="skip">Skip</button>':""}<button class="btn sm" data-pa="cancel">Cancel</button></div></div>`}
+function markPicks(root){const t=U.tgt;if(!t)return;t.picks.forEach((u,i)=>{if(!u)return;root.querySelectorAll(`[data-u="${String(u).replace(/["\\]/g,"")}"]`).forEach(el=>{if(el.parentElement&&el.parentElement.closest(`[data-u="${el.dataset.u}"]`))return;el.classList.add("tpicked");el.classList.remove("cand");el.dataset.pn=String(t.picks.slice(0,i+1).filter(Boolean).length)})})}
 function skipEmpty(){const t=U.tgt;while(t&&t.i<t.slots.length&&!t.slots[t.i].cands.filter(u=>!(t.slots[t.i].distinct&&t.picks.includes(u))).length){t.picks.push(null);t.i++}
   if(t&&t.i>=t.slots.length){const a=Object.assign({},t.a,{targets:t.picks});U.tgt=null;send(a)}}
 function pickTarget(u){const t=U.tgt;if(!t)return;const sl=t.slots[t.i];if(!sl.cands.includes(u)){toast("That isn't a legal target.");return}

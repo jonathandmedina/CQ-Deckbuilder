@@ -1,9 +1,9 @@
 /* Update 30 (proposal): opponent action pop-ups. Each opponent action floats over the play area as a stack, newest on top.
-   Each one stays 3 seconds or until dismissed; "Dismiss all" clears the stack. Hovering the stack pauses every timer.
+   Nov 20: no timer; each one stays until dismissed (the stack keeps the newest few); "Dismiss all" clears the stack. Hovering the stack pauses every timer.
    Only the newest pop-up draws its targeting arrow (actor -> target) and pulses its target(s); older ones show the target as text.
    API: CQPop.push({who, cardId, verb, name, dest, sub, actorU, targetU:[uids]}), CQPop.clear(), CQPop.redraw() after the board re-renders. */
 (function(){
-  const LIFE=3000,MAX=5;
+  const MAX=6;
   const css=`
 .ap-wrap{position:fixed;z-index:60;display:grid;gap:8px;width:min(370px,92vw);pointer-events:none}
 .ap-top{display:flex;justify-content:flex-end;pointer-events:auto}
@@ -54,9 +54,9 @@
     svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("class","ap-svg");svg.setAttribute("aria-hidden","true");
     svg.innerHTML='<defs><marker id="apHead" markerWidth="10" markerHeight="10" refX="6" refY="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="#F2C14E"/></marker></defs>';
     document.body.appendChild(svg);addEventListener("resize",()=>{anchor();arrows()});addEventListener("scroll",arrows,true)}
-  function arm(i,ms){clearTimeout(i.t);i.at=Date.now();i.left=ms;if(!paused)i.t=setTimeout(()=>drop(i.id),ms)}
+  function arm(){} /* Nov 20: pop-ups no longer time out */
   let seq=0;
-  function push(a){ensure();const i={id:++seq,a};items.unshift(i);while(items.length>MAX){const o=items.pop();clearTimeout(o.t)}arm(i,a.boss?LIFE+1500:LIFE);draw()} /* Trials boss flips stay 1.5 s longer */
+  function push(a){ensure();const i={id:++seq,a};items.unshift(i);while(items.length>MAX){const o=items.pop();clearTimeout(o.t)}draw()}
   function drop(id){const i=items.find(x=>x.id===id);if(!i)return;clearTimeout(i.t);items=items.filter(x=>x!==i);draw()}
   function clear(){items.forEach(i=>clearTimeout(i.t));items=[];draw()}
   function draw(){if(!wrap)return;
@@ -64,7 +64,7 @@
       items.map((i,k)=>{const a=i.a,dest=a.dest?` → ${esc(a.dest)}`:"",c=a.cardId&&typeof BYID!=="undefined"?BYID.get(a.cardId):null;
         const zb=c?` data-apz="${esc(c.id)}" role="button" tabindex="0" title="Click to view ${esc(c.name)}" aria-label="View ${esc(c.name)}"`:"";const thumb=!c?"<span></span>":k?`<img src="${esc(artSrc(c))}" alt=""${zb} class="ap-thumb">`:`<div class="ap-card"${zb}>${cardHTML(c,{nozoom:true})}</div>`;return`<div class="ap-pop ${k?"old":"new"}${a.boss?" boss":""}">${thumb}
         <div style="min-width:0"><div class="ap-who">${esc(a.who||"Opponent")}</div><div class="ap-what">${a.verb?esc(a.verb)+" ":""}<em>${esc(a.name!=null&&a.name!==""?a.name:(c?c.name:""))}</em>${dest}</div>
-        ${a.sub?`<div class="ap-sub">${esc(a.sub)}</div>`:""}<div class="ap-row"><span class="ap-bar"><i style="animation-duration:${LIFE}ms"></i></span><button type="button" class="ap-x" data-ap="${i.id}">Dismiss</button></div></div></div>`}).join("");
+        ${a.sub?`<div class="ap-sub">${esc(a.sub)}</div>`:""}<div class="ap-row"><span></span><button type="button" class="ap-x" data-ap="${i.id}">Dismiss</button></div></div></div>`}).join("");
     wrap.hidden=!items.length;try{if(typeof fitArt==="function")fitArt(wrap)}catch(e){}anchor();arrows()}
   function q(u){return u?document.querySelector(`[data-pa="obj"][data-u="${u}"]`):null}
   function center(el){const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2,r}}

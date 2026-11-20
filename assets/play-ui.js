@@ -405,6 +405,7 @@ html[data-skin="art"] #play-root .pl-hand .hc{flex-basis:var(--hcw,150px)}
 @keyframes fxOut{0%{transform:scale(1) rotate(0);opacity:1;filter:none}100%{transform:scale(.6) translateY(120px) rotate(18deg);opacity:0;filter:grayscale(1) blur(2px)}}
 @media (prefers-reduced-motion:reduce){#pl-fx .fxc{animation:fxIn .2s both, fxOut .4s 1s forwards}#pl-fx .fxc::after{animation:none}}
 .pl-snd{display:inline-flex;align-items:center;gap:5px;margin-left:auto}
+.pl-side-h .pl-snd{margin-left:0}
 /* Rules fix stacked above Concede at the right */
 /* Nov 19: view-board tab, Echo glow and order, spectating */
 .pl-viewboard{float:right;margin:-4px -4px 6px 8px}
@@ -550,7 +551,7 @@ function trialsGameHTML(s,opts){const me=U.me;const helpers=E.parties(s).filter(
     ${zoneHTML(s,me,opts)}
     ${U.spec?"":handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button>${s.over||U.spec?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}${U.spec?`<button class="btn sm danger" data-pa="spec-leave">Stop watching</button>`:`<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button>`}</span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}${sndBtnsHTML()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button>${s.over||U.spec?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}${U.spec?`<button class="btn sm danger" data-pa="spec-leave">Stop watching</button>`:`<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button>`}</span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Dimmed Golem = deal with your own first</span></div>
   </aside></div>`}
@@ -948,6 +949,15 @@ function exhumeOk(s,pid,c){const pl=s.p[pid];return !!c&&((pl.t.milled||[]).incl
 function exhumePops(s){if(!window.CQPop||U.me==null||!s)return;const key=U.gameKey||"g";if(exhumePops.key!==key){exhumePops.key=key;exhumePops.seen=new Set()}
   const pl=s.p[U.me];(pl.t.milled||[]).forEach(u=>{if(exhumePops.seen.has(u))return;exhumePops.seen.add(u);const c=pl.disc.find(x=>x.uid===u);if(!c||!isExhume(E.DB[c.id]))return;
     CQPop.push({who:"You · Exhume",cardId:c.id,verb:"",name:E.DB[c.id].name,dest:"your discard pile",sub:"Exhume: you can play it from your discard pile this turn, paying its costs. Open your discard pile and tap it, or use its Play button.",actorU:null,targetU:[]})})}
+function trigOwner(s,name){for(let p=0;p<s.p.length;p++){const pl=s.p[p];if((pl.inv||[]).some(o=>o.name===name)||(pl.bf||[]).some(o=>o.name===name)||pl.heroes.some(h=>Object.values(h.eq||{}).some(e=>e&&e.name===name)||(h.ench||[]).some(e=>e.name===name)))return p}return null}
+function trigPops(s,lines,objs,uidOf){const heroish=new Set(objs.map(o=>o.name));const seen=new Set();
+  lines.forEach(l=>{const m0=String(l.m);let src=null,what="",dest="",tg=[];
+    const d=/^(.+?) deals (\d+) (?:([A-Z][a-z]+) )?damage to (.+?)(?: \(|\.|$)/.exec(m0);
+    if(d&&!heroish.has(d[1])&&byName(d[1])){src=d[1];what=`deals ${d[2]}${d[3]?" "+d[3]:""} damage`;dest=d[4];const u=uidOf(d[4]);if(u)tg.push(u)}
+    else{const c=/^([^:]{3,40}): (.+)$/.exec(m0);if(c&&!/^(Echo|Opening Act|Engine error|Initiative roll)/.test(c[1])&&byName(c[1])&&!heroish.has(c[1])){src=c[1];what=c[2].replace(/\.$/,"")}}
+    if(!src)return;const own=trigOwner(s,src);const owner=own!=null?own:l.p;if(owner==null||owner===U.me||owner<0)return;
+    const key=src+"|"+what+"|"+dest;if(seen.has(key))return;seen.add(key);const card=byName(src);
+    CQPop.push({who:((s.p[owner]||{}).name||"Opponent")+" · Triggered ability",cardId:card?card.id:null,verb:"",name:src,dest:"",sub:what+(dest?` → ${dest}`:""),actorU:null,targetU:tg})})}
 function opPops(s,lines){if(!window.CQPop||U.me==null)return;
   /* Nov 12, 2026: the Song Opening Act puts into a hand pops up for both players */
   lines.forEach(l=>{const m=/^Opening Act: (.+) puts (.+) into their hand\.$/.exec(String(l.m));if(!m)return;const c=byName(m[2]);
@@ -956,8 +966,11 @@ function opPops(s,lines){if(!window.CQPop||U.me==null)return;
   const uidOf=n=>{const o=objs.find(x=>x.name===n);return o?o.uid:null};
   const groups=[];lines.forEach(l=>{const echo=/^Echo: /.test(l.m);const m=POP_START.exec(String(l.m).replace(/^✋ /,"").replace(/^Echo: /,"").replace(/ again\.$/,"."));if(m)m.echo=echo;const sub=m&&/^(summons|conjures|creates)$/.test(m[2])&&groups.length&&groups[groups.length-1].l.p===l.p;
     if(m&&!sub&&l.p!=null&&l.p>=0){groups.push({l,m,after:[]})}else if(groups.length)groups[groups.length-1].after.push(l)});
+  /* Nov 20: triggered abilities pop up too: a card in play that deals damage on its own ("The Forbidden Tuner deals 1 damage to X")
+     or a card trigger line ("Tip Jar: …"). Shown when the card belongs to your opponent. */
+  try{trigPops(s,lines,objs,uidOf)}catch(e){console.warn(e)}
   /* Echo replays happen on their own at Dawn, so they pop up for both players */
-  groups.filter(g=>g.l.p!==U.me||g.m.echo).slice(-5).forEach(g=>{const[,actor,verb,rest]=g.m;const card=byName(rest)||null;
+  groups.filter(g=>g.l.p!==U.me||g.m.echo).slice(-6).forEach(g=>{const[,actor,verb,rest]=g.m;const card=byName(rest)||null;
     const tgts=[];const add=n=>{const u=uidOf(n);if(u&&!tgts.includes(u))tgts.push(u)};
     if(verb==="attacks")add(rest);
     const names=objs.map(o=>o.name).filter((n,i,a)=>n&&n!==actor&&a.indexOf(n)===i).sort((x,y)=>y.length-x.length);
@@ -1060,6 +1073,11 @@ function waitPop(s){if(U.spec){const e0=document.getElementById("pl-waitpop");if
 addEventListener("hashchange",()=>{if(location.hash!=="#play"){document.getElementById("pl-waitpop")?.remove()}});
 /* Town window (Nov 12, 2026): Inn, Shop, Church and Blacksmith in one window in the middle of the screen, with Leave Town.
    Places you can't use right now stay listed with the reason. */
+/* Nov 20: the Blacksmith shows what each upgrade does (now → upgraded) */
+function upInfoHTML(o){const d=E.DB[o.id]||{};const up=d.up;const rt=t=>typeof rulesHTML==="function"?rulesHTML(t||""):esc(t||"");
+  const st=(a,b)=>[a?`+${a} STR`:"",b?`+${b} DEF`:""].filter(Boolean).join(" ");
+  if(!up)return d.rules&&/Upgrade/.test(d.rules)?`<div class="tw-upi"><span class="tw-upk">Upgrade</span>${rt((d.rules.split("\n").find(x=>/Upgrade/.test(x)))||"")}</div>`:"";
+  return`<div class="tw-upi"><div><span class="tw-upk">Now</span>${st(d.pstr,d.pdef)?`<b>${st(d.pstr,d.pdef)}</b> `:""}${rt(d.rules)}</div><div class="tw-upn"><span class="tw-upk">Upgraded</span>${st(up.pstr,up.pdef)?`<b>${st(up.pstr,up.pdef)}</b> `:""}${rt(up.rules)}</div></div>`}
 function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.town.order[s.town.i]!==me||s.pend.length||U.townHide)return"";
   /* Nov 12, 2026: every option is listed; ones you can't use right now are greyed out with the reason */
   const opts=legal(),pl=s.p[me],g=pl.gold,used=s.town.used||{};
@@ -1074,8 +1092,8 @@ function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.t
   const dead=pl.heroes.filter(h=>h.dead);const churchBody=dead.length?dead.map(h=>{const o=has("church","hero",h.uid);const lab=`Resurrect ${esc(h.name)}`;
     return o?on(o,lab):off(lab,h.surr?"Its soul was surrendered":used.church?"Used this visit":g<E.CHURCH_COST?`Needs ${E.CHURCH_COST} Gold`:"Not available")}).join(""):off("Resurrect a Hero","No Hero has died");
   const ups=(E.upgradables?E.upgradables(s,me):[]);const upBody=ups.length?ups.map(o=>{const uc=E.upgradeCost(o)||{};const nm=esc(o.name||(E.DB[o.id]||{}).name||"");const tip=esc(((E.DB[o.id]||{}).up||{}).rules||"");
-    if(uc.x){const xs=opts.filter(u=>u.type==="upgrade"&&u.uid===o.uid).map(u=>u.x);return xs.length?`<span class="pl-up">Upgrade ${nm} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>`:off(`Upgrade ${nm}`,"Needs at least 1 Gold")}
-    const op=has("upgrade","uid",o.uid);const lab=`Upgrade ${nm}${uc.cost?` (${uc.cost} Gold)`:""}`;return op?`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(op))}' title="${tip}">${lab}</button>`:off(lab,`Needs ${uc.cost} Gold`)}).join(""):off("Upgrade","Nothing in play can be upgraded");
+    if(uc.x){const xs=opts.filter(u=>u.type==="upgrade"&&u.uid===o.uid).map(u=>u.x);return xs.length?`<div class="tw-up"><span class="pl-up">Upgrade ${nm} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>${upInfoHTML(o)}</div>`:`<div class="tw-up">${off(`Upgrade ${nm}`,"Needs at least 1 Gold")}${upInfoHTML(o)}</div>`}
+    const op=has("upgrade","uid",o.uid);const lab=`Upgrade ${nm}${uc.cost?` (${uc.cost} Gold)`:""}`;return`<div class="tw-up">${op?`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(op))}' title="${tip}">${lab}</button>`:off(lab,`Needs ${uc.cost} Gold`)}${upInfoHTML(o)}</div>`}).join(""):off("Upgrade","Nothing in play can be upgraded");
   return`<div class="pl-town" role="dialog" aria-modal="false" aria-label="Town"><div class="pl-town-box">
     <div class="tw-top"><h2>Town</h2><span class="tw-gold"><b>${g}</b> Gold</span><button class="btn sm" data-pa="town-hide" title="Hide this window to look at the board">Hide</button></div>
     <p class="tw-note">Each place can be used once per visit. Gold you don't spend carries over. Greyed-out choices can't be used right now.</p>
@@ -1095,7 +1113,9 @@ function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.t
 .tw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .tw-place{border:1.5px solid #8A5E40;border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.22);display:flex;flex-direction:column;gap:8px}
 .tw-h{display:flex;gap:10px;align-items:flex-start}.tw-ic{font-size:1.5rem;line-height:1}.tw-h b{display:block;font:400 1.3rem/1.1 "Pirata One",var(--display);color:#ffd98a}.tw-h span{font-size:.85rem;color:#d8c3a0}
-.tw-acts{display:flex;flex-wrap:wrap;gap:6px}.tw-acts .btn{font-size:.9rem}.tw-hp{opacity:.75;font-size:.8em}
+.tw-acts{display:flex;flex-wrap:wrap;gap:6px}
+.tw-up{display:flex;flex-direction:column;gap:4px;width:100%;padding:6px 0;border-bottom:1px dashed var(--line)}.tw-up:last-child{border-bottom:0}.tw-up .btn{align-self:flex-start}
+.tw-upi{font-size:.8rem;line-height:1.35;display:grid;gap:3px}.tw-upi p{margin:0;display:inline}.tw-upk{display:inline-block;min-width:68px;font-weight:800;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-right:6px}.tw-upn{color:#ffe08a}.tw-acts .btn{font-size:.9rem}.tw-hp{opacity:.75;font-size:.8em}
 .tw-no{font-size:.85rem;color:#a8906f;font-style:italic}
 .tw-acts .btn.tw-off{opacity:.45;filter:grayscale(.7);cursor:not-allowed;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px}.tw-acts .btn.tw-off small{font-size:.72rem;font-weight:400;opacity:.9}
 #play-root .pl-man{position:fixed;right:16px;top:64px;z-index:112;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 84px);overflow:auto;background:linear-gradient(#2b1f15,#1b130c);color:#f3e6cf;border:2px solid #ffc100;box-shadow:0 20px 50px rgba(0,0,0,.7)}
@@ -1155,7 +1175,7 @@ function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
     ${zoneHTML(s,me,opts)}
     ${U.spec?"":handHTML(s,opts)}
   </div><aside class="pl-side">
-    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button>${s.over||U.spec?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}${U.spec?`<button class="btn sm danger" data-pa="spec-leave">Stop watching</button>`:`<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button>`}</span></div>
+    <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}${sndBtnsHTML()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button>${s.over||U.spec?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}${U.spec?`<button class="btn sm danger" data-pa="spec-leave">Stop watching</button>`:`<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button>`}</span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div>
   </aside></div>`}
@@ -1390,9 +1410,11 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const posL=s.trials?[[0,"Lead"],[1,"Closer"],[3,"Last"]]:[...E.POS,"Last"].map((p,i)=>[i,p]); /* Trials parties have 2 Heroes: Lead, Closer, Last */
   const posm=`<span class="posm" title="Position marker">${posL.map(([i,p])=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="An Abiding Hero acts here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
-  return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}<button type="button" class="btn sm pl-snd" data-pa="snd" data-volpop="sfx" aria-label="Sound effects on or off (point at it for volume)" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" data-volpop="music" aria-label="Music on or off (point at it for volume)" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
+  return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
     <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over||!fixBtn?"":`<span class="pl-endcol">${helpHTML(fixBtn)}</span>`}</div>`:""}${ban?"":man}</section>`}
 /* Nov 16: Menu and Full screen buttons for the game log tray (computers; tablets use the Controls tray) */
+/* Nov 20: sound and music toggles live in the bottom-right button tray */
+function sndBtnsHTML(){return`<button type="button" class="btn sm pl-snd" data-pa="snd" data-volpop="sfx" aria-label="Sound effects on or off (point at it for volume)" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" data-volpop="music" aria-label="Music on or off (point at it for volume)" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>`}
 function ctlBtns(){const T=window.CQTablet;const fsOn=!!(document.fullscreenElement||document.webkitFullscreenElement);const fsOk=!!(T&&T.fsAvail&&T.fsAvail());
   return`<button type="button" class="btn sm pl-ctl" data-pa="menu" aria-expanded="${document.documentElement.classList.contains("pl-menu")}" title="Show the site menu">☰ Menu</button>${fsOk?`<button type="button" class="btn sm pl-ctl" data-pa="fs" aria-pressed="${fsOn}" title="${fsOn?"Exit full screen (Esc)":"Full screen (Esc to exit)"}">⛶ ${fsOn?"Exit full screen":"Full screen"}</button>`:""}`}
 /* opponent's turn: what they have to work with */

@@ -409,10 +409,10 @@ html[data-skin="art"] #play-root .pl-hand .hc{flex-basis:var(--hcw,150px)}
 /* Rules fix stacked above Concede at the right */
 /* Nov 19: view-board tab, Echo glow and order, spectating */
 .pl-viewboard{float:right;margin:-4px -4px 6px 8px}
-#pl-modtab{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:75;display:flex;align-items:center;gap:10px;max-width:min(620px,94vw);padding:8px 16px 10px;border-radius:12px 12px 0 0;border:2px solid #f2c14e;border-bottom:0;background:#1d1209;color:#f6e7c8;font:inherit;cursor:pointer;box-shadow:0 -4px 18px #000a;animation:mtPulse 1.6s ease-in-out infinite}
-#pl-modtab .mt-k{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#f2c14e}
-#pl-modtab b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px}
-#pl-modtab .mt-o{margin-left:auto;font-weight:800;color:#f2c14e}
+#pl-modtab,.pl-towntab{position:fixed;left:50%;bottom:0;transform:translateX(-50%);z-index:75;display:flex;align-items:center;gap:10px;max-width:min(620px,94vw);padding:8px 16px 10px;border-radius:12px 12px 0 0;border:2px solid #f2c14e;border-bottom:0;background:#1d1209;color:#f6e7c8;font:inherit;cursor:pointer;box-shadow:0 -4px 18px #000a;animation:mtPulse 1.6s ease-in-out infinite}
+#pl-modtab .mt-k,.pl-towntab .mt-k{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#f2c14e}
+#pl-modtab b,.pl-towntab b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:380px}
+#pl-modtab .mt-o,.pl-towntab .mt-o{margin-left:auto;font-weight:800;color:#f2c14e}
 @keyframes mtPulse{0%,100%{box-shadow:0 -4px 18px #000a}50%{box-shadow:0 -4px 22px #f2c14e88}}
 .res.echo-z{opacity:.55}
 .res.echo-z.on{opacity:1;border-color:#9fd3ff!important;background:#123a5c!important;color:#dff1ff!important;box-shadow:0 0 0 2px #4aa8ff66,0 0 14px #4aa8ffaa;animation:echoGlow 1.8s ease-in-out infinite}
@@ -1078,7 +1078,8 @@ function upInfoHTML(o){const d=E.DB[o.id]||{};const up=d.up;const rt=t=>typeof r
   const st=(a,b)=>[a?`+${a} STR`:"",b?`+${b} DEF`:""].filter(Boolean).join(" ");
   if(!up)return d.rules&&/Upgrade/.test(d.rules)?`<div class="tw-upi"><span class="tw-upk">Upgrade</span>${rt((d.rules.split("\n").find(x=>/Upgrade/.test(x)))||"")}</div>`:"";
   return`<div class="tw-upi"><div><span class="tw-upk">Now</span>${st(d.pstr,d.pdef)?`<b>${st(d.pstr,d.pdef)}</b> `:""}${rt(d.rules)}</div><div class="tw-upn"><span class="tw-upk">Upgraded</span>${st(up.pstr,up.pdef)?`<b>${st(up.pstr,up.pdef)}</b> `:""}${rt(up.rules)}</div></div>`}
-function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.town.order[s.town.i]!==me||s.pend.length||U.townHide)return"";
+function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.town.order[s.town.i]!==me||s.pend.length)return"";
+  if(U.townHide)return`<button type="button" class="pl-towntab" data-pa="town-show"><span class="mt-k">Town</span><b>${s.p[me].gold} Gold to spend</b><span class="mt-o">Open ▴</span></button>`; /* Nov 20: same tab as other choices */
   /* Nov 12, 2026: every option is listed; ones you can't use right now are greyed out with the reason */
   const opts=legal(),pl=s.p[me],g=pl.gold,used=s.town.used||{};
   const on=(o,label,cls)=>`<button class="btn${cls?" "+cls:""}" data-pa="do" data-a='${esc(JSON.stringify(o))}'>${label}</button>`;
@@ -1095,7 +1096,7 @@ function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.t
     if(uc.x){const xs=opts.filter(u=>u.type==="upgrade"&&u.uid===o.uid).map(u=>u.x);return xs.length?`<div class="tw-up"><span class="pl-up">Upgrade ${nm} for <select data-pa="up-x" data-u="${o.uid}">${xs.map(x=>`<option value="${x}">${x} Gold (+${x})</option>`).join("")}</select><button class="btn" data-pa="up-go" data-u="${o.uid}">Upgrade</button></span>${upInfoHTML(o)}</div>`:`<div class="tw-up">${off(`Upgrade ${nm}`,"Needs at least 1 Gold")}${upInfoHTML(o)}</div>`}
     const op=has("upgrade","uid",o.uid);const lab=`Upgrade ${nm}${uc.cost?` (${uc.cost} Gold)`:""}`;return`<div class="tw-up">${op?`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify(op))}' title="${tip}">${lab}</button>`:off(lab,`Needs ${uc.cost} Gold`)}${upInfoHTML(o)}</div>`}).join(""):off("Upgrade","Nothing in play can be upgraded");
   return`<div class="pl-town" role="dialog" aria-modal="false" aria-label="Town"><div class="pl-town-box">
-    <div class="tw-top"><h2>Town</h2><span class="tw-gold"><b>${g}</b> Gold</span><button class="btn sm" data-pa="town-hide" title="Hide this window to look at the board">Hide</button></div>
+    <div class="tw-top"><h2>Town</h2><span class="tw-gold"><b>${g}</b> Gold</span><button class="btn sm" data-pa="town-hide" title="Hide the Town to look at the board and your hand. Reopen it from the tab at the bottom.">👁 View board</button></div>
     <p class="tw-note">Each place can be used once per visit. Gold you don't spend carries over. Greyed-out choices can't be used right now.</p>
     <div class="tw-grid">
     ${place("🛏","Inn",`Heal a Hero ${E.INN_HEAL} HP · ${E.INN_COST} Gold`,innBody)}

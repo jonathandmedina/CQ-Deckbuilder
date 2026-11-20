@@ -173,7 +173,6 @@ const RAW_CARDS=[
 [2, "Quick Change", "2", "", "Tactic", "", "Generic", "Move an equipment from a hero you control to another hero you control. (You don't pay its Aura cost.)", 1],
 [2, "Radiant Strike", "3", "", "Tactic", "", "Paladin", "Deal 3 Light damage, or 5 if this hero has a Sword equipped. Exhaust this hero.", 2],
 [2, "Rally the Troops", "5", "", "Tactic", "", "Paladin", "Summon two 2/3 Soldiers. Exhaust this hero.", 3],
-[2, "Rapacious Encore", "1", "", "Tactic", "", "Bard", "Play a song from your discard pile, paying its Aura cost. Deal damage equal to that song's Aura cost to any target. Piercing. (Its damage ignores all Defense.)", 2],
 [2, "Redirect", "0", "Hidden", "Spell", "", "Mage", "2{A}: Change the target of target card or ability.", 1],
 [2, "Refire", "1", "", "Tactic", "", "Ranger", "Activate an arrow. If it resolves, put it back into your inventory.", 1],
 [2, "Reload", "0", "", "Tactic", "", "Ranger", "Look at the top 2 cards of your library. You may put an arrow from among them into your inventory. Put the rest on the bottom of your library.", 3],
@@ -264,7 +263,7 @@ const RAW_CARDS=[
 [2, "Die Swinging", "0", "Hidden", "Tactic", "", "Barbarian", "0{A}: If a Barbarian you control would die, it first attacks a random enemy. That attack ignores Defense.", 3],
 [1, "Blood Price", "3", "Legendary", "Tactic", "", "Barbarian", "As an additional cost to play this card, this Barbarian loses X Health Points. It gets +X Strength until end of turn.", 4],
 [2, "Warrior's Pyre", "2", "", "Item", "Relic", "Barbarian", "Whenever a Barbarian you control dies, put a fury counter on Warrior's Pyre. Barbarians you control get +1 Strength for each fury counter.", 2],
-[2, "\"Call and Response\"", "1", "", "Song", "", "Bard", "Draw a card. Harmonize 1: Draw an additional card.", 2],
+[2, "\"Call and Response\"", "2", "", "Song", "", "Bard", "Draw a card. Harmonize 1: Draw an additional card.", 3],
 [2, "Rebuke", "2", "", "Tactic", "", "Cleric", "This hero deals damage equal to its Defense instead of its Strength until end of turn.", 2],
 [2, "Bulwark Prayer", "3", "", "Tactic", "", "Cleric", "Target ally gets +2 Defense until end of turn. Clerics you control deal damage equal to their Defense instead of their Strength until end of turn.", 2],
 [2, "Ley Grove", "3", "", "Item", "", "Druid", "At dawn, gain 1 Aura for every two summons you control.", 1],
@@ -366,7 +365,7 @@ const RAW_HEROES=[
 ["Forest Scout", "Ranger", "0", "1", "2", "16", "Your first trap each turn triggers twice.\n{L3} Your traps trigger twice.", 3],
 ["Fury Titan", "Barbarian", "2", "0", "1", "15", "{L3} Whenever this hero deals damage, destroy target item.", 2],
 ["Grandmaster Reece", "Monk", "1", "1", "1", "15", "Whenever Grandmaster Reece plays its third combo card in a turn, target hero gets +2 Strength until end of turn.\n{L3} Every third combo card Grandmaster Reece plays in a turn (third, sixth and so on), target hero gets +2 Strength until end of turn.", 3],
-["Harmony Sage", "Bard", "1", "1", "1", "15", "Whenever a Bard you control plays or duplicates a song, heal that Bard for 1 Health Point.", 3],
+["Harmony Sage", "Bard", "1", "1", "1", "15", "Whenever this hero plays a song, you may heal target ally for 1 Health Point.", 4],
 ["Hawkeye", "Ranger", "0", "1", "2", "16", "{L3} Arrows that Hawkeye activates get +1 damage.\n{L6} Arrows that Hawkeye activates get an additional +1 damage.", 3],
 ["Hexcaster", "Warlock", "0", "0", "2", "16", "Exhaust, Lose 2 Health Points: Opponents can't use consumable items until end of turn.", 2],
 ["Holy Guardian", "Paladin", "0", "1", "1", "16", "While this hero is exhausted, each adjacent hero gets +1 Defense.", 3],
@@ -384,7 +383,7 @@ const RAW_HEROES=[
 ["Sanctifier", "Cleric", "1", "0", "1", "16", "Whenever this hero deals damage, remove 1 status counter from any target.", 3],
 ["Savage Raider", "Barbarian", "2", "0", "1", "14", "Enraged: This hero's attacks ignore Defense.", 2],
 ["Valdo Sticky Fingers", "Rogue", "2", "0", "1", "16", "Exhaust: Gain control of target item an opponent controls with an Aura cost of 2 or less.\n{L3} Exhaust: Gain control of target item an opponent controls.", 3],
-["Echo Performer", "Bard", "1", "1", "1", "15", "The first song this hero plays from your hand each turn has echo.\n{L3} Songs this hero plays from your hand have echo.", 5],
+["Echo Performer", "Bard", "0", "0", "1", "15", "The first song this hero plays from your hand each turn has echo.\n{L3} Songs this hero plays from your hand have echo.", 6],
 ["Storm Caller", "Mage", "0", "0", "2", "15", "2{A}, Exhaust: Deal 2 damage to each enemy hero.\n{L3} 2{A}, Exhaust: Deal 3 damage to each enemy hero.", 3],
 ["Sun Paladin", "Paladin", "1", "0", "1", "16", "While this hero is exhausted, it gets +2 Defense.", 2],
 ["Thorncaller", "Druid", "0", "0", "2", "16", "{L6} When this hero reaches level 6, duplicate each friendly summon.", 2],
@@ -536,6 +535,7 @@ const DEPRECATED_EQUIP=[
 ["Drums of War", "", "Instrument", "Bard", "Other Heroes in your party gain +1 STR while this Hero is ready.", "1", "Two-Handed", "0", "0", 2]
 ];
 const DEPRECATED_CARDS=[
+[2, "Rapacious Encore", "1", "", "Tactic", "", "Bard", "Play a song from your discard pile, paying its Aura cost. Deal damage equal to that song's Aura cost to any target. Piercing. (Its damage ignores all Defense.)", 2],
 [2, "Disarm", "2", "", "Tactic", "", "Generic", "Unequip target Equipment. It goes to its owner's inventory. (If there's no open inventory slot, it is discarded.)", 2],
 [2, "Ice Bath", "3", "", "Tactic", "", "Generic", "Remove all Burn counters from all Heroes and summons.", 1],
 [2, "Pitfall", "0", "Hidden", "Item", "Trap", "Ranger", "4{A}: When an enemy Hero attacks, cancel that attack. Unequip all of the attacker's equipment.", 2],

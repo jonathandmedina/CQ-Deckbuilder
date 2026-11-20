@@ -1273,7 +1273,7 @@ function resolveCont(s,pid,cont,mods){
   if(d.type==="Spell"&&actor&&!actor.dead&&hasEqN(actor,"Staff of Doom")&&(hasUpN(s,actor,"Staff of Doom")||actor.fl.staffRound!==s.round)){actor.fl.staffRound=s.round;
     const n=d.cost==="X"?(cont.x||0):num(d.cost);const hs=inPlayTargets(s).filter(o=>o.kind==="hero"&&(!stealth(s,o)||ctrl(s,o)===pid));
     if(n>0&&hs.length)ask(s,pid,`Staff of Doom: target Hero loses ${n} HP`,targetOpts(s,pid,hs.filter(o=>ctrl(s,o)!==pid),n).concat(targetOpts(s,pid,hs.filter(o=>ctrl(s,o)===pid),n)).concat([{label:"No one",v:null}]),"loseTo",{n,name:"Staff of Doom"})}
-  if(d.type==="Song"&&actor&&!actor.dead&&heroIs(actor,"Bard")){living(pl).filter(h=>h.name==="Harmony Sage").forEach(hs=>heal(s,hs,actor,1,pid))}
+  if(d.type==="Song"&&actor&&!actor.dead&&actor.name==="Harmony Sage"){/* Update 46: whenever this hero plays a song, you may heal target ally for 1 */const al=[...living(pl),...pl.bf.filter(o=>o.kind==="summon")].sort((a,b)=>(b.dmg||0)-(a.dmg||0));if(al.length)ask(s,pid,"Harmony Sage: you may heal target ally for 1 Health Point",al.map(o=>({label:`${o.name}${o.kind==="summon"?" (summon)":""} (${Math.max(0,maxHp(s,o)-(o.dmg||0))}/${maxHp(s,o)} HP)`,v:o.uid})).concat([{label:"No heal",v:null}]),"healTo",{n:1,healer:actor.uid})}
   if(d.type==="Song"&&pl.inv.some(o=>!o.fd&&o.name==="Tip Jar"))tip(s,pid,"Tip Jar");
   if(d.type==="Song"){/* Nov 17: every Forbidden Tuner in your inventory triggers (each copy deals its own 1 damage) */
     pl.inv.filter(o=>!o.fd&&o.name==="The Forbidden Tuner").forEach(tun=>{const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);

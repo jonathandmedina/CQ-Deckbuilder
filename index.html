@@ -87,6 +87,8 @@ button{cursor:pointer}
 body{padding-bottom:calc(58px + env(safe-area-inset-bottom,0px))}
 .sitebar{position:fixed;left:0;right:0;bottom:0;z-index:19;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 14px rgba(0,0,0,.12);padding-bottom:env(safe-area-inset-bottom,0px)}
 .sitebar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:7px}
+.sitebar .sb-right{display:inline-flex;align-items:center;gap:4px}
+.thanks{max-width:720px}.thanks ul{line-height:1.8}.thanks .fine{font-size:.9rem;opacity:.8;border-top:1px solid var(--line);padding-top:12px;margin-top:22px}
 .sitebar .sb-link{font-weight:600;text-decoration:none;color:var(--ink);padding:5px 10px;border-radius:8px}
 .sitebar .sb-link:hover,.sitebar .sb-link[aria-current="page"]{background:var(--sunk);color:var(--accent,var(--ink))}
 html:has(#play-root .pl-game) .sitebar{display:none}
@@ -474,8 +476,8 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 .sitebar .sb-fb{display:inline-flex;align-items:center;gap:7px}.sb-fb-i{width:20px;height:20px;flex:none}
 .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/art.css?v=20261119p">
-<link rel="stylesheet" href="assets/home.css?v=20261119p">
+<link rel="stylesheet" href="assets/art.css?v=20261119q">
+<link rel="stylesheet" href="assets/home.css?v=20261119q">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -499,7 +501,8 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <main><div class="wrap" id="view"></div></main>
 <footer class="sitebar" id="sitebar"><div class="wrap">
   <span class="sb-links"><a href="#changelog" data-view="changelog" class="sb-link">Changelog</a><a href="#admin" data-view="admin" id="adminTab" class="sb-link" hidden>Admin</a><a href="https://www.facebook.com/groups/1152569287102321/" class="sb-link sb-fb" target="_blank" rel="noopener" title="Riverstead on Facebook (opens in a new tab)"><svg class="sb-fb-i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#1877F2"/><path fill="#fff" d="M13.4 19.5v-6.1h2.1l.3-2.4h-2.4V9.5c0-.7.2-1.2 1.2-1.2h1.3V6.2c-.2 0-1-.1-1.9-.1-1.9 0-3.2 1.2-3.2 3.3V11H8.7v2.4h2.1v6.1h2.6z"/></svg>Facebook</a></span>
-  <button type="button" class="sb-link sb-music" id="sbMusic" aria-pressed="true" title="Turn the music on or off"><span aria-hidden="true">🎵</span> Music on</button>
+  <span class="sb-right"><a href="#thanks" data-view="thanks" class="sb-link">Acknowledgments</a>
+  <button type="button" class="sb-link sb-music" id="sbMusic" aria-pressed="true" title="Turn the music on or off"><span aria-hidden="true">🎵</span> Music on</button></span>
 </div></footer>
 <div id="layer"></div>
 <noscript><p class="wrap">Deck Forge needs JavaScript turned on.</p></noscript>
@@ -507,25 +510,25 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261119p"></script>
-<script src="assets/trials-data.js?v=20261119p"></script>
-<script src="assets/audio-prefs.js?v=20261119p"></script>
-<script src="assets/app.js?v=20261119p"></script>
-<script src="assets/home.js?v=20261119p"></script>
-<script src="assets/play-engine.js?v=20261119p"></script>
-<script src="assets/play-trials.js?v=20261119p"></script>
-<script src="assets/play-cards.js?v=20261119p"></script>
-<script src="assets/play-ai.js?v=20261119p"></script>
-<script src="assets/play-ui.js?v=20261119p"></script>
-<script src="assets/changelog-data.js?v=20261119p"></script>
-<script src="assets/changelog.js?v=20261119p"></script>
-<script src="assets/admin.js?v=20261119p"></script>
-<script src="assets/profile.js?v=20261119p"></script>
-<script src="assets/action-pop.js?v=20261119p"></script>
-<script src="assets/blog.js?v=20261119p"></script>
-<script src="assets/online.js?v=20261119p"></script>
-<script src="assets/tutorial.js?v=20261119p"></script>
-<script src="assets/play-tablet.js?v=20261119p"></script>
+<script src="assets/cards-data.js?v=20261119q"></script>
+<script src="assets/trials-data.js?v=20261119q"></script>
+<script src="assets/audio-prefs.js?v=20261119q"></script>
+<script src="assets/app.js?v=20261119q"></script>
+<script src="assets/home.js?v=20261119q"></script>
+<script src="assets/play-engine.js?v=20261119q"></script>
+<script src="assets/play-trials.js?v=20261119q"></script>
+<script src="assets/play-cards.js?v=20261119q"></script>
+<script src="assets/play-ai.js?v=20261119q"></script>
+<script src="assets/play-ui.js?v=20261119q"></script>
+<script src="assets/changelog-data.js?v=20261119q"></script>
+<script src="assets/changelog.js?v=20261119q"></script>
+<script src="assets/admin.js?v=20261119q"></script>
+<script src="assets/profile.js?v=20261119q"></script>
+<script src="assets/action-pop.js?v=20261119q"></script>
+<script src="assets/blog.js?v=20261119q"></script>
+<script src="assets/online.js?v=20261119q"></script>
+<script src="assets/tutorial.js?v=20261119q"></script>
+<script src="assets/play-tablet.js?v=20261119q"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(/^#blog/.test(location.hash)&&window.CQBlog)window.CQBlog.mount(document.getElementById("view"),S.blogSlug)</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>

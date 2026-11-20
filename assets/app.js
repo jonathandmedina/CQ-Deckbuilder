@@ -598,6 +598,10 @@ function render(){
   else if(S.view==="set2-rules"){if(set2On()){v.innerHTML=viewSet2Rules();if(!S.s2rules)loadSet2Rules()}else{v.innerHTML=viewRules();if(!S.rules)loadRules()}}
   else if(S.view==="play"){if(window.CQPlay)window.CQPlay.mount(v);else v.innerHTML='<p class="lede">Loading the game…</p>'}
   else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
+  else if(S.view==="thanks"){v.innerHTML=`<section class="thanks"><h1>Acknowledgments</h1><p class="lede">Riverstead is a fun hobby project of mine, and I've been having a blast designing it. Shout-out to these people:</p>
+    <ul><li><b>Mike Degaro</b>: my co-designer</li><li><a href="https://sunpixels.art" target="_blank" rel="noopener"><b>sunpixels.art</b></a>: graphic and art design</li><li><b>Our playtesters!</b> You guys rock!</li></ul>
+    <p>Special thanks to the creators of <b>The Journey TCG</b>, whose party-based design helped inspire our early ideas.</p>
+    <p class="fine">Riverstead is an independent game and is not affiliated with, endorsed by, or sponsored by The Journey TCG.</p><p>— Jonathan</p></section>`}
   else if(S.view==="blog"){if(window.CQBlog)window.CQBlog.mount(v,S.blogSlug);else v.innerHTML='<p class="lede">Loading the blog…</p>'}
   else if(S.view==="best"){v.innerHTML=viewBest();if(!S.best||Date.now()-S.best.at>60000)loadBest()}
   else if(S.view==="community"){v.innerHTML=viewCommunity();if(!S.comm||Date.now()-S.comm.at>60000)loadCommunity()}
@@ -1462,7 +1466,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.q
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
 function route(){const h=location.hash.replace("#","");const pm=/^player\/(.+)$/.exec(h);if(pm){try{S.playerName=decodeURIComponent(pm[1])}catch(e){S.playerName=pm[1]}}
   const bm=/^blog(?:\/(.+))?$/.exec(h);S.blogSlug=bm?bm[1]||"":""; /* Nov 19: Blog */
-  S.view=bm?"blog":pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","trials-rules","set2-rules","play","best","community","changelog","admin","leaderboard"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+  S.view=bm?"blog":pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","trials-rules","set2-rules","play","best","community","changelog","admin","leaderboard","thanks"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

@@ -800,7 +800,7 @@ async function exportDeckPNG(d){warnHidden(d);
     const me=myIdentity();
     const stack=e=>`<div class="vs-stack" style="--n:${e.q}">${Array.from({length:e.q},(_,i)=>`<div class="vs-card" style="--i:${i}">${cardHTML(e.c,{nozoom:true})}</div>`).join("")}${e.q>1?`<span class="vs-q">×${e.q}</span>`:""}</div>`;
     const groups=VIS_GROUPS.map(([g,label])=>{const l=es.filter(e=>visGroup(e.c)===g);return l.length?`<section class="vs-g"><h3>${label} <span>${l.reduce((a,e)=>a+e.q,0)}</span></h3><div class="vs-row">${l.map(stack).join("")}</div></section>`:""}).join("");
-    host.innerHTML=`<div class="ps-top"><div><h2>${esc(d.name||"Untitled deck")}</h2><p>Riverstead · ${deckTotal(d)} cards · Deck Forge</p></div>
+    host.innerHTML=`<div class="ps-top"><div><h2>${esc(d.name||"Untitled deck")}</h2><p>Riverstead · ${deckTotal(d)} cards · playriverstead.com</p></div>
       <div class="ps-me"><img src="${ICON_BASE}art/hero-head/${artKey(me.hero.name)}.png?v=${ART_VER}" alt=""><div><b>${esc(me.name)}</b><small>Deck by</small></div></div></div>
       <div class="party ps-party">${hs.map((h,i)=>`<div class="slot full hero-full hero-dig" style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}">${heroDigitalHTML(h,(i+1)+" · "+["LEAD","CENTER","CLOSER"][i])}</div>`).join("")}</div>
       ${groups}<p class="ps-foot">playriverstead.com</p>`;

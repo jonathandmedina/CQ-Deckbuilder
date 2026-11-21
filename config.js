@@ -1,4 +1,4 @@
-/* Deck Forge settings.
+/* Site settings.
    Paste your Supabase project URL and anon (public) key below. The anon key is safe to publish:
    the database rules in supabase/schema.sql make sure each player can only read and change their own decks.
    Leave the placeholders in place to run the site without accounts (decks save in the browser). */

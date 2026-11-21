@@ -1,4 +1,4 @@
-/* Riverstead Deck Forge: Blog (#blog, #blog/<slug>) and the "What happened to my cards?!" pop-up for returning playtesters.
+/* Riverstead: Blog (#blog, #blog/<slug>) and the "What happened to my cards?!" pop-up for returning playtesters.
    Posts live in POSTS below; card pictures are drawn with the site's own card renderer (cardHTML), so they always show current text. */
 (function(){
 const E=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -100,7 +100,7 @@ function viewPost(p){return`<div class="bl-wrap"><a class="bl-back" href="#blog"
   <article class="bl-body">${p.body()}</article></div>`}
 function mount(v,slug){injectCSS();const p=slug&&POSTS.find(x=>x.slug===slug);
   v.innerHTML=slug&&!p?`<h1>Post not found</h1><p class="lede"><a href="#blog">Back to the blog</a></p>`:p?viewPost(p):viewList();
-  if(p)document.title=p.title+" · Riverstead";else document.title="Blog · Riverstead Deck Forge"}
+  if(p)document.title=p.title+" · Riverstead";else document.title="Blog · Riverstead"}
 
 /* ---------- "What happened to my cards?!" for returning playtesters ----------
    Shown once per browser to anyone who had used the site before this visit (a saved guest id or decks) or who signs in. */

@@ -1,4 +1,4 @@
-/* Riverstead Deck Forge: Changelog tab (Cards Change Log + Website Log). Data in changelog-data.js. */
+/* Riverstead: Changelog tab (Cards Change Log + Website Log). Data in changelog-data.js. */
 (function(){
 
 const CSS=`.cl-tabs{margin:6px 0 16px}
@@ -93,7 +93,7 @@ function cardsTab(){const d=L();const list=filtered();const by={};list.forEach(r
       <td class="cl-r" data-h="Reason">${r.r?E(r.r):'<span class="cl-none">—</span>'}</td></tr>`).join("")}
     </tbody></table></div></section>`).join("")}
 
-function siteTab(){return`<p class="lede cl-lede">Changes to the Deck Forge site, the rules and the Play client. Newest first.</p>`+L().site.map(e=>`<section class="cl-upd cl-site"><h2>${E(e.title)} <small>${E(e.date)}${e.ver?` · v=${E(e.ver)}`:""}</small></h2>
+function siteTab(){return`<p class="lede cl-lede">Changes to the website, the rules and the Play client. Newest first.</p>`+L().site.map(e=>`<section class="cl-upd cl-site"><h2>${E(e.title)} <small>${E(e.date)}${e.ver?` · v=${E(e.ver)}`:""}</small></h2>
   <ul>${e.items.map(([a,t])=>`<li><span class="cl-area a-${a.replace(/\s+/g,"").toLowerCase()}">${E(a)}</span> ${E(t)}</li>`).join("")}</ul></section>`).join("")}
 
 /* Set 2 tab: only for accounts with Set 2 access (admins, or the Set 2 box in Admin > Users) */

@@ -1,4 +1,4 @@
-/* Riverstead Deck Forge: Admin page (#admin). Only admins see the menu link and the page.
+/* Riverstead: Admin page (#admin). Only admins see the menu link and the page.
    Playtesting dashboard (Games, Heroes, Cards) is built from deck_results (one row per deck per finished Play-tab game).
    Users: make admins and give Set 2 access (Supabase RPCs admin_list_users / admin_set_admin / admin_set_set2).
    Database setup: "Admin Panel SQL" in the project. Uses app.js globals (SB, S, HEROES, CARDS, BYID, esc, toast, cc, artKey, ICON_BASE, ART_VER, RENAMES, canSee). */

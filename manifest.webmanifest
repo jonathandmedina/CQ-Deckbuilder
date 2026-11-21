@@ -1,6 +1,6 @@
 {
-  "name": "Riverstead Deck Forge",
-  "short_name": "Deck Forge",
+  "name": "Riverstead",
+  "short_name": "Riverstead",
   "description": "Build Riverstead decks and play.",
   "start_url": "./#play",
   "scope": "./",

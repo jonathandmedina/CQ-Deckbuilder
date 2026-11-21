@@ -5,7 +5,7 @@
 
 ## About This Supplement
 
-- **Who sees it:** only accounts with Set Two access on Deck Forge.
+- **Who sees it:** only accounts with Set Two access on playriverstead.com.
 - **How it combines:** use the main rules for everything not covered here. If this supplement and the main rules disagree, this supplement wins in games that include Set Two cards.
 - **Status:** playtest only. Every rule and card here can change between updates.
 

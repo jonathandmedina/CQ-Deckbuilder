@@ -1,4 +1,4 @@
-/* Riverstead Deck Forge: "Card Art" theme. Storybook RPG menus: warm brown windows with copper frames and corner curls,
+/* Riverstead: "Card Art" theme. Storybook RPG menus: warm brown windows with copper frames and corner curls,
    a serif face (EB Garamond), a gold pointer, blue banner headings with gold trim, and the card-image template for cards with art.
    Built from retro.css (same selectors, rescoped to html[data-skin="art"]) plus the overrides at the end. All ornaments are original SVG. */
 html[data-skin="art"]{

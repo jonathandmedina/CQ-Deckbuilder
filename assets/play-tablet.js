@@ -5,7 +5,7 @@
    - Full screen: a button (the toolbar on tablets; on computers, next to Menu in the game log tray at the bottom right, Nov 16). On tablets, starting a game
      goes full screen by itself. Leaving the Play tab exits full screen.
    - The screen is kept awake while a game is in progress, where the browser allows it.
-   - Add to Home Screen: index.html links a web app manifest, so the icon opens Deck Forge without Safari's bars. */
+   - Add to Home Screen: index.html links a web app manifest, so the icon opens the site without Safari's bars. */
 (function(){
 "use strict";
 const KEY="cq.play.tablet";

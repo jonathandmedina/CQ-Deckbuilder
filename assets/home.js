@@ -1,4 +1,4 @@
-/* Riverstead Deck Forge: Home page (#home, the site's landing page) and Learn to Play (#learn).
+/* Riverstead: Home page (#home, the site's landing page) and Learn to Play (#learn).
    Banner: Riverstead (Dawn) or Draven Temple (Dusk), with its own music.
    Music on/off lives in the bottom bar (#sbMusic) and shares the cq.music setting with the Play tab.
    Uses app.js globals: ICON_BASE, HEROES, CARDS, cardHTML, esc, cc, S. */

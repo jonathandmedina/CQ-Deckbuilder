@@ -1180,7 +1180,7 @@ function lobbyHTML1(tabs){const ch=deckChoices();const resL=store2.get("cq.play.
   </div>`}
 function roomHTML(){const n=U.net;if(!n)return"";
   return`<h1>${n.role==="host"?"Your room":"Joining room"}</h1>
-  <div class="panel" style="max-width:520px">${n.role==="host"?`<p>Share this code with your opponent:</p><div class="pl-code">${esc(n.code)}</div><p class="pl-note">They open Deck Forge → Play → Join with a code. The game starts as soon as they join.</p>`
+  <div class="panel" style="max-width:520px">${n.role==="host"?`<p>Share this code with your opponent:</p><div class="pl-code">${esc(n.code)}</div><p class="pl-note">They go to playriverstead.com → Play → Join with a code. The game starts as soon as they join.</p>`
     :`<div class="pl-code">${esc(n.code)}</div><p>${U.busy?"Waiting for the host…":"Connecting to the host…"} If nothing happens, check the code and make sure the host has the room open.</p>`}
   <p class="pl-note">${n.peers?"Opponent connected.":"Waiting for opponent…"}</p>
   <div class="actions"><button class="btn" data-pa="leave">Cancel</button></div></div>`}

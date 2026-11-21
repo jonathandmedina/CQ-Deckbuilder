@@ -1,4 +1,4 @@
-/* Update 30 (proposal): online counter. Every open Deck Forge tab joins one Supabase Realtime presence channel.
+/* Update 30 (proposal): online counter. Every open site tab joins one Supabase Realtime presence channel.
    People online = unique presence keys (account id, or a per-browser guest id), so several tabs count once.
    Games = unique games in progress (an AI game counts once; both players in an online room report the same room code). */
 (function(){

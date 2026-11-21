@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- Add to Home Screen (iPad proposal, Nov 12, 2026): opens Deck Forge like an app, without Safari's bars -->
+<!-- Add to Home Screen (iPad proposal, Nov 12, 2026): opens the site like an app, without Safari's bars -->
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Deck Forge">
+<meta name="apple-mobile-web-app-title" content="Riverstead">
 <meta name="theme-color" content="#1b130c">
 <link rel="apple-touch-icon" href="assets/app/icon-180.png">
-<title>Riverstead Deck Forge</title>
+<title>Riverstead</title>
 <meta name="description" content="Browse every Riverstead card, build decks, save them to your account, export print-and-play PDFs or Tabletop Simulator decks, and play games against the AI or friends online.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -476,12 +476,12 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 .sitebar .sb-fb{display:inline-flex;align-items:center;gap:7px}.sb-fb-i{width:20px;height:20px;flex:none}
 .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/art.css?v=20261120d">
-<link rel="stylesheet" href="assets/home.css?v=20261120d">
+<link rel="stylesheet" href="assets/art.css?v=20261121a">
+<link rel="stylesheet" href="assets/home.css?v=20261121a">
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <a class="brand" href="#home" title="Home">Riverstead <small>Deck Forge</small></a>
+  <a class="brand" href="#home" title="Home">Riverstead</a>
   <button type="button" class="nav-burger" id="navBurger" aria-expanded="false" aria-controls="navPanel" aria-label="Menu"><span></span><span></span><span></span></button>
   <div class="nav-panel" id="navPanel">
   <nav class="tabs" id="tabs">
@@ -494,7 +494,7 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
     <a href="#blog" data-view="blog">Blog</a>
   </nav>
   <div class="acct" id="acct"><span>Checking account…</span></div>
-  <span class="online-pill" id="onlinePill" title="People with Deck Forge open right now, and games being played" hidden><span class="on-dot"></span><b id="onN">0</b><span class="on-w"> online</span><span class="on-g"> · </span><b class="on-g" id="onG">0</b><span class="on-g"> games</span></span>
+  <span class="online-pill" id="onlinePill" title="People on Riverstead right now, and games being played" hidden><span class="on-dot"></span><b id="onN">0</b><span class="on-w"> online</span><span class="on-g"> · </span><b class="on-g" id="onG">0</b><span class="on-g"> games</span></span>
   <a class="btn sm discord-btn" href="https://discord.gg/wErfNbug5e" target="_blank" rel="noopener">Join the Discord</a>
   </div>
 </div></header>
@@ -505,30 +505,30 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
   <button type="button" class="sb-link sb-music" id="sbMusic" aria-pressed="true" title="Turn the music on or off"><span aria-hidden="true">🎵</span> Music on</button></span>
 </div></footer>
 <div id="layer"></div>
-<noscript><p class="wrap">Deck Forge needs JavaScript turned on.</p></noscript>
+<noscript><p class="wrap">Riverstead needs JavaScript turned on.</p></noscript>
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261120d"></script>
-<script src="assets/trials-data.js?v=20261120d"></script>
-<script src="assets/audio-prefs.js?v=20261120d"></script>
-<script src="assets/app.js?v=20261120d"></script>
-<script src="assets/home.js?v=20261120d"></script>
-<script src="assets/play-engine.js?v=20261120d"></script>
-<script src="assets/play-trials.js?v=20261120d"></script>
-<script src="assets/play-cards.js?v=20261120d"></script>
-<script src="assets/play-ai.js?v=20261120d"></script>
-<script src="assets/play-ui.js?v=20261120d"></script>
-<script src="assets/changelog-data.js?v=20261120d"></script>
-<script src="assets/changelog.js?v=20261120d"></script>
-<script src="assets/admin.js?v=20261120d"></script>
-<script src="assets/profile.js?v=20261120d"></script>
-<script src="assets/action-pop.js?v=20261120d"></script>
-<script src="assets/blog.js?v=20261120d"></script>
-<script src="assets/online.js?v=20261120d"></script>
-<script src="assets/tutorial.js?v=20261120d"></script>
-<script src="assets/play-tablet.js?v=20261120d"></script>
+<script src="assets/cards-data.js?v=20261121a"></script>
+<script src="assets/trials-data.js?v=20261121a"></script>
+<script src="assets/audio-prefs.js?v=20261121a"></script>
+<script src="assets/app.js?v=20261121a"></script>
+<script src="assets/home.js?v=20261121a"></script>
+<script src="assets/play-engine.js?v=20261121a"></script>
+<script src="assets/play-trials.js?v=20261121a"></script>
+<script src="assets/play-cards.js?v=20261121a"></script>
+<script src="assets/play-ai.js?v=20261121a"></script>
+<script src="assets/play-ui.js?v=20261121a"></script>
+<script src="assets/changelog-data.js?v=20261121a"></script>
+<script src="assets/changelog.js?v=20261121a"></script>
+<script src="assets/admin.js?v=20261121a"></script>
+<script src="assets/profile.js?v=20261121a"></script>
+<script src="assets/action-pop.js?v=20261121a"></script>
+<script src="assets/blog.js?v=20261121a"></script>
+<script src="assets/online.js?v=20261121a"></script>
+<script src="assets/tutorial.js?v=20261121a"></script>
+<script src="assets/play-tablet.js?v=20261121a"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(/^#blog/.test(location.hash)&&window.CQBlog)window.CQBlog.mount(document.getElementById("view"),S.blogSlug)</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>

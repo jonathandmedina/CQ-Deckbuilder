@@ -144,7 +144,7 @@ Every card's type line reads **Supertype - Type - Subtype**, with a dash between
 
 ### Card Versions
 
-Every card shows a version number (v1, v2, v3…) in its bottom corner. When a card’s text or stats change, its version goes up. Always play the newest version of a card. If a printed copy shows an older version, the current text on the Deck Forge site wins.
+Every card shows a version number (v1, v2, v3…) in its bottom corner. When a card’s text or stats change, its version goes up. Always play the newest version of a card. If a printed copy shows an older version, the current text on playriverstead.com wins.
 
 ## 5. Areas of Play
 
@@ -538,7 +538,7 @@ Whenever more cards need to go into your inventory than you have empty slots, yo
 
 Some items and equipment have an **Upgrade** cost in Gold (for example, “Upgrade X Gold: This Arrow deals +X more damage”).
 
-**Every piece of equipment has one fixed upgrade.** Its back side (the upgraded side) shows the Upgrade cost and the equipment’s new text and stats, which replace the front side’s. Stronger equipment has bigger upgrades that cost more Gold (3 to 7), and upgrades that add DEF cost more than ones that add STR. In Deck Forge, press the flip icon (⟳) on a card to see its upgraded side.
+**Every piece of equipment has one fixed upgrade.** Its back side (the upgraded side) shows the Upgrade cost and the equipment’s new text and stats, which replace the front side’s. Stronger equipment has bigger upgrades that cost more Gold (3 to 7), and upgrades that add DEF cost more than ones that add STR. On the website, press the flip icon (⟳) on a card to see its upgraded side.
 
 At the Blacksmith in Town, you may upgrade any of them:
 
@@ -556,7 +556,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Barkborn** | When a summon with Barkborn enters, it gains Defense equal to its Health Points until end of turn. Barkborn stacks: each time a summon has Barkborn, add that DEF again. Cards and abilities can give the next summon (or every summon) that enters this turn Barkborn. |
 | **Combo** | When a card with Combo finishes resolving (including any Scry it makes), reveal the top card of your library. If its subtype is Combo, you may play it, or a Combo card from your hand, by paying its Aura cost. This doesn’t use another action. A Hidden card with Combo triggers it when revealed. A **Combo card** is a card with the Combo subtype; only those count as “Combo cards you have played this turn.” |
 | **Conjure** | Create a Pillar token on the battlefield. |
-| **Echo** | If you played this card from your hand, you may exile it as it resolves. If you do, play it again at your next Dawn without paying its costs again: no Aura, and no additional cost such as Harmonize (it keeps the mode and X chosen the first time, and no Heroes are exhausted for it). Any of your Heroes that can play it does, and you may choose new targets, then put it in your discard pile. A card played any other way (at Dawn, from your discard pile or library, or as a copy or duplicate) can’t Echo, so a card repeats only once. Cards that give Echo (Echo Performer, Sing Along) follow the same rule. The Dawn replay counts as playing the card, so it triggers abilities like Tip Jar and The Forbidden Tuner. If you have more than one Echo card waiting, they replay one at a time in the order they were played: first in, first out (in Deck Forge, click your Echo zone to see the order). |
+| **Echo** | If you played this card from your hand, you may exile it as it resolves. If you do, play it again at your next Dawn without paying its costs again: no Aura, and no additional cost such as Harmonize (it keeps the mode and X chosen the first time, and no Heroes are exhausted for it). Any of your Heroes that can play it does, and you may choose new targets, then put it in your discard pile. A card played any other way (at Dawn, from your discard pile or library, or as a copy or duplicate) can’t Echo, so a card repeats only once. Cards that give Echo (Echo Performer, Sing Along) follow the same rule. The Dawn replay counts as playing the card, so it triggers abilities like Tip Jar and The Forbidden Tuner. If you have more than one Echo card waiting, they replay one at a time in the order they were played: first in, first out (on the website, click your Echo zone to see the order). |
 | **Enraged** | A Hero is Enraged while it is at or below half its maximum HP. |
 | **Harmonize X** | Exhaust X other ready Heroes you control (not the Hero playing the card) to gain the effect after the colon. |
 | **Lifelink** | When this Hero deals damage, heal it that much. |

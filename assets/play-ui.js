@@ -876,11 +876,24 @@ const DRAG_CSS=`.pl-hand .hc{touch-action:pan-x;user-select:none;-webkit-user-se
 .hc-drag-tag{position:absolute;left:50%;top:100%;transform:translate(-50%,10px);white-space:nowrap;font:700 .9rem/1 var(--body);padding:7px 12px;border-radius:999px;background:#1b130c;color:#f3e6cf;border:2px solid #8A5E40;box-shadow:0 6px 16px rgba(0,0,0,.6)}
 .hc-drag.over.ok .hc-drag-tag{background:#ffc100;color:#2A1606;border-color:#ffc100}
 .hc-drag.over.no .hc-drag-tag{background:#5a1a12;color:#ffd2c8;border-color:#C0392B}
+.dcand{outline:2px dashed #f2c14e!important;outline-offset:2px}
+.dhit{outline:3px solid #f2c14e!important;outline-offset:3px;box-shadow:0 0 0 6px #f2c14e55,0 0 22px #f2c14e!important;filter:brightness(1.12)}
 @media (prefers-reduced-motion:reduce){.hc-drag-in{transition:none}}`;
 {const st=document.createElement("style");st.textContent=DRAG_CSS;document.head.appendChild(st)}
 let drag=null,dragEat=0;
 /* card art is an image: stop the browser's own image drag so the card drag can run */
 document.addEventListener("dragstart",e=>{if(e.target.closest&&e.target.closest("#play-root .pl-hand"))e.preventDefault()},true);
+/* Nov 20: drop on a target: cards whose first choice is a target light up the legal targets while dragging; releasing on one plays the card at it */
+function dragTargets(uid){const s=view();if(!s||U.tgt)return null;const pl=s.p[U.me];const c=pl.hand.find(x=>x.uid===uid);if(!c)return null;const d=E.DB[c.id]||{};
+  const sc=SCR()[d.name];if(sc&&sc.modes)return null;if(d.cost==="X"||(sc&&sc.x))return null;
+  const o=legal().find(x=>x.type==="play"&&(x.uid===uid||(pl.hand.find(h=>h.uid===x.uid)||{}).id===c.id));if(!o)return null;
+  let sl=[];try{sl=E.need(s,U.me,Object.assign({},o,{uid}))}catch(e){return null}if(!sl.length||!sl[0].cands.length)return null;
+  const set=new Set(sl[0].cands);const els=[];document.querySelectorAll('#play-root [data-pa="obj"][data-u]').forEach(el=>{if(set.has(el.dataset.u)&&!(el.parentElement&&el.parentElement.closest(`[data-u="${el.dataset.u}"]`))){el.classList.add("dcand");els.push(el)}});
+  return{set,els,label:sl[0].label}}
+function dragMark(d){if(!d||!d.tg)return;if(d.tg.els.length&&d.tg.els.every(el=>el.isConnected))return;d.tg.els=[];document.querySelectorAll('#play-root [data-pa="obj"][data-u]').forEach(el=>{if(d.tg.set.has(el.dataset.u)&&!(el.parentElement&&el.parentElement.closest(`[data-u="${el.dataset.u}"]`))){el.classList.add("dcand");d.tg.els.push(el)}})}
+function dragHit(x,y,d){d=d||drag;if(!d||!d.tg)return null;dragMark(d);let hit=null;for(const el of document.elementsFromPoint(x,y)){const o=el.closest&&el.closest('#play-root [data-pa="obj"][data-u]');if(o&&d.tg.set.has(o.dataset.u)){hit=o;break}}
+  if(d.hit!==hit||(hit&&!hit.classList.contains("dhit"))){if(d.hit)d.hit.classList.remove("dhit");if(hit)hit.classList.add("dhit");d.hit=hit}return hit}
+function dragClear(d){if(d&&d.tg)d.tg.els.forEach(el=>el.classList.remove("dcand","dhit"));document.querySelectorAll("#play-root .dhit,#play-root .dcand").forEach(el=>el.classList.remove("dcand","dhit"))}
 function dragLine(){const hw=document.querySelector("#play-root .pl-handwrap");return hw?hw.getBoundingClientRect().top-8:innerHeight*0.7}
 function dragInfo(uid){const s=view();if(!s)return{ok:false,why:""};const c=s.p[U.me].hand.find(x=>x.uid===uid);if(!c)return{ok:false,why:""};
   if(U.tgt)return{ok:false,why:"Finish choosing targets first"};
@@ -903,7 +916,7 @@ document.addEventListener("pointermove",e=>{if(!drag||e.pointerId!==drag.id)retu
     drag.ox=Math.max(0,Math.min(r.width,drag.x-r.left));drag.oy=Math.max(0,Math.min(r.height,drag.y-r.top));
     g.querySelector(".hc-drag-in").style.transformOrigin=drag.ox+"px "+drag.oy+"px";
     g.style.transform=`translate3d(${(e.clientX-drag.ox).toFixed(1)}px,${(e.clientY-drag.oy).toFixed(1)}px,0)`;g.style.visibility="";
-    drag.on=true;drag.tilt=0;drag.info=dragInfo(drag.uid);drag.el.classList.add("dragsrc");document.documentElement.classList.add("pl-dragging");
+    drag.on=true;drag.tilt=0;drag.info=dragInfo(drag.uid);drag.tg=drag.info.ok?dragTargets(drag.uid):null;drag.el.classList.add("dragsrc");document.documentElement.classList.add("pl-dragging");
     try{drag.el.setPointerCapture(e.pointerId)}catch(err){}}
   e.preventDefault();drag.cx=e.clientX;drag.cy=e.clientY;
   if(!drag.raf)drag.raf=requestAnimationFrame(dragFrame)},{passive:false});
@@ -912,14 +925,18 @@ function dragFrame(){const d=drag;if(!d||!d.on)return;d.raf=0;const g=d.g,inf=d.
   g.style.transform=`translate3d(${(x-d.ox).toFixed(1)}px,${(y-d.oy).toFixed(1)}px,0)`;
   const want=Math.max(-12,Math.min(12,(x-(d.lx==null?x:d.lx))*0.9));d.lx=x;d.tilt+=(want-d.tilt)*0.35;if(Math.abs(d.tilt)<0.05)d.tilt=0;
   g.style.setProperty("--tilt",d.tilt.toFixed(2)+"deg");
-  const over=y<dragLine();if(over!==d.over){d.over=over;g.classList.toggle("over",over);g.classList.toggle("ok",over&&inf.ok);g.classList.toggle("no",over&&!inf.ok);
-    const tag=g.querySelector(".hc-drag-tag");if(tag)tag.textContent=over?(inf.ok?inf.label:inf.why):"Drag onto the board to play"}
+  const over=y<dragLine();const hit=dragHit(x,y);const hk=hit?hit.dataset.u:"";if(over!==d.over||hk!==d.hk){d.over=over;d.hk=hk;g.classList.toggle("over",over);g.classList.toggle("ok",over&&inf.ok);g.classList.toggle("no",over&&!inf.ok);
+    const nm=hit?((hit.getAttribute("aria-label")||"").split(",")[0]||"this target"):"";
+    const tag=g.querySelector(".hc-drag-tag");if(tag)tag.textContent=over?(inf.ok?(hit?`Release to play on ${nm}`:d.tg?`${inf.label} · or drop on a target`:inf.label):inf.why):"Drag onto the board to play"}
   if(d.tilt)d.raf=requestAnimationFrame(dragFrame)}/* keep easing the tilt back to level after the hand stops */
 function dragEnd(e,cancel){if(!drag||(e&&e.pointerId!==drag.id))return;const d=drag;drag=null;if(!d.on){if(d.g)d.g.remove();return}if(d.raf)cancelAnimationFrame(d.raf);
   dragEat=Date.now();d.g.remove();d.el.classList.remove("dragsrc");document.documentElement.classList.remove("pl-dragging");
-  if(cancel||!e||e.clientY>=dragLine())return;
+  const hit=!cancel&&e&&d.tg?dragHit(e.clientX,e.clientY,d):null;const tu=hit&&hit.dataset.u;dragClear(d);
+  if(cancel||!e||(e.clientY>=dragLine()&&!tu))return;
   const inf=dragInfo(d.uid);if(!inf.ok){toast(inf.why||"You can't play that card right now.");return}
-  closeModal();begin({type:"play",uid:d.uid})}
+  closeModal();begin({type:"play",uid:d.uid});
+  /* dropped on a legal target: use it as the first choice */
+  if(tu&&U.tgt&&U.tgt.i===0&&U.tgt.slots[0]&&U.tgt.slots[0].cands.includes(tu))pickTarget(tu)}
 document.addEventListener("pointerup",e=>dragEnd(e,false),true);
 document.addEventListener("pointercancel",e=>dragEnd(e,true),true);
 /* the click that ends a drag must not also open the card's window */

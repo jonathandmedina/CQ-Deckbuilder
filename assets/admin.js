@@ -280,6 +280,10 @@ function usersTab(){
       <td><label class="ad-sw"><input type="checkbox" data-ad-role="trials" data-uid="${E(u.id)}" data-nm="${E(u.name)}"${u.trials||u.is_admin?" checked":""}${u.is_admin?' disabled title="Admins always see Trials"':""}><span class="sr-only">Trials</span></label></td></tr>`).join("")||`<tr><td colspan="8" class="ad-empty">No players match.</td></tr>`}
   </tbody></table></div></section>`}
 
+/* ---------- Never playtested (Nov 20): every current Hero, card and piece of equipment that has never been in a deck in a finished Play-tab game (all time, all modes) ---------- */
+function untestedTab(){if(D.err)return`<div class="empty">Couldn't load game results: ${E(D.err)}</div>`;if(!D.rows)return`<p class="ad-empty">Loading game results…</p>`;
+  const played=new Set();for(const r of D.rows){(r.heroes||[]).forEach(n=>played.add(fixName(n)));for(const[n,q]of Object.entries(r.cards||{}))if(q>0)played.add(fixName(n))}
+  return window.CQUntestedHTML?window.CQUntestedHTML(played,D.rows.length):""}
 /* ---------- page ---------- */
 function emptyMsg(){return`<div class="empty">No finished games match these filters yet.${st.complete?" Try turning off <b>Complete games only</b> or picking a longer period.":""}</div>`}
 function playTab(){
@@ -300,11 +304,11 @@ function view(){
   if(!S.access)return`<h1>Admin</h1><p class="ad-empty">Checking access…</p>`;
   if(!S.access.admin)return`<h1>Admin</h1><div class="empty">This page is only for admins.</div>`;
   return`<h1>Admin</h1><p class="lede">Only you and other admins can see this page.</p>
-  <div class="chips ad-tabs" role="tablist">${[["play","Playtesting"],["users","Users"],["dep","Deprecated cards"]].map(([v,l])=>`<button type="button" class="chip" role="tab" data-ad-tab="${v}" aria-selected="${st.tab===v}" aria-pressed="${st.tab===v}">${l}</button>`).join("")}</div>
-  ${st.tab==="users"?usersTab():st.tab==="dep"?(window.CQDeprecatedHTML?window.CQDeprecatedHTML():""):playTab()}`}
+  <div class="chips ad-tabs" role="tablist">${[["play","Playtesting"],["untested","Never playtested"],["users","Users"],["dep","Deprecated cards"]].map(([v,l])=>`<button type="button" class="chip" role="tab" data-ad-tab="${v}" aria-selected="${st.tab===v}" aria-pressed="${st.tab===v}">${l}</button>`).join("")}</div>
+  ${st.tab==="users"?usersTab():st.tab==="dep"?(window.CQDeprecatedHTML?window.CQDeprecatedHTML():""):st.tab==="untested"?untestedTab():playTab()}`}
 function mount(el){injectCSS();root=el;
   if(SB&&S.uid&&S.access&&S.access.admin){
-    if(st.tab==="play"){if(!D.rows&&!D.loading||Date.now()-D.at>120000&&!D.loading)loadRows();if(!D.watch)loadWatch()}
+    if(st.tab==="play"||st.tab==="untested"){if(!D.rows&&!D.loading||Date.now()-D.at>120000&&!D.loading)loadRows();if(st.tab==="play"&&!D.watch)loadWatch()}
     if(st.tab==="users"&&!D.users)loadUsers()}
   el.innerHTML=view()}
 function rerender(){if(root&&root.isConnected&&S.view==="admin"){const y=scrollY;const a=document.activeElement,k=a&&a.dataset&&a.dataset.ad,pos=a&&a.selectionStart;mount(root);

@@ -327,7 +327,7 @@ def("Snuff Out",{t:[t("any","summon or Construct with 3 or less HP",(s,o)=>(o.ki
   /* Update 41: a Hero Construct is destroyed by taking it to 0 HP (it then dies like any Hero, and can't be revived) */
   if(o.kind==="hero"){o.dmg=E.maxHp(c.s,o);log(c,`${o.name} is destroyed (Snuff Out).`);return}destroy(c,o)}});
 def("Smash to Smithereens",{run(c){c.s.p.forEach(pl=>pl.bf.filter(o=>o.kind==="pillar").forEach(o=>destroy(c,o)));exMe(c)}});
-def("Farewell",{run(c){E.allObjs(c.s).filter(o=>o.kind!=="hero"&&!o.fd).forEach(o=>destroy(c,o));living(c.me).forEach(h=>h.ex=true)}});
+def("Catastrophe",{run(c){E.allObjs(c.s).filter(o=>o.kind!=="hero"&&!o.fd).forEach(o=>destroy(c,o));living(c.me).forEach(h=>h.ex=true)}});
 def("Ice Bath",{run(c){c.s.p.forEach(pl=>[...pl.heroes,...summons(pl)].forEach(o=>{if(o.st)o.st.burn=0}));log(c,"All Burn counters are removed.")}});
 def("Mocking Doll",{run(c){E.makeDoll(c.s,c.pid)}});
 def("Quick Change",{t:[t("allyEquip","your equipment"),t("allyHero","Hero to receive it")],run(c){const e=c.t[0],h=c.t[1];if(!e||!h||!E.canUseEq(c.s,h,e))return log(c,"That Hero can't use it.");const f=E.find(c.s,e.uid);if(f.hero===h)return;f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;E.equipTo(c.s,h,e)}});

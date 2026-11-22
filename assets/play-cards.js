@@ -82,7 +82,7 @@ def("Blood Offering",{run(c){E.loseHp(c.s,c.actor,3,"Blood Offering");c.me.aura+
 def("Disorient",{t:[ANY],run(c){st(c,c.t[0],"confuse")}});
 def("Fog of Darkness",{t:[ANY],run(c){if(c.x>0)st(c,c.t[0],"confuse",c.x)}}); /* update 21 */
 def("Mind Rend",{t:[HERO],run(c){const h=c.t[0];if(!h||h.dead)return;h.fl.rendRound=c.s.round;log(c,`${h.name}: when it deals damage this turn, the damaged party discards a card.`)}}); /* update 21 */
-def("Frailty",{t:[HERO],run(c){buff(c.t[0],{zeroDef:1});log(c,`${c.t[0].name}'s DEF is 0 until Dusk.`)}});
+def("Frailty",{t:[HERO],run(c){buff(c.t[0],{zeroDef:1});log(c,`${c.t[0].name}'s DEF is 0 until end of turn.`)}});
 def("Ritual of Pain",{run(c){pillar(c,"Pain Pillar");exMe(c)}});
 def("Dark Insight",{run(c){draw(c,1);pillar(c,"Pain Pillar");exMe(c)}});
 def("Splitting Ritual",{t:[t("allyPillar","your Pillar")],run(c){const p=c.t[0];if(!p)return;destroy(c,p);pillar(c,p.name,2);exMe(c)}});
@@ -138,7 +138,7 @@ def("Noble Choice",M(2,[{label:"Summon a 2/3 Soldier",run:c=>{summon(c,"Soldier"
 def("Pump",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:2})}});
 def("Blunt Force",{t:[cls("Barbarian")],run(c){buff(c.t[0],{str:4})}});
 /* Blood Frenzy v2: losing 3 HP is an additional cost (Ritual Athame sees it); +3 STR until Dusk */
-def("Blood Frenzy",{t:[cls("Barbarian")],run(c){const b=c.t[0];if(!b)return;E.costHp(c.s,c.pid,b,3,"Blood Frenzy cost");if(!b.dead){buff(b,{str:3});log(c,`${b.name} gains +3 STR until Dusk.`)}}});
+def("Blood Frenzy",{t:[cls("Barbarian")],run(c){const b=c.t[0];if(!b)return;E.costHp(c.s,c.pid,b,3,"Blood Frenzy cost");if(!b.dead){buff(b,{str:3});log(c,`${b.name} gains +3 STR until end of turn.`)}}});
 def("Bind",{t:[t("hero","Hero to exhaust (Level 3)",null,{opt:true})],run(c){buff(c.actor,{str:1});const h=c.t[0];if(c.actor.lvl>=3&&h&&dfn(c,h)<str(c,c.actor))E.exhaust(c.s,c.pid,h)}});
 def("Battered",{t:[HERO],run(c){D(c,c.t[0],dstr(c,c.actor,c.t[0]));if(c.me.disc.some(x=>x.id==="Bruised"))st(c,c.t[0],"wound")}});
 /* Nov 12, 2026: double this Hero's Strength (was Strength times the number of Barbarians) */
@@ -191,7 +191,7 @@ const medCtr=(c,h)=>{if(h&&h.med&&!h.dead){h.plus=(h.plus||0)+1;log(c,`${h.name}
 /* "If no Hero you control is Meditating, this Hero may Meditate." */
 const medMay=c=>{const a=c.actor;if(!a||a.dead||c.me.heroes.some(h=>h.med&&!h.dead))return;E.ask(c.s,c.pid,`${a.name} may Meditate`,[{label:`${a.name} Meditates`,v:a.uid},{label:"Don't Meditate",v:null}],"medMay",{name:c.def&&c.def.name})};
 E.ASK.medMay=(s,pid,pr,v)=>{if(v==null)return;const h=E.heroByUid(s,v);if(h&&!h.med)E.meditate(s,h)};
-def("Meditate",{run(c){E.meditate(c.s,c.actor);buff(c.actor,{def:3});log(c,`${c.actor.name} gets +3 DEF until Dusk.`)}});
+def("Meditate",{run(c){E.meditate(c.s,c.actor);buff(c.actor,{def:3});log(c,`${c.actor.name} gets +3 DEF until end of turn.`)}});
 def("Deep Contemplation",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){draw(c,1);medCtr(c,c.t[0]);medMay(c)}});
 def("Defend Prayer",{t:[t("any","damage target"),t("meditating","Meditating Hero for the counter",null,{opt:true})],run(c){D(c,c.t[0],2);medCtr(c,c.t[1]);medMay(c)}});
 def("Look Ahead",{t:[t("meditating","Meditating Hero",null,{opt:true})],run(c){medCtr(c,c.t[0]);scry(c,2);medMay(c)}});
@@ -210,7 +210,7 @@ song("Crescendo",Object.assign({t:[ANY]},{modes:{n:1,opts:[{label:"Deal 3 damage
 song("Dazzling Melody",{t:[t("enemyPlayer","target opponent")],run(c){const pl=c.me;if(pl.fl.tipRound===c.s.round){log(c,"Dazzling Melody: you already got a Tip this round.");return}pl.fl.tipRound=c.s.round;
   const g=E.stealGold(c.s,c.pid,E.oppOf(c.s,c.pid),1,"Dazzling Melody (Tip)");if(!g)log(c,"Dazzling Melody: the opponent has no Gold to tip.")}});
 song("Lullaby",{t:[t("any","target with 0 or less STR",(s,o)=>E.str(s,o)<=0)],run(c){if(c.t[0])E.exhaust(c.s,c.pid,c.t[0])}});
-song("Peace",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{zeroStr:1});log(c,`${c.t[0].name}'s Strength becomes 0 until Dusk.`)}if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
+song("Peace",{t:[HERO],run(c){if(c.t[0]){buff(c.t[0],{zeroStr:1});log(c,`${c.t[0].name}'s Strength becomes 0 until end of turn.`)}if(c.me.disc.some(x=>x.id==='"Understanding"'))draw(c,1)}});
 /* update 23: Harmonize X (other ready Heroes): draw X+1 cards and gain X+1 Aura */
 song("Rousing Chorus",{x:{label:"Harmonize X: how many other ready Heroes to exhaust",max:(s,pid,a)=>s.p[pid].heroes.filter(h=>!h.dead&&!h.ex&&h!==a).length,free:true},run(c){
   const n=c.echo?(c.x||0):Math.min(c.x||0,living(c.me).filter(h=>!h.ex&&h!==c.actor).length);if(!n){HARM.rousing(c,0);return}harmonize(c,n,"rousing")}});
@@ -401,7 +401,7 @@ hid("Hand of the Protector",["attack","card","afterDmg","party10","dusk"],null,c
   const tu=c.trig&&(c.trig.target||(c.trig.targets||[])[0]);const first=al.find(o=>o.uid===tu);const l=first?[first].concat(al.filter(o=>o!==first)):al.slice().sort((a,b)=>E.hp(c.s,b)-E.hp(c.s,a));
   E.ask(c.s,c.pid,"Hand of the Protector: target ally gains Defense equal to its Health Points until Dusk",l.map(o=>({label:`${o.name}${o.kind==="summon"?" (summon)":""}: +${E.hp(c.s,o)} DEF`,v:o.uid})),"handProtector",{name:"Hand of the Protector"})});
 S["Hand of the Protector"].hidden.summonPay=true;
-E.ASK.handProtector=(s,pid,pr,v)=>{const f=E.find(s,v);if(!f||f.o.dead)return;const n=E.hp(s,f.o);E.addMod(f.o,{def:n});E.log(s,`Hand of the Protector: ${f.o.name} gains +${n} DEF until Dusk.`,pid)};
+E.ASK.handProtector=(s,pid,pr,v)=>{const f=E.find(s,v);if(!f||f.o.dead)return;const n=E.hp(s,f.o);E.addMod(f.o,{def:n});E.log(s,`Hand of the Protector: ${f.o.name} gains +${n} DEF until end of turn.`,pid)};
 /* Burgle (update 18): only while every opposing Hero that isn't dead is exhausted */
 hid("Burgle",["attack","card","afterDmg","party10","dusk"],(s,pid)=>{const o=E.oppOf(s,pid);const op=E.living(s.p[o]);return!E.isBoss(s,o)&&op.length>0&&op.every(h=>h.ex)&&(s.p[o].gold||0)>0},c=>{E.stealGold(c.s,c.pid,E.oppOf(c.s,c.pid),5,"Burgle")});
 hid("Narrow Escape","card",(s,pid,trig)=>trig.card&&trig.cost>=3&&(trig.targets||[]).some(u=>{const f=E.find(s,u);return f&&f.pid===pid&&f.o.kind==="hero"&&E.heroIs(f.o,"Rogue")}),c=>{c.mods.cancel=true});
@@ -601,7 +601,7 @@ OPS.fromDisc=(s,pid,pr,picks)=>{const pl=s.p[pid];picks.forEach(u=>{const i=pl.d
 /* ===== Set 2: Artificer (Set Two Rules Supplement) ===== */
 /* Ingots (Material, formerly the Metal subtype): generic items; each has its own use (Exile). Artificers also use them as ingredients. */
 def("Copper Ingot",item(0,[],c=>{c.me.aura+=1;log(c,`${c.me.name} gains 1 Aura.`)},{exile:true}));
-def("Iron Ingot",item(0,[AL],c=>{if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 Defense until Dusk.`)}},{exile:true}));
+def("Iron Ingot",item(0,[AL],c=>{if(c.t[0]){buff(c.t[0],{def:2});log(c,`${c.t[0].name} gains +2 Defense until end of turn.`)}},{exile:true}));
 def("Mithril Ingot",item(0,[],c=>draw(c,2),{exile:true}));
 /* Quicksilver: no effect of its own; Craft can use it as any ingredient (E.craftPlan) */
 S["Quicksilver"]={};

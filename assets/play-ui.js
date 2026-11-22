@@ -457,7 +457,8 @@ function heroHL(ph){const hand=document.querySelector(".pl-hand");if(!hand)retur
 ["mouseout","focusout"].forEach(ev=>document.addEventListener(ev,e=>{const ph=e.target.closest&&e.target.closest(".ph[data-u]");if(ph&&!(e.relatedTarget&&ph.contains(e.relatedTarget)))heroHL(null)}));
 const TCSS=`/* Trials board (Plan B+C): boss bar, Golems, compact helper parties */
 .tr-boss{border:2px solid #8a3b2a;border-radius:12px;padding:8px 12px;background:linear-gradient(#3a1d16,#22120d);display:grid;gap:6px;margin-bottom:8px}
-.tr-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:.9rem}
+.tr-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:.9rem;border-radius:10px;padding:2px 4px;border:2px solid transparent}
+.tr-bar.cand{cursor:pointer;border-color:rgba(255,138,112,.55);background:rgba(255,138,112,.07)}
 .tr-bname{all:unset;cursor:pointer;font:700 1.05rem/1.2 var(--display,var(--body));color:#f7d9a8;padding:2px 8px;border-radius:8px;border:2px solid transparent}
 .tr-bname.cand{border-color:var(--warn,#FF8A70);box-shadow:0 0 0 3px rgba(255,138,112,.35)}
 .tr-hp{display:inline-flex;align-items:center;gap:6px}.tr-hpb{display:inline-block;width:180px;max-width:38vw;height:12px;border-radius:6px;background:rgba(0,0,0,.45);overflow:hidden;border:1px solid #6d3a2a}
@@ -528,20 +529,21 @@ function bossPips(n,max,cls,title){let o="";for(let i=0;i<max;i++)o+=`<i class="
 function bossHTML(s){const T=window.CQT;const b=T.bossState(s);const st=s.trials;const h=T.bossHero(s);
   const cands=U.tgt?new Set(U.tgt.slots[U.tgt.i].cands):new Set();
   const pct=Math.max(0,Math.min(100,b.hp/Math.max(1,b.max)*100));
-  const tags=[b.winded?'<span class="tr-tag wind" title="0 Defense until its next flip">Winded</span>':"",b.skin?`<span class="tr-tag skin" title="+${b.skin} Defense until its next flip">Stone Skin</span>`:"",
+  const tags=[b.winded?'<span class="tr-tag wind" title="0 Defense until its next turn">Winded</span>':"",b.skin?`<span class="tr-tag skin" title="+${b.skin} Defense until its next turn">Stone Skin</span>`:"",
     ...E.STATUS.filter(k=>h.st[k]).map(k=>`<span class="tr-tag st">${E.STATUS_NAME[k]} ${h.st[k]}</span>`)].join("");
   const left=Math.max(0,b.rageAt-b.rage);
-  const lf=b.lastFlip?(b.lastFlip.kind==="stampede"?`<b>Raging Stampede</b> → every player Hero`:b.lastFlip.kind==="skip"?"skipped (Stunned or exhausted)":`<b>${esc(b.lastFlip.card)}</b>${b.lastFlip.targets.length?" → "+b.lastFlip.targets.map(esc).join(", "):""}`):"none yet";
+  const one=f=>f.kind==="stampede"?`<b>Raging Stampede</b> → every player Hero`:f.kind==="skip"?"skipped (Stunned or exhausted)":`<b>${esc(f.card)}</b>${f.targets.length?" → "+f.targets.map(esc).join(", "):""}`;
+  const lf=b.lastTurn&&b.lastTurn.length?b.lastTurn.map(one).join(" · "):"none yet";
   const golems=b.spawns.slice().sort((x,y)=>(y.pid===U.me)-(x.pid===U.me)||x.pid-y.pid).map(g=>{const nm=g.pid===U.me?"You":esc(s.p[g.pid].name.replace(/ · .*$/,""));
     const list=s.p[st.boss].bf.filter(o=>o.spawn&&o.fl.vs===g.pid).map(o=>{const okT=E.trialsTargetOk(s,U.me,o);const html=summonHTML(s,o,okT?cands:new Set());
       return okT?`<span class="tr-golem">${html}</span>`:`<span class="tr-golem dim" title="Deal with your own Golem first.">${html}</span>`}).join("");
     return`<div class="tr-gcol"><span class="lbl">vs ${nm}</span>${list||'<span class="pl-note">—</span>'}</div>`}).join("");
   return`<section class="tr-boss" aria-label="${esc(b.name)}">
-    <div class="tr-bar"><button type="button" class="tr-bname${cands.has(h.uid)?" cand":""}" data-pa="obj" data-u="${h.uid}" title="${esc(b.name)} (counts as an enemy Hero)">${esc(b.name)}</button>
+    <div class="tr-bar${cands.has(h.uid)?" cand":""}"${cands.has(h.uid)?` data-pa="obj" data-u="${h.uid}" title="Tap anywhere on the boss bar to target ${esc(b.name)}"`:""}><button type="button" class="tr-bname${cands.has(h.uid)?" cand":""}" data-pa="obj" data-u="${h.uid}" title="${esc(b.name)} (counts as an enemy Hero)">${esc(b.name)}</button>
       <span class="tr-hp" role="img" aria-label="${b.hp} of ${b.max} Health Points"><span class="tr-hpb"><i style="width:${pct.toFixed(1)}%"></i></span><b>${b.hp}/${b.max}</b> HP</span>
       <span class="tr-def" title="Defense: 1 per Stone Plate${b.skin?", plus Stone Skin":""}${b.winded?" (Winded: 0)":""}">Defense <b>${b.def}</b> ${bossPips(b.plates,b.platesMax,"plate","Stone Plates: "+b.plates+" of "+b.platesMax)}</span>
-      <span class="tr-rage" title="Raging Stampede at ${b.rageAt} Rage">Rage ${bossPips(b.rage,b.rageAt,"rage","Rage "+b.rage+" of "+b.rageAt)} <small>(${left?left+" to Stampede":"Stampede next flip"})</small></span>${tags}</div>
-    <div class="tr-flip"><span>Boss deck <b>${b.deck}</b></span><span>Last flip: ${lf}</span></div>
+      <span class="tr-rage" title="Raging Stampede at ${b.rageAt} Rage">Rage ${bossPips(b.rage,b.rageAt,"rage","Rage "+b.rage+" of "+b.rageAt)} <small>(${left?left+" to Stampede":"Stampede on its turn"})</small></span>${tags}</div>
+    <div class="tr-flip"><span>Boss deck <b>${b.deck}</b></span><span title="The boss takes its turn after every party passes: spawns attack, then it reveals one card per party.">Last turn: ${lf}</span></div>
     <div class="tr-golems"><span class="lbl">Golems</span>${golems}</div></section>`}
 function trialsGameHTML(s,opts){const me=U.me;const helpers=E.parties(s).filter(p=>p!==me).sort((a,b)=>a-b);
   return`<div class="pl-game trials${U.logHidden?" nolog":""}"><button class="btn sm pl-logshow" data-pa="log-toggle" title="Show the game log">Show log</button><div class="pl-board">
@@ -555,15 +557,15 @@ function trialsGameHTML(s,opts){const me=U.me;const helpers=E.parties(s).filter(
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
     <div class="pl-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Dimmed Golem = deal with your own first</span></div>
   </aside></div>`}
-/* boss flips and Raging Stampede pop up like opponent actions, with the boss card shown large */
+/* boss reveals and Raging Stampede pop up like opponent actions, with the boss card shown large */
 function trialsPops(s){if(!s.trials||!window.CQPop)return;const ev=s.trials.events||[];if(U.evFor!==U.gameKey){U.evFor=U.gameKey;U.evSeen=ev.length?ev[ev.length-1].n:0;return}
   const fresh=ev.filter(e=>e.n>U.evSeen);if(!fresh.length)return;U.evSeen=fresh[fresh.length-1].n;
   const bn=s.p[s.trials.boss].name;const T=window.CQT;const h=T.bossHero(s);
-  fresh.slice(-3).forEach(e=>{const objs=[];s.p.forEach(pl=>pl.heroes.forEach(x=>objs.push(x)));const tu=(e.targets||[]).map(n=>(objs.find(o=>o.name===n)||{}).uid).filter(Boolean);
-    if(e.kind==="skip"){CQPop.push({who:bn,boss:true,cardId:null,verb:"",name:"skips its flip",dest:"",sub:"It was Stunned or exhausted.",actorU:h&&h.uid,targetU:[]});return}
-    if(e.kind==="stampede"){const c=byName(bn);CQPop.push({who:bn+" · boss ability",boss:true,cardId:c?c.id:null,verb:"does",name:"Raging Stampede",dest:"every player Hero",sub:`${s.trials.stampede} damage to each Hero; it's Winded (0 Defense) until its next flip.`,actorU:h&&h.uid,targetU:tu});return}
+  fresh.slice(-5).forEach(e=>{const objs=[];s.p.forEach(pl=>pl.heroes.forEach(x=>objs.push(x)));const tu=(e.targets||[]).map(n=>(objs.find(o=>o.name===n)||{}).uid).filter(Boolean);
+    if(e.kind==="skip"){CQPop.push({who:bn,boss:true,cardId:null,verb:"",name:"skips a reveal",dest:"",sub:"It was Stunned or exhausted.",actorU:h&&h.uid,targetU:[]});return}
+    if(e.kind==="stampede"){const c=byName(bn);CQPop.push({who:bn+" · boss ability",boss:true,cardId:c?c.id:null,verb:"does",name:"Raging Stampede",dest:"every player Hero",sub:`${s.trials.stampede} damage to each Hero; it's Winded (0 Defense) until its next turn.`,actorU:h&&h.uid,targetU:tu});return}
     const c=byName(e.card);const row=(typeof TRIALS_BOSS_CARDS!=="undefined"?TRIALS_BOSS_CARDS:[]).find(r=>r[0]===e.card);
-    CQPop.push({who:bn+" · boss flip",boss:true,cardId:c?c.id:null,verb:"flips",name:e.card,dest:(e.targets||[]).join(", "),sub:row?row[4]:"",actorU:h&&h.uid,targetU:tu})})}
+    CQPop.push({who:bn+" · boss turn",boss:true,cardId:c?c.id:null,verb:"reveals",name:e.card,dest:(e.targets||[]).join(", "),sub:row?row[4]:"",actorU:h&&h.uid,targetU:tu})})}
 function trialsLobbyHTML(){const L=U.lobby.t;const pc=partyChoices();if(!L.party||!pc.some(c=>c.id===L.party&&c.ok))L.party=(pc.find(c=>c.ok)||{}).id||"";
   const res=store2.get(TKEY,null);const run=trialRun();
   const popt=sel=>pc.map(c=>`<option value="${esc(c.id)}" ${c.id===sel?"selected":""} ${c.ok?"":"disabled"}>${esc(c.name)}</option>`).join("");
@@ -1640,7 +1642,10 @@ function tgtPopHTML(){const t=U.tgt;if(!t||t.i>=t.slots.length)return"";const sl
 function markPicks(root){const t=U.tgt;if(!t)return;t.picks.forEach((u,i)=>{if(!u)return;root.querySelectorAll(`[data-u="${String(u).replace(/["\\]/g,"")}"]`).forEach(el=>{if(el.parentElement&&el.parentElement.closest(`[data-u="${el.dataset.u}"]`))return;el.classList.add("tpicked");el.classList.remove("cand");el.dataset.pn=String(t.picks.slice(0,i+1).filter(Boolean).length)})})}
 function skipEmpty(){const t=U.tgt;while(t&&t.i<t.slots.length&&!t.slots[t.i].cands.filter(u=>!(t.slots[t.i].distinct&&t.picks.includes(u))).length){t.picks.push(null);t.i++}
   if(t&&t.i>=t.slots.length){const a=Object.assign({},t.a,{targets:t.picks});U.tgt=null;send(a)}}
-function pickTarget(u){const t=U.tgt;if(!t)return;const sl=t.slots[t.i];if(!sl.cands.includes(u)){toast("That isn't a legal target.");return}
+function pickTarget(u){const t=U.tgt;if(!t)return;const sl=t.slots[t.i];if(!sl.cands.includes(u)){
+    /* say what was tapped, so a report pins down the miss (Trials fix queue item 1, Nov 22) */
+    const s0=view();const f=s0&&u&&E.find(s0,u);const o=f&&f.o;const nm=o&&o.name;
+    toast(o&&o.spawn&&s0.trials&&!E.trialsTargetOk(s0,U.me,o)?`Deal with your own ${nm} first.`:nm?`${nm} isn't a legal target for this.`:"That isn't a legal target.");return}
   if(sl.distinct&&t.picks.includes(u)){toast("Choose a different target.");return}
   t.picks.push(u);t.i++;if(t.i<t.slots.length){skipEmpty();render();return}
   const a=Object.assign({},t.a,{targets:t.picks});U.tgt=null;send(a)}

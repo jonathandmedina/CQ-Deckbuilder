@@ -1,7 +1,8 @@
 /* Riverstead Trials boss runtime (co-op boss module, Trials Plan B+C).
    Loaded after play-engine.js and before play-cards.js. Registers itself on CQE.hooks; the engine calls it only in Trials games (s.trials),
    so 1-on-1 games never touch this file. Every number comes from trials-data.js (TRIALS_BOSSES, TRIALS_BOSS_CARDS, TRIALS_SPAWNS, TRIALS_LOOT).
-   Boss state lives in s.trials: {deck, disc, plates, rage, rageAt, winded, skin, skipNext, lastFlip, events, dealt}.
+   Boss state lives in s.trials: {deck, disc, plates, rage, rageAt, winded, skin, skipNext (reveals to skip), lastFlip, lastTurn, events, dealt}.
+   The boss acts once per round (E.hooks.bossTurn), after every party passes and before Dusk.
    Every random choice (boss deck shuffle, loot reveal) uses the engine's seeded rng, so a Trial replays exactly from its seed. */
 "use strict";
 (function(root){
@@ -27,7 +28,7 @@ T.syncDef=syncDef;
 
 /* ---------- setup ---------- */
 T.setup=function(s){const st=s.trials;const P=st.parties;const row=bossRow(st.trial);const R=bossRules(row);const sp=spawnRow(row[0]);
-  Object.assign(st,{bossName:row[0],baseDef:+row[3]||0,plates:(+row[4]||0)*P,rage:0,rageAt:P+R.rageExtra,stampede:R.stampede,winded:false,skin:0,skipNext:false,lastFlip:null,events:[],disc:[],dealt:{round:0,by:{}},spawn:sp?sp[0]:null,exSeen:false,stunSeen:0});
+  Object.assign(st,{bossName:row[0],baseDef:+row[3]||0,plates:(+row[4]||0)*P,rage:0,rageAt:P+R.rageExtra,stampede:R.stampede,winded:false,skin:0,skipNext:0,lastFlip:null,events:[],disc:[],dealt:{round:0,by:{}},spawn:sp?sp[0]:null,exSeen:false,stunSeen:0});
   const h=E.mkBossHero(s,row[0],(+row[2]||0)*P,0);bossSide(s).heroes.push(h);bossSide(s).name=row[0];
   if(sp&&!E.TOK[sp[0]])E.TOK[sp[0]]={name:sp[0],tkind:"Spawn",sub:"Spawn",cls:"Trials",str:+sp[2]||0,def:+sp[3]||0,hp:+sp[4]||1,cost:0,region:"",rules:sp[5]||""};
   st.deck=[];BCARDS.filter(r=>r[1]===row[0]).forEach(r=>{for(let i=0;i<(+r[2]||0);i++)st.deck.push(r[0])});E.shuffle(s,st.deck);
@@ -59,7 +60,7 @@ T.targetOf=function(s,name){const L=heroList(s);const hp=x=>E.hp(s,x.h);
     const x=pick(s,leads,x=>x.d);return x?[x.h]:[]}
   case"Rockslide":{const ps=liveParties(s).map(pid=>{const hs=s.p[pid].heroes.filter(h=>!h.dead);return{pid,hs,t:hs.reduce((n,h)=>n+E.hp(s,h),0),d:hs.reduce((n,h)=>n+E.defn(s,h),0),oi:E.parties(s).indexOf(pid)}});
     const x=ps.sort((a,b)=>b.t-a.t||a.d-b.d||a.oi-b.oi)[0];return x?x.hs:[]}
-  case"Tremor":return liveParties(s).map(pid=>pick(s,L.filter(x=>x.pid===pid&&!x.h.ex),x=>E.str(s,x.h))).filter(Boolean).map(x=>x.h);
+  case"Tremor":return liveParties(s).map(pid=>pick(s,L.filter(x=>x.pid===pid&&!x.h.fat),x=>E.str(s,x.h))).filter(Boolean).map(x=>x.h);
   case"Call the Mountain":{const ps=liveParties(s).map((pid,oi)=>({pid,n:spawnsVs(s,pid).length,oi}));const x=ps.sort((a,b)=>a.n-b.n||a.oi-b.oi)[0];return x?{summonVs:[x.pid]}:{summonVs:[]}}
   case"The Mountain Wakes":return{summonVs:liveParties(s)};
   case"Stone Skin":return[bossHero(s)];
@@ -68,38 +69,47 @@ T.targetOf=function(s,name){const L=heroList(s);const hp=x=>E.hp(s,x.h);
 T.spawnTarget=function(s,o){const n=s.trials.parties;for(let k=0;k<n;k++){const pid=(o.fl.vs+k)%n;if(E.wiped(s,pid))continue;
     const L=heroList(s).filter(x=>x.pid===pid);const x=pick(s,L,x=>E.hp(s,x.h));if(x)return x.h}return null};
 
-/* ---------- after each sweep: the boss flips (or skips, or Stampedes), then every spawn attacks ---------- */
-T.afterSweep=function(s){const st=s.trials;if(s.over)return;const h=bossHero(s);if(!h||h.dead)return;
-  T.checkSkip(s);
-  if(st.skipNext){st.skipNext=false;E.log(s,`${h.name} is Stunned or exhausted and skips its flip.`);ev(s,{kind:"skip",card:null,targets:[]});st.lastFlip={kind:"skip",card:null,targets:[]};T.seen(s);return}
-  if(st.rage>=st.rageAt){st.skin=0;const ts=heroList(s).map(x=>x.h);E.log(s,`💢 ${h.name} does Raging Stampede: ${st.stampede} damage to every player Hero.`);
-    st.lastFlip={kind:"stampede",card:"Raging Stampede",targets:ts.map(t=>t.name)};ev(s,st.lastFlip);
-    ts.forEach(t=>{if(!s.over&&!t.dead)E.withSrc(s,"Raging Stampede",()=>E.damage(s,h,t,st.stampede,{card:true,srcName:"Raging Stampede"}))});
-    st.rage=0;st.winded=true;st.stampedes=(st.stampedes||0)+1;syncDef(s);E.log(s,`${h.name} is Winded (0 Defense until its next flip).`)}
-  else{st.skin=0;st.winded=false;
-    if(!st.deck.length){st.deck=st.disc.splice(0);E.shuffle(s,st.deck);E.log(s,`${h.name} shuffles its boss deck.`)}
-    const card=st.deck.pop();st.disc.push(card);syncDef(s);resolveCard(s,card)}
-  if(s.over)return;
-  bossSide(s).bf.filter(o=>o.kind==="summon"&&o.spawn).forEach(o=>{if(s.over||E.hp(s,o)<=0||!bossSide(s).bf.includes(o))return;
+/* ---------- the boss turn (Nov 22, 2026): once per round, after every party passes and before Dusk.
+   Every spawn attacks first, then the boss reveals one card per party still in the Trial. Raging Stampede replaces one reveal;
+   each Stun or exhaust on the boss skips one reveal. Stone Skin and Winded last until the boss's next turn. ---------- */
+function spawnsAttack(s){bossSide(s).bf.filter(o=>o.kind==="summon"&&o.spawn).forEach(o=>{if(s.over||E.hp(s,o)<=0||!bossSide(s).bf.includes(o))return;
     if(o.st&&o.st.stun>0){E.log(s,`${o.name} is Stunned and doesn't attack.`);return}
-    const t=T.spawnTarget(s,o);if(!t)return;E.log(s,`⚔ ${o.name} attacks ${t.name}.`);E.damage(s,o,t,E.str(s,o),{combat:true})});
-  T.seen(s)};
+    const t=T.spawnTarget(s,o);if(!t)return;E.log(s,`⚔ ${o.name} attacks ${t.name}.`);E.damage(s,o,t,E.str(s,o),{combat:true})})}
+T.spawnsAttack=spawnsAttack;
+function stampede(s){const st=s.trials,h=bossHero(s);const ts=heroList(s).map(x=>x.h);E.log(s,`💢 ${h.name} does Raging Stampede: ${st.stampede} damage to every player Hero.`);
+  st.lastFlip={kind:"stampede",card:"Raging Stampede",targets:ts.map(t=>t.name)};ev(s,st.lastFlip);
+  ts.forEach(t=>{if(!s.over&&!t.dead)E.withSrc(s,"Raging Stampede",()=>E.damage(s,h,t,st.stampede,{card:true,srcName:"Raging Stampede"}))});
+  st.rage=0;st.winded=true;st.stampedes=(st.stampedes||0)+1;syncDef(s);E.log(s,`${h.name} is Winded (0 Defense until its next turn).`)}
+function reveal(s){const st=s.trials,h=bossHero(s);
+  if(st.skipNext>0){st.skipNext--;E.log(s,`${h.name} was Stunned or exhausted and skips a reveal.`);st.lastFlip={kind:"skip",card:null,targets:[]};ev(s,st.lastFlip);return}
+  if(st.rage>=st.rageAt){stampede(s);return}
+  if(!st.deck.length){st.deck=st.disc.splice(0);E.shuffle(s,st.deck);E.log(s,`${h.name} shuffles its boss deck.`)}
+  const card=st.deck.pop();st.disc.push(card);resolveCard(s,card)}
+T.bossTurn=function(s){const st=s.trials;if(s.over)return;const h=bossHero(s);if(!h||h.dead)return;
+  T.checkSkip(s);
+  if(st.skin||st.winded){st.skin=0;st.winded=false;syncDef(s);E.log(s,`${h.name}'s Stone Skin and Winded end (Defense ${E.defn(s,h)}).`)}
+  const n=liveParties(s).length;E.log(s,`— ${h.name}'s turn: spawns attack, then it reveals ${n} card${n===1?"":"s"} —`);
+  spawnsAttack(s);const ev0=st.evN||0;
+  for(let k=0;k<n&&!s.over&&!h.dead;k++)reveal(s);
+  st.lastTurn=(st.events||[]).filter(e=>e.n>ev0).map(e=>({kind:e.kind,card:e.card,targets:e.targets||[]}));
+  st.skipNext=0;T.seen(s)};
 function resolveCard(s,card){const st=s.trials;const h=bossHero(s);const row=cardRow(card)||[card,"",0,"",""];const eff=row[4]||"";const n=num(/Deal (\d+) damage/i,eff,0);
   const tg=T.targetOf(s,card);const names=Array.isArray(tg)?tg.map(t=>t.name):(tg.summonVs||[]).map(p=>s.p[p].name);
   st.lastFlip={kind:"flip",card,targets:names};ev(s,st.lastFlip);
-  E.log(s,`🂠 ${h.name} flips ${card}${names.length?" → "+names.join(", "):""}.`);
+  E.log(s,`🂠 ${h.name} reveals ${card}${names.length?" → "+names.join(", "):""}.`);
   E.withSrc(s,card,()=>{
-    if(card==="Stone Skin"){st.skin=num(/\+(\d+) Defense/i,eff,2);syncDef(s);E.log(s,`${h.name} gets +${st.skin} Defense until its next flip (Defense ${E.defn(s,h)}).`);return}
-    if(card==="Tremor"){tg.forEach(t=>{E.exhaust(s,s.trials.boss,t,"Tremor")});return}
+    if(card==="Stone Skin"){st.skin=num(/\+(\d+) Defense/i,eff,2);syncDef(s);E.log(s,`${h.name} gets +${st.skin} Defense until its next turn (Defense ${E.defn(s,h)}).`);return}
+    if(card==="Tremor"){tg.forEach(t=>{if(E.cantExhaust(s,t,s.trials.boss)){E.log(s,`${t.name} can't be exhausted or Fatigued by enemy cards or abilities (Stampede Boots).`);return}t.fat=(t.fat||0)+1;t.fl.fatRested=false;E.log(s,`Tremor: ${t.name} gets a Fatigue counter (it won't ready at the next Dawn).`)});return}
     if(!Array.isArray(tg)){(tg.summonVs||[]).forEach(p=>spawnVs(s,p));return}
     tg.forEach(t=>{if(!s.over&&!t.dead&&n>0)E.damage(s,h,t,n,{card:true,srcName:card})})})}
 T.resolveCard=resolveCard;
 
-/* Stun or exhaust on the boss (any card or ability) makes it skip its next flip; it readies right away (it has no actions to lose) */
-T.checkSkip=function(s){const st=s.trials,h=bossHero(s);if(!h||h.dead)return;
-  if(h.ex){h.ex=false;st.skipNext=true;E.log(s,`${h.name} was exhausted: it will skip its next flip.`)}
-  if((h.st.stun||0)>(st.stunSeen||0)){st.skipNext=true;E.log(s,`${h.name} was Stunned: it will skip its next flip.`)}};
-T.seen=s=>{const h=bossHero(s);if(h)s.trials.stunSeen=h.st.stun||0};
+/* Stun or exhaust on the boss (any card or ability) makes it skip one reveal on its next turn; it readies right away (it has no actions to lose) */
+T.checkSkip=function(s){const st=s.trials,h=bossHero(s);if(!h||h.dead)return;st.skipNext=+st.skipNext||0;
+  if(h.ex){h.ex=false;st.skipNext++;E.log(s,`${h.name} was exhausted: it skips a reveal this turn.`)}
+  /* each Stun counter skips one reveal and is used up here (statuses tick down at Dawn, so counting increases would miss a new Stun) */
+  const n=h.st.stun||0;if(n>0){st.skipNext+=n;h.st.stun=0;E.log(s,`${h.name} was Stunned: it skips ${n} reveal${n===1?"":"s"} this turn.`)}};
+T.seen=s=>{s.trials.stunSeen=0};
 
 /* a spawn dies: break a Stone Plate and add a Rage counter (new spawns never repair plates) */
 T.onSummonDies=function(s,o){if(!o.spawn)return;const st=s.trials;const was=st.plates;st.plates=Math.max(0,st.plates-1);st.rage+=1;syncDef(s);
@@ -111,7 +121,7 @@ T.noteDamage=function(s,side,n){const st=s.trials;if(!st||side==null||E.isBoss(s
 
 T.bossState=function(s){const st=s.trials;if(!st)return null;const h=bossHero(s);
   return{name:h&&h.name,hp:h?E.hp(s,h):0,max:h?E.maxHp(s,h):0,def:h?E.defn(s,h):0,plates:st.plates,platesMax:st.parties*(+bossRow(st.trial)[4]||0),rage:st.rage,rageAt:st.rageAt,winded:st.winded,skin:st.skin,
-    deck:st.deck.length,disc:st.disc.length,lastFlip:st.lastFlip,spawns:E.parties(s).map(p=>({pid:p,list:spawnsVs(s,p).map(o=>({uid:o.uid,name:o.name,hp:E.hp(s,o),max:E.maxHp(s,o)}))}))}};
+    deck:st.deck.length,disc:st.disc.length,lastFlip:st.lastFlip,lastTurn:st.lastTurn||(st.lastFlip?[st.lastFlip]:[]),spawns:E.parties(s).map(p=>({pid:p,list:spawnsVs(s,p).map(o=>({uid:o.uid,name:o.name,hp:E.hp(s,o),max:E.maxHp(s,o)}))}))}};
 T.lootPool=trial=>LOOT.map(r=>r[0]);
 /* Loot (supplement section 10): on a win, reveal one loot card per party plus one, from the Trial's pool, with the seeded rng. Revealed once per game. */
 T.lootReveal=function(s,n){const st=s.trials;if(!st)return[];if(st.lootShown)return st.lootShown.slice();const pool=T.lootPool(st.trial).slice();E.shuffle(s,pool);
@@ -132,5 +142,5 @@ T.partyFromStarter=function(st,list,pick){const DB=E.DB;const hs=pick.map(i=>"h:
 T.trialsStarters=(ST,SL)=>ST.map((st,i)=>T.partyFromStarter(st,SL[i],PICKS[i]||[0,1]));
 
 E.hooks.onDamage=(s,src,tgt,n,side)=>{if(tgt&&tgt.boss)T.noteDamage(s,side,n)};
-E.hooks.setup=T.setup;E.hooks.afterSweep=T.afterSweep;E.hooks.onSummonDies=T.onSummonDies;
+E.hooks.setup=T.setup;E.hooks.bossTurn=T.bossTurn;E.hooks.onSummonDies=T.onSummonDies;
 })(typeof window!=="undefined"?window:globalThis);

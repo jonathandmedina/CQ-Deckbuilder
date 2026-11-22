@@ -10,7 +10,7 @@ FAKE_SB = """window.supabase={createClient(){const res=d=>({data:d,error:null});
  return{auth:{getSession:async()=>res({session:{user}}),getUser:async()=>res({user}),
    onAuthStateChange:cb=>{setTimeout(()=>cb('SIGNED_IN',{user}),0);return{data:{subscription:{unsubscribe(){}}}}},signOut:async()=>res(null)},
   rpc:async(n,a)=>{window.__RPC.push([n,a]);if(n==='my_access')return res(window.__ACCESS__);if(n==='admin_list_users')return res(window.__USERS__||[]);return res(null)},
-  from:()=>chain(),channel:()=>({on(){return this},subscribe(){return this}}),removeChannel(){}}}};"""
+  from:()=>chain(),channel:()=>({on(){return this},subscribe(){return this},send(){},track(){},untrack(){},presenceState(){return{}}}),removeChannel(){}}}};"""
 NAMES = ["Rock Mammoth","Golem","Crag Helm","Tusk Gore","Raging Stampede","Stoneplate Mantle"]
 
 def serve():
@@ -91,7 +91,7 @@ def main():
                 check("Trials Supplement" in text(pg), f"[{w}] {acc}: no Trials rules tab")
                 pg.goto(f"http://127.0.0.1:{port}/index.html#trials-rules"); pg.wait_for_timeout(1000)
                 t = text(pg)
-                for term in ["Trial", "Boss flip", "Spawn", "Stone Plate", "Rage", "Raging Stampede", "Winded", "Loot", "Intelligence Level"]:
+                for term in ["Trial", "Boss turn", "Spawn", "Stone Plate", "Rage", "Raging Stampede", "Winded", "Loot", "Intelligence Level"]:
                     check(term in t, f"[{w}] {acc}: supplement glossary missing {term}")
                 check(not errs, f"[{w}] {acc}: console errors {errs[:3]}")
                 ctx.close()

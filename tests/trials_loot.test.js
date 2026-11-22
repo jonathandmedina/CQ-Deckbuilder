@@ -27,8 +27,8 @@ test("Crag Helm: +1 Defense (upgraded +2); can't be Stunned",()=>both((s,a)=>{co
 test("Stampede Boots: +1 Defense; enemy cards and abilities can't exhaust it (allies still can)",()=>both((s,a,b)=>{const h=s.p[a].heroes[0];setH(h,{def:0});gear(s,h,"Stampede Boots");eq(E.defn(s,h),1);
   ctx.CQ_SCRIPTS["Sleep"].run(E.mkCtx(s,b===2?2:b,null,E.DB["Sleep"],null,[h.uid]));ok(!h.ex,"enemy Sleep");ctx.CQ_SCRIPTS["Sleep"].run(E.mkCtx(s,a,null,E.DB["Sleep"],null,[h.uid]));ok(h.ex,"your own card can");
   const h2=s.p[a].heroes[1];setH(h2,{def:0});gear(s,h2,"Stampede Boots",true);eq(E.defn(s,h2),2)}));
-test("Stampede Boots in a Trial: Tremor can't exhaust it",()=>{const s=trial(9);s.p.slice(0,2).forEach(pl=>pl.heroes.forEach(h=>setH(h,{str:1,def:0,hp:10})));const h=s.p[0].heroes[0];setH(h,{str:5});gear(s,h,"Stampede Boots");
-  ctx.CQT.resolveCard(s,"Tremor");ok(!h.ex)});
+test("Stampede Boots in a Trial: Tremor can't Fatigue it",()=>{const s=trial(9);s.p.slice(0,2).forEach(pl=>pl.heroes.forEach(h=>setH(h,{str:1,def:0,hp:10})));const h=s.p[0].heroes[0];setH(h,{str:5});gear(s,h,"Stampede Boots");
+  ctx.CQT.resolveCard(s,"Tremor");ok(!h.ex);ok(!h.fat,"no Fatigue")});
 test("Stoneplate Mantle: +1 Defense; the first time each game it would die, it stays at 1 Health Point",()=>both((s,a)=>{const h=s.p[a].heroes[0];setH(h,{def:0,hp:10});gear(s,h,"Stoneplate Mantle");eq(E.defn(s,h),1);
   E.damage(s,null,h,50,{ignoreDef:true});ok(!h.dead);eq(E.hp(s,h),1);E.damage(s,null,h,50,{ignoreDef:true});ok(h.dead,"only once");
   const h2=s.p[a].heroes[1];setH(h2,{def:0});gear(s,h2,"Stoneplate Mantle",true);eq(E.defn(s,h2),2)}));

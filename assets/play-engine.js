@@ -82,7 +82,7 @@ const opp=pid=>1-pid;E.opp=opp;/* 1-on-1 only (UI helpers); the engine uses oppO
 /* ---------- Trials teams (co-op boss module) ----------
    In a Trials game s.p[0..P-1] are the player parties and s.p[P] is the boss side (s.trials.boss = P). Every party's opponent is the boss side;
    every party is an ally of every other party. In a 1-on-1 game these helpers reduce exactly to the old 1-pid / pid===other logic. */
-E.hooks={afterSweep:null,onSummonDies:null,setup:null,onDamage:null};
+E.hooks={bossTurn:null,onSummonDies:null,setup:null,onDamage:null};
 const isBoss=(s,pid)=>!!(s&&s.trials&&pid===s.trials.boss);E.isBoss=isBoss;
 const wiped=(s,pid)=>{const pl=s.p[pid];return!!pl&&pl.heroes.length>0&&pl.heroes.every(h=>h.dead)};E.wiped=wiped;
 /* party indexes in initiative order starting at s.init (1-on-1: [init, other]) */
@@ -130,7 +130,7 @@ function newTrial(cfg){const tc=cfg.trials;const list=(tc.parties||[]).map((x,i)
   const side=()=>Array.from({length:n+1},()=>({}));
   const s={v:1,nx:0,rng:(cfg.seed>>>0)||((Math.random()*2**31)|0),round:0,phase:"mull",init:0,pos:0,prio:0,acted:Array(n+1).fill(false),passed:Array(n+1).fill(false),
     p:[],pend:[],cur:null,qatk:null,bonus:null,town:null,over:false,winner:null,log:[],seq:0,dawnDone:Array(n+1).fill(false),lastCard:null,
-    stats:{dmg:side(),prev:side(),heal:side(),start:Array.from({length:n+1},()=>[])},trials:{trial:tc.trial||1,boss:n,parties:n,swAct:false}};
+    stats:{dmg:side(),prev:side(),heal:side(),start:Array.from({length:n+1},()=>[])},trials:{trial:tc.trial||1,boss:n,parties:n,bossDone:false}};
   list.forEach((pc,pid)=>{const pl=newSide(s,pid,pc.name||(pid?`Helper ${pid}`:"You"),!!pc.ai,pc.deck.heroes.map(h=>mkHero(s,pid,h)),pc.deck.name||"");
     for(const[id,q]of Object.entries(pc.deck.cards))if(DB[id])for(let i=0;i<q;i++)pl.lib.push(mkCard(s,pid,id));s.p.push(pl)});
   const boss=newSide(s,n,"Boss",true,[],"");boss.boss=true;boss.mullDone=true;s.p.push(boss);
@@ -965,7 +965,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
     log(s,`${pl.name} activates ${o.name}${c?` (${c} Aura)`:""} (no action used).`,pid);
     withSrc(s,o.name,()=>isc.act.run(mkCtx(s,pid,null,DB[o.id],o,a.targets||[],{modes:a.modes||[]})));checkDeaths(s);return}
   /* battle actions */
-  s.cur={pid,type:a.type};const actor=actorFor(s,pid);s.dmgTo=[0,0];pl.t.acts=(pl.t.acts||0)+1;if(s.trials)s.trials.swAct=true;
+  s.cur={pid,type:a.type};const actor=actorFor(s,pid);s.dmgTo=[0,0];pl.t.acts=(pl.t.acts||0)+1;
   if(actor&&a.type!=="soul"&&!((a.type==="attack"||a.type==="band")&&a.att!==actor.uid))pl.t.lastActor=actor.uid;
   stallTick(s,pid);
   if(a.type==="play"){const fd=!pl.hand.some(c=>c.uid===a.uid)&&pl.disc.some(c=>c.uid===a.uid);if(fd)log(s,`${pl.name} plays a card from their discard pile (Exhume).`,pid);playCard(s,pid,actor,a.uid,a,fd?{fromDisc:true}:{});return}
@@ -1491,7 +1491,7 @@ function settle(s){let guard=0;
     if(s.phase==="dawn"&&s.dawnDone.every(Boolean)){startBattle(s);continue}
     if(s.phase==="battle"){const pid=s.prio;
       if(!s.passed[pid]&&!hasRealOption(s,pid)){log(s,`${P(s,pid).name} has no actions left and passes.`,pid);s.passed[pid]=true;advance(s,pid);continue}
-      if(allPassed(s)){if(sweepEnd(s)){if(s.over)return;continue}doDusk(s);continue}
+      if(allPassed(s)){if(bossTurn(s)){if(s.over)return;continue}doDusk(s);continue}
       return}
     return}
   checkWin(s)}
@@ -1505,11 +1505,10 @@ function advance(s,pid){s.acted[pid]=true;if(allPassed(s))return;
   /* Lead → Center → Closer → Last (only when a ready Hero is Abiding) → Lead. Trials parties have 2 Heroes: Lead → Closer → Last */
   const anyBack=s.p.some(pl=>pl.heroes.some(h=>!h.dead&&!h.ex&&h.fl.stepped===s.round));const lastPos=s.trials?1:2;
   s.pos=s.pos===lastPos?(anyBack?3:0):s.pos===3?0:s.pos+1;s.acted=s.p.map(()=>false);
-  s.prio=order.find(p=>!s.passed[p]);
-  sweepEnd(s)}
-/* Trials: after a sweep in which any party acted, the boss flips (E.hooks.afterSweep). Returns true if the hook ran. */
-function sweepEnd(s){if(!s.trials||!s.trials.swAct||s.over)return false;s.trials.swAct=false;if(E.hooks.afterSweep)E.hooks.afterSweep(s);checkDeaths(s);return true}
-E.sweepEnd=sweepEnd;
+  s.prio=order.find(p=>!s.passed[p])}
+/* Trials (Nov 22, 2026): the boss takes one turn per round, once every party has passed and before Dusk (E.hooks.bossTurn). Returns true if it ran. */
+function bossTurn(s){if(!s.trials||s.trials.bossDone||s.over)return false;s.trials.bossDone=true;if(E.hooks.bossTurn)E.hooks.bossTurn(s);checkDeaths(s);return true}
+E.bossTurn=bossTurn;
 function startRound(s){s.round++;s.phase="dawn";log(s,`— Round ${s.round}: Dawn —`);doDawn(s)}
 function doDawn(s){
   s.p.forEach((pl,pid)=>{
@@ -1557,7 +1556,7 @@ function doDawn(s){
   s.p.forEach((pl,pid)=>{if(!isBoss(s,pid)&&!(s.trials&&wiped(s,pid)))draw(s,pid,1)});
   s.dawnDone=s.p.map((pl,pid)=>!(pl.inv.some(o=>!o.fd&&isDawnItem(def(o)))));
   if(s.dawnDone.every(Boolean)&&!s.pend.length)startBattle(s)}
-function startBattle(s){s.phase="battle";s.pos=0;s.acted=s.p.map(()=>false);s.passed=s.p.map((_,i)=>isBoss(s,i));s.bonus=null;s.prio=s.init;if(s.trials)s.trials.swAct=false;
+function startBattle(s){s.phase="battle";s.pos=0;s.acted=s.p.map(()=>false);s.passed=s.p.map((_,i)=>isBoss(s,i));s.bonus=null;s.prio=s.init;if(s.trials)s.trials.bossDone=false;
   log(s,`— Battle Phase (${s.p[s.init].name} has initiative) —`)}
 E.startBattle=startBattle;
 function doDusk(s){

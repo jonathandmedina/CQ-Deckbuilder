@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 22, 2026 (Pain Pillars: you choose the target)*
+*Version: November 22, 2026 (update 48: each Pain Pillar triggers separately for 1)*
 
 ## 1. Welcome to Riverstead
 
@@ -129,7 +129,7 @@ Tokens are cards created by effects rather than drawn from your library, such as
 | Elemental | Summon | 4/1 | — | | Lesser Elemental |
 | Greater Elemental | Summon (Elemental) | 5/1 | — | | Greater Elemental |
 | Spell Damage Pillar | Pillar | — | — | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. | Boost Ritual, Volt Jab, Lightning Lance, Lightning Rod, Ritual of Power |
-| Pain Pillar | Pillar | — | — | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. All your Pain Pillars trigger once together (not once each), and you choose the target: any Hero or summon. | Dark Insight, Ritual of Pain |
+| Pain Pillar | Pillar | — | — | At Dusk, target enemy loses 1 HP. Each Pain Pillar triggers separately, and you choose a target for each one. | Dark Insight, Ritual of Pain |
 
 Splitting Ritual and Doubling Ritual copy whichever Pillars you sacrifice.
 
@@ -562,7 +562,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Lifelink** | When this Hero deals damage, heal it that much. |
 | **Meditate** | Exhaust this Hero. It is now Meditating. At each Dawn, it gets a meditation counter, then you may keep it exhausted. When it readies (at Dawn or any other way), it stops Meditating: remove all its meditation counters (including any from Monk Tactics), your party gains that much Aura, and the Hero gains +1 Strength for each one removed until end of turn. |
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
-| **Pain Pillar** | At Dusk, target loses X HP, where X is the number of Pain Pillars you control. All your Pain Pillars trigger once together (not once each), and you choose the target: any Hero or summon. |
+| **Pain Pillar** | At Dusk, target enemy loses 1 HP. Each Pain Pillar triggers separately, and you choose a target for each one. |
 | **Piercing X** | Damage from this ignores X points of the target’s DEF (attacks, spells, abilities and any other damage), and at least X of it always gets through. Piercing with no number ignores all of the target’s DEF. |
 | **Poisonous X** | Whenever this Hero or card deals damage, Poison the target X times. **Poisonous** with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage. |
 | **Scry X** | Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order. |
@@ -789,4 +789,4 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Your next spell has +2 Spell Damage; sacrifice the Pillar after that spell resolves.
 - **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026), Fortify and Pull Together (Nov 9, 2026, update 26), Campfire (Nov 10, 2026, update 28). Update 40 (Nov 19, 2026): Sanctuary, Line It Up, Quickdraw, Blunt-Point Force, Poison Dart, Rapid Shot, Call of Nature, Drawwing, Energy Stone, Entangling Roots, Evolve, Hand of the Protector, Primal Energy, Populate, Return to the Earth, Spore Calling, Tooth, Beast, Broken Blade, Cut Off, Pillage the Dead, Vigil, Protect, Take a Stand, Noble Promotion, Self Sacrifice, Brain Rot, Disorient, Mind Rend, Night Terror, Fog of Darkness, Distract, "Dazzling Melody", Drums of War, Frog in the Throat, "Lullaby", "Marching Cadence", Mirrored Chant, "Peace", "Duet", Strong Stance, Tempo Change, "Rousing Chorus", Levitate; Heroes Shadow Ranger, Beast Tracker, Verdant Sage, Rootfolk Elder, Demon Pactist, Battle Minstrel and Skullcrusher. Update 41 (Nov 19, 2026): Disarm, Ice Bath and Pitfall. Update 46 (Nov 20, 2026): Rapacious Encore.
-- **Pain Pillar (Warlock)**: At Dusk, target loses X HP, where X is the number of Pain Pillars you control. All your Pain Pillars trigger once together (not once each), and you choose the target: any Hero or summon.
+- **Pain Pillar (Warlock)**: At Dusk, target enemy loses 1 HP. Each Pain Pillar triggers separately, and you choose a target for each one.

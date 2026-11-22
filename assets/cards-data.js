@@ -499,7 +499,7 @@ const RAW_TOKENS=[
 ["Greater Elemental", "Summon", "Elemental", "Druid", "5", "", "1", "0", "", "", "Greater Elemental", 1],
 ["Eliazar", "Summon", "Soldier", "Paladin", "3", "", "5", "0", "", "", "Sword of Eliazar", 3],
 ["Spell Damage Pillar", "Pillar", "", "Mage", "", "", "", "0", "", "Your next spell gets +2 Spell Damage. Sacrifice this pillar after that spell resolves.", "Boost Ritual; Volt Jab; Lightning Lance; Lightning Rod; Ritual of Power; Splitting Ritual; Doubling Ritual", 2],
-["Pain Pillar", "Pillar", "", "Warlock", "", "", "", "0", "", "At dusk, target loses X Health Points, where X is the number of Pain Pillars you control.", "Dark Insight; Ritual of Pain; Splitting Ritual; Doubling Ritual", 1],
+["Pain Pillar", "Pillar", "", "Warlock", "", "", "", "0", "", "At dusk, target enemy loses 1 Health Point.", "Dark Insight; Ritual of Pain; Splitting Ritual; Doubling Ritual", 2],
 /* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
 ["Construct", "Summon", "Construct", "Artificer", "2 or 3", "", "2 or 3", "0", "", "Made by recipes: 2/2 (Clockwork Pair) or 3/3 (Iron Guardians).", "Clockwork Pair; Iron Guardians", 1],
 ["Frost Kat", "Summon", "Construct", "Artificer", "5", "1", "5", "0", "", "Whenever this deals damage to an enemy, stun it.", "Frost Kat Recipe", 1],

@@ -1291,7 +1291,9 @@ function resolveCont(s,pid,cont,mods){
     if(added>0)s.pend.splice(added,0,{type:"comboGo",pid,actor:actor&&actor.uid});else comboTrigger(s,pid,actor)}
   }
   checkDeaths(s)}
-ASK.painPillar=(s,pid,pr,v)=>{const t=resolveTarget(s,v);if(!t||t.dead)return;log(s,`Pain Pillar${pr.data.n>1?"s":""}: ${P(s,pid).name} targets ${t.name}.`,pid);loseHp(s,t,pr.data.n,"Pain Pillar");stat(s,"dmg",pid,"Pain Pillar",pr.data.n)};
+function painTargets(s,pid){const op=P(s,oppOf(s,pid));const out=[];parties(s).forEach(q=>{if(q===pid||(s.trials&&sameTeam(s,q,pid)))return;const pl=P(s,q);out.push(...living(pl),...pl.bf.filter(o=>o.kind==="summon"))});return out.filter(o=>!stealth(s,o)&&!cardProof(s,o))}
+function painAsk(s,pid,i,k){const ts=painTargets(s,pid);if(!ts.length)return false;return ask(s,pid,`Pain Pillar${k>1?` (${i} of ${k})`:""}: target enemy loses 1 Health Point`,targetOpts(s,pid,ts,1),"painPillar",{i,k,name:"Pain Pillar"})}
+ASK.painPillar=(s,pid,pr,v)=>{const t=resolveTarget(s,v);if(t&&!t.dead){log(s,`Pain Pillar: ${P(s,pid).name} targets ${t.name}.`,pid);loseHp(s,t,1,"Pain Pillar");stat(s,"dmg",pid,"Pain Pillar",1)}if(pr.data.i<pr.data.k)painAsk(s,pid,pr.data.i+1,pr.data.k)};
 ASK.loseTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t||t.dead)return;loseHp(s,t,pr.data.n,pr.data.name);stat(s,"dmg",pid,pr.data.name,pr.data.n)};
 ASK.lightningRod=(s,pid,pr,v)=>{if(v==null)return;const h=heroByUid(s,v);if(!h||h.ex)return;h.ex=true;log(s,`Lightning Rod: ${h.name} is exhausted.`,pid);makePillar(s,pid,"Spell Damage Pillar")};
 ASK.splitKick=(s,pid,pr,v)=>{if(v==null)return;copyCard(s,pid,pr.data.actor,pr.data.id,[v].concat(pr.data.rest||[]),pr.data.modes,pr.data.x)};
@@ -1565,10 +1567,8 @@ function doDusk(s){
   if(!s.duskAsked){s.duskAsked=true;let any=false;log(s,`— Dusk —`);s.duskLogged=true;
     parties(s).reverse().forEach(pid=>{const pl=P(s,pid);
       pl.inv.filter(o=>!o.fd&&o.name==="Tome of Gim").forEach(o=>{if(pl.hand.length){pushChoose(s,pid,{title:"Tome of Gim: you may put a card from your hand under it",cards:pl.hand.map(c=>c.uid),min:0,max:1,op:"tomePut",tome:o.uid});any=true}});
-      /* Nov 22: Pain Pillars ask for their target (any target; Stealth/Cloak enemies can't be chosen). All your Pain Pillars trigger once together for X. */
-      {const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;if(pp){const all=[];s.p.forEach((q,qp)=>{all.push(...living(q),...q.bf.filter(o=>o.kind==="summon"))});
-        const ts=all.filter(o=>ctrl(s,o)===pid||(!stealth(s,o)&&!cardProof(s,o)));
-        if(ts.length){const hp=pp>1?"Health Points":"Health Point";ask(s,pid,`Pain Pillar${pp>1?"s":""} (${pp}): target loses ${pp} ${hp}`,targetOpts(s,pid,ts.filter(o=>ctrl(s,o)!==pid),pp).concat(targetOpts(s,pid,ts.filter(o=>ctrl(s,o)===pid),pp)),"painPillar",{n:pp,name:"Pain Pillar"});s.painAsked=s.painAsked||{};s.painAsked[pid]=true;any=true}}}
+      /* Nov 22 (update 48): each Pain Pillar triggers separately: target enemy loses 1 Health Point. Asks chain one at a time so dead targets drop out. */
+      {const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;if(pp&&painAsk(s,pid,1,pp)){s.painAsked=s.painAsked||{};s.painAsked[pid]=true;any=true}}
       const tr={kind:"dusk",pid};if(windowFor(s,pid,tr)){s.pend.unshift({type:"window",pid,trig:tr,cont:{k:"none"},mods:{}});log(s,`${pl.name} may respond with a Hidden card at Dusk…`);any=true}});
     if(any)return}
   s.duskAsked=false;
@@ -1579,7 +1579,7 @@ function doDusk(s){
   s.p.forEach((pl,pid)=>living(pl).forEach(h=>{if(h.ex&&!h.fat&&!h.fl.fatRested&&hasEqN(h,"Deeg's Heavy Bow")){if(hasUpN(s,h,"Deeg's Heavy Bow")&&pl.aura>=1){pl.aura-=1;log(s,`Upgraded Deeg's Heavy Bow: ${pl.name} pays 1 Aura so ${h.name} doesn't get a Fatigue counter.`,pid);return}h.fat=1;log(s,`Deeg's Heavy Bow: ${h.name} gets a Fatigue counter (it won't ready at the next Dawn).`,pid)}}));
   parties(s).forEach(pid=>{const pl=P(s,pid);
     const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;
-    if(pp&&!(s.painAsked&&s.painAsked[pid])){const t=autoTarget(s,pid,"enemy");if(t)loseHp(s,t,pp,"Pain Pillar")}
+    if(pp&&!(s.painAsked&&s.painAsked[pid])){for(let i=0;i<pp;i++){const t=autoTarget(s,pid,"enemy");if(t)loseHp(s,t,1,"Pain Pillar")}}
     pl.heroes.forEach(h=>{if(h.dead)return;
       h.ench.forEach(e=>{if(e.name==="Mark of Doom")loseHp(s,h,1,"Mark of Doom")});
       if(h.fl.chargedRound===s.round&&!h.dead){if(!(h.fl.chargedHit===s.round)){log(s,`Charged Barrage: ${h.name} strikes every enemy.`,pid);const st=strOf(s,h);P(s,oppOf(s,pid)).heroes.filter(x=>!x.dead).concat(P(s,oppOf(s,pid)).bf.filter(o=>o.kind==="summon")).forEach(t=>damage(s,h,t,st,{card:true}))}}

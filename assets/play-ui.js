@@ -437,6 +437,11 @@ html[data-skin="art"] #play-root .pl-hand .hc{flex-basis:var(--hcw,150px)}
 /* Nov 19: repeated trigger prompts */
 .ask-box{position:relative;padding-bottom:18px;animation:askIn .25s ease-out}
 .ask-n{position:absolute;right:0;bottom:0;font-size:.75rem;font-weight:700;opacity:.85}
+.ask-amt{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0 2px}
+.ask-amt .btn{min-width:40px;padding:6px 10px}
+.ask-amt b{font-size:1.6rem;min-width:2ch;text-align:center}
+.ask-amt-of{opacity:.75}
+.ask-amt-hint{text-align:center;margin:2px 0 8px;opacity:.8;font-size:.85rem}
 @keyframes askIn{from{opacity:.15;transform:translateY(4px)}to{opacity:1;transform:none}}
 
 .pl-acts{align-items:center}
@@ -1577,7 +1582,9 @@ function modals(s){const pr=s.pend[0];
   else if(pr.type==="combo"){const m=modal(comboHTML(s,pr),{wide:true,dismiss:false});m.dataset.k=key}
   else if(pr.type==="ask"&&pr.opts.some(o=>o.card)){const da=i=>`data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'`;
     const m=modal(`<div class="ask-box"><h2>${esc(pr.title||"Choose")}</h2><div class="pick-list">${pr.opts.map((o,i)=>o.card?`<div class="ask-card"><button class="pk" ${da(i)} title="${esc(o.label)}">${cardHTML(cardOf(o.card))}</button><button class="btn" ${da(i)}>${esc(o.label)}</button></div>`:"").join("")}</div><div class="actions" style="flex-direction:column;align-items:stretch;margin-top:10px">${pr.opts.map((o,i)=>o.card?"":`<button class="btn" ${da(i)}>${esc(o.label)}</button>`).join("")}</div>${askN(s,pr,key)}</div>`,{wide:true,dismiss:false});m.dataset.k=key}
-  else if(pr.type==="ask"){const m=modal(`<div class="ask-box"><h2>${esc(pr.title||"Choose")}</h2><div class="actions" style="flex-direction:column;align-items:stretch">${pr.opts.map((o,i)=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'>${esc(o.label)}</button>`).join("")}</div>${askN(s,pr,key)}</div>`,{dismiss:false});m.dataset.k=key;try{document.activeElement&&document.activeElement.blur()}catch(e){}}
+  else if(pr.type==="ask"){const am=pr.amount;if(am){if(!U.askAmt||U.askAmt.key!==key)U.askAmt={key,val:am.val,min:am.min,max:am.max}}else U.askAmt=null;
+    const amtHTML=am?`<div class="ask-amt"><span>Triggers</span><button class="btn" data-pa="amt" data-d="-1" aria-label="Fewer">−</button><b id="ask-amt-v">${U.askAmt.val}</b><span class="ask-amt-of">of ${am.max}</span><button class="btn" data-pa="amt" data-d="1" aria-label="More">+</button><button class="btn" data-pa="amt" data-d="all">All</button></div><p class="ask-amt-hint">Then click a target.</p>`:"";
+    const m=modal(`<div class="ask-box"><h2>${esc(pr.title||"Choose")}</h2>${amtHTML}<div class="actions" style="flex-direction:column;align-items:stretch">${pr.opts.map((o,i)=>`<button class="btn" data-pa="do" data-a='${esc(JSON.stringify({type:"ask",i}))}'>${esc(o.label)}</button>`).join("")}</div>${askN(s,pr,key)}</div>`,{dismiss:false});m.dataset.k=key;try{document.activeElement&&document.activeElement.blur()}catch(e){}}
   else if(cur&&cur.dataset.k)closeModal();addViewBoard()}
 function cardById(s,u,pr){if(pr&&pr.show&&pr.show[u])return pr.show[u];for(const pl of s.p)for(const z of["hand","lib","disc"]){const c=pl[z].find(x=>x.uid===u);if(c&&c.id)return c.id}return null}
 function scryHTML(s,pr){const sc=U.scry;
@@ -1728,7 +1735,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="multi-t"){const u=b.dataset.u;U.multiSel=U.multiSel.includes(u)?U.multiSel.filter(x=>x!==u):U.multiSel.concat([u]);U.multiDraw();return}
   if(k==="multi-ok"){closeModal();send({type:"multiBow",n:U.multiSel.length,uids:U.multiSel});return}
   if(!s)return;
-  if(k==="do"){let a;try{a=JSON.parse(b.dataset.a)}catch(err){return}closeModal();
+  if(k==="amt"){const A=U.askAmt;if(!A)return;const d=b.dataset.d;A.val=d==="all"?A.max:Math.max(A.min,Math.min(A.max,A.val+(+d)));const el=document.getElementById("ask-amt-v");if(el)el.textContent=A.val;return}
+  if(k==="do"){let a;try{a=JSON.parse(b.dataset.a)}catch(err){return}{const mk=document.getElementById("pl-modal");if(a.type==="ask"&&U.askAmt&&mk&&mk.dataset.k===U.askAmt.key){a.amt=U.askAmt.val;U.askAmt=null}}closeModal();
     if(a.type==="fix"||a.type==="manDone"||a.type==="decline"){U.man=null;U.manT=null}
     begin(a);return}
   if(k==="modal-min"){const s2=view();const pr2=s2&&s2.pend[0];if(pr2)U.modalMin=pr2.type+":"+s2.seq;closeModal();render();return}

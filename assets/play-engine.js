@@ -943,7 +943,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
     /* Rapacious Encore: deal damage equal to the replayed Song's Aura cost, Piercing (ignores all DEF) */
     if(pr.encore&&d0){const n=num(d0.cost);const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);if(n>0&&ts.length)ask(s,pid,`Rapacious Encore: deal ${n} damage to any target (Piercing)`,targetOpts(s,pid,ts,n),"dmgTo",{n,name:"Rapacious Encore",pierce:99,src:pr.actor})}
     return}
-  case"ask":{const pr=s.pend.shift();const o=pr.opts[a.i];const fn=ASK[pr.op];if(fn&&o)withSrc(s,pr.data&&pr.data.name||CUR_SRC,()=>fn(s,pid,pr,o.v));return}
+  case"ask":{const pr=s.pend.shift();const o=pr.opts[a.i];const fn=ASK[pr.op];if(fn&&o)withSrc(s,pr.data&&pr.data.name||CUR_SRC,()=>fn(s,pid,pr,o.v,a.amt));return}
   case"scry":{const pr=s.pend.shift();finishScry(s,pid,pr,a);return}
   case"choose":{const pr=s.pend.shift();finishChoose(s,pid,pr,a.picks||[]);return}
   case"man":manualOp(s,pid,a);return;
@@ -1292,8 +1292,11 @@ function resolveCont(s,pid,cont,mods){
   }
   checkDeaths(s)}
 function painTargets(s,pid){const op=P(s,oppOf(s,pid));const out=[];parties(s).forEach(q=>{if(q===pid||(s.trials&&sameTeam(s,q,pid)))return;const pl=P(s,q);out.push(...living(pl),...pl.bf.filter(o=>o.kind==="summon"))});return out.filter(o=>!stealth(s,o)&&!cardProof(s,o))}
-function painAsk(s,pid,i,k){const ts=painTargets(s,pid);if(!ts.length)return false;return ask(s,pid,`Pain Pillar${k>1?` (${i} of ${k})`:""}: target enemy loses 1 Health Point`,targetOpts(s,pid,ts,1),"painPillar",{i,k,name:"Pain Pillar"})}
-ASK.painPillar=(s,pid,pr,v)=>{const t=resolveTarget(s,v);if(t&&!t.dead){log(s,`Pain Pillar: ${P(s,pid).name} targets ${t.name}.`,pid);loseHp(s,t,1,"Pain Pillar");stat(s,"dmg",pid,"Pain Pillar",1)}if(pr.data.i<pr.data.k)painAsk(s,pid,pr.data.i+1,pr.data.k)};
+/* Update 48b: one prompt for all Pain Pillar triggers. It starts at all remaining triggers; the player lowers the number (pr.amount) and clicks a target; repeat until none are left. Each trigger is "target enemy loses 1 Health Point". */
+function painAsk(s,pid,left,total){const ts=painTargets(s,pid);if(!ts.length)return false;const ok=ask(s,pid,left>1?`Pain Pillars: ${left} trigger${left>1?"s":""} left. Choose how many, then a target (each one: target enemy loses 1 Health Point)`:`Pain Pillar: target enemy loses 1 Health Point`,targetOpts(s,pid,ts,left),"painPillar",{left,total,name:"Pain Pillar"});if(ok&&left>1)s.pend[0].amount={min:1,max:left,val:left};return ok}
+ASK.painPillar=(s,pid,pr,v,amt)=>{const left=pr.data.left;let n=Math.floor(+amt);if(!(n>=1))n=left;n=Math.min(n,left);const t=resolveTarget(s,v);
+  if(t&&!t.dead){log(s,`Pain Pillar${n>1?"s":""}: ${P(s,pid).name} aims ${n} trigger${n>1?"s":""} at ${t.name}.`,pid);loseHp(s,t,n,n>1?`${n} Pain Pillars`:"Pain Pillar");stat(s,"dmg",pid,"Pain Pillar",n)}
+  if(left-n>0)painAsk(s,pid,left-n,pr.data.total)};
 ASK.loseTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t||t.dead)return;loseHp(s,t,pr.data.n,pr.data.name);stat(s,"dmg",pid,pr.data.name,pr.data.n)};
 ASK.lightningRod=(s,pid,pr,v)=>{if(v==null)return;const h=heroByUid(s,v);if(!h||h.ex)return;h.ex=true;log(s,`Lightning Rod: ${h.name} is exhausted.`,pid);makePillar(s,pid,"Spell Damage Pillar")};
 ASK.splitKick=(s,pid,pr,v)=>{if(v==null)return;copyCard(s,pid,pr.data.actor,pr.data.id,[v].concat(pr.data.rest||[]),pr.data.modes,pr.data.x)};
@@ -1568,7 +1571,7 @@ function doDusk(s){
     parties(s).reverse().forEach(pid=>{const pl=P(s,pid);
       pl.inv.filter(o=>!o.fd&&o.name==="Tome of Gim").forEach(o=>{if(pl.hand.length){pushChoose(s,pid,{title:"Tome of Gim: you may put a card from your hand under it",cards:pl.hand.map(c=>c.uid),min:0,max:1,op:"tomePut",tome:o.uid});any=true}});
       /* Nov 22 (update 48): each Pain Pillar triggers separately: target enemy loses 1 Health Point. Asks chain one at a time so dead targets drop out. */
-      {const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;if(pp&&painAsk(s,pid,1,pp)){s.painAsked=s.painAsked||{};s.painAsked[pid]=true;any=true}}
+      {const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;if(pp&&painAsk(s,pid,pp,pp)){s.painAsked=s.painAsked||{};s.painAsked[pid]=true;any=true}}
       const tr={kind:"dusk",pid};if(windowFor(s,pid,tr)){s.pend.unshift({type:"window",pid,trig:tr,cont:{k:"none"},mods:{}});log(s,`${pl.name} may respond with a Hidden card at Dusk…`);any=true}});
     if(any)return}
   s.duskAsked=false;

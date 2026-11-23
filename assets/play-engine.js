@@ -434,7 +434,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(src&&!o.noTrig){
     if(dealt>0&&lifelink(s,src)){const room=src.kind==="hero"?Math.min(dealt,src.dmg||0):dealt;heal(s,src,src,dealt);
       if(src.kind==="hero"&&hasUpN(s,src,"Ring of Radiance")&&dealt>room){const t=living(P(s,src.owner)).filter(h=>h!==src&&h.dmg>0).sort((a,b)=>b.dmg-a.dmg)[0];if(t)heal(s,src,t,dealt-room)}}
-    const pz=(o.poisonous==="dmg"?dealt:0)+poisonous(s,src,dealt);if(pz&&tgt.st)addStatus(s,tgt,"poison",pz); /* update 16: Poisonous stacks (Poison the target X times) */
+    /* Nov 22: Poisonous needs damage dealt (0 after DEF or 0 Strength doesn't poison) */const pz=dealt>0?(o.poisonous==="dmg"?dealt:0)+poisonous(s,src,dealt):0;if(pz&&tgt.st)addStatus(s,tgt,"poison",pz); /* update 16: Poisonous stacks (Poison the target X times) */
     if(src.kind==="hero"){
       if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
       if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,1)}

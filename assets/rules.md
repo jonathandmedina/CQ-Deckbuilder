@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 22, 2026 (update 48: each Pain Pillar triggers separately for 1)*
+*Version: November 22, 2026 (Poisonous needs damage dealt)*
 
 ## 1. Welcome to Riverstead
 
@@ -402,7 +402,7 @@ You must have a ready Hero to trigger a Hidden card. If all your matching Heroes
 - **Burned, Poisoned and Wounded** make the target lose Health Points; that isn’t damage, so DEF doesn’t reduce it.
 - **“Lose X HP”** isn’t damage. It ignores DEF.
 
-On-hit effects that apply a status still apply, even if DEF reduces the damage to 0. If an effect depends on “damage dealt”, use the damage after DEF.
+On-hit effects that apply a status still apply, even if DEF reduces the damage to 0. Poisonous is the exception: it needs at least 1 damage dealt. If an effect depends on “damage dealt”, use the damage after DEF.
 
 *Example: a Hero with 5 STR attacks a Hero with 2 DEF that played Extra Protection this turn (+1 DEF, so 3 DEF). The target takes 2 damage.*
 
@@ -564,7 +564,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 | **Mill X** | Move the top X cards of your library to your discard pile. (If a card says a player or target mills, use that player’s library.) |
 | **Pain Pillar** | At Dusk, target enemy loses 1 HP. Each Pain Pillar triggers separately, and you choose a target for each one. |
 | **Piercing X** | Damage from this ignores X points of the target’s DEF (attacks, spells, abilities and any other damage), and at least X of it always gets through. Piercing with no number ignores all of the target’s DEF. |
-| **Poisonous X** | Whenever this Hero or card deals damage, Poison the target X times. **Poisonous** with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage. |
+| **Poisonous X** | Whenever this Hero or card deals damage, Poison the target X times. **Poisonous** with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage. If no damage gets through (0 after DEF, or 0 Strength from Humble), it doesn’t Poison. |
 | **Scry X** | Look at the top X cards of your library. Put any number on the bottom and the rest back on top in any order. |
 | **Spell Damage +X** | Your spells deal X extra damage. |
 | **Spell Damage Pillar** | Your next spell has +2 Spell Damage. Sacrifice this Pillar after that spell resolves. |
@@ -778,7 +778,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Echo (Bard)**: If you played it from your hand, exile it and play it again for free at your next Dawn (no Aura, and Harmonize isn't paid again; you may choose new targets), then discard it. A card only repeats once.
 - **Tip (Bard)**: Gain 1 Gold, only once per round.
 - **Harmonize X (Bard)**: Exhaust X other ready Heroes to gain the effect after the colon.
-- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage.
+- **Poisonous X (Rogue)**: Whenever this Hero or card deals damage, Poison the target X times. Poisonous with no number Poisons it once for each damage dealt. Each instance of Poisonous triggers separately: a Hero with Poisonous 1 that has a Dagger with Poisonous 1 equipped Poisons the target twice each time it deals damage. If no damage gets through (0 after DEF, or 0 Strength from Humble), it doesn’t Poison.
 - **Stealth (Rogue)**: This Hero can’t be targeted by enemy cards or abilities. It can still be attacked.
 - **Lifelink (Cleric)**: When this Hero deals damage, heal it that much.
 - **Enraged (Barbarian)**: A Hero is Enraged while at or below half its max HP. Some Barbarian abilities only work while Enraged.

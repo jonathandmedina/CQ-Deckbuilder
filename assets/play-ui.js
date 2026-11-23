@@ -1098,10 +1098,9 @@ addEventListener("hashchange",()=>{if(location.hash!=="#play"){document.getEleme
 /* Town window (Nov 12, 2026): Inn, Shop, Church and Blacksmith in one window in the middle of the screen, with Leave Town.
    Places you can't use right now stay listed with the reason. */
 /* Nov 20: the Blacksmith shows what each upgrade does (now → upgraded) */
-function upInfoHTML(o){const d=E.DB[o.id]||{};const up=d.up;const rt=t=>typeof rulesHTML==="function"?rulesHTML(t||""):esc(t||"");
-  const st=(a,b)=>[a?`+${a} STR`:"",b?`+${b} DEF`:""].filter(Boolean).join(" ");
-  if(!up)return d.rules&&/Upgrade/.test(d.rules)?`<div class="tw-upi"><span class="tw-upk">Upgrade</span>${rt((d.rules.split("\n").find(x=>/Upgrade/.test(x)))||"")}</div>`:"";
-  return`<div class="tw-upi"><div><span class="tw-upk">Now</span>${st(d.pstr,d.pdef)?`<b>${st(d.pstr,d.pdef)}</b> `:""}${rt(d.rules)}</div><div class="tw-upn"><span class="tw-upk">Upgraded</span>${st(up.pstr,up.pdef)?`<b>${st(up.pstr,up.pdef)}</b> `:""}${rt(up.rules)}</div></div>`}
+function upInfoHTML(o){const d=E.DB[o.id]||{};if(!o.id)return"";const up=!!d.up;
+  /* Nov 22: a small one-color eye button; it opens the whole card (its upgraded side when it has one) in the zoom view */
+  return`<button type="button" class="tw-eye" data-zoom="${esc(o.id)}"${up?' data-zup="1"':""} title="${up?"See the upgraded card":"See the card"}" aria-label="${up?"See the upgraded side of":"See"} ${esc(d.name||"this card")}"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></button>`}
 function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.town.order[s.town.i]!==me||s.pend.length)return"";
   if(U.townHide)return`<button type="button" class="pl-towntab" data-pa="town-show"><span class="mt-k">Town</span><b>${s.p[me].gold} Gold to spend</b><span class="mt-o">Open ▴</span></button>`; /* Nov 20: same tab as other choices */
   /* Nov 12, 2026: every option is listed; ones you can't use right now are greyed out with the reason */
@@ -1139,7 +1138,8 @@ function townHTML(s){const me=U.me;if(!s||s.over||s.phase!=="town"||!s.town||s.t
 .tw-place{border:1.5px solid #8A5E40;border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.22);display:flex;flex-direction:column;gap:8px}
 .tw-h{display:flex;gap:10px;align-items:flex-start}.tw-ic{font-size:1.5rem;line-height:1}.tw-h b{display:block;font:400 1.3rem/1.1 "Pirata One",var(--display);color:#ffd98a}.tw-h span{font-size:.85rem;color:#d8c3a0}
 .tw-acts{display:flex;flex-wrap:wrap;gap:6px}
-.tw-up{display:flex;flex-direction:column;gap:4px;width:100%;padding:6px 0;border-bottom:1px dashed var(--line)}.tw-up:last-child{border-bottom:0}.tw-up .btn{align-self:flex-start}
+.tw-up{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:6px;width:100%;padding:6px 0;border-bottom:1px dashed var(--line)}.tw-up:last-child{border-bottom:0}.tw-up .btn{align-self:center}
+.tw-eye{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border-radius:50%;border:1px solid currentColor;background:transparent;color:#ffd98a;cursor:pointer;opacity:.85;flex:none}.tw-eye:hover,.tw-eye:focus-visible{opacity:1;background:rgba(255,217,138,.12)}
 .tw-upi{font-size:.8rem;line-height:1.35;display:grid;gap:3px}.tw-upi p{margin:0;display:inline}.tw-upk{display:inline-block;min-width:68px;font-weight:800;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-right:6px}.tw-upn{color:#ffe08a}.tw-acts .btn{font-size:.9rem}.tw-hp{opacity:.75;font-size:.8em}
 .tw-no{font-size:.85rem;color:#a8906f;font-style:italic}
 .tw-acts .btn.tw-off{opacity:.45;filter:grayscale(.7);cursor:not-allowed;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px}.tw-acts .btn.tw-off small{font-size:.72rem;font-weight:400;opacity:.9}

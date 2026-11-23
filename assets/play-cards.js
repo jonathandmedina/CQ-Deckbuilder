@@ -76,7 +76,7 @@ const lifeCard=(pay,n)=>({t:[t("enemy","target enemy")],run(c){if(c.actor)E.lose
 def("Dark Jab",lifeCard(2,4));def("Dark Lance",lifeCard(3,5)); /* update 21: 4 and 5 */
 def("Night Terror",{run(c){if(c.actor)E.loseHp(c.s,c.actor,4,"Night Terror cost");enemies(c).forEach(e=>{if(!e.dead){E.loseHp(c.s,e,3,"Night Terror");st(c,e,"confuse")}});exMe(c)}});
 /* update 27: Target Hero loses 2 Health Points. Heal this Hero for 2 Health Points. */
-def("Siphon Life",{t:[t("hero","Hero to lose 2 HP")],run(c){const o=c.t[0];if(o&&!o.dead)E.loseHp(c.s,o,2,"Siphon Life");heal(c,c.actor,2)}});
+def("Draw Life",{t:[t("hero","Hero to lose 2 HP")],run(c){const o=c.t[0];if(o&&!o.dead)E.loseHp(c.s,o,2,"Draw Life");heal(c,c.actor,2)}}); /* Nov 23: was Siphon Life */
 def("Dark Arts",{t:[EN],x:{label:"HP to lose (X)",max:(s,pid,a)=>a?Math.max(0,E.hp(s,a)-1):6,free:true},run(c){const n=Math.max(0,c.x||0); /* update 21: no cap */if(n<=0)return;E.loseHp(c.s,c.actor,n,"Dark Arts");if(c.t[0])E.loseHp(c.s,c.t[0],n,"Dark Arts")}});
 def("Blood Offering",{run(c){E.loseHp(c.s,c.actor,3,"Blood Offering");c.me.aura+=2;log(c,`${c.me.name} gains 2 Aura.`)}});
 def("Disorient",{t:[ANY],run(c){st(c,c.t[0],"confuse")}});
@@ -109,7 +109,13 @@ def("Carry Radiance",{t:[cls("Cleric")],run(c){buff(c.t[0],{lifelink:1})}});
 def("Medical Visit",{t:[ANY],run(c){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}});
 def("Purify",{t:[AL],run(c){if(c.t[0]){E.removeStatus(c.s,c.t[0],1);heal(c,c.t[0],1)}}});
 def("Resurrection",{t:[t("deadAlly","dead Hero")],can:(s,pid)=>s.p[pid].heroes.some(h=>h.dead&&!h.surr),run(c){const h=c.t[0];if(h){h.dead=false;h.dmg=Math.max(0,E.maxHp(c.s,h)-8);h.ex=true;log(c,`${h.name} is revived with ${E.hp(c.s,h)} HP.`)}exMe(c)}});
-def("Wave of Life",{t:[t("any","heal target")],run(c){heal(c,c.t[0],3)}});
+/* Nov 23: Wave of Life v3. {L3} a dead hero in your party can be the target; you're asked whether to pay 3 Aura to revive it (exhausted) first, then it heals 3 */
+def("Wave of Life",{t:[t("anyOrDeadAlly","heal target (Level 3: or a dead hero to revive)")],run(c){const h=c.t[0];if(!h)return;
+  if(h.kind==="hero"&&h.dead){if(h.surr||!(c.actor&&c.actor.lvl>=3)){log(c,`${h.name} is dead and can't be healed.`);return}
+    if(c.me.aura<3){log(c,`Wave of Life: not enough Aura to revive ${h.name} (needs 3).`);return}
+    E.ask(c.s,c.pid,`Wave of Life: pay 3 Aura to revive ${h.name}? It returns exhausted, then heals 3 Health Points.`,[{label:`Pay 3 Aura and revive ${h.name}`,v:h.uid},{label:"Don't pay",v:null}],"waveRevive",{name:"Wave of Life",healer:c.actor&&c.actor.uid});return}
+  heal(c,h,3)}});
+E.ASK.waveRevive=(s,pid,pr,v)=>{if(v==null){E.log(s,"Wave of Life: no Aura paid; the dead hero stays dead.",pid);return}const h=E.heroByUid(s,v);const pl=s.p[pid];if(!h||!h.dead||h.surr||pl.aura<3)return;pl.aura-=3;h.dead=false;h.dmg=E.maxHp(s,h);h.ex=true;E.log(s,`Wave of Life: ${pl.name} pays 3 Aura. ${h.name} is revived, exhausted.`,pid);const hh=pr.data.healer?E.heroByUid(s,pr.data.healer):null;E.heal(s,hh||{name:"Wave of Life",ctrl:pid},h,3,pid)};
 def("Righteous Rage",{run(c){buff(c.actor,{str:2,lifelink:1});const tg=enemies(c).filter(e=>!E.stealth(c.s,e)&&!E.noAttack(c.s,e)).sort((a,b)=>hp(c,b)-hp(c,a))[0];c.actor.ex=false;attack(c,c.actor,tg)}});
 def("Withdrawal Ailments",{t:[ANY],run(c){let n=0;living(c.me).forEach(h=>E.STATUS.forEach(k=>{n+=h.st[k];h.st[k]=0}));log(c,`${n} status counters removed.`);D(c,c.t[0],n,{type:"Light"})}});
 def("Healer's Choice",M(2,[{label:"Heal 2 HP",t:[ANY],run:c=>heal(c,c.t[0],2)},{label:"Remove 1 status counter",t:[ANY],run:c=>c.t[0]&&E.removeStatus(c.s,c.t[0],1)},{label:"Deal 2 Light damage",t:[ANY],run:c=>D(c,c.t[0],2,{type:"Light"})}]));
@@ -425,7 +431,7 @@ hab("Divine Knight",[{label:"Ally +2 DEF this turn",cost:1,t:[AL],run:c=>buff(c.
 hab("Essence Reaper",[{label:"Stun target enemy",lvl:3,t:[EN],run:c=>st(c,c.t[0],"stun")}]);
 hab("Trainee Vincent",[{label:"Meditate",run:c=>E.meditate(c.s,c.actor)}]);
 hab("Inspiration Herald",[{label:"Ready another ally",t:[t("ally","another ally",(s,o,x)=>o.uid!==x.actor.uid&&o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}}]);
-hab("Rage Brute",[{label:"Fatigue: +STR equal to its STR this turn",ex:false,can:(s,pid,a)=>!a.fat,run:c=>{const n=E.str(c.s,c.actor);c.actor.fat=1;buff(c.actor,{str:n});log(c,`${c.actor.name} gets a Fatigue counter and gains +${n} STR this turn (it won't ready at the next Dawn).`)}}]);
+hab("Rage Brute",[{label:"Fatigue: +STR equal to its STR this turn (Level 3, once per turn)",ex:false,can:(s,pid,a)=>!a.fat&&a.lvl>=3&&a.fl.rageRound!==s.round,run:c=>{c.actor.fl.rageRound=c.s.round;const n=E.str(c.s,c.actor);c.actor.fat=1;buff(c.actor,{str:n});log(c,`${c.actor.name} gets a Fatigue counter and gains +${n} STR this turn (it won't ready at the next Dawn).`)}}]);
 hab("Rootbinder",[{label:"Summons +1 STR this turn",run:c=>{c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}}]);
 /* Echo Performer (Nov 12, 2026): passive, the first Song it plays from your hand each turn has Echo; Level 3: every Song it plays from your hand (engine) */
 hab("Storm Caller",[{label:"Deal 2 damage to each enemy Hero",cost:2,can:(s,pid,a)=>a.lvl<3,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,2,{card:true}))},{label:"Deal 3 damage to each enemy Hero",lvl:3,cost:2,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,3,{card:true}))}]);

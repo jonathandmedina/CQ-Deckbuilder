@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 22, 2026 (Poisonous vs. “Poison it”)*
+*Version: November 23, 2026 (update 49: Confused attacks, Enchant wording)*
 
 ## 1. Welcome to Riverstead
 
@@ -468,7 +468,7 @@ There are five status counters. At Dawn, each Burned, Poisoned and Wounded count
 | **Burned** | Loses 1 Health Point at Dawn. |
 | **Poisoned** | Loses 1 Health Point at Dawn. |
 | **Wounded** | Loses 1 Health Point at Dawn. |
-| **Confused** | The Hero’s attacks and the targets of its cards and abilities are chosen at random from all legal targets, including allies. |
+| **Confused** | The targets of the Hero’s cards and abilities are chosen at random from all legal targets, including allies. Its attacks go to a random enemy: an attack can never target an ally. |
 | **Stunned** | The Hero can’t activate abilities or play cards. It can still attack, equip from inventory and move equipment. |
 
 ### Other Counters
@@ -727,6 +727,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Equip**: A Hero pays the equipment’s Aura cost and puts it on itself, whether it comes from your hand, your inventory, or another of your Heroes. The receiving Hero always takes the action. Equipment has no separate equip cost.
 - **Unequip**: Take equipment off a Hero. It goes to your inventory.
 - **Attach**: Put an enchantment or curse onto a Hero. On older cards, “attach an Equipment” means equip it.
+- **Enchant / Enchanted**: “Enchant target hero” means attach this enchantment or curse to that hero. “Enchanted hero” is the hero it’s attached to.
 - **Activate**: Use an ability or item. Activating an Arrow exhausts the Hero.
 - **Trigger**: A condition that sets off an ability or Hidden card (“Whenever…”, “When…”, “At Dawn”).
 - **Resolve**: Carry out a card's effect as fully as possible.
@@ -754,7 +755,7 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Burned**: Status. Loses 1 Health Point each Dawn Phase. Cards say “Burn”.
 - **Poisoned**: Status. Loses 1 Health Point each Dawn Phase. Cards say “Poison”.
 - **Wounded**: Status. Loses 1 Health Point each Dawn Phase. Cards say “Wound”.
-- **Confused**: Status. The Hero's attacks and targets are random. Cards say “Confuse”.
+- **Confused**: Status. The Hero's card and ability targets are random (allies included); its attacks hit a random enemy, never an ally. Cards say “Confuse”.
 - **Burn / Poison / Wound / Confuse / Stun (verbs)**: Put one counter of that status on the target; if it already has one, add another.
 - **Stunned**: Status. The Hero can't activate abilities or play cards. It can still attack and equip from inventory. Cards say “Stun”.
 - **Dies / Dead**: At 0 HP a Hero dies and is turned face down. Its equipment goes to your inventory. It can’t act, make Aura, earn Gold or be healed until revived.

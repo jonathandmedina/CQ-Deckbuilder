@@ -308,7 +308,7 @@ E.targetOpts=targetOpts;
 /* lose HP as part of paying a cost (Ritual Athame watches for this) */
 function costHp(s,pid,h,n,why){if(!h||n<=0)return;loseHp(s,h,n,why);const pl=P(s,pid);
   const at=living(pl).find(x=>hasEqN(x,"Ritual Athame")&&x.fl.athameRound!==s.round);
-  if(at&&!s.over){at.fl.athameRound=s.round;const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);{const an=eqList(at).some(e=>e.name==="Ritual Athame"&&isUp(s,e))?2:1;ask(s,pid,`Ritual Athame: deal ${an} Dark damage to any target`,targetOpts(s,pid,ts,an).concat([{label:"No damage",v:null}]),"dmgTo",{n:an,name:"Ritual Athame",type:"Dark",src:at.uid})}}}
+  if(at&&!s.over){at.fl.athameRound=s.round;const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);{const an=eqList(at).some(e=>e.name==="Ritual Athame"&&isUp(s,e))?2:1;ask(s,pid,`Ritual Athame: target enemy loses ${an} Health Point${an>1?"s":""}`,targetOpts(s,pid,ts.filter(o=>!sameTeam(s,ctrl(s,o),pid)&&!cardProof(s,o,true)),an),"loseTo",{n:an,name:"Ritual Athame"})}}}
 E.costHp=costHp;
 ASK.healTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t)return;const hh=pr.data.healer?heroByUid(s,pr.data.healer):null;heal(s,hh||{name:pr.data.name||"Heal",ctrl:pid},t,pr.data.n,pid)};
 ASK.dmgTo=(s,pid,pr,v)=>{if(v==null)return;const t=resolveTarget(s,v);if(!t)return;const src=pr.data.src?find(s,pr.data.src):null;damage(s,src?src.o:{name:pr.data.name,ctrl:pid},t,pr.data.n,{card:true,type:pr.data.type,pierce:pr.data.pierce,srcName:pr.data.name,noTrig:!src})};
@@ -437,7 +437,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
     /* Nov 22: Poisonous needs damage dealt (0 after DEF or 0 Strength doesn't poison) */const pz=dealt>0?(o.poisonous==="dmg"?dealt:0)+poisonous(s,src,dealt):0;if(pz&&tgt.st)addStatus(s,tgt,"poison",pz); /* update 16: Poisonous stacks (Poison the target X times) */
     if(src.kind==="hero"){
       if(dealt>0&&src.name==="Void Binder"){const dp=P(s,ctrl(s,tgt));const r=Math.min(1,dp.aura);dp.aura-=r;if(r)log(s,`Void Binder removes ${r} Aura from ${dp.name}.`)}
-      if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,1)}
+      if(dealt>0&&src.name==="Sanctifier"){const t=autoTarget(s,src.owner,"statusAlly");if(t)removeStatus(s,t,src.lvl>=3?3:1)} /* Nov 23: {L3} remove 3 instead */
       if(src.fl.brutalWound&&dealt>0&&tgt.st&&ctrl(s,tgt)!==src.owner){src.fl.brutalWound=false;addStatus(s,tgt,"wound",2);log(s,`Brutality's Choice: ${tgt.name} is Wounded twice.`)} /* Update 40 */
       if(src.fl.bruisedRound===s.round&&dealt>0&&tgt.st&&ctrl(s,tgt)!==src.owner)addStatus(s,tgt,"wound",1); /* Update 40: enemies only */
       /* Mind Rend (update 21): the damaged party discards a card (its owner chooses) */
@@ -670,6 +670,7 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
       if(k==="meditating"&&(isEnemy(o)||!o.med))return false;
       return true})}
   else if(k==="deadAlly"){list=P(s,pid).heroes.filter(h=>h.dead&&!h.surr)}
+  else if(k==="anyOrDeadAlly"){list=inPlayTargets(s).concat(ctx.actor&&ctx.actor.lvl>=3?P(s,pid).heroes.filter(h=>h.dead&&!h.surr):[])} /* Nov 23 Wave of Life: {L3} a dead ally can be the target */
   else if(k==="deadAny"){list=[];s.p.forEach(pl=>pl.heroes.forEach(h=>{if(h.dead&&!h.surr)list.push(h)}))}
   else{const objs=allObjs(s);
     if(k==="item")list=objs.filter(o=>(o.kind==="card"&&!o.fd&&def(o).type==="Item")||o.kind==="doll"||(o.kind==="card"&&o.fd&&isEnemy(o)));
@@ -970,7 +971,7 @@ function doAct(s,pid,a){const pl=P(s,pid);
   stallTick(s,pid);
   if(a.type==="play"){const fd=!pl.hand.some(c=>c.uid===a.uid)&&pl.disc.some(c=>c.uid===a.uid);if(fd)log(s,`${pl.name} plays a card from their discard pile (Exhume).`,pid);playCard(s,pid,actor,a.uid,a,fd?{fromDisc:true}:{});return}
   if(a.type==="playStalled"){log(s,`${pl.name} plays a Stalled card.`,pid);playCard(s,pid,actor,a.uid,a,{free:true,fromStall:true});return}
-  if(a.type==="attack"){startAttack(s,pid,a.att,a.targets[0],{});return}
+  if(a.type==="attack"){let tg=a.targets[0];{const at=find(s,a.att);if(at&&confused(at.o)&&!forcedTarget(s,at.o)){const cs=candidates(s,pid,{k:"enemy"},{attack:true,actor:at.o});if(cs.length){tg=cs[ri(s,cs.length)];const r=resolveTarget(s,tg);log(s,`${at.o.name} is Confused and attacks a random enemy: ${r?r.name:"?"}.`,pid)}}} /* Nov 23: Confused attacks pick a random enemy; attacks never hit allies */ startAttack(s,pid,a.att,tg,{});return}
   if(a.type==="band"){const all=bandMembers(s,pid);let mem=(a.members||all.map(o=>o.uid)).filter(u=>u!==a.att&&all.some(o=>o.uid===u));
     if(!mem.length){startAttack(s,pid,a.att,a.targets[0],{});return}
     startAttack(s,pid,a.att,a.targets[0],{band:mem});return}
@@ -1468,7 +1469,7 @@ function cloakCheck(s){s.p.forEach((pl,pid)=>pl.heroes.forEach(h=>{const was=!!h
   /* Set 2 Grave Caller's Wand: whenever the equipped Hero exhausts, target player Mills 1 */
   if(h.ex&&!was&&!h.dead)eqList(h).filter(e=>e.name==="Grave Caller's Wand").forEach(()=>ask(s,pid,`Grave Caller's Wand: ${h.name} exhausted. Target player Mills 1`,[{label:`${P(s,oppOf(s,pid)).name} Mills 1`,v:oppOf(s,pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid}],"millOne",{name:"Grave Caller's Wand"}));
   if(h.ex&&!was&&!h.dead&&hasEqN(h,"Cloak of Hate")){const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);
-    eqList(h).filter(e=>e.name==="Cloak of Hate").forEach(()=>ask(s,pid,`Cloak of Hate: ${h.name} is exhausted, deal 2 Dark damage to any target`,targetOpts(s,pid,ts,2).concat([{label:"No damage",v:null}]),"dmgTo",{n:2,name:"Cloak of Hate",type:"Dark",src:h.uid}))}}))}
+    eqList(h).filter(e=>e.name==="Cloak of Hate").forEach(()=>ask(s,pid,`Cloak of Hate: ${h.name} is exhausted, target enemy loses 1 Health Point`,targetOpts(s,pid,ts.filter(o=>!sameTeam(s,ctrl(s,o),pid)&&!cardProof(s,o,true)),1),"loseTo",{n:1,name:"Cloak of Hate"}))}}))}
 function settle(s){let guard=0;
   while(!s.over&&guard++<200){
     if(s.phase==="battle")cloakCheck(s);

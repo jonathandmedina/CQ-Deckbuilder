@@ -503,7 +503,7 @@ function zoomHTML(c){const id=c.face==="up"?c.id.slice(0,-3):c.id;return`<span c
 function zoomOnly(c){const l=$("#layer");const m=document.createElement("div");m.className="modal zoom-only";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label",c.name);
   m.innerHTML=`<div class="box">${cardHTML(c,{nozoom:1})}${artRateHTML(c)}<div class="actions"><button type="button" class="btn" data-act="close">Close</button></div></div>`;
   m.addEventListener("click",e=>{if(e.target===m)m.remove()});l.appendChild(m);m.querySelector("[data-act=close]").focus();loadArtRate(m)}
-function zoomFrom(z){let c=BYID.get(z.dataset.zoom)||DEP_BYID.get(z.dataset.zoom);if(!c)return;
+function zoomFrom(z){let c=BYID.get(z.dataset.zoom)||DEP_BYID.get(z.dataset.zoom)||(S.view==="admin"&&S.access&&S.access.admin?TRIALS_OBJS.find(x=>x.id===z.dataset.zoom):null); /* Nov 23: Admin → Trials zooms even when Trials cards aren't loaded into the catalog */if(!c)return;
   const mode=z.closest("#play-root,#pl-modal")?"zoom":"inspect";if(mode==="zoom"&&z.dataset.zup&&c.up)c=upFace(c);openZoom(c,mode);zoomNav(z,mode)}
 /* zoom arrows: the zoomed view gets ‹ › buttons (plus ←/→ keys and swipe) that step through the list the card was opened from
    (card grid, hero picker, card pool, deck list, test hand, Play hand, piles, pick lists, board Heroes). Off at the ends; hidden for a one-card list. */
@@ -512,12 +512,12 @@ const ZITEM_SEL="[data-zoom],[data-act=inspect][data-id],[data-act=inspect-hand]
 function openZoom(c,mode){if(mode==="inspect")inspect(c);else zoomOnly(c)}
 function zoomList(t){const box=t&&t.closest&&t.closest(ZLIST_SEL);if(!box||box.closest("#layer > .modal:not(#pl-modal)"))return null;
   const tileOf=el=>el.closest(".card,li,.pill,.hc,.pk,.ph,.slot")||el;const me=tileOf(t);const seen=new Set(),items=[];let at=-1;
-  box.querySelectorAll(ZITEM_SEL).forEach(el=>{const tile=tileOf(el);if(seen.has(tile))return;const id=el.dataset.zoom||el.dataset.id;if(!id||!BYID.get(id))return;
+  box.querySelectorAll(ZITEM_SEL).forEach(el=>{const tile=tileOf(el);if(seen.has(tile))return;const id=el.dataset.zoom||el.dataset.id;if(!id||!(BYID.get(id)||(S.view==="admin"&&TRIALS_OBJS.some(x=>x.id===id))))return;
     seen.add(tile);if(tile===me||tile.contains(t))at=items.length;items.push({id,zup:!!el.dataset.zup})});
   return at<0||items.length<2?null:{items,at}}
 function zoomNav(t,mode){const L=zoomList(t);const m=$("#layer").lastElementChild;if(L&&m)addZnav(m,L,mode)}
 function addZnav(m,L,mode,focusDir){const n=L.items.length,i=L.at;m.classList.add("has-znav");
-  const go=d=>{const j=i+d;if(j<0||j>=n)return;const it=L.items[j];let c=BYID.get(it.id);if(!c)return;if(it.zup&&c.up)c=upFace(c);
+  const go=d=>{const j=i+d;if(j<0||j>=n)return;const it=L.items[j];let c=BYID.get(it.id)||(S.view==="admin"?TRIALS_OBJS.find(x=>x.id===it.id):null);if(!c)return;if(it.zup&&c.up)c=upFace(c);
     m.remove();openZoom(c,mode);const m2=$("#layer").lastElementChild;if(m2)addZnav(m2,{items:L.items,at:j},mode,d)};
   m._znav=go;
   m.insertAdjacentHTML("beforeend",`<button type="button" class="btn znav prev" aria-label="Previous card" title="Previous card (←)"${i<=0?" disabled":""}><svg class="zchev" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="btn znav next" aria-label="Next card" title="Next card (→)"${i>=n-1?" disabled":""}><svg class="zchev" viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M9 4.5 16.5 12 9 19.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`);

@@ -613,18 +613,19 @@ async function maybeRecord(){const s=U.s,m=U.meta;if(!s||s.trials)return; /* Tri
   const done=store2.get("cq.play.recorded",[]);if(done.includes(m.gid)){m.recorded=true;return}
   const c=sb();if(!c)return;m.recorded=true;saveLocal();
   const sides=m.mode==="ai"?[0]:[0,1];const rows=[];
-  for(const side of sides){const d=m.decks[side];if(!d||E.validateDeck(d).length)continue;
+  /* Nov 23: a deck that was legal when the game started is recorded even if a later update made it illegal (deprecated or renamed cards) */
+  for(const side of sides){const d=m.decks[side];if(!d||!Array.isArray(d.heroes)||d.heroes.length!==3)continue;
     /* online: the guest's row is saved without an account; the guest's own browser claims it (claim_result) so it counts on their profile */
     rows.push({...(m.mode==="online"&&side===1?{user_id:null}:{}),game_id:m.gid,side,deck_key:await deckKey(d),deck_name:d.name,heroes:d.heroes,cards:d.cards,player_name:(s.p[side].name||"Guest").slice(0,40),mode:m.mode,result:s.winner<0?"draw":(s.winner===side?"win":"loss"),rounds:s.round,stats:recStats(s,side),
       started_at:m.t0?new Date(m.t0).toISOString():null,ended_at:new Date().toISOString(),active_secs:m.t0?Math.min(172800,Math.round((m.act||0)/1000)):null})}
-  if(!rows.length)return;
+  if(!rows.length){toast("This game wasn't recorded: the deck is missing its three heroes.");return}
   let{error}=await c.from("deck_results").insert(rows);
   /* the stats column may not exist yet: save the result without it */
   /* the time columns (Admin update) may not exist yet: save without them */
   if(error&&/started_at|ended_at|active_secs/i.test(error.message)){({error}=await c.from("deck_results").insert(rows.map(r=>{const x=Object.assign({},r);delete x.started_at;delete x.ended_at;delete x.active_secs;return x})))}
   if(error&&/stats/i.test(error.message)){({error}=await c.from("deck_results").insert(rows.map(r=>{const x=Object.assign({},r);delete x.stats;delete x.started_at;delete x.ended_at;delete x.active_secs;return x})))}
-  if(error&&!/duplicate/i.test(error.message)){m.recorded=false;saveLocal();console.warn("Couldn't save the result:",error.message);return}
-  store2.set("cq.play.recorded",done.concat([m.gid]).slice(-300));toast("Result recorded for Best Decks.")}
+  if(error&&!/duplicate/i.test(error.message)){m.recorded=false;saveLocal();console.warn("Couldn't save the result:",error.message);toast("Couldn't record this game's result: "+error.message);return}
+  store2.set("cq.play.recorded",done.concat([m.gid]).slice(-300));toast(AS()&&S.me?"Result recorded for Best Decks.":"Result recorded for Best Decks. Sign in so your games count on your profile and the Leaderboard.")}
 function recStats(s,side){try{const g=E.gameStats(s);const sd=g.sides[side],od=g.sides[E.opp(side)];
   const o={v:1,rounds:g.rounds,lineup:{start:sd.start,final:sd.final},opp:{start:od.start,final:od.final},dmg:sd.dmg,prev:sd.prev,healer:sd.healer,tot:{dmg:sd.totDmg,prev:sd.totPrev,heal:sd.totHeal},end:s.conceded!=null?"concede":(s.deckedOut!=null?"deckout":(s.winner<0?"draw":"party"))};
   return JSON.stringify(o).length<5500?o:null}catch(e){return null}}

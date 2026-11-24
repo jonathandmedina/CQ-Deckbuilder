@@ -500,6 +500,7 @@ function starterDeck(i){const st=STARTERS[i];return{id:"starter:"+i,name:st.name
 U.starterDeck=starterDeck;
 /* Trials: five built-in 2-Hero helper parties, each a split of a starter deck (play-trials.js builds them) */
 U.TRIALS_STARTERS=window.CQT&&CQT.trialsStarters?CQT.trialsStarters(STARTERS,STARTER_LISTS):[];
+window.CQTrialsStarters=()=>U.TRIALS_STARTERS; /* Nov 23: Admin → Trials shows these */
 /* ---------- Trials: the co-op boss module (Plan B+C). Only for accounts with Trials access (admins always). ----------
    One player (party 0) plus 1 to 3 AI helper parties against the boss; or "watch mode", where the AI plays every party.
    Trials games are saved under cq.play.trials (not cq.play.local) and are never recorded to deck_results. */

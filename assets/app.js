@@ -621,6 +621,29 @@ window.CQDeprecatedHTML=function(){S.dep=S.dep||{q:"",cls:"all",type:"all",sort:
     <span class="count">${list.length} shown</span>
   </div>
   <div class="grid">${gridWithGroups(list,f,c=>cardHTML(c,{}))}</div>`};
+/* Nov 23: Admin → Trials: every Trial boss with its boss deck and spawns, the Trials loot, and the Trials parties (built-in helpers and yours), shown like the Visual View */
+function trialsDeckBody(d){const es=deckSorted(d),hs=(d.heroes||[]).map(h=>BYID.get(h)).filter(Boolean);
+  const stack=e=>`<div class="vs-stack" style="--n:${e.q}" title="${e.q} × ${esc(e.c.name)}">${Array.from({length:e.q},(_,i)=>`<div class="vs-card" style="--i:${i}">${cardHTML(e.c,{nozoom:i<e.q-1})}</div>`).join("")}<span class="vs-q">×${e.q}</span></div>`;
+  const pos=hs.length===2?["Lead","Closer"]:["Lead","Center","Closer"];
+  const groups=VIS_GROUPS.map(([g,label])=>{const l=es.filter(e=>visGroup(e.c)===g);return l.length?`<section class="vs-g"><h3>${label} <span>${l.reduce((n,e)=>n+e.q,0)}</span></h3><div class="vs-row">${l.map(stack).join("")}</div></section>`:""}).join("");
+  return`${hs.length?`<section class="vs-g"><h3>Heroes <span>${hs.length}</span></h3><div class="vs-row">${hs.map((h,i)=>`<div class="tr-ad-one"><span class="vs-pos">${pos[i]||""}</span>${stack({c:h,q:1})}</div>`).join("")}</div></section>`:""}${groups||'<div class="empty">No cards.</div>'}`}
+window.CQTrialsAdminHTML=function(){if(typeof TRIALS_BOSSES==="undefined")return`<div class="empty">The Trials module isn't loaded.</div>`;
+  const obj=n=>TRIALS_OBJS.find(c=>c.name===n&&c.kind==="token");
+  const stackOf=(c,q)=>`<div class="vs-stack" style="--n:${q}" title="${q} × ${esc(c.name)}">${Array.from({length:q},(_,i)=>`<div class="vs-card" style="--i:${i}">${cardHTML(c,{nozoom:i<q-1})}</div>`).join("")}<span class="vs-q">×${q}</span></div>`;
+  const bosses=TRIALS_BOSSES.map(b=>{const bc=TRIALS_BOSS_CARDS.filter(r=>r[1]===b[0]),sp=TRIALS_SPAWNS.filter(r=>r[1]===b[0]);const n=bc.reduce((t,r)=>t+(+r[2]||0),0);const bo=obj(b[0]);
+    return`<section class="panel tr-ad"><h2>Trial ${b[1]} · ${esc(b[0])}</h2>
+      <p class="note">${b[2]} Health Points per party · base Defense ${b[3]} · ${b[4]} Stone Plate${b[4]===1?"":"s"} per party · ${b[5]} Golem${b[5]===1?"":"s"} per party at the start · v${b[7]||1}</p>
+      <section class="vs-g"><h3>Boss and spawns</h3><div class="vs-row">${bo?`<div class="tr-ad-one"><span class="vs-pos">Boss</span>${stackOf(bo,1)}</div>`:""}${sp.map(r=>{const o=obj(r[0]);return o?`<div class="tr-ad-one"><span class="vs-pos">Spawn · ${r[2]}/${r[4]}${r[3]?`, ${r[3]} Defense`:""}</span>${stackOf(o,1)}</div>`:""}).join("")}</div></section>
+      <section class="vs-g"><h3>Boss deck <span>${n}</span></h3><div class="vs-row">${bc.map(r=>{const o=obj(r[0]);return o?stackOf(o,+r[2]||1):""}).join("")}</div></section></section>`}).join("");
+  const loot=TRIALS_OBJS.filter(c=>c.kind==="equip");
+  const built=(window.CQTrialsStarters?window.CQTrialsStarters():[])||[];
+  const mine=(S.decks||[]).filter(d=>(d.heroes||[]).filter(Boolean).length===2);
+  const party=(d,tag)=>`<section class="panel tr-ad"><h2>${esc(d.name||"Untitled party")} <span class="note">${tag} · ${deckTotal(d)} cards</span></h2>${trialsDeckBody(d)}</section>`;
+  return`<p class="ad-note">The Trials module (hidden from players without Trials access). Boss decks show each boss card with its copies; click the magnifier to zoom in.</p>
+    <h2 class="tr-ad-h">Bosses</h2>${bosses}
+    <section class="panel tr-ad"><h2>Trials loot <span class="note">${loot.length} pieces of equipment</span></h2><div class="grid">${loot.map(c=>cardHTML(c,{})).join("")}</div></section>
+    <h2 class="tr-ad-h">Built-in helper parties <span class="note">(${built.length})</span></h2>${built.map(d=>party(d,"Helper party")).join("")||'<div class="empty">None.</div>'}
+    <h2 class="tr-ad-h">Your Trials parties <span class="note">(${mine.length})</span></h2>${mine.map(d=>party(d,"My Decks")).join("")||'<div class="empty">You have no saved Trials parties. Make one in My Decks with 2 Heroes (Lead and Closer).</div>'}`};
 /* Nov 20: Admin → Never playtested: the Catalog view, showing only current cards no finished game has used */
 window.CQUntestedHTML=function(played,games){S.unt=S.unt||{q:"",cls:"all",type:"all",sort:(S.cat&&S.cat.sort)||"name",set:"all"};const f=S.unt;fixSet(f);
   const pool=[...HEROES,...CARDS].filter(c=>canSee(c)&&!played.has(c.name));const list=filterSort(pool,f);

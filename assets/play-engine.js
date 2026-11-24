@@ -92,6 +92,10 @@ E.parties=parties;
 function oppOf(s,pid){if(!s||!s.trials)return 1-pid;if(pid!==s.trials.boss)return s.trials.boss;const o=parties(s);const f=o.find(p=>!wiped(s,p));return f==null?o[0]:f}
 E.oppOf=oppOf;
 function sameTeam(s,a,b){if(!s||!s.trials||a==null||b==null)return a===b;return(a===s.trials.boss)===(b===s.trials.boss)}
+/* Nov 23: every side that isn't on pid's team (1-on-1: the opponent; Trials: the boss side). Use this, not parties(s), to list enemies:
+   in a Trial parties(s) is the player parties only, so loops over it never reach the boss or its spawns. */
+function enemySides(s,pid){return s.p.map((_,i)=>i).filter(i=>!sameTeam(s,i,pid))}
+E.enemySides=enemySides;
 E.sameTeam=sameTeam;
 const allPassed=s=>parties(s).every(p=>s.passed[p]);
 /* Trials "your spawns first": while a spawn placed against party pid is alive, pid can't attack or single-target a spawn placed against another party
@@ -1292,7 +1296,7 @@ function resolveCont(s,pid,cont,mods){
     if(added>0)s.pend.splice(added,0,{type:"comboGo",pid,actor:actor&&actor.uid});else comboTrigger(s,pid,actor)}
   }
   checkDeaths(s)}
-function painTargets(s,pid){const op=P(s,oppOf(s,pid));const out=[];parties(s).forEach(q=>{if(q===pid||(s.trials&&sameTeam(s,q,pid)))return;const pl=P(s,q);out.push(...living(pl),...pl.bf.filter(o=>o.kind==="summon"))});return out.filter(o=>!stealth(s,o)&&!cardProof(s,o))}
+function painTargets(s,pid){const out=[];enemySides(s,pid).forEach(q=>{const pl=P(s,q);out.push(...living(pl),...pl.bf.filter(o=>o.kind==="summon"))});return out.filter(o=>!stealth(s,o)&&!cardProof(s,o)&&trialsTargetOk(s,pid,o))}
 /* Update 48b: one prompt for all Pain Pillar triggers. It starts at all remaining triggers; the player lowers the number (pr.amount) and clicks a target; repeat until none are left. Each trigger is "target enemy loses 1 Health Point". */
 function painAsk(s,pid,left,total){const ts=painTargets(s,pid);if(!ts.length)return false;const ok=ask(s,pid,left>1?`Pain Pillars: ${left} trigger${left>1?"s":""} left. Choose how many, then a target (each one: target enemy loses 1 Health Point)`:`Pain Pillar: target enemy loses 1 Health Point`,targetOpts(s,pid,ts,left),"painPillar",{left,total,name:"Pain Pillar"});if(ok&&left>1)s.pend[0].amount={min:1,max:left,val:left};return ok}
 ASK.painPillar=(s,pid,pr,v,amt)=>{const left=pr.data.left;let n=Math.floor(+amt);if(!(n>=1))n=left;n=Math.min(n,left);const t=resolveTarget(s,v);

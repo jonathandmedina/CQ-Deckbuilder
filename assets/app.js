@@ -83,6 +83,15 @@ const TRIALS_OBJS=typeof TRIALS_LOOT==="undefined"?[]:[
   ...TRIALS_BOSSES.map(r=>({id:"t:"+r[0],kind:"token",tkind:"Boss",name:r[0],type:"Token",sub:"Trial "+r[1]+" boss",cls:"Trials",sup:"",cost:"",rules:`Health Points: ${r[2]} per party. Defense: ${r[3]}, plus its Stone Plates.\n${r[6]}`,ver:r[7]||1,set:"trials"})),
   ...TRIALS_BOSS_CARDS.map(r=>({id:"t:"+r[0],kind:"token",tkind:"Boss Card",name:r[0],type:"Token",sub:`${r[1]} boss card · ${r[2]} in its deck`,cls:"Trials",sup:"",cost:"",rules:`Target: ${r[3]}\n${r[4]}`,ver:r[5]||1,set:"trials"})),
   ...TRIALS_SPAWNS.map(r=>({id:"t:"+r[0],kind:"token",tkind:"Summon",name:r[0],type:"Token",sub:`Spawn · ${r[1]}`,cls:"Trials",sup:"",cost:"",str:r[2],def:r[3],hp:r[4],rules:r[5],ver:r[6]||1,set:"trials"}))];
+/* Nov 23: every Trials card carries its Trial: c.trial (number) and c.trialTag ("Trial 1 - Rock Mammoth").
+   Loot has no Trial column in the Trials_Loot sheet yet, so it counts as Trial 1 (TRIALS_LOOT_TRIAL can override per card). */
+const TRIALS_LOOT_TRIAL={};
+{const bt={};(typeof TRIALS_BOSSES!=="undefined"?TRIALS_BOSSES:[]).forEach(r=>bt[r[0]]=+r[1]);
+  const bossOfTrial=n=>((typeof TRIALS_BOSSES!=="undefined"?TRIALS_BOSSES:[]).find(r=>+r[1]===n)||[])[0]||"";
+  const owner=n=>{const f=(L)=>(typeof L!=="undefined"?L:[]).find(r=>r[0]===n);const bc=f(typeof TRIALS_BOSS_CARDS!=="undefined"?TRIALS_BOSS_CARDS:undefined)||f(typeof TRIALS_SPAWNS!=="undefined"?TRIALS_SPAWNS:undefined);return bc?bc[1]:null};
+  TRIALS_OBJS.forEach(c=>{let t=0;if(c.kind==="equip")t=TRIALS_LOOT_TRIAL[c.name]||1;else if(c.tkind==="Boss")t=bt[c.name]||0;else{const o=owner(c.name);t=o?bt[o]||0:0}
+    c.trial=t;const bn=bossOfTrial(t);c.trialTag=t?`Trial ${t}${bn?" - "+bn:""}`:"Trials"})}
+window.CQTrialTag=c=>c&&c.trialTag;
 const trialsOn=()=>!!(S.access&&S.access.trials);
 /* a card name or id the viewer may not see (a Trials card without Trials access) */
 const trialsHidden=id=>{const k=String(id||"").replace(/^[th]:/,"");return(TRIALS_SET.has(k)&&!trialsOn())||(SET2.has(k)&&!set2On())};
@@ -450,7 +459,7 @@ function cardHTML(c,o={}){
   <div class="c-head"><span class="c-name">${esc(c.name)}${c.face==="up"?` <span class="upstar" title="${c.backOf?"Made by the Recipe":"Upgraded side"}">★</span>`:""}</span>${hasGem(c)&&!(c.backOf&&c.cost==="")?`<span class="gem" title="Aura cost">${esc(c.cost)}</span>`:""}</div>
   <div class="c-type">${typeLine(c)}</div>
   <div class="c-rules">${rulesHTML(c.rules||"")}</div>
-  <div class="c-foot">${footHTML(c)}${o.nozoom?"":zoomHTML(c)}</div>
+  <div class="c-foot">${footHTML(c)}${o.nozoom?"":zoomHTML(c)}</div>${c.trialTag?`<span class="trial-tag" title="Trials module">${esc(c.trialTag)}</span>`:""}
   ${o.slot?`<span class="slotbadge">${o.slot}</span>`:""}
   ${o.ctrl||""}
 </${tag}>`;
@@ -536,7 +545,7 @@ document.addEventListener("contextmenu",e=>{const t=e.target.closest&&e.target.c
   const id=t.dataset.pool;if(!S.deck.cards[id])return;setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})});
 function artCardHTML(c,o,tag,attrs){
   return`<${tag} class="card art${o.picked?" picked":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}" title="${esc(c.name)}${c.face==="up"?" (upgraded)":""} · ${esc(c.cls)} · v${c.ver||1}"${attrs}>
-  <div class="art-frame"><img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">${artOverlayHTML(c)}</div>
+  <div class="art-frame"><img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">${artOverlayHTML(c)}</div>${c.trialTag?`<span class="trial-tag" title="Trials module">${esc(c.trialTag)}</span>`:""}
   ${flipHTML(c)}
   ${o.nozoom?"":zoomHTML(c)}
   ${o.slot?`<span class="slotbadge">${o.slot}</span>`:""}
@@ -546,15 +555,16 @@ function artCardHTML(c,o,tag,attrs){
 const kindRank=c=>c.kind==="hero"?0:c.kind==="token"?2:1;
 /* Set filter (Nov 15): Set 1 (main game), Set 2 (hidden playtest set), Trials module. Only sets this account can see are offered. */
 const setKey=c=>c.set===2?"2":c.set==="trials"?"trials":"1";
-const setOpts=()=>[["all","All sets"],["1","Set 1"],...(set2On()?[["2","Set 2"]]:[]),...(trialsOn()?[["trials","Trials module"]]:[])];
+const trialSetOpts=()=>{const seen=new Map();TRIALS_OBJS.forEach(c=>{if(c.trial&&!seen.has(c.trial))seen.set(c.trial,c.trialTag)});return[...seen.entries()].sort((x,y)=>x[0]-y[0]).map(([t,lab])=>["trial:"+t,"· "+lab])};
+const setOpts=()=>[["all","All sets"],["1","Set 1"],...(set2On()?[["2","Set 2"]]:[]),...(trialsOn()?[["trials","Trials module (all Trials)"],...trialSetOpts()]:[])];
 const fixSet=f=>{if(f.type==="Trials"){f.type="all";f.set="trials"}if(!f.set||!setOpts().some(o=>o[0]===f.set))f.set="all"};
 const setSel=(id,f)=>setOpts().length>2?`<label class="field" for="${id}">Set ${selectHTML(id,id,f.set,setOpts())}</label>`:"";
 function filterSort(list,f){
   const q=f.q.trim().toLowerCase();
-  let l=list.filter(c=>canSee(c)&&(!f.set||f.set==="all"||setKey(c)===f.set)&&(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Trials"?c.set==="trials":f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
+  let l=list.filter(c=>canSee(c)&&(!f.set||f.set==="all"||setKey(c)===f.set||(/^trial:/.test(f.set)&&c.set==="trials"&&c.trial===+f.set.slice(6)))&&(f.cls==="all"||c.cls===f.cls)&&(f.type==="all"||(f.type==="Trials"?c.set==="trials":f.type==="Hero"?c.kind==="hero":c.type===f.type))&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q)));
   const byName=(a,b)=>sortName(a.name).localeCompare(sortName(b.name));
   const setRank=c=>c.set==="trials"?2:c.set===2?1:0;
-  const s={class:(a,b)=>setRank(a)-setRank(b)||kindRank(a)-kindRank(b)||clsOrder(a.cls)-clsOrder(b.cls)||(a.set==="trials"&&b.set==="trials"?(a.tkind||"").localeCompare(b.tkind||""):0)||byName(a,b),
+  const s={class:(a,b)=>setRank(a)-setRank(b)||kindRank(a)-kindRank(b)||clsOrder(a.cls)-clsOrder(b.cls)||(a.set==="trials"&&b.set==="trials"?((a.trial||0)-(b.trial||0))||(a.tkind||"").localeCompare(b.tkind||""):0)||byName(a,b),
     name:byName,cost:(a,b)=>costNum(a)-costNum(b)||byName(a,b),type:(a,b)=>a.type.localeCompare(b.type)||byName(a,b)}[f.sort]||byName;
   return l.sort(s);
 }
@@ -565,7 +575,7 @@ function gridWithGroups(list,f,tile){
     return`<div class="empty">No cards match these filters${on.length?` (${on.join(", ")})`:""}.${sc&&on.length?` <button type="button" class="btn sm" data-act="clear-filters" data-scope="${sc}">Clear filters</button>`:""}</div>`}
   if(f.sort!=="class")return list.map(tile).join("");
   let out="",last=null;
-  const gk=c=>c.set==="trials"&&c.kind==="token"?"Trials module · "+(c.tkind==="Boss Card"?"Boss cards":c.tkind==="Boss"?"Bosses":"Spawns"):(c.set==="trials"?"Trials module · ":c.set===2?"Set 2 · ":"")+(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
+  const gk=c=>c.set==="trials"?(c.trialTag||"Trials module")+" · "+(c.kind==="equip"?"Loot":c.tkind==="Boss Card"?"Boss cards":c.tkind==="Boss"?"Bosses":"Summons"):(c.set===2?"Set 2 · ":"")+(c.kind==="hero"?"Heroes · ":c.kind==="token"?"Tokens · ":"")+c.cls;
   const counts={};list.forEach(c=>{const k=gk(c);counts[k]=(counts[k]||0)+1});
   for(const c of list){const k=gk(c);
     if(k!==last){out+=`<div class="group-h" style="--cc:${cc(c.cls)};--ci:${ci(c.cls)}"><i class="dot"></i>${esc(k)} <span>${counts[k]}</span></div>`;last=k}
@@ -624,13 +634,11 @@ window.CQDeprecatedHTML=function(){S.dep=S.dep||{q:"",cls:"all",type:"all",sort:
 /* Nov 23: Admin → Trials, laid out like Never playtested: Trial chips (All Trials, Trial 1–5), search, type and sort filters,
    then sections Bosses, Deck cards (boss cards, with copies), Summons (spawns) and Loot.
    The Trials_Loot sheet has no Trial column yet, so loot counts as Trial 1 (the only Trial so far) until it gets one. */
-const LOOT_TRIAL={};
 window.CQTrialsAdminHTML=function(){if(typeof TRIALS_BOSSES==="undefined")return`<div class="empty">The Trials module isn't loaded.</div>`;
   S.trv=S.trv||{trial:"all",q:"",type:"all",sort:"name"};const f=S.trv;
   const bossTrial={};TRIALS_BOSSES.forEach(r=>bossTrial[r[0]]=+r[1]);
   const copies={};TRIALS_BOSS_CARDS.forEach(r=>copies[r[0]]=+r[2]||1);
-  const trialOf=c=>{if(c.kind==="equip")return LOOT_TRIAL[c.name]||1;const n=c.name;
-    const b=TRIALS_BOSSES.find(r=>r[0]===n);if(b)return +b[1];const bc=TRIALS_BOSS_CARDS.find(r=>r[0]===n);if(bc)return bossTrial[bc[1]]||0;const sp=TRIALS_SPAWNS.find(r=>r[0]===n);if(sp)return bossTrial[sp[1]]||0;return 0};
+  const trialOf=c=>c.trial||0;
   const sec=c=>c.kind==="equip"?"loot":c.tkind==="Boss"?"boss":c.tkind==="Boss Card"?"deck":"summon";
   const q=(f.q||"").trim().toLowerCase();
   const byName=(x,y)=>sortName(x.name).localeCompare(sortName(y.name));

@@ -335,6 +335,7 @@ button.card:hover{border-color:var(--cc)}
 .vis-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .vis-top h2{margin:0}
 .vs-heroes{display:flex;gap:14px;flex-wrap:wrap}
+:where(.card){position:relative}.trial-tag{position:absolute;left:50%;top:15.5%;transform:translateX(-50%);max-width:92%;overflow:hidden;text-overflow:ellipsis;z-index:3;white-space:nowrap;font:700 .68rem/1.2 system-ui,sans-serif;letter-spacing:.02em;color:#2a1a06;background:linear-gradient(#ffe39a,#e6b04a);border:1px solid #8a5a12;border-radius:10px;padding:2px 9px;box-shadow:0 1px 3px rgba(0,0,0,.45);pointer-events:none}
 .vs-hero{width:170px;display:flex;flex-direction:column;gap:4px}
 .vs-pos{font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .vs-g h3{margin:6px 0 8px;font-size:1.05rem}.vs-g h3 span{color:var(--muted);font-weight:600}
@@ -476,8 +477,8 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 .sitebar .sb-fb{display:inline-flex;align-items:center;gap:7px}.sb-fb-i{width:20px;height:20px;flex:none}
 .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/art.css?v=20261123h">
-<link rel="stylesheet" href="assets/home.css?v=20261123h">
+<link rel="stylesheet" href="assets/art.css?v=20261123i">
+<link rel="stylesheet" href="assets/home.css?v=20261123i">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -510,25 +511,25 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261123h"></script>
-<script src="assets/trials-data.js?v=20261123h"></script>
-<script src="assets/audio-prefs.js?v=20261123h"></script>
-<script src="assets/app.js?v=20261123h"></script>
-<script src="assets/home.js?v=20261123h"></script>
-<script src="assets/play-engine.js?v=20261123h"></script>
-<script src="assets/play-trials.js?v=20261123h"></script>
-<script src="assets/play-cards.js?v=20261123h"></script>
-<script src="assets/play-ai.js?v=20261123h"></script>
-<script src="assets/play-ui.js?v=20261123h"></script>
-<script src="assets/changelog-data.js?v=20261123h"></script>
-<script src="assets/changelog.js?v=20261123h"></script>
-<script src="assets/admin.js?v=20261123h"></script>
-<script src="assets/profile.js?v=20261123h"></script>
-<script src="assets/action-pop.js?v=20261123h"></script>
-<script src="assets/blog.js?v=20261123h"></script>
-<script src="assets/online.js?v=20261123h"></script>
-<script src="assets/tutorial.js?v=20261123h"></script>
-<script src="assets/play-tablet.js?v=20261123h"></script>
+<script src="assets/cards-data.js?v=20261123i"></script>
+<script src="assets/trials-data.js?v=20261123i"></script>
+<script src="assets/audio-prefs.js?v=20261123i"></script>
+<script src="assets/app.js?v=20261123i"></script>
+<script src="assets/home.js?v=20261123i"></script>
+<script src="assets/play-engine.js?v=20261123i"></script>
+<script src="assets/play-trials.js?v=20261123i"></script>
+<script src="assets/play-cards.js?v=20261123i"></script>
+<script src="assets/play-ai.js?v=20261123i"></script>
+<script src="assets/play-ui.js?v=20261123i"></script>
+<script src="assets/changelog-data.js?v=20261123i"></script>
+<script src="assets/changelog.js?v=20261123i"></script>
+<script src="assets/admin.js?v=20261123i"></script>
+<script src="assets/profile.js?v=20261123i"></script>
+<script src="assets/action-pop.js?v=20261123i"></script>
+<script src="assets/blog.js?v=20261123i"></script>
+<script src="assets/online.js?v=20261123i"></script>
+<script src="assets/tutorial.js?v=20261123i"></script>
+<script src="assets/play-tablet.js?v=20261123i"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(/^#blog/.test(location.hash)&&window.CQBlog)window.CQBlog.mount(document.getElementById("view"),S.blogSlug)</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>

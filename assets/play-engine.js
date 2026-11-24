@@ -217,7 +217,7 @@ function strOf(s,o,vs){
     /* Set 2 Dagger of the Dead: activated (Nov 17, 2026; see CQ_EQACT) */
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bar-Bear Ian"&&enraged(s,o))v+=o.lvl>=3?4:2;
-    /* update 26: Level 3 Radiant Sentinel gets +5 instead when 5+ of its DEF comes from equipment */if(o.name==="Radiant Sentinel"){const eqd=eqList(o).reduce((n,e)=>n+(e.pdef||0),0);if(o.lvl>=3&&eqd>=5)v+=5;else if(defOf(s,o)>=5)v+=2}
+    /* Update 50 (Nov 23): with 5+ Defense (any source) it gets +2 Strength; {L3} +5 instead */if(o.name==="Radiant Sentinel"&&defOf(s,o)>=5)v+=o.lvl>=3?5:2;
     if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2*(o.fl.bannerN||1); /* Nov 17: +2 per Brute's Banner */
     if(heroIs(o,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre")v+=(x.ctr&&x.ctr.fury)||0});
     o.ench.forEach(e=>{if(e.name==="Weaken")v-=1});

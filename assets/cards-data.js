@@ -376,7 +376,7 @@ const RAW_HEROES=[
 ["Night Stalker", "Rogue", "2", "0", "1", "16", "While exhausted, this hero gains stealth.", 1],
 ["Precision Fighter", "Monk", "1", "1", "1", "15", "While this hero has 3 or more Strength, it gains piercing 1.", 1],
 ["Radiant Oracle", "Cleric", "1", "0", "1", "16", "Whenever this hero heals 3 or more Health Points, draw a card.\n{L3} Lifelink.", 3],
-["Radiant Sentinel", "Paladin", "0", "1", "1", "16", "While this hero has 5 or more Defense, it gets +2 Strength.\n{L3} While this hero has 5 or more Defense from equipment, it gets +5 Strength instead.", 4],
+["Radiant Sentinel", "Paladin", "0", "1", "1", "16", "While this hero has 5 or more Defense, it gets +2 Strength.\n{L3} While this hero has 5 or more Defense, it gets +5 Strength instead.", 5],
 ["Rage Brute", "Barbarian", "2", "0", "1", "15", "{L3} Fatigue: This hero gains Strength equal to its current Strength until end of turn. You can only activate this ability once per turn.", 4],
 ["Rootbinder", "Druid", "0", "0", "2", "16", "Exhaust: Summons you control get +1 Strength until end of turn.", 1],
 ["Sage Monk", "Monk", "1", "1", "1", "15", "Whenever Sage Monk plays its first combo card each turn, you may scry 1.\n{L3} Whenever you scry, Sage Monk gets +1 Strength until end of turn for each card you scry.", 2],

@@ -4,7 +4,10 @@
    Database setup: "Admin Panel SQL" in the project. Uses app.js globals (SB, S, HEROES, CARDS, BYID, esc, toast, cc, artKey, ICON_BASE, ART_VER, RENAMES, canSee). */
 (function(){
 "use strict";
-const CSS=`.ad-tabs{margin:6px 0 14px}.ad-sub{margin:0 0 14px}
+const CSS=`
+.tr-sec{margin:18px 0 8px;font-size:1.25rem}.tr-sec .count{font-size:.85rem;font-weight:400;opacity:.75;margin-left:6px}
+.tr-tile{position:relative}.tr-copies{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.75);color:#ffd98a;font-weight:700;font-size:.8rem;padding:2px 8px;border-radius:10px;pointer-events:none}
+.ad-tabs{margin:6px 0 14px}.ad-sub{margin:0 0 14px}
 .ad-bar{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end;margin:0 0 14px}
 .ad-bar .field{min-width:130px}.ad-chk{display:flex;gap:6px;align-items:center;padding-bottom:8px;white-space:nowrap}
 .ad-kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:0 0 18px}

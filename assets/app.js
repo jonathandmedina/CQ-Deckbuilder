@@ -621,29 +621,38 @@ window.CQDeprecatedHTML=function(){S.dep=S.dep||{q:"",cls:"all",type:"all",sort:
     <span class="count">${list.length} shown</span>
   </div>
   <div class="grid">${gridWithGroups(list,f,c=>cardHTML(c,{}))}</div>`};
-/* Nov 23: Admin → Trials: every Trial boss with its boss deck and spawns, the Trials loot, and the Trials parties (built-in helpers and yours), shown like the Visual View */
-function trialsDeckBody(d){const es=deckSorted(d),hs=(d.heroes||[]).map(h=>BYID.get(h)).filter(Boolean);
-  const stack=e=>`<div class="vs-stack" style="--n:${e.q}" title="${e.q} × ${esc(e.c.name)}">${Array.from({length:e.q},(_,i)=>`<div class="vs-card" style="--i:${i}">${cardHTML(e.c,{nozoom:i<e.q-1})}</div>`).join("")}<span class="vs-q">×${e.q}</span></div>`;
-  const pos=hs.length===2?["Lead","Closer"]:["Lead","Center","Closer"];
-  const groups=VIS_GROUPS.map(([g,label])=>{const l=es.filter(e=>visGroup(e.c)===g);return l.length?`<section class="vs-g"><h3>${label} <span>${l.reduce((n,e)=>n+e.q,0)}</span></h3><div class="vs-row">${l.map(stack).join("")}</div></section>`:""}).join("");
-  return`${hs.length?`<section class="vs-g"><h3>Heroes <span>${hs.length}</span></h3><div class="vs-row">${hs.map((h,i)=>`<div class="tr-ad-one"><span class="vs-pos">${pos[i]||""}</span>${stack({c:h,q:1})}</div>`).join("")}</div></section>`:""}${groups||'<div class="empty">No cards.</div>'}`}
+/* Nov 23: Admin → Trials, laid out like Never playtested: Trial chips (All Trials, Trial 1–5), search, type and sort filters,
+   then sections Bosses, Deck cards (boss cards, with copies), Summons (spawns) and Loot.
+   The Trials_Loot sheet has no Trial column yet, so loot counts as Trial 1 (the only Trial so far) until it gets one. */
+const LOOT_TRIAL={};
 window.CQTrialsAdminHTML=function(){if(typeof TRIALS_BOSSES==="undefined")return`<div class="empty">The Trials module isn't loaded.</div>`;
-  const obj=n=>TRIALS_OBJS.find(c=>c.name===n&&c.kind==="token");
-  const stackOf=(c,q)=>`<div class="vs-stack" style="--n:${q}" title="${q} × ${esc(c.name)}">${Array.from({length:q},(_,i)=>`<div class="vs-card" style="--i:${i}">${cardHTML(c,{nozoom:i<q-1})}</div>`).join("")}<span class="vs-q">×${q}</span></div>`;
-  const bosses=TRIALS_BOSSES.map(b=>{const bc=TRIALS_BOSS_CARDS.filter(r=>r[1]===b[0]),sp=TRIALS_SPAWNS.filter(r=>r[1]===b[0]);const n=bc.reduce((t,r)=>t+(+r[2]||0),0);const bo=obj(b[0]);
-    return`<section class="panel tr-ad"><h2>Trial ${b[1]} · ${esc(b[0])}</h2>
-      <p class="note">${b[2]} Health Points per party · base Defense ${b[3]} · ${b[4]} Stone Plate${b[4]===1?"":"s"} per party · ${b[5]} Golem${b[5]===1?"":"s"} per party at the start · v${b[7]||1}</p>
-      <section class="vs-g"><h3>Boss and spawns</h3><div class="vs-row">${bo?`<div class="tr-ad-one"><span class="vs-pos">Boss</span>${stackOf(bo,1)}</div>`:""}${sp.map(r=>{const o=obj(r[0]);return o?`<div class="tr-ad-one"><span class="vs-pos">Spawn · ${r[2]}/${r[4]}${r[3]?`, ${r[3]} Defense`:""}</span>${stackOf(o,1)}</div>`:""}).join("")}</div></section>
-      <section class="vs-g"><h3>Boss deck <span>${n}</span></h3><div class="vs-row">${bc.map(r=>{const o=obj(r[0]);return o?stackOf(o,+r[2]||1):""}).join("")}</div></section></section>`}).join("");
-  const loot=TRIALS_OBJS.filter(c=>c.kind==="equip");
-  const built=(window.CQTrialsStarters?window.CQTrialsStarters():[])||[];
-  const mine=(S.decks||[]).filter(d=>(d.heroes||[]).filter(Boolean).length===2);
-  const party=(d,tag)=>`<section class="panel tr-ad"><h2>${esc(d.name||"Untitled party")} <span class="note">${tag} · ${deckTotal(d)} cards</span></h2>${trialsDeckBody(d)}</section>`;
-  return`<p class="ad-note">The Trials module (hidden from players without Trials access). Boss decks show each boss card with its copies; click the magnifier to zoom in.</p>
-    <h2 class="tr-ad-h">Bosses</h2>${bosses}
-    <section class="panel tr-ad"><h2>Trials loot <span class="note">${loot.length} pieces of equipment</span></h2><div class="grid">${loot.map(c=>cardHTML(c,{})).join("")}</div></section>
-    <h2 class="tr-ad-h">Built-in helper parties <span class="note">(${built.length})</span></h2>${built.map(d=>party(d,"Helper party")).join("")||'<div class="empty">None.</div>'}
-    <h2 class="tr-ad-h">Your Trials parties <span class="note">(${mine.length})</span></h2>${mine.map(d=>party(d,"My Decks")).join("")||'<div class="empty">You have no saved Trials parties. Make one in My Decks with 2 Heroes (Lead and Closer).</div>'}`};
+  S.trv=S.trv||{trial:"all",q:"",type:"all",sort:"name"};const f=S.trv;
+  const bossTrial={};TRIALS_BOSSES.forEach(r=>bossTrial[r[0]]=+r[1]);
+  const copies={};TRIALS_BOSS_CARDS.forEach(r=>copies[r[0]]=+r[2]||1);
+  const trialOf=c=>{if(c.kind==="equip")return LOOT_TRIAL[c.name]||1;const n=c.name;
+    const b=TRIALS_BOSSES.find(r=>r[0]===n);if(b)return +b[1];const bc=TRIALS_BOSS_CARDS.find(r=>r[0]===n);if(bc)return bossTrial[bc[1]]||0;const sp=TRIALS_SPAWNS.find(r=>r[0]===n);if(sp)return bossTrial[sp[1]]||0;return 0};
+  const sec=c=>c.kind==="equip"?"loot":c.tkind==="Boss"?"boss":c.tkind==="Boss Card"?"deck":"summon";
+  const q=(f.q||"").trim().toLowerCase();
+  const byName=(x,y)=>sortName(x.name).localeCompare(sortName(y.name));
+  const sorts={name:byName,trial:(x,y)=>trialOf(x)-trialOf(y)||byName(x,y),copies:(x,y)=>(copies[y.name]||0)-(copies[x.name]||0)||byName(x,y),cost:(x,y)=>costNum(x)-costNum(y)||byName(x,y)};
+  const pool=TRIALS_OBJS.filter(c=>(f.trial==="all"||trialOf(c)===+f.trial)&&(f.type==="all"||sec(c)===f.type)&&(!q||(c.name+" "+c.rules+" "+c.type+" "+c.sub).toLowerCase().includes(q))).sort(sorts[f.sort]||byName);
+  const tile=c=>{const n=copies[c.name];return n&&sec(c)==="deck"?`<div class="tr-tile">${cardHTML(c,{})}<span class="tr-copies" title="${n} in the boss deck">×${n} in deck</span></div>`:cardHTML(c,{})};
+  const SECS=[["boss","Bosses"],["deck","Deck cards"],["summon","Summons"],["loot","Loot"]];
+  const tLabel=f.trial==="all"?"any Trial":"Trial "+f.trial;
+  const body=SECS.filter(([k])=>f.type==="all"||f.type===k).map(([k,label])=>{const l=pool.filter(c=>sec(c)===k);
+    const deckN=k==="deck"?l.reduce((t,c)=>t+(copies[c.name]||0),0):0;
+    return`<h2 class="tr-sec">${label} <span class="count">${l.length}${k==="deck"?` cards · ${deckN} in the boss deck${f.trial==="all"&&TRIALS_BOSSES.length>1?"s":""}`:""}</span></h2>
+      <div class="grid">${l.length?l.map(tile).join(""):`<p class="pl-note">No ${label.toLowerCase()} for ${tLabel} yet.</p>`}</div>`}).join("");
+  const chips=`<div class="chips" role="group" aria-label="Filter by Trial">${["all",1,2,3,4,5].map(t=>`<button type="button" class="chip" data-act="trv-trial" data-v="${t}" aria-pressed="${String(f.trial)===String(t)}">${t==="all"?"All Trials":"Trial "+t}</button>`).join("")}</div>`;
+  return`<p class="ad-note">The Trials module: ${TRIALS_BOSSES.length} boss${TRIALS_BOSSES.length===1?"":"es"}, ${TRIALS_BOSS_CARDS.length} boss deck cards, ${TRIALS_SPAWNS.length} summon${TRIALS_SPAWNS.length===1?"":"s"} and ${TRIALS_LOOT.length} pieces of loot. Hidden from players without Trials access. Click the magnifier to zoom in.</p>
+  <div class="bar">${chips}</div>
+  <div class="bar">
+    <label class="field" for="trv-q">Search <input type="search" id="trv-q" data-act="trv-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
+    <label class="field" for="trv-type">Type ${selectHTML("trv-type","trv-type",f.type,[["all","All"],["boss","Bosses"],["deck","Deck cards"],["summon","Summons"],["loot","Loot"]])}</label>
+    <label class="field" for="trv-sort">Sort by ${selectHTML("trv-sort","trv-sort",f.sort,[["name","Name"],["trial","Trial"],["copies","Copies in deck"],["cost","Aura cost"]])}</label>
+    <span class="count">${pool.length} shown</span>
+  </div>
+  ${body}`};
 /* Nov 20: Admin → Never playtested: the Catalog view, showing only current cards no finished game has used */
 window.CQUntestedHTML=function(played,games){S.unt=S.unt||{q:"",cls:"all",type:"all",sort:(S.cat&&S.cat.sort)||"name",set:"all"};const f=S.unt;fixSet(f);
   const pool=[...HEROES,...CARDS].filter(c=>canSee(c)&&!played.has(c.name));const list=filterSort(pool,f);
@@ -1399,6 +1408,7 @@ document.addEventListener("click",async e=>{
   if(a==="cat-cls"){S.cat.cls=v;store.set("cq.cat",S.cat);render()}
   else if(a==="dep-cls"){S.dep.cls=v;render()}
   else if(a==="unt-cls"){S.unt.cls=v;render()}
+  else if(a==="trv-trial"){S.trv.trial=v;render()}
   else if(a==="hero-cls"){S.b.heroCls=v;render()}
   else if(a==="b-cls"){S.b.cls=v;render()}
   else if(a==="clear-filters"){const f=b.dataset.scope==="cat"?S.cat:S.b;f.q="";f.type="all";f.cls="all";f.set="all";if(f===S.cat)store.set("cq.cat",S.cat);render()}
@@ -1483,7 +1493,7 @@ let qT;
 document.addEventListener("input",e=>{const t=e.target,a=t.dataset&&t.dataset.act;if(!a)return;
   if(a==="deck-name"){S.deck.name=t.value;S.dirty=true;saveDraft();return}
   if(a==="rules-q"){rulesFilter(t.value);return}
-  if(a==="cat-q"||a==="b-q"||a==="dep-q"||a==="unt-q"){clearTimeout(qT);qT=setTimeout(()=>{(a==="cat-q"?S.cat:a==="dep-q"?S.dep:a==="unt-q"?S.unt:S.b).q=t.value;if(a==="cat-q")store.set("cq.cat",S.cat);const pos=t.selectionStart;render();const n=document.getElementById(a);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}},180)}
+  if(a==="cat-q"||a==="b-q"||a==="dep-q"||a==="unt-q"||a==="trv-q"){clearTimeout(qT);qT=setTimeout(()=>{(a==="cat-q"?S.cat:a==="dep-q"?S.dep:a==="unt-q"?S.unt:a==="trv-q"?S.trv:S.b).q=t.value;if(a==="cat-q")store.set("cq.cat",S.cat);const pos=t.selectionStart;render();const n=document.getElementById(a);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}},180)}
 });
 document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.act;if(!a)return;
   if(a==="cat-type"){S.cat.type=t.value;store.set("cq.cat",S.cat);render()}
@@ -1495,6 +1505,8 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
   else if(a==="dep-sort"){S.dep.sort=t.value;render()}
   else if(a==="unt-type"){S.unt.type=t.value;render()}
   else if(a==="unt-sort"){S.unt.sort=t.value;render()}
+  else if(a==="trv-type"){S.trv.type=t.value;render()}
+  else if(a==="trv-sort"){S.trv.sort=t.value;render()}
   else if(a==="b-allcls"){S.b.allCls=!!t.checked;if(!S.b.allCls)S.b.cls="all";render()}
   else if(a==="b-sort"){S.b.sort=t.value;render()}
   else if(a==="rules-sel"&&t.value){rulesJump(t.value);t.value=""}

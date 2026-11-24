@@ -1734,6 +1734,9 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     U.multiDraw=draw;draw();return}
   if(k==="multi-t"){const u=b.dataset.u;U.multiSel=U.multiSel.includes(u)?U.multiSel.filter(x=>x!==u):U.multiSel.concat([u]);U.multiDraw();return}
   if(k==="multi-ok"){closeModal();send({type:"multiBow",n:U.multiSel.length,uids:U.multiSel});return}
+  /* Nov 23: Watch / Stop watching work from the lobby, where there is no game state yet */
+  if(k==="spec"){spectate(b.dataset.g);return}
+  if(k==="spec-leave"){leaveSpec();U.s=null;U.mode="lobby";U.overHide=false;closeModal();render();return}
   if(!s)return;
   if(k==="amt"){const A=U.askAmt;if(!A)return;const d=b.dataset.d;A.val=d==="all"?A.max:Math.max(A.min,Math.min(A.max,A.val+(+d)));const el=document.getElementById("ask-amt-v");if(el)el.textContent=A.val;return}
   if(k==="do"){let a;try{a=JSON.parse(b.dataset.a)}catch(err){return}{const mk=document.getElementById("pl-modal");if(a.type==="ask"&&U.askAmt&&mk&&mk.dataset.k===U.askAmt.key){a.amt=U.askAmt.val;U.askAmt=null}}closeModal();
@@ -1741,8 +1744,6 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
     begin(a);return}
   if(k==="modal-min"){const s2=view();const pr2=s2&&s2.pend[0];if(pr2)U.modalMin=pr2.type+":"+s2.seq;closeModal();render();return}
   if(k==="modal-max"){U.modalMin=null;render();return}
-  if(k==="spec"){spectate(b.dataset.g);return}
-  if(k==="spec-leave"){leaveSpec();U.s=null;U.mode="lobby";U.overHide=false;closeModal();render();return}
   if(k==="echo-mv"){send({type:"echoOrder",i:+b.dataset.i,d:+b.dataset.d});return}
   if(k==="cancel"){U.tgt=null;render();return}
   if(k==="skip"){const t=U.tgt;if(!t)return;t.picks.push(null);t.i++;if(t.i>=t.slots.length){const a=Object.assign({},t.a,{targets:t.picks});U.tgt=null;send(a)}else{skipEmpty();render()}return}

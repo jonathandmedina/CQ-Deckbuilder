@@ -209,6 +209,26 @@ if(fixRenames(S.deck))saveDraft();
 const deckTotal=d=>Object.values(d.cards).reduce((a,b)=>a+b,0);
 const partyClasses=d=>[...new Set(d.heroes.map(h=>BYID.get(h)?.cls).filter(Boolean))];
 function allowed(c,d){return c.cls==="Generic"||partyClasses(d).includes(c.cls)}
+/* ---------- Nov 24: sideboards for Best-of-3 matches (admins only while it's tested). d.side={heroes:["h:Name"],cards:{id:n}}.
+   Up to 10 cards counting a Hero; at most 1 Hero. Copy limits count the deck and sideboard together. ---------- */
+const SIDE_MAX=10;
+const sideOn=()=>!!(S.access&&S.access.admin);
+const sideOf=d=>{if(!d.side||typeof d.side!=="object")d.side={heroes:[],cards:{}};d.side.heroes=(d.side.heroes||[]).filter(Boolean).slice(0,1);d.side.cards=d.side.cards||{};return d.side};
+const cloneSide=x=>x&&(((x.heroes||[]).filter(Boolean).length)||Object.keys(x.cards||{}).length)?{heroes:(x.heroes||[]).filter(Boolean).slice(0,1),cards:{...(x.cards||{})}}:undefined;
+const sideTotal=d=>d&&d.side?(d.side.heroes||[]).filter(Boolean).length+Object.values(d.side.cards||{}).reduce((a,q)=>a+q,0):0;
+const sideHero=d=>d&&d.side&&d.side.heroes&&d.side.heroes[0]?BYID.get(d.side.heroes[0]):null;
+function sideAllowed(c,d){const h=sideHero(d);return allowed(c,d)||!!(h&&c.cls===h.cls)}
+function sideIssues(d){const out=[],sd=d.side;if(!sd)return out;const t=sideTotal(d);
+  if(t>SIDE_MAX)out.push(`The sideboard has ${t} cards (10 at most, counting a Hero).`);
+  if((sd.heroes||[]).filter(Boolean).length>1)out.push("The sideboard can hold only 1 Hero.");
+  const h=sideHero(d);if(h&&d.heroes.includes(h.id))out.push(`${h.name} is already in your party.`);
+  const ring=d.cards["Ring of Vocation"]||sd.cards["Ring of Vocation"];
+  for(const[id,q]of Object.entries(sd.cards)){const c=BYID.get(id);if(!c){out.push(`"${id}" isn't in the card list anymore.`);continue}
+    if(q+(d.cards[id]||0)>maxCopies(c))out.push(`${c.name}: ${c.sup==="Legendary"?"Legendary, 1 copy between deck and sideboard":"3 copies at most between deck and sideboard"}.`);
+    if(!sideAllowed(c,d)&&!ring)out.push(`${c.name} is ${c.cls}; no Hero in your party or sideboard can play it.`)}
+  return out}
+function sideLocal(id){const m=store.get("cq.deckside",{})||{};return m[id]||undefined}
+function sideLocalSet(id,sd){const m=store.get("cq.deckside",{})||{};if(sd)m[id]=sd;else delete m[id];store.set("cq.deckside",m)}
 /* Update 40: deprecated cards, equipment and Heroes */
 function isDeprecatedName(n){n=String(n).replace(/^h:/,"");return(typeof DEPRECATED_CARDS!=="undefined"&&DEPRECATED_CARDS.some(r=>r[1]===n))||(typeof DEPRECATED_EQUIP!=="undefined"&&DEPRECATED_EQUIP.some(r=>r[0]===n))||(typeof DEPRECATED_HEROES!=="undefined"&&DEPRECATED_HEROES.some(r=>r[0]===n))}
 function issues(d){
@@ -314,17 +334,20 @@ async function loadDecks(){
   /* own decks only (the profiles update adds a public-read policy, so filter by user); is_private may not exist before the Profiles SQL runs */
   /* update 30: the decks.log column (Deck log) may not exist until "Deck Log SQL" runs; is_private may not exist before the Profiles SQL */
   const sel=c=>SB.from("decks").select(c).eq("user_id",S.uid).order("updated_at",{ascending:false});
-  let{data,error}=await sel("id,name,heroes,cards,updated_at,is_private,log");S.logCol=!error;
+  /* Nov 24: decks.side (sideboard) needs the "Game Logs & Sideboards SQL"; until then sideboards stay in this browser */
+  let{data,error}=await sel("id,name,heroes,cards,updated_at,is_private,log,side");S.sideCol=!error;
+  if(error&&/\bside\b/.test(error.message))({data,error}=await sel("id,name,heroes,cards,updated_at,is_private,log"));
+  S.logCol=!error;
   if(error&&/\blog\b/.test(error.message))({data,error}=await sel("id,name,heroes,cards,updated_at,is_private"));
   if(error&&/is_private/.test(error.message))({data,error}=await sel("id,name,heroes,cards,updated_at"));
   if(error){toast("Couldn't load your decks. Check your connection and reload.");return}
-  S.decks=data.map(r=>({id:r.id,name:r.name,heroes:r.heroes||[],cards:r.cards||{},updated:Date.parse(r.updated_at)||0,log:Array.isArray(r.log)&&r.log.length?r.log:logLocal(r.id),...(typeof r.is_private==="boolean"?{priv:r.is_private}:{})}));
+  S.decks=data.map(r=>({id:r.id,name:r.name,heroes:r.heroes||[],cards:r.cards||{},updated:Date.parse(r.updated_at)||0,log:Array.isArray(r.log)&&r.log.length?r.log:logLocal(r.id),side:cloneSide(r.side)||cloneSide(sideLocal(r.id)),...(typeof r.is_private==="boolean"?{priv:r.is_private}:{})}));
   const fixed=S.decks.filter(fixRenames);
   if(fixed.length)SB.from("decks").upsert(fixed.map(d=>({...toRow(d),updated_at:new Date(d.updated||Date.now()).toISOString()}))).then(({error})=>{if(!error)toast(`Updated ${fixed.length} saved deck${fixed.length===1?"":"s"} for renamed cards.`)});
   if(S.view==="decks")render();
   rebuildPrompt();
 }
-const toRow=d=>({id:d.id,user_id:S.uid,name:(d.name||"Untitled deck").slice(0,80),heroes:hcompact(d.heroes).slice(0,3),cards:d.cards,updated_at:new Date().toISOString(),...(S.logCol&&d.log?{log:d.log}:{})});
+const toRow=d=>({id:d.id,user_id:S.uid,name:(d.name||"Untitled deck").slice(0,80),heroes:hcompact(d.heroes).slice(0,3),cards:d.cards,updated_at:new Date().toISOString(),...(S.logCol&&d.log?{log:d.log}:{}),...(S.sideCol?{side:cloneSide(d.side)||null}:{})});
 /* ---------- Deck log (update 30): each save records what changed (name, Heroes, cards +/-). Kept on the deck (decks.log in your account, or in this browser).
    Until the account's log column exists ("Deck Log SQL"), account deck logs are kept in this browser under cq.decklog. ---------- */
 const LOG_MAX=100;
@@ -340,14 +363,14 @@ function withLog(d){const prev=S.decks.find(x=>x.id===d.id);const old=(prev&&pre
   d.log=e?[e,...old].slice(0,LOG_MAX):old.slice(0,LOG_MAX);return d}
 async function persistDeck(d){
   withLog(d);
-  if(S.mode==="account"){if(!S.logCol)logLocalSet(d.id,d.log);
+  if(S.mode==="account"){if(!S.logCol)logLocalSet(d.id,d.log);if(!S.sideCol)sideLocalSet(d.id,cloneSide(d.side));
     const{error}=await SB.from("decks").upsert(toRow(d));
     if(error){toast("Couldn't save to your account: "+error.message);throw error}
-    const i=S.decks.findIndex(x=>x.id===d.id);const rec={...d,cards:{...d.cards},heroes:d.heroes.slice(),log:(d.log||[]).slice(),updated:Date.now()};if(i>=0&&typeof S.decks[i].priv==="boolean")rec.priv=S.decks[i].priv;else if(S.decks.some(x=>typeof x.priv==="boolean"))rec.priv=false;
+    const i=S.decks.findIndex(x=>x.id===d.id);const rec={...d,cards:{...d.cards},heroes:d.heroes.slice(),side:cloneSide(d.side),log:(d.log||[]).slice(),updated:Date.now()};if(i>=0&&typeof S.decks[i].priv==="boolean")rec.priv=S.decks[i].priv;else if(S.decks.some(x=>typeof x.priv==="boolean"))rec.priv=false;
     if(i>=0)S.decks.splice(i,1);S.decks.unshift(rec);return "account";
   }
   const list=localDecks().filter(x=>x.id!==d.id);
-  list.unshift({...d,cards:{...d.cards},heroes:d.heroes.slice(),log:(d.log||[]).slice(),updated:Date.now()});
+  list.unshift({...d,cards:{...d.cards},heroes:d.heroes.slice(),side:cloneSide(d.side),log:(d.log||[]).slice(),updated:Date.now()});
   store.set("cq.decks",list);S.decks=list;return "local";
 }
 async function removeDeck(id){
@@ -542,7 +565,10 @@ document.addEventListener("click",e=>{const z=e.target.closest&&e.target.closest
 document.addEventListener("keydown",e=>{const z=e.target.closest&&e.target.closest("[data-zoom]");if(!z||(e.key!=="Enter"&&e.key!==" "))return;e.preventDefault();e.stopPropagation();zoomFrom(z)},true);
 /* Deck Builder pool: left click a card adds a copy (data-act="inc"), right click removes one */
 document.addEventListener("contextmenu",e=>{const t=e.target.closest&&e.target.closest("[data-pool]");if(!t||e.target.closest(".c-ctrl,[data-zoom],[data-flip]"))return;e.preventDefault();
-  const id=t.dataset.pool;if(!S.deck.cards[id])return;setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})});
+  const id=t.dataset.pool;if(sideMode(t)){if(!S.deck.side||!S.deck.side.cards[id])return;setDeck(d=>{const s=sideOf(d);if(s.cards[id]>1)s.cards[id]--;else delete s.cards[id]});return}
+  if(!S.deck.cards[id])return;setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})});
+/* Nov 24: while the pool is set to Sideboard, pool clicks add to and remove from the sideboard (the deck list's own − / + still change the deck) */
+function sideMode(el){return S.b.to==="side"&&sideOn()&&!isTrialsDeck(S.deck)&&S.b.step==="cards"&&!(el&&el.closest&&el.closest(".deckpanel"))}
 function artCardHTML(c,o,tag,attrs){
   return`<${tag} class="card art${o.picked?" picked":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}" title="${esc(c.name)}${c.face==="up"?" (upgraded)":""} · ${esc(c.cls)} · v${c.ver||1}"${attrs}>
   <div class="art-frame"><img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">${artOverlayHTML(c)}</div>${c.trialTag?`<span class="trial-tag" title="Trials module">${esc(c.trialTag)}</span>`:""}
@@ -731,12 +757,15 @@ function viewBuild(){
   if(f.cls!=="all"&&f.cls!=="Generic"&&!pcls.includes(f.cls)&&!(f.allCls&&visClasses().includes(f.cls)))f.cls="all";
   if(f.type!=="all"&&!visTypes().includes(f.type))f.type="all";fixSet(f);
   /* Update 40: "All classes" shows every class's cards (for Ring of Vocation decks) */
-  const pool=filterSort(CARDS.filter(c=>f.allCls?canSee(c)&&!trialsHidden(c.id):allowed(c,d)),f);
+  const toSide=sideOn()&&!party&&f.to==="side";if(toSide)sideOf(d);const sh=toSide?sideHero(d):null;
+  if(sh&&!pcls.includes(sh.cls))pcls.push(sh.cls);
+  const pool=filterSort(CARDS.filter(c=>f.allCls?canSee(c)&&!trialsHidden(c.id):(toSide?sideAllowed(c,d):allowed(c,d))),f);
   const total=deckTotal(d);
   return`<div class="bhead"><h1>Deck Builder</h1><button type="button" class="btn primary go newdeck" data-act="new-deck-ask" title="Start a new, empty deck">New Deck</button>${trialsOn()?`<button type="button" class="btn newparty" data-act="new-party" title="A 2-Hero party for the co-op Trials">New Trials party</button>`:""}</div>${stepsHTML()}
   ${partySlots(d)}
   <div class="split">
     <section aria-label="Card pool">
+      ${sideOn()&&!party?`<div class="bar sb-to"><span class="note">Add cards to</span><button type="button" class="chip" data-act="b-to" data-v="deck" aria-pressed="${!toSide}">Deck</button><button type="button" class="chip" data-act="b-to" data-v="side" aria-pressed="${toSide}" title="Best-of-3 sideboard: up to 10 cards, 1 of which may be a Hero">Sideboard ${sideTotal(d)}/${SIDE_MAX}</button></div>`:""}
       <div class="bar">${classChips(f.cls,"b-cls",[...(f.allCls?visClasses().slice():pcls).sort((a,b)=>clsOrder(a)-clsOrder(b)),"Generic"])}</div>
       <div class="bar">
         <label class="field" for="b-q">Search <input type="search" id="b-q" data-act="b-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
@@ -747,7 +776,7 @@ function viewBuild(){
         <button type="button" class="btn sm" data-act="to-heroes">Change Heroes</button>
       </div>
       <p class="note pool-tip">Click a card to add a copy, right-click to remove one. Use the magnifier to zoom in.</p>
-      <div class="grid">${gridWithGroups(pool,f,c=>{const q=d.cards[c.id]||0,m=maxCopies(c);
+      <div class="grid">${gridWithGroups(pool,f,c=>{const q=toSide?(d.side.cards[c.id]||0):(d.cards[c.id]||0),m=Math.max(0,maxCopies(c)-(toSide?(d.cards[c.id]||0):((d.side&&d.side.cards[c.id])||0)));
         return cardHTML(c,{pool:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><button type="button" class="btn add3" data-act="inc-max" data-id="${esc(c.id)}" ${q>=m?"disabled":""} title="Add copies up to the limit (${m})">Add ${m}</button><span class="sp"></span></div>`})})}</div>
     </section>
     ${deckPanel(d)}
@@ -775,6 +804,7 @@ function deckPanel(d){
     ${HN(d)?`<div class="dl heroes"><h4><span>Heroes</span><span>${HN(d)}/${HSLOTS(d)}</span></h4><ul>${d.heroes.map((id,i)=>{const h=BYID.get(id);if(!h)return"";return`<li style="--cc:${cc(h.cls)};--ci:${ci(h.cls)}"><span class="q">${i+1}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(h.id)}" title="${SLOT_NAMES(d)[i]} · ${esc(h.cls)} · click to view">${esc(h.name)}</button>${heroStatsHTML(h,"hstats sm")}</li>`}).join("")}</ul></div>`:""}
     <div class="dl">${order.filter(g=>groups[g]).map(g=>`<h4><span>${g}</span><span>${groups[g].reduce((a,e)=>a+e.q,0)}</span></h4><ul>${groups[g].sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id)).map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink${allowed(e.c,d)?"":" bad"}" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>${e.c.sup==="Legendary"?'<span class="leg-ico" title="Legendary: 1 copy per deck" aria-label="Legendary">L</span>':""}`:`<span class="n bad">${esc(hiddenLabel(e.id))}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="dec" data-id="${esc(e.id)}" aria-label="Remove one">−</button><button type="button" class="mini" data-act="inc" data-id="${esc(e.id)}" aria-label="Add one" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>+</button><button type="button" class="mini add3" data-act="inc-max" data-id="${esc(e.id)}" title="Fill to ${e.c?maxCopies(e.c):3} copies" ${!e.c||e.q>=maxCopies(e.c)?"disabled":""}>×${e.c?maxCopies(e.c):3}</button><button type="button" class="mini rmall" data-act="rmall" data-id="${esc(e.id)}" aria-label="Remove all copies of ${esc(e.c?e.c.name:hiddenLabel(e.id))}" title="Remove all copies">×</button></li>`).join("")}</ul>`).join("")}</div>
     ${(()=>{const tk=tokensFor(d);return tk.length?`<div class="dl tokens"><h4><span>Tokens needed</span><span>${tk.reduce((a,t)=>a+t.q,0)}</span></h4><ul>${tk.map(t=>`<li style="--cc:${cc(t.c.cls)};--ci:${ci(t.c.cls)}"><span class="q">${t.q}</span><i class="dot"></i><button type="button" class="n nlink" data-act="inspect" data-id="${esc(t.c.id)}" title="Click to view">${esc(t.c.name)}</button><span class="cst">${esc(tokenStatLine(t.c))}</span></li>`).join("")}</ul><p class="note">Enough for every copy of the cards that make them. Tokens don't count toward your deck. Print &amp; Play includes them.</p></div>`:""})()}
+    ${sideOn()&&!isTrialsDeck(d)?sidePanelHTML(d):""}
     ${entries.some(e=>e.c&&!allowed(e.c,d))?`<button type="button" class="btn sm danger" data-act="prune">Remove cards your party can't play</button>`:""}
     <div class="actions">
       <button type="button" class="btn" data-act="pnp" data-src="current">Print &amp; Play PDF</button>
@@ -787,11 +817,19 @@ function deckPanel(d){
     <p class="note">${S.mode==="account"?"Saved decks sync to your account.":"You're not signed in, so saved decks stay in this browser."+(SB?' <a href="#account">Sign in</a>':"")}${S.dirty?" Unsaved changes.":""}</p>
   </aside>`;
 }
+function sidePanelHTML(d){const sd=sideOf(d),t=sideTotal(d),iss=sideIssues(d),h=sideHero(d);
+  const hs=HEROES.filter(x=>canSee(x)&&!x.dep&&!trialsHidden(x.id)&&!d.heroes.includes(x.id)).sort((a,b)=>clsOrder(a.cls)-clsOrder(b.cls)||a.name.localeCompare(b.name));
+  const list=Object.entries(sd.cards).filter(([,q])=>q>0).map(([id,q])=>({id,q,c:BYID.get(id)})).sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id));
+  return`<div class="dl side"><h4><span>Sideboard · Best of 3</span><span>${t}/${SIDE_MAX}</span></h4>
+    <label class="note sb-hero">Sideboard Hero <select data-act="side-hero"><option value="">None</option>${hs.map(x=>`<option value="${esc(x.id)}"${h&&h.id===x.id?" selected":""}>${esc(x.name)} · ${esc(x.cls)}</option>`).join("")}</select></label>
+    <ul>${list.map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="sdec" data-id="${esc(e.id)}" aria-label="Remove one from the sideboard">−</button><button type="button" class="mini" data-act="sinc" data-id="${esc(e.id)}" aria-label="Add one to the sideboard">+</button></li>`).join("")}</ul>
+    ${!t?`<p class="note">Switch the pool to <b>Sideboard</b> to add cards. Up to 10 cards, and 1 of them may be a Hero. Between games of a Best-of-3 match you can swap cards (and the Hero) between your deck and sideboard.</p>`:""}
+    ${iss.length?`<ul class="issues bad">${iss.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}</div>`}
 /* ---------- update 30: own decks from Decklists, Visual View, Deck log, deck image (PNG) ---------- */
 /* a deck in Decklists that is one of your saved decks opens that deck (no "(copy)"), so saving updates it */
 function ownMatch(d){const key=x=>JSON.stringify([x.heroes.slice().sort(),Object.entries(x.cards).filter(([,q])=>q>0).sort()]);const k=key(d);return S.decks.find(x=>key(x)===k)||null}
 function openOwn(o){if(!o)return false;if(S.dirty&&S.deck.id!==o.id&&!confirmReplace())return true;
-  S.deck={id:o.id,name:o.name,heroes:o.heroes.slice(),cards:{...o.cards}};S.dirty=false;S.b.step=HN(o)===3?"cards":"heroes";saveDraft();go("build");toast("This is one of your saved decks. Opened it, so Save deck updates it.");return true}
+  S.deck={id:o.id,name:o.name,heroes:o.heroes.slice(),cards:{...o.cards},side:cloneSide(o.side)};S.dirty=false;S.b.step=HN(o)===3?"cards":"heroes";saveDraft();go("build");toast("This is one of your saved decks. Opened it, so Save deck updates it.");return true}
 function deckLog(d){const o=S.decks.find(x=>x.id===d.id);return(o&&o.log)||d.log||[]}
 const deckSorted=d=>Object.entries(d.cards).filter(([,q])=>q>0).map(([id,q])=>({c:BYID.get(id),id,q})).filter(x=>x.c)
   .sort((a,b)=>costNum(a.c)-costNum(b.c)||sortName(a.c.name).localeCompare(sortName(b.c.name)));
@@ -1411,7 +1449,7 @@ document.addEventListener("click",async e=>{
     const k=await rebuildDecks(list);busy(false);b.closest(".modal")?.remove();toast(`Rebuilt ${k} deck${k===1?"":"s"} to 50 cards.${k?" Open a deck to fine-tune it.":""}`);
     if(a==="rb-auto"&&S.view!=="build")go("decks");render();return}
   if(a==="rb-manual"){const list=rebuildList();b.closest(".modal")?.remove();const d=list[0];if(!d)return;
-    if(d!==S.deck){S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=false;saveDraft()}
+    if(d!==S.deck){S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards},side:cloneSide(d.side)};S.dirty=false;saveDraft()}
     S.b.step="cards";go("build");render();toast(`Add ${DECK_SIZE-deckTotal(S.deck)} cards to reach 50, then press Save deck.${list.length>1?" Your other decks are marked in My Decks.":""}`);return}
   if(a==="cat-cls"){S.cat.cls=v;store.set("cq.cat",S.cat);render()}
   else if(a==="dep-cls"){S.dep.cls=v;render()}
@@ -1436,6 +1474,15 @@ document.addEventListener("click",async e=>{
   else if(a==="unhero"){setDeck(d=>{const n=HSLOTS(d);while(d.heroes.length<n)d.heroes.push(null);d.heroes=d.heroes.map(h=>h===id?null:h)});S.b.swap=null;if(HN(S.deck)<HSLOTS(S.deck)){S.b.step="heroes";render()}}
   else if(a==="to-cards"){if(HN(S.deck)===HSLOTS(S.deck)){S.b.step="cards";S.b.cls="all";render();scrollTo(0,0)}}
   else if(a==="to-heroes"){S.b.step="heroes";render()}
+  else if((a==="inc-max"||a==="inc"||a==="dec")&&sideMode(b)){const c=BYID.get(id);if(!c)return;const sd=sideOf(S.deck),q=sd.cards[id]||0,m=maxCopies(c)-(S.deck.cards[id]||0);
+    if(a==="dec"){setDeck(d=>{const s=sideOf(d);if(s.cards[id]>1)s.cards[id]--;else delete s.cards[id]});return}
+    const room=SIDE_MAX-sideTotal(S.deck);if(q>=m){toast(`No more copies: ${c.sup==="Legendary"?"1 Legendary":"3 copies"} between deck and sideboard.`);return}if(room<=0){toast("The sideboard is full (10 cards, counting a Hero).");return}
+    const n=a==="inc-max"?Math.min(m,q+room):q+1;setDeck(d=>{sideOf(d).cards[id]=n})}
+  else if(a==="sinc"||a==="sdec"){const c=BYID.get(id);const sd=sideOf(S.deck);
+    if(a==="sdec"){setDeck(d=>{const s=sideOf(d);if(s.cards[id]>1)s.cards[id]--;else delete s.cards[id]});return}
+    if(!c||(sd.cards[id]||0)+(S.deck.cards[id]||0)>=maxCopies(c)){toast("That's the most copies allowed between deck and sideboard.");return}if(sideTotal(S.deck)>=SIDE_MAX){toast("The sideboard is full (10 cards, counting a Hero).");return}
+    setDeck(d=>{const s=sideOf(d);s.cards[id]=(s.cards[id]||0)+1})}
+  else if(a==="b-to"){S.b.to=b.dataset.v==="side"?"side":"deck";render()}
   else if(a==="inc-max"){const c=BYID.get(id);if(!c)return;const m=maxCopies(c),q=S.deck.cards[id]||0;if(q>=m)return;setDeck(d=>{d.cards[id]=m});toast(`${m} × ${c.name} in your deck.`)}
   else if(a==="inc"||a==="inc-close"){const c=BYID.get(id);if(!c)return;
     if((S.deck.cards[id]||0)>=maxCopies(c)){toast(c.sup==="Legendary"?"Legendary cards are limited to 1 copy.":"You can include up to 3 copies.");return}
@@ -1461,8 +1508,8 @@ document.addEventListener("click",async e=>{
   else if(a==="save"){const d=S.deck;d.name=(d.name||"").trim()||"Untitled deck";b.disabled=true;
     try{const where=await persistDeck(d);S.dirty=false;saveDraft();toast(where==="account"?"Deck saved to your account.":"Deck saved in this browser.")}catch(err){}
     render()}
-  else if(a==="open"){const d=S.decks.find(x=>x.id===id);if(!d)return;if(isTrialsDeck(d)&&!trialsOn())return;S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards},...(isTrialsDeck(d)?{trials:true}:{})};S.dirty=false;S.b.step=HN(d)===HSLOTS(d)?"cards":"heroes";saveDraft();go("build")}
-  else if(a==="dup"){const d=S.decks.find(x=>x.id===id);if(!d)return;const c={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};try{await persistDeck(c);toast("Deck duplicated.")}catch(err){}render()}
+  else if(a==="open"){const d=S.decks.find(x=>x.id===id);if(!d)return;if(isTrialsDeck(d)&&!trialsOn())return;S.deck={id:d.id,name:d.name,heroes:d.heroes.slice(),cards:{...d.cards},side:cloneSide(d.side),...(isTrialsDeck(d)?{trials:true}:{})};S.dirty=false;S.b.step=HN(d)===HSLOTS(d)?"cards":"heroes";saveDraft();go("build")}
+  else if(a==="dup"){const d=S.decks.find(x=>x.id===id);if(!d)return;const c={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards},side:cloneSide(d.side)};try{await persistDeck(c);toast("Deck duplicated.")}catch(err){}render()}
   else if(a==="del"){const box=document.querySelector(`[data-confirm="${id}"]`);if(box)box.hidden=false}
   else if(a==="del-no"){const box=document.querySelector(`[data-confirm="${id}"]`);if(box)box.hidden=true}
   else if(a==="del-yes"){await removeDeck(id)}
@@ -1491,10 +1538,10 @@ document.addEventListener("click",async e=>{
   else if(a==="comm-unshare"){const rid=S.commMine&&S.commMine.get(id);if(rid&&window.confirm("Remove this deck from Community Decks?"))commUnshare(rid)}
   else if(a==="comm-open"){const r=(S.comm&&S.comm.rows||[]).find(x=>x.id===id);if(!r)return;b.closest(".modal")?.remove();const d=commDeck(r);
     if(openOwn(S.uid&&r.user_id===S.uid?S.decks.find(x=>String(x.id)===String(r.deck_id)):null)||openOwn(ownMatch(d)))return;
-    if(S.dirty&&!confirmReplace())return;S.deck={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=true;S.b.step="cards";saveDraft();go("build");toast("Deck copied into the Deck Builder. Press Save deck to keep it.")}
+    if(S.dirty&&!confirmReplace())return;S.deck={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards},side:cloneSide(d.side)};S.dirty=true;S.b.step="cards";saveDraft();go("build");toast("Deck copied into the Deck Builder. Press Save deck to keep it.")}
   else if(a==="best-open"){const r=(S.best&&S.best.rows||[]).find(x=>x.deck_key===id)||(S.comm&&S.comm.recent||[]).find(x=>x.deck_key===id);if(!r)return;b.closest(".modal")?.remove();const d=bestDeck(r);
     if(openOwn(ownMatch(d)))return;
-    if(S.dirty&&!confirmReplace())return;S.deck={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards}};S.dirty=true;S.b.step="cards";saveDraft();go("build");toast("Deck copied into the Deck Builder. Press Save deck to keep it.")}
+    if(S.dirty&&!confirmReplace())return;S.deck={id:newId(),name:d.name+" (copy)",heroes:d.heroes.slice(),cards:{...d.cards},side:cloneSide(d.side)};S.dirty=true;S.b.step="cards";saveDraft();go("build");toast("Deck copied into the Deck Builder. Press Save deck to keep it.")}
   else if(a==="share"){const d=deckBySrc(b.dataset.src);if(d&&isTrialsDeck(d)){toast("Trials parties can't be shared yet.");return}if(d)copyText(shareURL(d),"Share link copied. Anyone with it can open this deck.")}
 });
 let qT;
@@ -1515,6 +1562,7 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
   else if(a==="unt-sort"){S.unt.sort=t.value;render()}
   else if(a==="trv-type"){S.trv.type=t.value;render()}
   else if(a==="trv-sort"){S.trv.sort=t.value;render()}
+  else if(a==="side-hero"){const v=t.value;if(v&&sideTotal(S.deck)-((S.deck.side&&S.deck.side.heroes||[]).filter(Boolean).length)>=SIDE_MAX){toast("The sideboard is full. Take a card out to add a Hero.");render();return}setDeck(d=>{sideOf(d).heroes=v?[v]:[]})}
   else if(a==="b-allcls"){S.b.allCls=!!t.checked;if(!S.b.allCls)S.b.cls="all";render()}
   else if(a==="b-sort"){S.b.sort=t.value;render()}
   else if(a==="rules-sel"&&t.value){rulesJump(t.value);t.value=""}

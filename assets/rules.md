@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 24, 2026 (update 51: “target enemy” wording; enchantments on summons)*
+*Version: November 24, 2026 (update 52: best-of-3 matches and sideboards)*
 
 ## 1. Welcome to Riverstead
 
@@ -46,6 +46,16 @@ Your party’s classes decide which cards you can play. A Hero can only play car
 - Your deck must have at least 50 cards. There is no maximum. Your three Heroes and any tokens don’t count toward the 50.
 - You may include up to 3 copies of any card with the same name.
 - You may include only 1 copy of each Legendary card.
+
+### Best-of-3 Matches and Sideboards
+
+A game is best of 1 unless both players agree to play a best-of-3 match.
+
+- In a best-of-3 match, the first player to win 2 games wins the match. A drawn game doesn't count for either player.
+- Each deck may bring a sideboard of up to 10 cards. Up to 1 of those cards may be a Hero, and it counts toward the 10.
+- Copy limits count your deck and sideboard together: up to 3 copies of a card, and 1 copy of a Legendary.
+- Between games, you may swap any number of cards between your deck and sideboard, and you may swap your sideboard Hero with a Hero in your party. Your deck must still have at least 50 cards, and your sideboard at most 10.
+- Your changes last for the rest of the match. Before any game, you may go back to the list you started the match with.
 
 ## 4. The Cards
 

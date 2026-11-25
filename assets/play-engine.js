@@ -160,6 +160,12 @@ E.validateDeck=function(d,opt){const tr=!!(opt&&opt.trials);
   let t=0;for(const[id,q]of Object.entries(d.cards||{})){if(!DB[id])out.push(`Unknown card ${id}`);else if(DB[id].dep)out.push(`${id} is deprecated (removed from play).`);t+=q}
   for(const[id,q]of Object.entries(d.cards||{})){const c=DB[id];if(c&&q>(c.sup==="Legendary"?1:3))out.push(`${id}: ${c.sup==="Legendary"?"Legendary, only 1 allowed":"max 3 copies"}.`)}
   if(t<50)out.push(`Deck has ${t} cards (needs at least 50).`);return out};
+/* Nov 24: Best-of-3 sideboards. d.side={heroes:["h:Name"],cards:{id:n}}: up to 10 cards counting a Hero, at most 1 Hero, copy limits shared with the deck */
+E.validateSide=function(d){const out=[],sd=d&&d.side;if(!sd)return out;const hs=(sd.heroes||[]).filter(Boolean);let t=hs.length;
+  if(hs.length>1)out.push("The sideboard can hold only 1 Hero.");hs.forEach(h=>{if(!DB[h])out.push(`Unknown Hero ${h}`);else if(DB[h].dep)out.push(`${DB[h].name} is deprecated (removed from play).`);if((d.heroes||[]).includes(h))out.push(`${String(h).replace(/^h:/,"")} is in the party and the sideboard.`)});
+  for(const[id,q]of Object.entries(sd.cards||{})){t+=q;const c=DB[id];if(!c){out.push(`Unknown card ${id}`);continue}if(c.dep)out.push(`${id} is deprecated (removed from play).`);
+    if(q+((d.cards||{})[id]||0)>(c.sup==="Legendary"?1:3))out.push(`${id}: ${c.sup==="Legendary"?"Legendary, 1 copy between deck and sideboard":"3 copies at most between deck and sideboard"}.`)}
+  if(t>10)out.push(`The sideboard has ${t} cards (10 at most, counting a Hero).`);return out};
 
 /* ---------- lookups ---------- */
 function allObjs(s){const out=[];s.p.forEach((pl,pid)=>{pl.heroes.forEach(h=>{out.push(h);eqList(h).forEach(e=>out.push(e));h.ench.forEach(e=>out.push(e))});pl.bf.forEach(o=>{out.push(o);(o.ench||[]).forEach(e=>out.push(e))});pl.inv.forEach(o=>out.push(o))});return out}

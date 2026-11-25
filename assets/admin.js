@@ -287,6 +287,24 @@ function usersTab(){
 function untestedTab(){if(D.err)return`<div class="empty">Couldn't load game results: ${E(D.err)}</div>`;if(!D.rows)return`<p class="ad-empty">Loading game results…</p>`;
   const played=new Set();for(const r of D.rows){(r.heroes||[]).forEach(n=>played.add(fixName(n)));for(const[n,q]of Object.entries(r.cards||{}))if(q>0)played.add(fixName(n))}
   return window.CQUntestedHTML?window.CQUntestedHTML(played,D.rows.length):""}
+/* ---------- Game logs (Nov 24): every finished Play-tab game saved by the host or vs-AI browser (table game_logs) ---------- */
+async function loadLogs(){D.logsErr=null;const{data,error}=await SB.from("game_logs").select("id,created_at,game_id,mode,players,winner,rounds,ver,ended,match_id,game_no").order("created_at",{ascending:false}).limit(300);
+  if(error)D.logsErr=error.message;else D.logs=data||[];rerender()}
+async function fullLog(id){const{data,error}=await SB.from("game_logs").select("*").eq("id",id).single();if(error){toast("Couldn't load that game: "+error.message);return null}return data}
+function logsTab(){
+  if(D.logsErr)return`<div class="empty">${/game_logs|relation|schema cache/i.test(D.logsErr)?"Game logs need the Game Logs SQL run in Supabase first.":"Couldn't load game logs: "+E(D.logsErr)}</div>`;
+  if(!D.logs)return`<p class="ad-empty">Loading game logs…</p>`;
+  const q=(st.lq||"").trim().toLowerCase(),m=st.lmode||"all";
+  const L=D.logs.filter(r=>(m==="all"||r.mode===m)&&(!q||(r.players||[]).join(" ").toLowerCase().includes(q)));
+  const res=r=>r.winner==null||r.winner<0?"Draw":`${E((r.players||[])[r.winner]||"?")} won${r.ended==="concede"?" (concede)":r.ended==="deckout"?" (deck out)":""}`;
+  return`<div class="ad-bar"><label class="field">Search<input type="search" data-ad="lq" value="${E(st.lq||"")}" placeholder="Player name"></label>
+    <label class="field">Games<select data-ad="lmode">${[["all","All games"],["ai","vs AI"],["online","Online"]].map(([v,l])=>`<option value="${v}"${m===v?" selected":""}>${l}</option>`).join("")}</select></label>
+    <button type="button" class="btn sm" data-ad-act="logs-refresh">Refresh</button></div>
+  <p class="ad-note">The newest 300 finished games. <b>Replay</b> steps through a game action by action on the Play tab. <b>Download</b> saves the full log (seed, decks, every action and the game log) as a JSON file for bug reports and AI training.</p>
+  <section class="ad-card"><div class="ad-scroll"><table class="ad-t"><thead><tr><th>When</th><th>Players</th><th class="ad-hide-sm">Mode</th><th>Result</th><th class="n">Rounds</th><th class="ad-hide-sm">Version</th><th></th></tr></thead><tbody>
+    ${L.map(r=>`<tr><td>${ago(r.created_at)}</td><td>${E((r.players||[]).join(" vs "))}</td><td class="ad-hide-sm">${r.mode==="online"?"Online":"vs AI"}${r.match_id?` · Bo3 game ${fmt(r.game_no)}`:""}</td><td>${res(r)}</td><td class="n">${fmt(r.rounds)}</td><td class="ad-hide-sm">${E(r.ver||"–")}</td>
+      <td style="white-space:nowrap"><button type="button" class="btn sm" data-ad-log="replay" data-id="${r.id}">Replay</button> <button type="button" class="btn sm" data-ad-log="dl" data-id="${r.id}">Download</button></td></tr>`).join("")||`<tr><td colspan="7" class="ad-empty">No saved games match.</td></tr>`}
+  </tbody></table></div></section>`}
 /* ---------- page ---------- */
 function emptyMsg(){return`<div class="empty">No finished games match these filters yet.${st.complete?" Try turning off <b>Complete games only</b> or picking a longer period.":""}</div>`}
 function playTab(){
@@ -307,12 +325,12 @@ function view(){
   if(!S.access)return`<h1>Admin</h1><p class="ad-empty">Checking access…</p>`;
   if(!S.access.admin)return`<h1>Admin</h1><div class="empty">This page is only for admins.</div>`;
   return`<h1>Admin</h1><p class="lede">Only you and other admins can see this page.</p>
-  <div class="chips ad-tabs" role="tablist">${[["play","Playtesting"],["untested","Never playtested"],["trials","Trials"],["users","Users"],["dep","Deprecated cards"]].map(([v,l])=>`<button type="button" class="chip" role="tab" data-ad-tab="${v}" aria-selected="${st.tab===v}" aria-pressed="${st.tab===v}">${l}</button>`).join("")}</div>
-  ${st.tab==="trials"?(window.CQTrialsAdminHTML?window.CQTrialsAdminHTML():""):st.tab==="users"?usersTab():st.tab==="dep"?(window.CQDeprecatedHTML?window.CQDeprecatedHTML():""):st.tab==="untested"?untestedTab():playTab()}`}
+  <div class="chips ad-tabs" role="tablist">${[["play","Playtesting"],["untested","Never playtested"],["logs","Game logs"],["trials","Trials"],["users","Users"],["dep","Deprecated cards"]].map(([v,l])=>`<button type="button" class="chip" role="tab" data-ad-tab="${v}" aria-selected="${st.tab===v}" aria-pressed="${st.tab===v}">${l}</button>`).join("")}</div>
+  ${st.tab==="logs"?logsTab():st.tab==="trials"?(window.CQTrialsAdminHTML?window.CQTrialsAdminHTML():""):st.tab==="users"?usersTab():st.tab==="dep"?(window.CQDeprecatedHTML?window.CQDeprecatedHTML():""):st.tab==="untested"?untestedTab():playTab()}`}
 function mount(el){injectCSS();root=el;
   if(SB&&S.uid&&S.access&&S.access.admin){
     if(st.tab==="play"||st.tab==="untested"){if(!D.rows&&!D.loading||Date.now()-D.at>120000&&!D.loading)loadRows();if(st.tab==="play"&&!D.watch)loadWatch()}
-    if(st.tab==="users"&&!D.users)loadUsers()}
+    if(st.tab==="users"&&!D.users)loadUsers();if(st.tab==="logs"&&!D.logs&&!D.logsErr)loadLogs()}
   el.innerHTML=view()}
 function rerender(){if(root&&root.isConnected&&S.view==="admin"){const y=scrollY;const a=document.activeElement,k=a&&a.dataset&&a.dataset.ad,pos=a&&a.selectionStart;mount(root);
   if(k){const n=root.querySelector(`[data-ad="${k}"]`);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}}scrollTo(0,y)}}
@@ -322,7 +340,10 @@ document.addEventListener("click",async e=>{const t=e.target;if(!root||S.view!==
   const tab=t.closest("[data-ad-tab]");if(tab){st.tab=tab.dataset.adTab;save();rerender();return}
   const sec=t.closest("[data-ad-sec]");if(sec){st.sec=sec.dataset.adSec;save();rerender();return}
   const so=t.closest("[data-ad-sort]");if(so){const k=so.dataset.adSort;st.sort.hero=st.sort.hero[0]===k?[k,-st.sort.hero[1]]:[k,k==="name"?1:-1];rerender();return}
-  const act=t.closest("[data-ad-act]");if(act){if(act.dataset.adAct==="refresh"){D.at=0;loadRows();loadWatch()}else{D.users=null;loadUsers()}rerender();return}
+  const lg=t.closest("[data-ad-log]");if(lg){lg.disabled=true;const row=await fullLog(lg.dataset.id);lg.disabled=false;if(!row)return;
+    if(lg.dataset.adLog==="replay"){if(window.CQReplay)window.CQReplay(row);else toast("Replay isn't available on this page.")}
+    else{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(row,null,1)],{type:"application/json"}));a.download=`riverstead-game-${String(row.created_at||"").slice(0,10)}-${(row.players||[]).join("-vs-").replace(/[^\w-]+/g,"_")}.json`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}return}
+  const act=t.closest("[data-ad-act]");if(act){if(act.dataset.adAct==="logs-refresh"){D.logs=null;D.logsErr=null;loadLogs();rerender();return}if(act.dataset.adAct==="refresh"){D.at=0;loadRows();loadWatch()}else{D.users=null;loadUsers()}rerender();return}
   const w=t.closest("[data-ad-watch]");if(w){await addWatch(w.dataset.name,w.dataset.adWatch,"");return}
   const u=t.closest("[data-ad-unwatch]");if(u){const{error}=await SB.from("watch_list").delete().eq("name",u.dataset.adUnwatch);if(error)toast("Couldn't remove it: "+error.message);else{toast(`${u.dataset.adUnwatch} removed from the watch list.`);loadWatch()}}});
 async function addWatch(name,kind,note){name=String(name||"").trim();if(!name)return;
@@ -331,7 +352,7 @@ async function addWatch(name,kind,note){name=String(name||"").trim();if(!name)re
   if(error){toast("Couldn't add it: "+error.message);return}toast(`${c.name} is on the watch list.`);loadWatch()}
 document.addEventListener("submit",e=>{const f=e.target.closest&&e.target.closest('[data-ad-form="watch"]');if(!f)return;e.preventDefault();const fd=new FormData(f);addWatch(fd.get("name"),f.dataset.kind,fd.get("note"))});
 document.addEventListener("change",async e=>{const t=e.target;if(!root||S.view!=="admin"||!t.dataset)return;
-  if(t.dataset.ad&&t.dataset.ad!=="uq"){st[t.dataset.ad]=t.type==="checkbox"?t.checked:t.value;if(t.dataset.ad==="minG")st.minG=+t.value;save();rerender();return}
+  if(t.dataset.ad&&t.dataset.ad!=="uq"&&t.dataset.ad!=="lq"){st[t.dataset.ad]=t.type==="checkbox"?t.checked:t.value;if(t.dataset.ad==="minG")st.minG=+t.value;save();rerender();return}
   const role=t.dataset.adRole;if(!role)return;const uid=t.dataset.uid,on=t.checked,nm=t.dataset.nm;
   if(role==="admin"){const msg=on?`Make ${nm} an admin? Admins see this page, can change other players' access and see Set 2.`:(uid===S.uid?"Remove your own admin access? You'll lose this page.":`Remove admin from ${nm}?`);
     if(!confirm(msg)){t.checked=!on;return}}
@@ -340,6 +361,6 @@ document.addEventListener("change",async e=>{const t=e.target;if(!root||S.view!=
   const what=role==="trials"?"Trials":"Set 2";
   toast(role==="admin"?(on?`${nm} is now an admin.`:`${nm} is no longer an admin.`):(on?`${nm} can now see ${what}.`:`${nm} can no longer see ${what}.`));
   if(uid===S.uid&&typeof loadAccess==="function")loadAccess();loadUsers()});
-document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||t.dataset.ad!=="uq")return;st.uq=t.value;rerender()});
+document.addEventListener("input",e=>{const t=e.target;if(!t.dataset||(t.dataset.ad!=="uq"&&t.dataset.ad!=="lq"))return;st[t.dataset.ad]=t.value;rerender()});
 window.CQAdmin={mount};
 })();

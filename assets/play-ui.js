@@ -6,7 +6,7 @@
 const E=window.CQE,AI=window.CQAI;
 const AS=()=>typeof S!=="undefined"?S:null;
 const SCR=()=>window.CQ_SCRIPTS||{};
-const U={mode:"lobby",s:null,me:0,vsAI:false,net:null,tgt:null,man:null,manT:null,aiT:null,logOpen:false,lobby:{deck:"",ai:"starter:1",tab:"ai",code:"",t:{party:"",helpers:1,h:["ai","ai","ai"],watch:false}},busy:false,lastErr:""};
+const U={mode:"lobby",s:null,me:0,vsAI:false,net:null,tgt:null,man:null,manT:null,aiT:null,logOpen:false,lobby:{bo:(()=>{try{return localStorage.getItem("cq.play.bo")==="3"?3:1}catch(e){return 1}})(),deck:"",ai:"starter:1",tab:"ai",code:"",t:{party:"",helpers:1,h:["ai","ai","ai"],watch:false}},busy:false,lastErr:""};
 window.CQPlay=U;
 const store2={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const cid=(()=>{let v=store2.get("cq.play.cid",null);if(!v){v="c"+Math.random().toString(36).slice(2,10);store2.set("cq.play.cid",v)}return v})();
@@ -22,6 +22,15 @@ const CSS=`
 .pl-over-why{margin:0 0 8px;color:var(--muted,#666)}
 .pl-over-box .pl-stats{margin-top:10px}
 .pl-over-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;justify-content:flex-end}
+/* Nov 24: Best-of-3 sideboarding and replays */
+.pl-match{font-size:.95rem}.pl-chbo{margin:0}
+#pl-sb{z-index:2050}.pl-sbox{max-width:min(860px,96vw)!important}
+.sb-heroes{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.sb-h{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:4px 8px}
+.sb-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}.sb-cols h3{margin:0 0 6px;display:flex;justify-content:space-between;font-size:1rem}
+.sb-cols ul{list-style:none;margin:0;padding:0;max-height:46vh;overflow:auto}.sb-cols li{display:grid;grid-template-columns:2em 1fr auto auto;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--line)}
+.sb-cols li .c{font-size:.75rem;color:var(--muted)}.sb-sh{margin:0 0 6px}
+@media (max-width:640px){.sb-cols{grid-template-columns:1fr}}
+.rp-acts{flex-wrap:wrap}
 html[data-skin="art"] .pl-over-box{background:linear-gradient(#2b1f15,#1b130c);color:#f3e6cf;border:2px solid #b8743a}
 html[data-skin="art"] .pl-over-box h2{font-family:"Pirata One",var(--display);color:#ffc100;font-weight:400}
 html[data-skin="art"] .pl-over-why{color:#d8c3a0}
@@ -555,9 +564,9 @@ function trialsGameHTML(s,opts){const me=U.me;const helpers=E.parties(s).filter(
   return`<div class="pl-game trials${U.logHidden?" nolog":""}"><button class="btn sm pl-logshow" data-pa="log-toggle" title="Show the game log">Show log</button><div class="pl-board">
     ${bossHTML(s)}
     <div class="tr-helpers n${helpers.length}">${helpers.map(p=>`<div class="tr-helper">${zoneHTML(s,p,opts)}</div>`).join("")}</div>
-    ${U.spec?specMidHTML(s):midHTML(s,opts)}
+    ${U.spec?(U.spec.replay?replayMidHTML(s):specMidHTML(s)):midHTML(s,opts)}
     ${zoneHTML(s,me,opts)}
-    ${U.spec?"":handHTML(s,opts)}
+    ${U.spec&&!U.spec.replay?"":handHTML(s,opts)}
   </div><aside class="pl-side">
     <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}${sndBtnsHTML()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="trules">Trials rules</button>${s.over||U.spec?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}${U.spec?`<button class="btn sm danger" data-pa="spec-leave">Stop watching</button>`:`<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button>`}</span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
@@ -604,7 +613,97 @@ function deckChoices(){const out=[];
 function deckById(id){const c=deckChoices().find(d=>d.id===id);return c&&c.ok?c.deck:null}
 
 /* ---------- persistence ---------- */
-function saveLocal(){if(U.tut)return;if(U.vsAI&&U.s){if(U.s.trials)store2.set(TKEY,{s:U.s,me:U.me,watch:!!U.trialsWatch,last:U.lastTrial||null});else store2.set("cq.play.local",{s:U.s,me:U.me,meta:U.meta||null})}if(U.net&&U.net.role==="host"&&U.s)store2.set("cq.play.host",{code:U.net.code,s:U.s,guest:U.net.guest||null,meta:U.meta||null});}
+function saveLocal(){if(U.tut)return;if(U.vsAI&&U.s){if(U.s.trials)store2.set(TKEY,{s:U.s,me:U.me,watch:!!U.trialsWatch,last:U.lastTrial||null});else store2.set("cq.play.local",{s:U.s,me:U.me,meta:U.meta||null,match:U.match||null})}if(U.net&&U.net.role==="host"&&U.s)store2.set("cq.play.host",{code:U.net.code,s:U.s,guest:U.net.guest||null,gname:U.net.gname||null,bo:U.net.bo||1,meta:U.meta||null,match:U.match||null});}
+/* ---------- Nov 24: game logs (table game_logs) ----------
+   Every top-level action on the live game is recorded with the seed and decks, so a finished game can be saved for
+   bug hunting and AI training, and replayed step by step (Admin → Game logs). Only the host's / vs-AI browser records. */
+function logSetup(seed,players){return{seed,players:players.map(x=>({name:x.name,ai:!!x.ai,deck:{name:x.deck.name||"",heroes:(x.deck.heroes||[]).slice(),cards:Object.assign({},x.deck.cards)}}))}}
+const ENGINE_ACT=E.act;let actDepth=0;
+E.act=function(s,pid,a){actDepth++;let r;try{r=ENGINE_ACT.call(E,s,pid,a)}finally{actDepth--}
+  if(r&&r.ok&&actDepth===0&&s===U.s&&!U.spec&&U.meta&&Array.isArray(U.meta.acts)){try{U.meta.acts.push([pid,JSON.parse(JSON.stringify(a))])}catch(e){}}return r};
+const siteVer=()=>{const e=document.querySelector('script[src*="play-engine.js"]');const m=e&&/[?&]v=([^&]+)/.exec(e.getAttribute("src")||"");return m?m[1]:""};
+async function maybeSaveLog(){const s=U.s,m=U.meta;if(!s||!s.over||!m||!m.setup||!Array.isArray(m.acts)||m.logged)return;const c=sb();if(!c)return;m.logged=true;saveLocal();
+  const row={game_id:m.gid,mode:m.mode,players:s.p.map(x=>x.name),winner:s.winner,rounds:s.round,ver:siteVer(),setup:m.setup,actions:m.acts,
+    log:s.log.map(l=>[l.r,l.p,l.m]),...(U.match?{match_id:U.match.id,game_no:U.match.n}:{}),ended:s.conceded!=null?"concede":(s.deckedOut!=null?"deckout":"party")};
+  const {error}=await c.from("game_logs").insert(row);
+  if(error&&!/duplicate/i.test(error.message)){console.warn("Couldn't save the game log:",error.message);if(!/game_logs|relation|schema cache/i.test(error.message)){m.logged=false;saveLocal()}}}
+/* replay: rebuild the state after the first i actions with the engine itself */
+function replayState(R,i){const st=E.newGame({seed:R.setup.seed,players:R.setup.players.map(x=>({name:x.name,ai:x.ai,deck:x.deck}))});let bad=0;
+  for(let k=0;k<i&&k<R.acts.length;k++){const[pid,a]=R.acts[k];const r=ENGINE_ACT.call(E,st,pid,JSON.parse(JSON.stringify(a)));if(!r.ok)bad++}R.bad=bad;return st}
+window.CQReplayState=replayState;
+window.CQReplay=function(row){if(!row||!row.setup||!Array.isArray(row.actions)){toast("This log can't be replayed.");return}
+  leaveSpec();clearTimeout(U.aiT);const R={setup:row.setup,acts:row.actions,i:0,ver:row.ver||"",title:(row.players||[]).join(" vs ")};
+  U.gameKey="g"+Date.now();U.spec={replay:R};U.me=0;U.vsAI=false;U.net=null;U.meta=null;U.s=replayState(R,0);U.mode="game";U.overHide=true;
+  if(location.hash!=="#play")location.hash="play";setTimeout(render,50)};
+function replayGo(i){const R=U.spec&&U.spec.replay;if(!R)return;R.i=Math.max(0,Math.min(R.acts.length,i));U.s=replayState(R,R.i);render()}
+/* jump to the first action of the next round, or back to the start of the previous one */
+function replayRound(dir){const R=U.spec&&U.spec.replay;if(!R)return;
+  if(!R.rounds){const st=E.newGame({seed:R.setup.seed,players:R.setup.players.map(x=>({name:x.name,ai:x.ai,deck:x.deck}))});R.rounds=[st.round];
+    for(const[pid,a]of R.acts){ENGINE_ACT.call(E,st,pid,JSON.parse(JSON.stringify(a)));R.rounds.push(st.round)}}
+  const rs=R.rounds,cur=rs[R.i],start=r=>{const k=rs.indexOf(r);return k<0?0:k};let j;
+  if(dir>0){j=R.i;while(j<R.acts.length&&rs[j]===cur)j++}
+  else{const s0=start(cur);j=R.i>s0?s0:start(cur-1)}
+  replayGo(j)}
+function replayMidHTML(s){const R=U.spec.replay;const pn=p=>esc(s.p[p]?s.p[p].name:"");const cv=siteVer();
+  return`<section class="pl-mid pl-specbar"><div class="pl-round"><b>Round ${s.round||"–"}</b> · ${esc(({mull:"Mulligan",dawn:"Dawn",battle:"Battle",dusk:"Dusk",town:"Town"})[s.phase]||s.phase||"")}</div>
+    <div class="pl-prompt">⏯ Replay: ${pn(0)} vs ${pn(1)} · action ${R.i} of ${R.acts.length}${s.over?` · ${s.winner<0?"draw":"🏆 "+pn(s.winner)+" wins"}`:""}${R.ver&&cv&&R.ver!==cv?` · <span title="The site changed since this game (${esc(R.ver)} → ${esc(cv)}); later steps may not match the saved log">⚠ played on ${esc(R.ver)}</span>`:""}${R.bad?` · ⚠ ${R.bad} step${R.bad>1?"s":""} didn't replay`:""}</div>
+    <div class="pl-acts rp-acts"><button class="btn sm" data-pa="rp" data-d="first" title="Start">⏮</button><button class="btn sm" data-pa="rp" data-d="rprev" title="Back a round">⏪ Round</button><button class="btn sm" data-pa="rp" data-d="prev" title="Back one action">◀</button><button class="btn sm" data-pa="rp" data-d="next" title="Next action">▶</button><button class="btn sm" data-pa="rp" data-d="rnext" title="Next round">Round ⏩</button><button class="btn sm" data-pa="rp" data-d="last" title="End">⏭</button><button class="btn sm danger" data-pa="spec-leave">Close replay</button></div></section>`}
+/* ---------- Nov 24: Best-of-3 matches with sideboards (admins only while it's tested; Best of 1 stays the default) ----------
+   U.match on the host / vs-AI browser: {id,bo:3,mode,n,wins,tal,base,cur,ready}. The guest gets a public copy with each state.
+   Between games each player sideboards (swaps cards, and a Hero, between deck and sideboard), then presses Ready. First to 2 wins. */
+const isAdm=()=>{const s=AS();return!!(s&&s.access&&s.access.admin)};
+const boPick=()=>isAdm()&&U.lobby.bo===3?3:1;
+const deckCl=d=>({id:d.id,name:d.name,heroes:(d.heroes||[]).slice(),cards:Object.assign({},d.cards),side:{heroes:((d.side&&d.side.heroes)||[]).filter(Boolean).slice(0,1),cards:Object.assign({},(d.side&&d.side.cards)||{})}});
+function newMatch(mode,d0,d1){return{id:newGid(),bo:3,mode,n:1,wins:[0,0],tal:[],base:[deckCl(d0),deckCl(d1)],cur:[deckCl(d0),deckCl(d1)],ready:[false,false]}}
+const matchDone=m=>!!m&&(m.wins[0]>=2||m.wins[1]>=2);
+function matchTally(){const m=U.match,s=U.s;if(!m||!m.tal||!s||!s.over||s.trials||!U.meta||m.tal.includes(U.meta.gid))return;m.tal.push(U.meta.gid);
+  if(s.winner===0||s.winner===1)m.wins[s.winner]++;m.ready=[false,false];m.done=matchDone(m);saveLocal()}
+const matchPub=()=>U.match?{id:U.match.id,bo:3,n:U.match.n,wins:U.match.wins.slice(),done:!!U.match.done,ready:U.match.ready.slice()}:null;
+function matchLine(s){const M=U.match;if(!M||!s)return"";const nm=i=>esc(s.p[i]?s.p[i].name:"");
+  return`<p class="pl-over-why pl-match">Best of 3 · Game ${M.n} · ${nm(0)} <b>${M.wins[0]}–${M.wins[1]}</b> ${nm(1)}${M.done?` · <b>${M.wins[U.me]>=2?"You win the match!":nm(M.wins[0]>=2?0:1)+" wins the match."}</b>`:""}</p>`}
+function matchActs(){const M=U.match;if(!M||M.done)return"";const mine=M.ready&&M.ready[U.me],theirs=M.ready&&M.ready[1-U.me];
+  if(mine)return`<button class="btn go" disabled>Waiting for your opponent…</button>`;
+  return`<button class="btn go" data-pa="m-side" title="Swap cards between your deck and sideboard, then start the next game">Next game: sideboard${theirs&&U.net?" (opponent is ready)":""}</button>`}
+/* my current list for the next game */
+function myCur(){const M=U.match;if(!M)return null;if(M.cur)return M.cur[U.me];return U.net&&U.net.deck?deckCl(U.net.deck):null}
+function myBase(){const M=U.match;if(M&&M.base)return M.base[U.me];return U.net&&U.net.base?U.net.base:myCur()}
+function sbOpen(){const d=myCur();if(!d){toast("Your deck for this match isn't available. Leave and rejoin the room.");return}U.sb={d:deckCl(d)};sbRender()}
+function sbIssues(d){const out=E.validateDeck(d).concat(E.validateSide(d));const DB=E.DB||{};
+  const cls=new Set(d.heroes.map(h=>DB[h]&&DB[h].cls).filter(Boolean));
+  if(!d.cards["Ring of Vocation"]){const off=Object.keys(d.cards).filter(id=>d.cards[id]>0&&DB[id]&&DB[id].cls&&DB[id].cls!=="Generic"&&!cls.has(DB[id].cls));if(off.length)out.push(`No Hero in your party can play ${off.slice(0,3).join(", ")}${off.length>3?` and ${off.length-3} more`:""}.`)}
+  return out}
+function sbRender(){const st=U.sb;if(!st)return;const d=st.d,DB=E.DB||{},M=U.match;const sd=d.side;const iss=sbIssues(d);
+  const tot=Object.values(d.cards).reduce((a,q)=>a+q,0),stot=sd.heroes.length+Object.values(sd.cards).reduce((a,q)=>a+q,0);
+  const row=(id,q,dir)=>`<li><span class="q">${q}</span><span class="n">${esc(id)}</span><span class="c">${esc(DB[id]&&DB[id].cls&&DB[id].cls!=="Generic"?DB[id].cls:"")}</span><button type="button" class="btn sm" data-sb="${dir}" data-id="${esc(id)}" title="${dir==="out"?"Move one to the sideboard":"Move one into the deck"}">${dir==="out"?"→":"←"}</button></li>`;
+  const hn=h=>esc(String(h).replace(/^h:/,""));const sh=sd.heroes[0];
+  document.getElementById("pl-sb")?.remove();const m=document.createElement("div");m.className="modal";m.id="pl-sb";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
+  m.innerHTML=`<div class="box wide pl-sbox"><h2>Sideboard for game ${(M?M.n:1)+1}</h2>
+    <p class="pl-note">Move cards between your deck and sideboard. The sideboard holds up to 10 cards, and 1 of them may be a Hero. Your deck needs at least 50 cards. Changes last for the rest of the match.</p>
+    <div class="sb-heroes"><b>Party</b>${d.heroes.map((h,i)=>`<span class="sb-h">${hn(h)}${sh?`<button type="button" class="btn sm" data-sb="hswap" data-i="${i}" title="Swap with ${hn(sh)}">⇄ ${hn(sh)}</button>`:""}</span>`).join("")}${sh?"":`<span class="pl-note">No Hero in your sideboard.</span>`}</div>
+    <div class="sb-cols"><section><h3>Deck <span>${tot}</span></h3><ul>${Object.keys(d.cards).filter(id=>d.cards[id]>0).sort().map(id=>row(id,d.cards[id],"out")).join("")}</ul></section>
+      <section><h3>Sideboard <span>${stot}/10</span></h3>${sh?`<p class="sb-sh">Hero: <b>${hn(sh)}</b></p>`:""}<ul>${Object.keys(sd.cards).filter(id=>sd.cards[id]>0).sort().map(id=>row(id,sd.cards[id],"in")).join("")||`<li class="pl-note">Empty</li>`}</ul></section></div>
+    ${iss.length?`<ul class="issues bad">${iss.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+    <div class="actions"><button type="button" class="btn primary go" data-sb="ready"${E.validateDeck(d).length||E.validateSide(d).length?" disabled":""}>Ready</button><button type="button" class="btn" data-sb="reset">Reset to registered list</button><button type="button" class="btn" data-sb="close">Back</button></div></div>`;
+  m.addEventListener("click",e=>{const b=e.target.closest("[data-sb]");if(!b)return;const k=b.dataset.sb,id=b.dataset.id;
+    if(k==="close"){m.remove();U.sb=null;return}
+    if(k==="reset"){const bse=myBase();if(bse)st.d=deckCl(bse);sbRender();return}
+    if(k==="out"){if(!d.cards[id])return;d.cards[id]--;if(!d.cards[id])delete d.cards[id];sd.cards[id]=(sd.cards[id]||0)+1;sbRender();return}
+    if(k==="in"){if(!sd.cards[id])return;sd.cards[id]--;if(!sd.cards[id])delete sd.cards[id];d.cards[id]=(d.cards[id]||0)+1;sbRender();return}
+    if(k==="hswap"){const i=+b.dataset.i,h=d.heroes[i];if(!sh||h==null)return;d.heroes[i]=sh;sd.heroes=[h];sbRender();return}
+    if(k==="ready"){if(E.validateDeck(d).length||E.validateSide(d).length)return;m.remove();U.sb=null;matchReady(d)}});
+  (document.getElementById("layer")||document.body).appendChild(m)}
+function matchReady(d){const M=U.match;if(!M)return;
+  if(U.net&&U.net.role==="guest"){U.net.deck=deckCl(d);store2.set("cq.play.guest",{code:U.net.code,deck:U.net.deck,base:U.net.base||null});M.ready=M.ready||[false,false];M.ready[1]=true;
+    try{U.net.ch.send({type:"broadcast",event:"next",payload:{cid,deck:U.net.deck}})}catch(e){}render();return}
+  M.cur[U.me]=deckCl(d);M.ready[U.me]=true;saveLocal();
+  if(M.mode==="ai"||M.ready[1-U.me])matchNext();else{broadcast();render()}}
+function onGuestNext(p){const M=U.match;if(!M||!M.cur||!U.s||!U.s.over||p.cid!==U.net.guest||!p.deck)return;
+  const bad=E.validateDeck(p.deck).concat(E.validateSide(p.deck));if(bad.length){U.net.ch.send({type:"broadcast",event:"state",payload:{to:p.cid,s:E.redact(U.s,1),me:1,err:"That list isn't legal: "+bad[0],match:matchPub()}});return}
+  M.cur[1]=deckCl(p.deck);M.ready[1]=true;saveLocal();if(M.ready[0])matchNext();else{broadcast();render()}}
+function matchNext(){const M=U.match;if(!M||M.done)return;M.n++;M.ready=[false,false];document.getElementById("pl-sb")?.remove();U.sb=null;U.overHide=false;
+  if(M.mode==="ai"){startAIGame(M.cur[0],M.cur[1]);return}
+  if(U.net&&U.net.role==="host"){U.net.deck=M.cur[0];newOnlineGame(M.cur[1],U.net.gname||"Guest")}}
+U.matchState=()=>U.match;
 /* ---------- win tracking for Best Decks ---------- */
 const newGid=()=>"g"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 function deckMeta(d){return{name:(d.name||"Untitled deck").replace(/ \(starter\)$/,"").slice(0,80),heroes:d.heroes.slice(0,3),cards:Object.assign({},d.cards)}}
@@ -637,7 +736,7 @@ function onlineListHTML(){const O=window.CQOnline;if(!O)return"";const L=O.list(
   const st={idle:"Online",ai:"In a game vs AI",online:"In an online game"};
   return`<section class="panel pl-players"><h2>Players online <span class="pl-note">(${L.length})</span></h2>
     ${L.length?`<ul class="pl-plist">${L.map(p=>`<li><span class="pl-pn"><b>${esc(p.name)}</b><small>${st[p.status]}</small></span>${p.status==="online"?`<button class="btn" disabled title="They're already in an online game">Busy</button>`:`<button class="btn" data-pa="challenge" data-k="${esc(p.key)}" data-n="${esc(p.name)}"${ok?"":" disabled title=\"Choose a legal deck first\""}>Challenge</button>`}</li>`).join("")}</ul>`:`<p class="pl-note">Nobody else is online right now.</p>`}
-    <p class="pl-note">Challenging someone opens a room with the deck chosen above. They pick their deck when they accept.</p></section>`}
+    <p class="pl-note">Challenging someone opens a room with the deck chosen above${isAdm()?`, as <b>${boPick()===3?"Best of 3":"Best of 1"}</b>`:""}. They pick their deck when they accept.</p></section>`}
 function hookOnline(){const O=window.CQOnline;if(U.onlineHooked||!O)return;U.onlineHooked=true;
   O.onChange(()=>{if(U.mode==="lobby"&&!U.s)render()});
   O.on("challenge",p=>{
@@ -647,7 +746,7 @@ function hookOnline(){const O=window.CQOnline;if(U.onlineHooked||!O)return;U.onl
     const opts=ch.map(d=>`<option value="${esc(d.id)}" ${d.id===U.lobby.deck?"selected":""} ${!d.ok?"disabled":""}>${esc(d.name)}</option>`).join("");
     /* its own pop-up (not the game's modal), so it shows on any page of the site and a game prompt can't replace it */
     document.getElementById("pl-chal")?.remove();const m=document.createElement("div");m.className="modal";m.id="pl-chal";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
-    m.innerHTML=`<div class="box"><h2>${esc(p.fromName||"A player")} challenges you!</h2>${inAI?`<p class="note warn">Your current game will be saved if you accept. You can resume it from the Play tab later.</p>`:""}
+    m.innerHTML=`<div class="box"><h2>${esc(p.fromName||"A player")} challenges you!</h2><p class="pl-chbo">${p.bo===3?"<b>Best of 3</b> match. Your deck's sideboard comes along, and you can swap cards between games.":"<b>Best of 1</b>: one game."}</p>${inAI?`<p class="note warn">Your current game will be saved if you accept. You can resume it from the Play tab later.</p>`:""}
       <label>Your deck<select class="ch-deck">${opts}</select></label>
       <div class="actions"><button class="btn primary go ch-acc">Accept</button><button class="btn ch-dec">Decline</button></div></div>`;
     m.querySelector(".ch-deck").addEventListener("change",e=>{U.lobby.deck=e.target.value});
@@ -657,7 +756,7 @@ function hookOnline(){const O=window.CQOnline;if(U.onlineHooked||!O)return;U.onl
     if(p.ok){toast(`${n.challenge.name} accepted. Joining…`);return}
     toast(p.busy?`${n.challenge.name} is busy in another game.`:`${n.challenge.name} declined your challenge.`);if(!U.s)leaveGame()})}
 function sendChallenge(to,name){const O=window.CQOnline;if(!O)return;if(O.isMe&&O.isMe(to)){toast("You can't challenge yourself.");return}if(U.s&&!U.s.over&&U.vsAI)saveLocal();hostRoom();if(!U.net)return;
-  U.net.challenge={to,name};O.send("challenge",{to,code:U.net.code});toast(`Challenge sent to ${name}. Waiting for an answer…`)}
+  U.net.challenge={to,name};O.send("challenge",{to,code:U.net.code,bo:U.net.bo===3?3:1});toast(`${U.net.bo===3?"Best-of-3":"Best-of-1"} challenge sent to ${name}. Waiting for an answer…`)}
 function acceptChallenge(){const p=U.challenge,O=window.CQOnline;document.getElementById("pl-chal")?.remove();if(!p||!O)return;U.challenge=null;
   if(!deckChoices().some(d=>d.id===U.lobby.deck&&d.ok)){toast("Choose a legal deck first.");return}
   /* an AI game in progress stays saved (cq.play.local) and can be resumed from the lobby */
@@ -669,8 +768,12 @@ setTimeout(function hk(){hookOnline();if(!U.onlineHooked)setTimeout(hk,1000)},50
 /* ---------- game control ---------- */
 function startAI(){U.lastTrial=null;U.trialsWatch=false;const dm=deckById(U.lobby.deck),da=deckById(U.lobby.ai);if(!dm){toast("Choose a legal deck (3 Heroes, at least 50 cards) for yourself.");return}
   if(!da){toast("Choose a deck for the AI.");return}
-  U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}]});
-  U.meta={gid:newGid(),mode:"ai",t0:Date.now(),lt:Date.now(),act:0,decks:[deckMeta(dm),deckMeta(da)]};
+  U.match=null;if(boPick()===3){const bad=E.validateSide(dm);if(bad.length){toast("Your sideboard isn't legal: "+bad[0]);return}U.match=newMatch("ai",dm,da)}
+  startAIGame(dm,da)}
+function startAIGame(dm,da){U.lastTrial=null;U.trialsWatch=false;U.overHide=false;
+  {const seed=(Math.random()*2**31)|0;const players=[{name:myName(),deck:dm},{name:"AI · "+da.name.replace(/ \(starter\)/,""),deck:da,ai:true}];
+  U.s=E.newGame({seed,players});
+  U.meta={gid:newGid(),mode:"ai",t0:Date.now(),lt:Date.now(),act:0,decks:[deckMeta(dm),deckMeta(da)],setup:logSetup(seed,players),acts:[]}}
   U.gameKey="g"+Date.now();U.me=0;U.vsAI=true;U.net=null;U.mode="game";U.tgt=null;U.man=null;saveLocal();render();pumpAI()}
 /* Learn to Play (tutorial.js): a coached game vs the AI. No result is recorded and no resume slot is kept. fix(s) may stack the opening hand and first draws. */
 U.startTutorial=function(dm,da,fix){clearTimeout(U.aiT);
@@ -686,7 +789,7 @@ function send(a){if(U.spec)return;
 /* active play time (Admin page): each gap between actions counts up to 3 minutes, so time away or paused is left out */
 const IDLE_CAP=180000;
 function tickTime(){const m=U.meta;if(!m||m.recorded)return;const now=Date.now();if(m.lt)m.act=(m.act||0)+Math.min(Math.max(0,now-m.lt),IDLE_CAP);m.lt=now}
-function afterChange(){tickTime();saveLocal();if(U.net&&U.net.role==="host")broadcast();render();pumpAI();if(U.s&&U.s.over&&(U.vsAI||(U.net&&U.net.role==="host")))maybeRecord()}
+function afterChange(){tickTime();saveLocal();if(U.net&&U.net.role==="host")broadcast();render();pumpAI();if(U.s&&U.s.over&&(U.vsAI||(U.net&&U.net.role==="host"))){maybeRecord();maybeSaveLog()}}
 function pumpAI(){clearTimeout(U.aiT);if(!U.vsAI||!U.s||U.s.over)return;
   if(!nextAI(U.s))return;
   U.aiT=setTimeout(()=>{if(!U.s||!U.stepAI())return;afterChange()},U.fast?0:(U.s.phase==="battle"&&!U.s.pend.length?650:350))}
@@ -697,34 +800,40 @@ function newCode(){const a="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let s="";for(let i
 function openChannel(code,role,onReady){const c=sb();if(!c){toast("Online play needs the site's account service.");return null}
   const ch=c.channel("cq-play-"+code,{config:{broadcast:{self:false},presence:{key:cid}}});
   ch.on("broadcast",{event:"act"},({payload})=>{if(U.net&&U.net.role==="host")onGuestAct(payload)});
+  ch.on("broadcast",{event:"next"},({payload})=>{if(U.net&&U.net.role==="host")onGuestNext(payload)});
   ch.on("broadcast",{event:"hello"},({payload})=>{if(U.net&&U.net.role==="host")onHello(payload)});
-  ch.on("broadcast",{event:"state"},({payload})=>{if(U.net&&U.net.role==="guest"&&payload.to===cid){U.s=payload.s;U.me=payload.me;U.busy=false;U.mode="game";if(payload.err)toast(payload.err);if(payload.gid&&U.s&&U.s.over)claimResult(payload.gid);render()}});
+  ch.on("broadcast",{event:"state"},({payload})=>{if(U.net&&U.net.role==="guest"&&payload.to===cid){const was=U.s;U.s=payload.s;U.me=payload.me;U.busy=false;U.mode="game";U.match=payload.match||null;if(U.s&&!U.s.over&&(!was||was.over)){document.getElementById("pl-sb")?.remove();U.sb=null;U.overHide=false}if(payload.err)toast(payload.err);if(payload.gid&&U.s&&U.s.over)claimResult(payload.gid);render()}});
   ch.on("broadcast",{event:"full"},({payload})=>{if(U.net&&U.net.role==="guest"&&payload.to===cid){toast("That room already has two players.");leaveGame()}});
   ch.on("presence",{event:"sync"},()=>{if(!U.net)return;const st=ch.presenceState();U.net.peers=Object.keys(st).filter(k=>k!==cid).length;render()});
   ch.subscribe(async status=>{if(status==="SUBSCRIBED"){await ch.track({name:myName(),role});onReady&&onReady()}else if(status==="CHANNEL_ERROR"||status==="TIMED_OUT"){toast("Couldn't reach the game server. Check your connection.")}});
   return ch}
 function hostRoom(resume){U.gameKey="g"+Date.now();const dm=deckById(U.lobby.deck);if(!resume&&!dm){toast("Choose a legal deck first.");return}
   const code=resume?resume.code:newCode();U.vsAI=false;U.s=resume?resume.s:null;U.me=0;U.meta=resume?resume.meta||null:null;if(U.meta)U.meta.lt=0;
-  U.net={role:"host",code,deck:dm,guest:resume?resume.guest:null,peers:0};U.mode=U.s?"game":"room";
+  U.match=resume?resume.match||null:null;
+  U.net={role:"host",code,deck:dm||(U.match&&U.match.cur[0])||null,guest:resume?resume.guest:null,gname:resume?resume.gname||null:null,bo:resume?(resume.bo||1):boPick(),peers:0};U.mode=U.s?"game":"room";
+  if(!resume&&U.net.bo===3){const bad=E.validateSide(dm);if(bad.length){toast("Your sideboard isn't legal: "+bad[0]);U.net=null;U.mode="lobby";return}}
   U.net.ch=openChannel(code,"host",()=>{if(U.s)broadcast()});render()}
 function joinRoom(code,resume){U.gameKey="g"+Date.now();code=(code||"").trim().toUpperCase();if(!/^[A-Z0-9]{5}$/.test(code)){toast("Room codes are 5 letters/numbers.");return}
-  const dm=resume?null:deckById(U.lobby.deck);if(!resume&&!dm){toast("Choose a legal deck first.");return}
-  U.vsAI=false;U.s=null;U.me=1;U.net={role:"guest",code,deck:dm,peers:0};U.mode="room";store2.set("cq.play.guest",{code});
+  const rg=resume?store2.get("cq.play.guest",null):null;const dm=resume?(rg&&rg.deck)||null:deckById(U.lobby.deck);if(!resume&&!dm){toast("Choose a legal deck first.");return}
+  U.vsAI=false;U.s=null;U.me=1;U.match=null;U.net={role:"guest",code,deck:dm,base:resume?(rg&&rg.base)||null:(dm?deckCl(dm):null),peers:0};U.mode="room";store2.set("cq.play.guest",{code,deck:dm,base:U.net.base});
   U.net.ch=openChannel(code,"guest",()=>{U.net.ch.send({type:"broadcast",event:"hello",payload:{cid,name:myName(),deck:dm}})});render()}
 function onHello(p){
   if(!U.s){if(!p.deck){return}const bad=E.validateDeck(p.deck);if(bad.length){U.net.ch.send({type:"broadcast",event:"state",payload:{to:p.cid,s:null,me:1,err:"Your deck isn't legal: "+bad[0]}});return}
-    U.net.guest=p.cid;let gn=(p.name||"Guest").slice(0,24);if(gn===myName())gn+=" 2";U.s=E.newGame({seed:(Math.random()*2**31)|0,players:[{name:myName(),deck:U.net.deck},{name:gn,deck:p.deck}]});U.meta={gid:newGid(),mode:"online",t0:Date.now(),lt:Date.now(),act:0,decks:[deckMeta(U.net.deck),deckMeta(p.deck)]};U.mode="game";toast(`${p.name||"A player"} joined. Good luck!`);afterChange();return}
+    if(U.net.bo===3){const bs=E.validateSide(p.deck);if(bs.length){U.net.ch.send({type:"broadcast",event:"state",payload:{to:p.cid,s:null,me:1,err:"Your sideboard isn't legal: "+bs[0]}});return}}
+    U.net.guest=p.cid;let gn=(p.name||"Guest").slice(0,24);if(gn===myName())gn+=" 2";U.net.gname=gn;U.match=U.net.bo===3?newMatch("online",U.net.deck,p.deck):null;newOnlineGame(p.deck,gn);toast(`${p.name||"A player"} joined. Good luck!${U.match?" Best of 3.":""}`);return}
   if(U.net.guest&&p.cid!==U.net.guest){U.net.ch.send({type:"broadcast",event:"full",payload:{to:p.cid}});return}
   U.net.guest=p.cid;broadcast()}
-function onGuestAct(p){if(!U.s||p.cid!==U.net.guest)return;const r=E.act(U.s,1,p.a);saveLocal();broadcast(r.ok?null:r.err);render();if(U.s.over)maybeRecord()}
-function broadcast(err){if(!U.net||!U.net.ch||!U.s||!U.net.guest)return;U.net.ch.send({type:"broadcast",event:"state",payload:{to:U.net.guest,s:E.redact(U.s,1),me:1,err:err||null,gid:U.s.over&&U.meta?U.meta.gid:null}})}
+function newOnlineGame(gdeck,gn){const seed=(Math.random()*2**31)|0;const players=[{name:myName(),deck:U.net.deck},{name:gn,deck:gdeck}];U.s=E.newGame({seed,players});U.overHide=false;
+  U.meta={gid:newGid(),mode:"online",t0:Date.now(),lt:Date.now(),act:0,decks:[deckMeta(U.net.deck),deckMeta(gdeck)],setup:logSetup(seed,players),acts:[]};U.mode="game";afterChange()}
+function onGuestAct(p){if(!U.s||p.cid!==U.net.guest)return;const r=E.act(U.s,1,p.a);saveLocal();broadcast(r.ok?null:r.err);render();if(U.s.over){maybeRecord();maybeSaveLog()}}
+function broadcast(err){if(!U.net||!U.net.ch||!U.s||!U.net.guest)return;if(U.s.over)matchTally();U.net.ch.send({type:"broadcast",event:"state",payload:{to:U.net.guest,s:E.redact(U.s,1),me:1,err:err||null,gid:U.s.over&&U.meta?U.meta.gid:null,match:matchPub()}})}
 /* guest: once the game is over, claim our side of the result the host saved (retries while the host's save lands) */
 const claimed=new Set();
 async function claimResult(gid){const c=sb(),st=AS();if(!c||!st||!st.uid||!gid||claimed.has(gid))return;claimed.add(gid);
   for(let i=0;i<6;i++){await new Promise(r=>setTimeout(r,i?4000:2500));try{const{data,error}=await c.rpc("claim_result",{gid});if(error)return;if(data>0){toast("Result saved to your profile.");return}}catch(e){return}}}
 function leaveGame(){specHostStop();leaveSpec();U.gameKey=null;clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(e){}}
   if(U.net&&U.net.role==="guest")store2.del("cq.play.guest");if(U.net&&U.net.role==="host")store2.del("cq.play.host");
-  if(U.vsAI)store2.del(U.s&&U.s.trials?TKEY:"cq.play.local");U.net=null;U.s=null;U.vsAI=false;U.trialsWatch=false;U.tut=null;U.mode="lobby";U.tgt=null;U.man=null;render()}
+  if(U.vsAI)store2.del(U.s&&U.s.trials?TKEY:"cq.play.local");U.net=null;U.s=null;U.match=null;document.getElementById("pl-sb")?.remove();U.sb=null;U.vsAI=false;U.trialsWatch=false;U.tut=null;U.mode="lobby";U.tgt=null;U.man=null;render()}
 
 /* ---------- Nov 19: spectate mode ----------
    The player who runs a game (the room host, or the player in a vs-AI game) opens a watch channel "cq-spec-<game id>".
@@ -748,7 +857,7 @@ function spectate(g){const c=sb();if(!c){toast("Watching games needs the site's 
   ch.subscribe(st=>{if(st==="SUBSCRIBED"){ch.track({role:"watch",name:myName()});setTimeout(()=>{if(U.spec&&U.spec.ch===ch)ch.send({type:"broadcast",event:"want",payload:{}})},600);
       setTimeout(()=>{if(U.spec&&U.spec.ch===ch&&!U.s){toast("That game isn't sending yet. It may have just ended.")}},6000)}
     else if(st==="CHANNEL_ERROR"||st==="TIMED_OUT")toast("Couldn't reach the game server.")});render()}
-function leaveSpec(){if(!U.spec)return;try{sb().removeChannel(U.spec.ch)}catch(e){}U.spec=null}
+function leaveSpec(){if(!U.spec)return;if(U.spec.ch){try{sb().removeChannel(U.spec.ch)}catch(e){}}U.spec=null}
 function specGamesHTML(){const O=window.CQOnline;if(!O||!O.games)return"";const G=O.games();
   return`<section class="panel pl-players pl-watch"><h2>Watch a game <span class="pl-note">(${G.length})</span></h2>
     ${G.length?`<ul class="pl-plist">${G.map(g=>`<li><span class="pl-pn"><b>${esc(g.ai?`${g.names[0]||"Player"} vs AI`:g.names.join(" vs ")||"Online game")}</b><small>${g.ai?"Game vs AI":"Online game"}</small></span><button class="btn" data-pa="spec" data-g="${esc(g.g)}">Watch</button></li>`).join("")}</ul>`:`<p class="pl-note">No games are being played right now.</p>`}
@@ -1170,6 +1279,7 @@ function lobbyHTML1(tabs){const ch=deckChoices();const resL=store2.get("cq.play.
   <div class="pl-lobby">
     <section class="panel"><h2>Your deck</h2>
       <label>Deck<select data-pa="deck">${opts(U.lobby.deck)}</select></label>
+      ${isAdm()?`<label>Match<select data-pa="bo"><option value="1"${boPick()===1?" selected":""}>Best of 1</option><option value="3"${boPick()===3?" selected":""}>Best of 3 with sideboards (admins)</option></select></label>${boPick()===3?(()=>{const d=deckById(U.lobby.deck);const n=d&&d.side?((d.side.heroes||[]).filter(Boolean).length+Object.values(d.side.cards||{}).reduce((a,q)=>a+q,0)):0;return`<p class="pl-note">Sideboard: ${n} card${n===1?"":"s"}${n?"":" (add one in the Deck Builder)"}. First to win 2 games wins the match; you can sideboard between games.</p>`})():""}`:""}
       <p class="pl-note">Your saved decks from My Decks appear here${AS()&&S.mode==="account"?" (from your account)":""}. Starter decks are ready to go.</p>
       ${!(AS()&&S.me)?`<label>Your name<input type="text" data-pa="name" maxlength="24" value="${esc(store2.get("cq.play.name",""))}" placeholder="Shown to your opponent"></label>`:""}
     </section>
@@ -1191,16 +1301,16 @@ function roomHTML(){const n=U.net;if(!n)return"";
   return`<h1>${n.role==="host"?"Your room":"Joining room"}</h1>
   <div class="panel" style="max-width:520px">${n.role==="host"?`<p>Share this code with your opponent:</p><div class="pl-code">${esc(n.code)}</div><p class="pl-note">They go to playriverstead.com → Play → Join with a code. The game starts as soon as they join.</p>`
     :`<div class="pl-code">${esc(n.code)}</div><p>${U.busy?"Waiting for the host…":"Connecting to the host…"} If nothing happens, check the code and make sure the host has the room open.</p>`}
-  <p class="pl-note">${n.peers?"Opponent connected.":"Waiting for opponent…"}</p>
+  <p class="pl-note">${n.role==="host"?(n.bo===3?"<b>Best of 3</b> match with sideboards. ":"<b>Best of 1</b>. "):""}${n.peers?"Opponent connected.":"Waiting for opponent…"}</p>
   <div class="actions"><button class="btn" data-pa="leave">Cancel</button></div></div>`}
 function gameHTML(s){const me=U.me,op=E.opp(me);const opts=legal();
   if(U.logHidden==null){try{U.logHidden=localStorage.getItem("cq.play.log")==="hide"}catch(e){U.logHidden=false}}
   if(s.trials)return trialsGameHTML(s,opts);
   return`<div class="pl-game${U.logHidden?" nolog":""}"><button class="btn sm pl-logshow" data-pa="log-toggle" title="Show the game log">Show log</button><div class="pl-board">
     ${zoneHTML(s,op,opts)}
-    ${U.spec?specMidHTML(s):midHTML(s,opts)}
+    ${U.spec?(U.spec.replay?replayMidHTML(s):specMidHTML(s)):midHTML(s,opts)}
     ${zoneHTML(s,me,opts)}
-    ${U.spec?"":handHTML(s,opts)}
+    ${U.spec&&!U.spec.replay?"":handHTML(s,opts)}
   </div><aside class="pl-side">
     <div class="pl-side-h"><button type="button" class="pl-logtab" data-pa="log-toggle" aria-expanded="${!U.logHidden}" title="${U.logHidden?"Show":"Hide"} the game log"><h2>Game log</h2><span aria-hidden="true">${U.logHidden?"▴":"▾"}</span></button><span class="actions">${ctlBtns()}${sndBtnsHTML()}<button class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn sm" data-pa="rules">Rules</button>${s.over||U.spec?"":`<button class="btn sm danger pl-concede" data-pa="concede-ask" title="Concede this game">Concede</button>`}${U.spec?`<button class="btn sm danger" data-pa="spec-leave">Stop watching</button>`:`<button class="btn sm danger" data-pa="leave-ask">${s.over?"Exit":"Leave"}</button>`}</span></div>
     <div class="pl-log" aria-live="polite">${logHTML(s)}</div>
@@ -1478,8 +1588,9 @@ function trialsOverHTML(s){const T=window.CQT;const P=s.trials.parties;const win
 function overHTML(s){if(!s.over||U.overHide||U.tut)return"";if(U.spec)return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${s.winner<0?"The game is a draw.":`🏆 ${esc(s.p[s.winner].name)} wins.`}</h2>${statsHTML(s)}<div class="pl-over-acts"><button class="btn primary" data-pa="spec-leave">Back to the lobby</button><button class="btn" data-pa="export-log">Export log</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`;if(s.trials)return trialsOverHTML(s);const me=U.me;
   const head=s.winner===me?"🏆 You win!":s.winner<0?"The game is a draw.":`${esc(s.p[s.winner].name)} wins.`;
   const why=(s.conceded!=null?(s.conceded===me?"You conceded.":`${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");
-  return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${head}</h2>${why?`<p class="pl-over-why">${why.trim()}</p>`:""}${statsHTML(s)}
-  <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button>${U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
+  if(U.match&&U.match.tal)matchTally();
+  return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${head}</h2>${why?`<p class="pl-over-why">${why.trim()}</p>`:""}${matchLine(s)}${statsHTML(s)}
+  <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button>${U.match?matchActs():U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
 /* end-of-game summary */
 function statsHTML(s){if(!E.gameStats)return"";const g=E.gameStats(s);const me=U.me;
   const li=a=>a.length?`<ol>${a.map(x=>`<li>${esc(x.name)} — <b>${x.v}</b>${x.side!=null?` <span class="pl-note">(${esc(s.p[x.side].name)})</span>`:""}</li>`).join("")}</ol>`:'<p class="pl-note">None.</p>';
@@ -1694,12 +1805,13 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="trules"){location.hash="trials-rules";return}
   if(k==="resume-trial"){const r=store2.get(TKEY,null);if(r&&r.s){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.meta=null;U.trialsWatch=!!r.watch;U.lastTrial=r.last||null;U.vsAI=true;U.net=null;U.mode="game";U.evFor=null;render();pumpAI()}return}
   if(k==="drop-trial"){store2.del(TKEY);render();return}
-  if(k==="deck"||k==="ai"||k==="code"||k==="name"||k==="man-op"||k==="man-n"||k==="man-k"||k==="man-name"||k==="man-card")return;
+  if(k==="bo"||k==="deck"||k==="ai"||k==="code"||k==="name"||k==="man-op"||k==="man-n"||k==="man-k"||k==="man-name"||k==="man-card")return;
   if(k==="close"){closeModal();return}
   if(k==="hscr"){const he=b.parentElement&&b.parentElement.querySelector(".pl-hand");if(he)he.scrollBy({left:(+b.dataset.d)*Math.max(200,he.clientWidth*0.8),behavior:"smooth"});return}
   if(k==="snd"){SND.toggle();render();return}
   if(k==="mus"){MUS.toggle();render();return}
   if(k==="start-ai"){startAI();return}
+  if(k==="m-side"){sbOpen();return}
   if(k==="rematch"){U.s=null;U.tut=null;if(U.lastTrial){startTrialWith(U.lastTrial,false);return}startAI();return}
   if(k==="over-hide"){U.overHide=true;render();return}
   if(k==="over-show"){U.overHide=false;render();return}
@@ -1717,7 +1829,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="log-toggle"){U.logHidden=!U.logHidden;try{localStorage.setItem("cq.play.log",U.logHidden?"hide":"show")}catch(e){}render();return}
   if(k==="leave-ask"){if(s&&s.over){leaveGame();return}modal(`<h2>Leave this game?</h2><p>${U.vsAI?"Your game is saved in this browser; you can resume it from the Play tab.":U.net&&U.net.role==="host"?"The room closes for your opponent. You can reopen it from the Play tab.":"You can rejoin with the same code while the host keeps the room open."}</p><div class="actions"><button class="btn primary" data-pa="leave-soft">Leave</button><button class="btn" data-pa="close">Stay</button></div>`);return}
   if(k==="leave-soft"){U.gameKey=null;closeModal();clearTimeout(U.aiT);if(U.net&&U.net.ch){try{sb().removeChannel(U.net.ch)}catch(err){}}U.net=null;U.s=null;U.vsAI=false;U.mode="lobby";render();return}
-  if(k==="resume-local"){const r=store2.get("cq.play.local",null);if(r){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.meta=r.meta||null;if(U.meta)U.meta.lt=0;U.vsAI=true;U.net=null;U.mode="game";render();pumpAI()}return}
+  if(k==="resume-local"){const r=store2.get("cq.play.local",null);if(r){U.gameKey="g"+Date.now();U.s=r.s;U.me=r.me||0;U.meta=r.meta||null;U.match=r.match||null;if(U.meta)U.meta.lt=0;U.vsAI=true;U.net=null;U.mode="game";render();pumpAI()}return}
   if(k==="drop-local"){store2.del("cq.play.local");render();return}
   if(k==="resume-host"){const r=store2.get("cq.play.host",null);if(r)hostRoom(r);return}
   if(k==="drop-host"){store2.del("cq.play.host");render();return}
@@ -1738,6 +1850,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="multi-ok"){closeModal();send({type:"multiBow",n:U.multiSel.length,uids:U.multiSel});return}
   /* Nov 23: Watch / Stop watching work from the lobby, where there is no game state yet */
   if(k==="spec"){spectate(b.dataset.g);return}
+  if(k==="rp"){const d=b.dataset.d,R=U.spec&&U.spec.replay;if(!R)return;if(d==="first")replayGo(0);else if(d==="last")replayGo(R.acts.length);else if(d==="prev")replayGo(R.i-1);else if(d==="next")replayGo(R.i+1);else if(d==="rnext")replayRound(1);else if(d==="rprev")replayRound(-1);return}
   if(k==="spec-leave"){leaveSpec();U.s=null;U.mode="lobby";U.overHide=false;closeModal();render();return}
   if(!s)return;
   if(k==="amt"){const A=U.askAmt;if(!A)return;const d=b.dataset.d;A.val=d==="all"?A.max:Math.max(A.min,Math.min(A.max,A.val+(+d)));const el=document.getElementById("ask-amt-v");if(el)el.textContent=A.val;return}
@@ -1797,7 +1910,8 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
 document.addEventListener("toggle",e=>{const t=e.target;if(t&&t.classList&&t.classList.contains("pl-help"))U.helpOpen=t.open},true);
 function redrawPrompt(){const m=document.getElementById("pl-modal");if(m)delete m.dataset.k;const s=view();if(m)m.remove();modals(s)}
 document.addEventListener("change",e=>{const t=e.target;const k=t.dataset&&t.dataset.pa;if(!k)return;
-  if(k==="deck"){U.lobby.deck=t.value}else if(k==="ai"){U.lobby.ai=t.value;U.lobby.aiPicked=true}
+  if(k==="bo"){U.lobby.bo=+t.value===3?3:1;try{localStorage.setItem("cq.play.bo",String(U.lobby.bo))}catch(e){}render()}
+  else if(k==="deck"){U.lobby.deck=t.value}else if(k==="ai"){U.lobby.ai=t.value;U.lobby.aiPicked=true}
   else if(k==="t-loot"){if(U.lootPick){U.lootPick.p[t.dataset.p]=t.value||undefined;if(!t.value)delete U.lootPick.p[t.dataset.p];render()}}
   else if(k==="t-party"){U.lobby.t.party=t.value}else if(k==="t-helpers"){U.lobby.t.helpers=+t.value||1;render()}else if(k==="t-h"){U.lobby.t.h[+t.dataset.i]=t.value}else if(k==="t-watch"){U.lobby.t.watch=t.checked}
   else if(k==="man-op"){U.man.op=t.value;if(t.value==="move")U.man.n=0;render()}else if(k==="man-k"){U.man.k=t.value}else if(k==="man-name"){U.man.name=t.value}});

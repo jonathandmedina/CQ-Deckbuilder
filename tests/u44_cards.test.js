@@ -10,7 +10,7 @@ const row=n=>ctx.RAW_CARDS.find(r=>r[1]===n),hero=n=>ctx.RAW_HEROES.find(r=>r[0]
 /* data */
 ok(/Heal each hero for 2 Health Points\./.test(row("All Play")[7])&&row("All Play")[8]===4,"All Play heals 2, v4");
 ok(row("Full Heal")[2]==="6"&&/maximum Health Points/.test(row("Full Heal")[7])&&row("Full Heal")[8]===2,"Full Heal costs 6, heals to full, v2");
-ok(/^1\{A\}, Exile: Until end of turn, whenever target hero would be healed/.test(row("False Cure")[7])&&row("False Cure")[8]===2,"False Cure text v2");
+ok(/^1\{A\}, Exile: Until end of turn, whenever target enemy would be healed/.test(row("False Cure")[7])&&row("False Cure")[8]===3,"False Cure text v3 (Update 51: target enemy)");
 ok(/another target friendly hero/.test(hero("Lightbringer")[6])&&/a card or ability you control heals/.test(hero("Lightbringer")[6])&&hero("Lightbringer")[7]===6,"Lightbringer text v6");
 /* False Cure: every heal on that hero this turn becomes HP loss */
 {const s=game();const h=s.p[1].heroes[0];h.dmg=5;h.fl.falseCure=s.round;E.heal(s,null,h,2,1);E.heal(s,null,h,3,1);ok(h.dmg===10,"two heals both become HP loss ("+h.dmg+")");

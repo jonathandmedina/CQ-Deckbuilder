@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 23, 2026 (update 49: Confused attacks, Enchant wording)*
+*Version: November 24, 2026 (update 51: “target enemy” wording; enchantments on summons)*
 
 ## 1. Welcome to Riverstead
 
@@ -91,7 +91,7 @@ Weapons, armor, instruments and accessories that you equip to a Hero to boost it
 
 ### Enchantments and Curses
 
-Enchantments attach to a Hero and change it while attached. Curses are Warlock enchantments that weaken the Hero they’re attached to.
+Enchantments attach to a Hero and change it while attached. A card that says “Enchant target enemy” can also attach to an enemy summon. Curses are Warlock enchantments that weaken what they’re attached to. When an enchanted summon leaves play, its enchantments go to their owners’ discard piles.
 
 ### Summons
 
@@ -695,8 +695,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Type line**: Supertype - Type - Subtype, with dashes (Legendary - Equipment - Sword).
 - **Equipment region**: Where equipment is worn: Head, Chest, Arms, Hands, Legs, Feet, Accessory. One piece per region.
 - **One-Handed / Two-Handed**: How many hands a weapon or instrument uses. A Hero has two hands.
-- **Enchantment**: Card attached to a Hero that changes it. Card text says “Enchanted ally”.
-- **Curse**: Enchantment subtype (Warlock) that weakens the Hero it's attached to.
+- **Enchantment**: Card attached to a Hero (or, if its card says “target enemy”, an enemy summon) that changes it. Card text says “Enchanted ally”.
+- **Curse**: Enchantment subtype (Warlock) that weakens what it's attached to.
 - **Summon**: Card type that creates a creature, and the creature itself. Playing a summon card exhausts the Hero only if the card says “Exhaust this Hero.” A summon has STR/HP, enters exhausted, can attack whenever you have priority, can't be equipped. At 0 HP it dies and is destroyed. It can't be revived.
 - **Token**: A card created by an effect. Pillars and summons go on the battlefield. Equipment and item tokens (Dagger, Viper Fang Dagger, Doll) take an inventory slot. A token’s Aura cost is 0 unless it says otherwise (Viper Fang Dagger costs 1 to equip). Tokens that leave play are removed from the game. See the token list in The Cards.
 - **Hidden**: Supertype. Set face down in an inventory slot as an action. To trigger it, exhaust a ready Hero of its class (any Hero for Generic) and pay its cost. Resolves before the action that triggered it.
@@ -726,8 +726,8 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Abide**: Action. The Hero acts last (after the Closer) for the rest of the round. Party order doesn’t change. Doesn’t exhaust. Only one of your Heroes can Abide each round.
 - **Equip**: A Hero pays the equipment’s Aura cost and puts it on itself, whether it comes from your hand, your inventory, or another of your Heroes. The receiving Hero always takes the action. Equipment has no separate equip cost.
 - **Unequip**: Take equipment off a Hero. It goes to your inventory.
-- **Attach**: Put an enchantment or curse onto a Hero. On older cards, “attach an Equipment” means equip it.
-- **Enchant / Enchanted**: “Enchant target hero” means attach this enchantment or curse to that hero. “Enchanted hero” is the hero it’s attached to.
+- **Attach**: Put an enchantment or curse onto a Hero (or another target its card names). On older cards, “attach an Equipment” means equip it.
+- **Enchant / Enchanted**: “Enchant target hero” (or “target enemy”) means attach this enchantment or curse to that target. “Enchanted hero” (or “enchanted enemy”) is what it’s attached to.
 - **Activate**: Use an ability or item. Activating an Arrow exhausts the Hero.
 - **Trigger**: A condition that sets off an ability or Hidden card (“Whenever…”, “When…”, “At Dawn”).
 - **Resolve**: Carry out a card's effect as fully as possible.

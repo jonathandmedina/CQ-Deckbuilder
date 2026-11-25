@@ -34,19 +34,40 @@ function bolt(pil){const s=trial(7);const me=E.parties(s)[0];if(pil)E.makePillar
   const a=s.p[me].heroes.find(h=>!h.dead);const hp0=E.hp(s,b);S["Lightning Bolt"].run(E.mkCtx(s,me,a,E.DB["Lightning Bolt"],{uid:"xLB",id:"Lightning Bolt",owner:me},[b.uid]));return hp0-E.hp(s,b)}
 {const w=bolt(false),p=bolt(true);ok(w>0,"Lightning Bolt hits the boss ("+w+")");ok(p-w===2,"Spell Damage Pillar adds 2 against the boss ("+w+" -> "+p+")")}
 
-/* Sweep: any slot that can pick an enemy Hero in 1-on-1 must be able to pick the boss in a Trial */
-const KINDS=new Set(["any","enemy","hero","enemyHero","anyOther","anyOrDeadAlly"]);
+/* Sweep (Update 51: a Trials boss is an enemy, not a Hero). For every live (not deprecated) scripted slot that can pick an enemy Hero in 1-on-1:
+   "enemy" / "any" slots must also be able to pick the boss in a Trial; "hero" / "enemyHero" slots must not. */
+const ENEMY_KINDS=new Set(["any","enemy","anyOther","anyOrDeadAlly"]),HERO_KINDS=new Set(["hero","enemyHero"]);
 /* legit exceptions: the card needs something the boss can't have */
 const EXEMPT={"Entangling Roots":"needs a second enemy Hero next to the target; the boss stands alone"};
+const live=n=>{const d=E.DB[n]||E.DB["h:"+n];return d&&!d.dep};
 const slots=[];
 for(const n in S){const x=S[n];(x.t||[]).forEach((sp,i)=>slots.push({n,src:"play",i,sp}));if(x.act&&x.act.t)x.act.t.forEach((sp,i)=>slots.push({n,src:"act",i,sp}))}
 for(const n in H)(H[n]||[]).forEach((ab,j)=>(ab.t||[]).forEach((sp,i)=>slots.push({n,src:"ability "+j,i,sp})));
 const d=duel(9),s=trial(9);const dA=d.p[0].heroes[0],tA=s.p[E.parties(s)[0]].heroes[0];const tme=E.parties(s)[0];
-let checked=0,misses=[];
-for(const sl of slots){if(!KINDS.has(sl.sp.k)||EXEMPT[sl.n])continue;const card=E.DB[sl.n]||E.DB["h:"+sl.n]||{};
+let checked=0,misses=[],leaks=[];
+for(const sl of slots){const k=sl.sp.k;if((!ENEMY_KINDS.has(k)&&!HERO_KINDS.has(k))||EXEMPT[sl.n]||!live(sl.n))continue;const card=E.DB[sl.n]||E.DB["h:"+sl.n]||{};
   let dc=[],tc=[];try{dc=E.candidates(d,0,sl.sp,{actor:dA,card})}catch(e){}try{tc=E.candidates(s,tme,sl.sp,{actor:tA,card})}catch(e){}
-  const dEnemyHero=d.p[1].heroes.some(h=>dc.includes(h.uid));if(!dEnemyHero)continue;checked++;
-  if(!tc.includes(boss(s).uid))misses.push(`${sl.n} (${sl.src} slot ${sl.i}, ${sl.sp.k})`)}
+  if(!d.p[1].heroes.some(h=>dc.includes(h.uid)))continue;checked++;const hasBoss=tc.includes(boss(s).uid);
+  if(ENEMY_KINDS.has(k)&&!hasBoss)misses.push(`${sl.n} (${sl.src} slot ${sl.i}, ${k})`);
+  if(HERO_KINDS.has(k)&&hasBoss)leaks.push(`${sl.n} (${sl.src} slot ${sl.i}, ${k})`)}
 ok(checked>50,"sweep checked "+checked+" slots");
-ok(!misses.length,"slots that reach an enemy Hero in 1-on-1 but not the boss: "+misses.join("; "));
+ok(!misses.length,"enemy/any slots that can't pick the boss: "+misses.join("; "));
+ok(!leaks.length,"Hero-only slots that still pick the boss: "+leaks.join("; "));
+
+/* Update 51 cards in a Trial */
+const run=(s,me,name,targets)=>{const a=s.p[me].heroes.find(h=>!h.dead);const sc=S[name]||S['"'+name+'"'];const dd=E.DB[name]||E.DB['"'+name+'"'];return sc.run(E.mkCtx(s,me,a,dd,{uid:"x"+name+Math.random(),id:name,owner:me},targets||[]))};
+{const s=trial(21);const me=E.parties(s)[0],b=boss(s);s.trials.plates=0;ctx.CQT.syncDef(s);const g=golems(s).find(o=>o.fl.vs===me);
+ const mine=s.p[me].heroes.map(h=>h.dmg||0),hp0=E.hp(s,b),g0=E.hp(s,g);run(s,me,"Hail");
+ ok(E.hp(s,b)===hp0-1&&E.hp(s,g)===g0-1,"Hail hits the boss and Golems");ok(s.p[me].heroes.every((h,i)=>(h.dmg||0)===mine[i]),"Hail skips your own Heroes");
+ const hpB=E.hp(s,b);run(s,me,"Chain Lightning");ok(E.hp(s,b)===hpB,"Chain Lightning (each enemy Hero) no longer hits the boss");
+ b.dmg=10;const h1=E.hp(s,b);run(s,me,"Song of Healing");ok(E.hp(s,b)===h1,"Song of Healing no longer heals the boss");
+ const hpS=E.hp(s,b);run(s,me,"Storm of Insight");ok(E.hp(s,b)<hpS,"Storm of Insight (each enemy) hits the boss")}
+{const s=trial(23);const me=E.parties(s)[0],b=boss(s);const g=golems(s).find(o=>o.fl.vs===me);
+ run(s,me,"Mark of Doom",[b.uid]);ok(b.ench.some(e=>e.name==="Mark of Doom"),"Mark of Doom enchants the boss");
+ run(s,me,"Mark of Doom",[g.uid]);ok((g.ench||[]).some(e=>e.name==="Mark of Doom"),"Mark of Doom enchants a Golem");
+ ok(E.find(s,g.ench[0].uid)&&E.find(s,g.ench[0].uid).zone==="ench","the Golem's enchantment can be found");
+ const hb=E.hp(s,b),hg=E.hp(s,g);for(let k=0;k<20&&s.phase==="battle";k++){if(s.pend.length){const pr=s.pend[0];const a=ctx.CQAI.choose(s,pr.pid);if(a)E.act(s,pr.pid,a);else s.pend.shift();continue}E.act(s,s.prio,{type:"pass"})}
+ ok(E.hp(s,b)<=hb-1,"Mark of Doom ticks on the boss at Dusk");ok(!s.p[s.trials.boss].bf.includes(g)||E.hp(s,g)<=hg-1,"Mark of Doom ticks on the Golem at Dusk")}
+{const s=trial(25);const me=E.parties(s)[0];const g=golems(s).find(o=>o.fl.vs===me);run(s,me,"Mark of Doom",[g.uid]);const mark=g.ench[0];E.destroyObj(s,g);
+ ok(s.p[me].disc.some(x=>x.uid===mark.uid||x.id==="Mark of Doom"),"a destroyed Golem's Mark of Doom goes to its owner's discard pile")}
 console.log(`trials parity: ${pass} passed, ${fail} failed (${checked} enemy slots swept)`);process.exit(fail?1:0);

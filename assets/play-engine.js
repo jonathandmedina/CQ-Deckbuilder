@@ -162,13 +162,15 @@ E.validateDeck=function(d,opt){const tr=!!(opt&&opt.trials);
   if(t<50)out.push(`Deck has ${t} cards (needs at least 50).`);return out};
 
 /* ---------- lookups ---------- */
-function allObjs(s){const out=[];s.p.forEach((pl,pid)=>{pl.heroes.forEach(h=>{out.push(h);eqList(h).forEach(e=>out.push(e));h.ench.forEach(e=>out.push(e))});pl.bf.forEach(o=>out.push(o));pl.inv.forEach(o=>out.push(o))});return out}
+function allObjs(s){const out=[];s.p.forEach((pl,pid)=>{pl.heroes.forEach(h=>{out.push(h);eqList(h).forEach(e=>out.push(e));h.ench.forEach(e=>out.push(e))});pl.bf.forEach(o=>{out.push(o);(o.ench||[]).forEach(e=>out.push(e))});pl.inv.forEach(o=>out.push(o))});return out}
 function find(s,uid){
   for(let pid=0;pid<s.p.length;pid++){const pl=s.p[pid];
     for(const h of pl.heroes){if(h.uid===uid)return{o:h,pid,zone:"hero"};
       for(const k in h.eq){const e=h.eq[k];if(e&&e!=="2H"&&e.uid===uid)return{o:e,pid,zone:"eq",hero:h,slot:k}}
       for(const e of h.ench)if(e.uid===uid)return{o:e,pid:e.ctrl!=null?e.ctrl:e.owner,zone:"ench",hero:h}}
-    for(const o of pl.bf)if(o.uid===uid)return{o,pid,zone:"bf"};
+    for(const o of pl.bf){if(o.uid===uid)return{o,pid,zone:"bf"};
+      /* Update 51: a summon can carry enchantments (Mark of Doom); "hero" here is the enchanted object */
+      for(const e of (o.ench||[]))if(e.uid===uid)return{o:e,pid:e.ctrl!=null?e.ctrl:e.owner,zone:"ench",hero:o}}
     for(const o of pl.inv)if(o.uid===uid)return{o,pid,zone:"inv"};
     for(const o of pl.hand)if(o.uid===uid)return{o,pid,zone:"hand"};
   }return null}
@@ -533,7 +535,7 @@ function overflow(s,pid){const pl=P(s,pid);const cap=E.slots(s,pid);
 function destroyObj(s,o,exile,why){const f=find(s,o.uid);if(!f)return;const pl=P(s,f.pid);
   /* Set 2 Impervious: destroy effects do nothing; it still dies at 0 HP, and sacrifice and exile work */
   if(o.imp&&!exile&&why!=="sac"&&hpOf(s,o)>0){log(s,`${o.name} can't be destroyed (Impervious).`);return}
-  if(f.zone==="bf"){pl.bf.splice(pl.bf.indexOf(o),1)}
+  if(f.zone==="bf"){pl.bf.splice(pl.bf.indexOf(o),1);(o.ench||[]).forEach(e=>toDisc(s,e));if(o.ench)o.ench=[]}
   else if(f.zone==="inv"){pl.inv.splice(pl.inv.indexOf(o),1)}
   else if(f.zone==="eq"){f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;
     if(o.name==="Sword of Eliazar"&&!exile){const m=makeSummon(s,f.pid,"Eliazar");if(isUp(s,o)){m.str+=1;m.hp+=1;log(s,`Upgraded Sword of Eliazar: Eliazar is ${m.str}/${m.hp}.`,f.pid)}}}
@@ -574,7 +576,7 @@ function checkWin(s){if(s.over)return;
     log(s,s.winner<0?"Both parties fall. The game is a draw.":`🏆 ${s.p[s.winner].name} wins!`);}}
 
 /* ---------- tokens / summons ---------- */
-function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};const o={uid:nid(s),kind:"summon",name,str:t.str,hp:t.hp,bdef:t.def||0,sub:t.sub||"",dmg:0,ex:!ready,ctrl:pid,owner:pid,tok:true,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},mods:[],fl:{}};
+function makeSummon(s,pid,name,ready){const t=TOK[name]||{str:2,hp:2,sub:""};const o={uid:nid(s),kind:"summon",name,str:t.str,hp:t.hp,bdef:t.def||0,sub:t.sub||"",dmg:0,ex:!ready,ctrl:pid,owner:pid,tok:true,st:{burn:0,poison:0,wound:0,confuse:0,stun:0},mods:[],fl:{},ench:[]};
   if(/\bStealth\b/i.test(t.rules||""))o.stealth=true;
   if(/^Impervious\b/i.test(t.rules||""))o.imp=true; /* Set 2 Revenant */ /* update 29: summons that enter with Stealth (Woods Beast, Great Rootfolk) */
   P(s,pid).bf.push(o);log(s,`${P(s,pid).name} summons ${/^[AEIOU]/.test(name)?"an":"a"} ${name} (${t.str}/${t.hp}).`,pid);
@@ -666,7 +668,7 @@ function candidates(s,pid,spec,ctx){ctx=ctx||{};const viaCard=!ctx.attack;let li
   if(k==="player"||k==="enemyPlayer"||k==="allyPlayer"){return s.p.map((_,i)=>i).filter(p=>k==="enemyPlayer"?!sameTeam(s,p,pid):true).filter(p=>k==="player"||(k==="enemyPlayer"?p!==pid:p===pid)).map(p=>"P"+p)}
   if(["any","enemy","ally","hero","enemyHero","allyHero","summon","enemySummon","allySummon","allyHeroOther","anyOther","meditating"].includes(k)){
     list=inPlayTargets(s).filter(o=>{
-      if(k.includes("Hero")||k==="hero"||k==="meditating"){if(o.kind!=="hero")return false}
+      if(k.includes("Hero")||k==="hero"||k==="meditating"){if(o.kind!=="hero")return false;if(o.boss)return false} /* Update 51: a Trials boss is an enemy, not a Hero */
       if(/[sS]ummon/.test(k)&&o.kind!=="summon")return false;
       if(k.startsWith("enemy")&&!isEnemy(o))return false;
       if(k.startsWith("ally")&&isEnemy(o))return false;
@@ -1115,7 +1117,7 @@ E.bend=bend;
 /* Set 2 Displace (Nov 17, 2026): exile a non-Hero object with 3 stall counters. It isn't destroyed and nothing "leaves play" triggers;
    when the last counter comes off (its controller's party takes actions) it returns: a summon or Pillar to the battlefield (a summon exhausted), anything else to the inventory. */
 function displace(s,o,n){const f=find(s,o.uid);if(!f||o.kind==="hero")return false;const pl=P(s,f.pid);
-  if(f.zone==="bf")pl.bf.splice(pl.bf.indexOf(o),1);else if(f.zone==="inv")pl.inv.splice(pl.inv.indexOf(o),1);
+  if(f.zone==="bf"){pl.bf.splice(pl.bf.indexOf(o),1);(o.ench||[]).forEach(e=>toDisc(s,e));if(o.ench)o.ench=[]}else if(f.zone==="inv")pl.inv.splice(pl.inv.indexOf(o),1);
   else if(f.zone==="eq"){f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null}
   else if(f.zone==="ench")f.hero.ench.splice(f.hero.ench.indexOf(o),1);else return false;
   pl.stall=(pl.stall||[]).concat([{uid:o.uid,id:o.id||o.name,name:o.name,owner:f.pid,n:n||3,ret:true,obj:o,displaced:true}]);
@@ -1274,10 +1276,11 @@ function resolveCont(s,pid,cont,mods){
   if(s.bonus&&s.bonus.pid===pid&&s.bonus.dup&&d.cls==="Bard"&&/Tactic|Song/.test(d.type)){s.bonus.dup=false;log(s,`Songweaver duplicates ${d.name}.`,pid);copyTargets(s,pid,{id:d.id,actor:actor&&actor.uid,modes:cont.modes||[],x:cont.x||0,picked:[],orig:cont.targets||[]})}
   /* triggers on card played */
   if(d.type==="Spell"){living(pl).forEach(h=>{if(h.name==="Diviner Mage")pushScry(s,pid,1)})}
-  /* Staff of Doom (update 21): the first Spell the equipped Hero plays each turn (every Spell when upgraded): target Hero loses HP equal to its Aura cost */
+  /* Staff of Doom (update 21, update 51): the first Spell the equipped Hero plays each turn (every Spell when upgraded): target enemy loses HP equal to its Aura cost */
   if(d.type==="Spell"&&actor&&!actor.dead&&hasEqN(actor,"Staff of Doom")&&(hasUpN(s,actor,"Staff of Doom")||actor.fl.staffRound!==s.round)){actor.fl.staffRound=s.round;
-    const n=d.cost==="X"?(cont.x||0):num(d.cost);const hs=inPlayTargets(s).filter(o=>o.kind==="hero"&&(!stealth(s,o)||ctrl(s,o)===pid));
-    if(n>0&&hs.length)ask(s,pid,`Staff of Doom: target Hero loses ${n} HP`,targetOpts(s,pid,hs.filter(o=>ctrl(s,o)!==pid),n).concat(targetOpts(s,pid,hs.filter(o=>ctrl(s,o)===pid),n)).concat([{label:"No one",v:null}]),"loseTo",{n,name:"Staff of Doom"})}
+    const n=d.cost==="X"?(cont.x||0):num(d.cost);const hs=candidates(s,pid,{k:"enemy"},{actor});
+    /* Update 51: target enemy (was target Hero) */
+    if(n>0&&hs.length)ask(s,pid,`Staff of Doom: target enemy loses ${n} HP`,targetOpts(s,pid,hs.map(u=>resolveTarget(s,u)).filter(Boolean),n).concat([{label:"No one",v:null}]),"loseTo",{n,name:"Staff of Doom"})}
   if(d.type==="Song"&&actor&&!actor.dead&&actor.name==="Harmony Sage"){/* Update 46: whenever this hero plays a song, you may heal target ally for 1 */const al=[...living(pl),...pl.bf.filter(o=>o.kind==="summon")].sort((a,b)=>(b.dmg||0)-(a.dmg||0));if(al.length)ask(s,pid,"Harmony Sage: you may heal target ally for 1 Health Point",al.map(o=>({label:`${o.name}${o.kind==="summon"?" (summon)":""} (${Math.max(0,maxHp(s,o)-(o.dmg||0))}/${maxHp(s,o)} HP)`,v:o.uid})).concat([{label:"No heal",v:null}]),"healTo",{n:1,healer:actor.uid})}
   if(d.type==="Song"&&pl.inv.some(o=>!o.fd&&o.name==="Tip Jar"))tip(s,pid,"Tip Jar");
   if(d.type==="Song"){/* Nov 17: every Forbidden Tuner in your inventory triggers (each copy deals its own 1 damage) */
@@ -1585,11 +1588,12 @@ function doDusk(s){
   s.p.forEach(pl=>{pl.heroes.forEach(h=>{if(h.fl&&h.fl.forceAtk)delete h.fl.forceAtk});(pl.bf||[]).forEach(o=>{if(o.fl&&o.fl.forceAtk)delete o.fl.forceAtk})});
   /* Deeg's Heavy Bow: a Hero that became exhausted this round gets a Fatigue counter */
   s.p.forEach((pl,pid)=>living(pl).forEach(h=>{if(h.ex&&!h.fat&&!h.fl.fatRested&&hasEqN(h,"Deeg's Heavy Bow")){if(hasUpN(s,h,"Deeg's Heavy Bow")&&pl.aura>=1){pl.aura-=1;log(s,`Upgraded Deeg's Heavy Bow: ${pl.name} pays 1 Aura so ${h.name} doesn't get a Fatigue counter.`,pid);return}h.fat=1;log(s,`Deeg's Heavy Bow: ${h.name} gets a Fatigue counter (it won't ready at the next Dawn).`,pid)}}));
+  /* Update 51: Mark of Doom on any enemy (a Hero, a summon or a Trials boss), on every side */
+  s.p.forEach(pl=>{pl.heroes.concat(pl.bf.filter(o=>o.kind==="summon")).forEach(o=>{if(o.dead)return;(o.ench||[]).forEach(e=>{if(e.name==="Mark of Doom"&&!o.dead)loseHp(s,o,1,"Mark of Doom")})})});
   parties(s).forEach(pid=>{const pl=P(s,pid);
     const pp=pl.bf.filter(o=>o.name==="Pain Pillar").length;
     if(pp&&!(s.painAsked&&s.painAsked[pid])){for(let i=0;i<pp;i++){const t=autoTarget(s,pid,"enemy");if(t)loseHp(s,t,1,"Pain Pillar")}}
     pl.heroes.forEach(h=>{if(h.dead)return;
-      h.ench.forEach(e=>{if(e.name==="Mark of Doom")loseHp(s,h,1,"Mark of Doom")});
       if(h.fl.chargedRound===s.round&&!h.dead){if(!(h.fl.chargedHit===s.round)){log(s,`Charged Barrage: ${h.name} strikes every enemy.`,pid);const st=strOf(s,h);P(s,oppOf(s,pid)).heroes.filter(x=>!x.dead).concat(P(s,oppOf(s,pid)).bf.filter(o=>o.kind==="summon")).forEach(t=>damage(s,h,t,st,{card:true}))}}
       if(h.fl.standRound===s.round&&!h.dead){log(s,`Take a Stand: ${h.name} dies at Dusk.`,pid);h.dmg=maxHp(s,h);}});
   });

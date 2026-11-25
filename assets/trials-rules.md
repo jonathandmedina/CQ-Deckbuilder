@@ -1,7 +1,7 @@
 # Trials Module Supplement
 *Co-op boss Trials for Riverstead. These rules add to the full rules and only apply in a Trial. If this supplement disagrees with the full rules during a Trial, this supplement wins.*
 
-*Version 1.2 · Nov 22, 2026 · Module 1: Trial 1, the Rock Mammoth*
+*Version 1.3 · Nov 24, 2026 · Module 1: Trial 1, the Rock Mammoth*
 
 ## 1. What a Trial Is
 
@@ -38,7 +38,7 @@ Dawn, Battle, Dusk and Town work as in the full rules, with these changes:
 
 ## 6. The Boss and Your Cards
 
-- **The boss counts as an enemy Hero** for all card text, so cards that hit “enemy Heroes” hit it. (This is temporary; cards will be reworded so it isn’t needed.)
+- **The boss is an enemy, not a Hero.** Cards that say “target enemy”, “each enemy”, “all enemies” or “any target” can hit it. Cards that say “Hero” (“target Hero”, “each enemy Hero”, “heal each Hero”) don’t affect it.
 - Each time the boss is Stunned or exhausted, it **skips one reveal** on its next turn. Its spawns still attack.
 - The boss can’t be stolen from or taken control of. It has no Gold, Aura, hand or level. Fatigue and Confuse do nothing to it. Each Stun or exhaust makes it skip only one reveal, and it readies right away.
 - **Spawns** are enemy summons. “All enemies” hits them; “each enemy Hero” doesn’t.

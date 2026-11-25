@@ -545,7 +545,7 @@ function bossHTML(s){const T=window.CQT;const b=T.bossState(s);const st=s.trials
       return okT?`<span class="tr-golem">${html}</span>`:`<span class="tr-golem dim" title="Deal with your own Golem first.">${html}</span>`}).join("");
     return`<div class="tr-gcol"><span class="lbl">vs ${nm}</span>${list||'<span class="pl-note">—</span>'}</div>`}).join("");
   return`<section class="tr-boss" aria-label="${esc(b.name)}">
-    <div class="tr-bar${cands.has(h.uid)?" cand":""}"${cands.has(h.uid)?` data-pa="obj" data-u="${h.uid}" title="Tap anywhere on the boss bar to target ${esc(b.name)}"`:""}><button type="button" class="tr-bname${cands.has(h.uid)?" cand":""}" data-pa="obj" data-u="${h.uid}" title="${esc(b.name)} (counts as an enemy Hero)">${esc(b.name)}</button>
+    <div class="tr-bar${cands.has(h.uid)?" cand":""}"${cands.has(h.uid)?` data-pa="obj" data-u="${h.uid}" title="Tap anywhere on the boss bar to target ${esc(b.name)}"`:""}><button type="button" class="tr-bname${cands.has(h.uid)?" cand":""}" data-pa="obj" data-u="${h.uid}" title="${esc(b.name)} (an enemy, not a Hero)">${esc(b.name)}</button>
       <span class="tr-hp" role="img" aria-label="${b.hp} of ${b.max} Health Points"><span class="tr-hpb"><i style="width:${pct.toFixed(1)}%"></i></span><b>${b.hp}/${b.max}</b> HP</span>
       <span class="tr-def" title="Defense: 1 per Stone Plate${b.skin?", plus Stone Skin":""}${b.winded?" (Winded: 0)":""}">Defense <b>${b.def}</b> ${bossPips(b.plates,b.platesMax,"plate","Stone Plates: "+b.plates+" of "+b.platesMax)}</span>
       <span class="tr-rage" title="Raging Stampede at ${b.rageAt} Rage">Rage ${bossPips(b.rage,b.rageAt,"rage","Rage "+b.rage+" of "+b.rageAt)} <small>(${left?left+" to Stampede":"Stampede on its turn"})</small></span>${tags}</div>
@@ -1398,7 +1398,7 @@ function statPopHTML(s,h,st,f){const pl=s.p[h.owner];const rows=[];const r=(l,v,
   return`<div class="ph-pop" role="dialog" aria-label="${STAT_NAME[f]}" data-pa="stat" data-u="${h.uid}" data-f="${f}"><h4>${STAT_NAME[f]}</h4>${rows.join("")}<div class="tot"><span>Now</span><b>${st[f]}</b></div>${note}</div>`}
 function auraBarHTML(s,pl){const max=pl.heroes.reduce((n,h)=>n+(h.dead?0:E.heroStats(s,h).aura),0);const p=max?Math.min(100,pl.aura/max*100):0;
   return`<span class="res aubar" title="Aura pool: ${pl.aura} left of ${max} (your living Heroes' Aura). Refreshes at Dawn; unspent Aura is lost at Dusk." style="--ap:${p.toFixed(1)}%"><i class="fill"></i><i class="aura"></i> <b>${pl.aura}</b><small>/ ${max} Aura</small></span>${pl.t&&pl.t.sAura?`<span class="res" title="From Remains: this Aura can only be spent on Summon cards. Lost at Dusk.">+<b>${pl.t.sAura}</b> Summon Aura</span>`:""}`}
-function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});const ar=arrA(o.uid);
+function summonHTML(s,o,cands){const tags=[];E.STATUS.forEach(k=>{if(o.st[k])tags.push(E.STATUS_NAME[k])});(o.ench||[]).forEach(e=>tags.push(e.name)); /* Update 51: enchanted summons (Mark of Doom) */const ar=arrA(o.uid);
   const hpN=E.hp(s,o),hpM=Math.max(1,E.maxHp(s,o)),hpP=Math.max(0,Math.min(100,hpN/hpM*100));
   const hpBar=`<span class="ps-hp" role="img" aria-label="${hpN} of ${hpM} Health Points" title="${hpN}/${hpM} HP"><i style="width:${hpP.toFixed(1)}%;background:${hpP>60?"#3fae4f":hpP>30?"#e0b13a":"#d4402c"}"></i></span>`;
   return`<button class="ps${o.ex?" ex":""}${cands.has(o.uid)?" cand":""}${U.man&&U.manT===o.uid?" mansel":""}${ar.c}" style="${ar.st}--cc:${cc((E.TOK[o.name]||{}).cls||"Druid")}" data-pa="obj" data-u="${o.uid}"><b>${esc(o.name)}</b><span>${E.str(s,o)} STR · ${E.hp(s,o)}/${E.maxHp(s,o)} HP${E.defn(s,o)?` · ${E.defn(s,o)} DEF`:""}</span>${o.ex?"<span>Exhausted</span>":""}${o.imp?"<span title=\"Can't be dealt damage or destroyed; dies at 0 Health Points\">Impervious</span>":""}${o.stealth?"<span>Stealth</span>":""}${E.hasBanding(s,o)?"<span class=\"band\">Banding</span>":""}${E.forcedTarget&&E.forcedTarget(s,o)?`<span class="must" style="color:#C0392B;font-weight:700">Must attack ${esc(nameOf(E.forcedTarget(s,o)))}</span>`:""}${tags.length?`<span style="color:var(--warn)">${tags.join(", ")}</span>`:""}${hpBar}</button>`}
@@ -1614,7 +1614,7 @@ function inspectObj(u){const s=view();const f=E.find(s,u);if(!f)return;const o=f
   const hidden=o.fd&&!mine;
   modal(`${hidden?"<p>A face-down Hidden card.</p>":card?cardHTML(card,{flipped:E.isUp(s,o),nozoom:1}):`<h2>${esc(o.name)}</h2>`}
     ${o.kind==="hero"?`<p class="pl-note">Level ${o.lvl}${o.bon.str||o.bon.def||o.bon.aura?` · level bonuses: ${["str","def","aura"].filter(k=>o.bon[k]).map(k=>`+${o.bon[k]} ${k.toUpperCase()}`).join(", ")}`:""}${o.dmg?` · ${o.dmg} damage taken`:""}</p>`:""}
-    ${o.kind==="hero"&&o.ench.length?`<p class="pl-note">Enchantments: ${o.ench.map(e=>esc(e.name)).join(", ")}</p>`:""}
+    ${(o.kind==="hero"||o.kind==="summon")&&(o.ench||[]).length?`<p class="pl-note">Enchantments: ${o.ench.map(e=>esc(e.name)).join(", ")}</p>`:""}
     <div class="actions">${acts.join("")}<button class="btn" data-pa="close">Close</button></div>`)}
 function showPile(pid,z){if(z==="echo")return showEcho(pid);const s=view();const pl=s.p[pid];const list=z==="echo"?pl.echo.map(e=>e.card||{}):pl[z];
   const mine=z==="disc"&&pid===U.me&&U.mode==="game";const ex=mine?list.filter(c=>exhumeOk(s,pid,c)):[];

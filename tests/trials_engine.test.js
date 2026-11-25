@@ -148,7 +148,7 @@ test("T4 your spawns first: no attacking or targeting another party's Golem whil
   ok(!E.trialsTargetOk(s,0,theirs));ok(E.trialsTargetOk(s,1,theirs));
   runCard(s,0,"Hail");ok(theirs.dmg>0,"Hail hits every spawn");
   E.destroyObj(s,mine);ok(E.candidates(s,0,{k:"enemy"},{}).includes(theirs.uid),"free once your own Golem is gone")});
-test("T4 the boss counts as an enemy Hero",()=>{const s=mk(2,81);toBattle(s);ok(E.candidates(s,0,{k:"enemyHero"},{}).includes(bossHero(s).uid))});
+test("T4 the boss is an enemy, not a Hero (Update 51)",()=>{const s=mk(2,81);toBattle(s);const b=bossHero(s).uid;ok(E.candidates(s,0,{k:"enemy"},{}).includes(b),"enemy");ok(E.candidates(s,0,{k:"any"},{}).includes(b),"any target");ok(!E.candidates(s,0,{k:"enemyHero"},{}).includes(b),"not enemy Hero");ok(!E.candidates(s,0,{k:"hero"},{}).includes(b),"not target Hero")});
 test("T4 Stun or exhaust on the boss: it skips one reveal on its next turn",()=>{const s=mk(2,82);toBattle(s);flat(s);E.addStatus(s,bossHero(s),"stun",1);const d=st(s).deck.length;stack(s,"Stone Skin");sweep(s);
   eq(st(s).deck.length,d,"Stun: one reveal skipped");eq(lastKinds(s,2),["skip","flip"]);eq(bossHero(s).st.stun,0,"Stun used up");
   stack(s,"Stone Skin","Stone Skin");sweep(s);ok(!lastKinds(s,2).includes("skip"),"only one skip");

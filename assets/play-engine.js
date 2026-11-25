@@ -1184,10 +1184,14 @@ function playCard(s,pid,actor,uid,a,o){const pl=P(s,pid);
   if(d.kind==="equip"){
     /* Set 2 (Nov 16, 2026): an opponent with a Time Pearl (or Pocket Watch) may respond to equipment being played. Only Set 2 responses open this window; Hidden cards don't. */
     if(!o.fromStall&&actor){const op=oppOf(s,pid);const tr={kind:"card",equip:true,src:actor,pid,card:d,cardUid:c.uid,targets:[],cost,cls:d.cls,type:d.type,name:d.name};
-      if(!isBoss(s,op)&&(canPearl(s,op,tr)||canStall(s,op,tr))){s.pend.unshift({type:"window",pid:op,trig:tr,cont:{k:"equip",actor:actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},fromDisc:!!o.fromDisc},mods:{}});log(s,`${P(s,op).name} may respond…`);return}}
+      /* Nov 24: playing equipment is playing a card, so Hidden responses (Cancel) can answer it too */
+      if(!isBoss(s,op)&&(canPearl(s,op,tr)||canStall(s,op,tr)||windowFor(s,op,tr))){s.pend.unshift({type:"window",pid:op,trig:tr,cont:{k:"equip",actor:actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},fromDisc:!!o.fromDisc},mods:{}});log(s,`${P(s,op).name} may respond…`);return}}
     const eo=eqObjFromCard(s,pid,c);equipTo(s,actor,eo);if(sc&&sc.enter)withSrc(s,d.name,()=>sc.enter(mkCtx(s,pid,actor,d,eo,[],{fromDisc:!!o.fromDisc})));return}
   if(d.sup==="Hidden"){pl.inv.push(Object.assign({kind:"card",fd:true,name:d.name},c));log(s,`${actor?actor.name:pl.name} sets a Hidden card face down.`,pid);overflow(s,pid);
     if(sc&&sc.onSet)sc.onSet(mkCtx(s,pid,actor,d,c,[]));return}
+  /* Nov 24: playing an item from hand opens a response window too (Cancel can stop it) */
+  if(d.type==="Item"&&!o.itemWin&&!o.fromStall&&actor){const op=oppOf(s,pid);const tr={kind:"card",item:true,src:actor,pid,card:d,cardUid:c.uid,targets:[],cost,cls:d.cls,type:d.type,name:d.name};
+    if(!isBoss(s,op)&&windowFor(s,op,tr)){s.pend.unshift({type:"window",pid:op,trig:tr,cont:{k:"itemcard",actor:actor.uid,card:{uid:c.uid,id:c.id,owner:c.owner},targets},mods:{}});log(s,`${P(s,op).name} may respond…`);return}}
   if(d.type==="Item"){const it=Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},c);pl.inv.push(it);overflow(s,pid);
     if(sc&&sc.enter){sc.enter(mkCtx(s,pid,actor,d,it,targets));if(bend(s,pid,d.name,actor))sc.enter(mkCtx(s,pid,actor,d,it,targets))}return}
   /* update 29: playing a Summon card no longer exhausts the Hero by rule; the card text says so when it does ("Exhaust this Hero") */
@@ -1230,13 +1234,15 @@ function doReveal(s,pid,o,pr,heroUid){const pl=P(s,pid);const d=def(o);const h=r
   }else{countCombo(s,pid,h,d);toDisc(s,o);s.pend.splice(1,0,{type:"manual",pid,title:d.name,text:d.rules,hidden:true})}
 }
 function trapGold(s,pid,d){if(d.sub!=="Trap")return;const n=living(P(s,pid)).filter(h=>h.name==="Beast Tracker").length;if(n){P(s,pid).gold+=n;log(s,`Beast Tracker: ${P(s,pid).name} gains ${n} Gold.`,pid)}}
-function afterCancel(s,pr){const c=pr.cont;if(c.k==="card"){const pl=P(s,pr.trig.pid);pl.disc.push(c.card)}}
+function afterCancel(s,pr){const c=pr.cont;if(c.k==="card"||c.k==="itemcard"||(c.k==="equip"&&!c.inv)){const pl=P(s,pr.trig.pid);pl.disc.push(c.card)}}
 function resolveCont(s,pid,cont,mods){
   if(cont.k==="none")return;
   if(cont.k==="attack"){resolveAttack(s,pid,cont,mods);return}
   /* Set 2: equipment held for a Time Pearl / Pocket Watch window and not delayed: equip it now */
   if(cont.k==="equip"){const h=heroByUid(s,cont.actor);if(!h||h.dead){P(s,pid).disc.push(cont.card);return}const d=DB[cont.card.id];const sc=SC()[d.name];
     const eo=cont.inv||eqObjFromCard(s,pid,cont.card);equipTo(s,h,eo);if(!cont.inv&&sc&&sc.enter)withSrc(s,d.name,()=>sc.enter(mkCtx(s,pid,h,d,eo,[],{fromDisc:!!cont.fromDisc})));return}
+  if(cont.k==="itemcard"){const pl=P(s,pid);const d=DB[cont.card.id];const sc=SC()[d.name];const h=cont.actor?heroByUid(s,cont.actor):null;const it=Object.assign({kind:"card",fd:false,name:d.name,ctr:{}},cont.card);pl.inv.push(it);overflow(s,pid);
+    if(sc&&sc.enter){sc.enter(mkCtx(s,pid,h,d,it,cont.targets||[]));if(bend(s,pid,d.name,h))sc.enter(mkCtx(s,pid,h,d,it,cont.targets||[]))}return}
   if(cont.k==="dying"){const f=find(s,cont.hero);const h=f&&f.o;if(!h||h.dead)return;
     if(hpOf(s,h)>0){h.fl.dyingDone=false;return}
     if(cont.stage===1){const tr={kind:"dying",hero:h.uid,pid:h.owner};if(windowFor(s,oppOf(s,h.owner),tr)){s.pend.unshift({type:"window",pid:oppOf(s,h.owner),trig:tr,cont:{k:"dying",hero:h.uid,stage:2},mods:{}});log(s,`${P(s,oppOf(s,h.owner)).name} may respond with a Hidden card…`);return}}

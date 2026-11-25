@@ -105,8 +105,8 @@ def("All Play",{run(c){const f=c.actor&&c.actor.lvl>=3?5:2; /* Update 44: each h
 def("Light Blast",dmgCard(2,{type:"Light",pierce:2}));
 def("Light Helix",{t:[t("hero","Hero to heal"),t("any","damage target")],run(c){heal(c,c.t[0],2);D(c,c.t[1],2,{type:"Light"})}});
 def("Healing Blast",{t:[t("any","heal target"),t("any","damage target")],run(c){const x=c.x||0;heal(c,c.t[0],x);D(c,c.t[1],Math.ceil(x/2),{type:"Light"});exMe(c)}});
-def("Bulwark Prayer",{t:[t("ally","ally to protect")],run(c){const a=c.t[0];buff(a,{def:2});c.me.fl.clericDefRound=c.s.round;log(c,"This turn, Clerics you control deal damage equal to their DEF instead of their STR.")}});
-def("Rebuke",{run(c){if(!c.actor)return;c.actor.fl.defDmgRound=c.s.round;log(c,`This turn, ${c.actor.name} deals damage equal to its DEF (${dfn(c,c.actor)}) instead of its STR.`)}});
+/* Update 53: Bulwark Prayer v3, +3 DEF until end of turn and heal 3 (no more DEF-damage clause). Rebuke is now a Hidden Tactic (below). */
+def("Bulwark Prayer",{t:[t("ally","ally to protect")],run(c){const a=c.t[0];if(!a)return;buff(a,{def:3});heal(c,a,3)}});
 def("Carry Radiance",{t:[cls("Cleric")],run(c){buff(c.t[0],{lifelink:1})}});
 def("Medical Visit",{t:[ANY],run(c){if(c.t[0])E.removeStatus(c.s,c.t[0],2)}});
 def("Purify",{t:[AL],run(c){if(c.t[0]){E.removeStatus(c.s,c.t[0],1);heal(c,c.t[0],1)}}});
@@ -404,6 +404,12 @@ hid("Out of the Woods","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);re
 hid("Fade the Fury","attack",(s,pid,trig)=>{const t2=E.find(s,trig.target);const a=atkr(s,trig);return t2&&t2.o.kind==="hero"&&E.heroIs(t2.o,"Rogue")&&a&&a.o.kind==="hero"&&E.str(s,a.o)>=3},c=>{c.mods.cancel=true});
 hid("Shelter from the Storm",["attack","card"],(s,pid,trig)=>s.p[pid].bf.some(o=>o.kind==="summon"),c=>{c.me.t.shelter=true;summons(c.me).forEach(o=>{o.ex=true});log(c,"Summons can't be destroyed this turn and are exhausted.")});
 hid("Cancel","card",null,c=>{c.mods.cancel=true});
+/* Update 53: Rebuke (Hidden Tactic). Revealed against an enemy attack on a friendly Hero, or an enemy card that deals damage.
+   The friendly Hero(es) it covers prevent the next damage this action would deal them; that much Light damage goes to a target enemy (engine damage()). */
+const rebukeCover=(s,pid,trig)=>{if(trig.kind==="attack"){const f=E.find(s,trig.target);return f&&f.pid===pid&&f.o.kind==="hero"?[f.o]:[]}
+  const d=E.DB[trig.card&&trig.card.id]||E.DB[trig.name]||{};if(!/damage/i.test(d.rules||trig.rules||""))return[];
+  const tg=(trig.targets||[]).map(u=>E.find(s,u)).filter(f=>f&&f.pid===pid&&f.o.kind==="hero").map(f=>f.o);return tg.length?tg:living(s.p[pid])};
+hid("Rebuke",["attack","card"],(s,pid,trig)=>rebukeCover(s,pid,trig).length>0,c=>{const hs=rebukeCover(c.s,c.pid,c.trig);hs.forEach(h=>{h.fl.rebuke={round:c.s.round,pid:c.pid}});log(c,`Rebuke: the next damage to ${hs.map(h=>h.name).join(", ")} this action is prevented and turned back.`)});
 /* Hand of the Protector (update 29): revealed in any response window, by a ready Druid or a ready summon; target ally gains DEF equal to its HP until Dusk */
 hid("Hand of the Protector",["attack","card","afterDmg","party10","dusk"],null,c=>{const al=living(c.me).concat(summons(c.me)).filter(o=>!o.dead);if(!al.length)return;
   const tu=c.trig&&(c.trig.target||(c.trig.targets||[])[0]);const first=al.find(o=>o.uid===tu);const l=first?[first].concat(al.filter(o=>o!==first)):al.slice().sort((a,b)=>E.hp(c.s,b)-E.hp(c.s,a));

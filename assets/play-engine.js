@@ -246,7 +246,7 @@ function strOf(s,o,vs){
     return Math.max(0,v)}
   return 0}
 E.str=strOf;E.defn=defOf;
-/* Rebuke / Bulwark Prayer: this turn the Hero deals damage equal to its DEF instead of its STR */
+/* DEF damage ("Doran Damage"): a Hero deals damage equal to its DEF instead of its STR. Unused since update 53 (was Rebuke / Bulwark Prayer); kept for future cards. */
 function usesDef(s,o){if(!o||o.kind!=="hero")return false;if(o.fl.defDmgRound===s.round)return true;const pl=P(s,o.owner);return heroIs(o,"Cleric")&&pl.fl.clericDefRound===s.round}
 function dmgStr(s,o,vs){return usesDef(s,o)?defOf(s,o):strOf(s,o,vs)}
 E.dmgStr=dmgStr;E.usesDef=usesDef;
@@ -431,6 +431,11 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   let dealt=Math.max(0,a-d);
   /* Piercing punches through: at least X of the damage always gets through, however much DEF the target has (Nov 12, 2026) */
   if(pierce>0&&!o.ignoreDef)dealt=Math.max(dealt,Math.min(pierce,a));
+  /* Update 53: Rebuke prevents the damage to the friendly Hero it covers and deals that much Light damage to a target enemy */
+  if(dealt>0&&tgt.kind==="hero"&&tgt.fl.rebuke&&tgt.fl.rebuke.round===s.round&&!o.status&&!sameTeam(s,ctrl(s,src||tgt),tgt.owner)){const rp=tgt.fl.rebuke.pid;tgt.fl.rebuke=null;
+    log(s,`Rebuke prevents ${dealt} damage to ${tgt.name}.`,rp);stat(s,"prev",tgt.owner,"Rebuke",dealt);
+    const es=[...living(P(s,oppOf(s,rp))),...P(s,oppOf(s,rp)).bf.filter(x=>x.kind==="summon"&&!x.dead)];
+    if(es.length)ask(s,rp,`Rebuke: deal ${dealt} Light damage to target enemy`,es.map(e=>({label:e.name+(e.kind==="summon"?" (summon)":""),v:e.uid})),"rebuke",{n:dealt});return 0}
   if(dealt>0){const w=wardFor(s,tgt);if(w){w.prot--;log(s,`Warded Cloak prevents ${dealt} damage to ${tgt.name} (${w.prot} protection counter${w.prot===1?"":"s"} left).`);stat(s,"prev",tgt.owner,"Warded Cloak",dealt);dealt=0;a=0}}
   tgt.dmg=(tgt.dmg||0)+dealt;
   if(!o.ignoreDef&&a>dealt)creditDef(s,tgt,a-dealt);
@@ -1222,7 +1227,8 @@ E.combosThisTurn=(s,pid)=>P(s,pid).t.combos||0;
 function queueResolve(s,pid,cont,trig){const op=oppOf(s,pid);trig.pid=pid;
   if(!trig.noHidden&&windowFor(s,op,trig)){s.pend.unshift({type:"window",pid:op,trig,cont,mods:{}});log(s,`${P(s,op).name} may respond with a Hidden card…`);return}
   resolveCont(s,pid,cont,{})}
-function closeWindow(s,pr){const m=pr.mods||{};if(m.retarget&&pr.cont&&pr.cont.k==="attack"){pr.cont.tgt=m.retarget.uid;pr.trig.target=m.retarget.uid}else if(m.retarget&&pr.cont&&pr.cont.targets){pr.cont.targets[m.retarget.i]=m.retarget.uid}resolveCont(s,pr.trig.pid,pr.cont,m)}
+ASK.rebuke=(s,pid,pr,v)=>{const t=resolveTarget(s,v);if(!t||t.dead)return;damage(s,{name:"Rebuke"},t,pr.data.n,{card:true,type:"Light",srcName:"Rebuke"})};
+function closeWindow(s,pr){const m=pr.mods||{};if(m.retarget&&pr.cont&&pr.cont.k==="attack"){pr.cont.tgt=m.retarget.uid;pr.trig.target=m.retarget.uid}else if(m.retarget&&pr.cont&&pr.cont.targets){pr.cont.targets[m.retarget.i]=m.retarget.uid}resolveCont(s,pr.trig.pid,pr.cont,m);s.p.forEach(pl=>pl.heroes.forEach(h=>{if(h.fl&&h.fl.rebuke)h.fl.rebuke=null}))}
 ASK.redirect=(s,pid,pr,v)=>{const w=s.pend.find(p=>p.type==="window");if(!w||v==null)return;w.mods.retarget={i:pr.data.i,uid:v};const t=resolveTarget(s,v);log(s,`Redirect: the new target is ${t?t.name:"?"}.`,pid)};
 function doReveal(s,pid,o,pr,heroUid){const pl=P(s,pid);const d=def(o);const h=revealHero(s,pid,o,pr,heroUid);const cost=hiddenCost(s,pid,o);
   h.ex=true;pay(s,pid,h,cost);o.fd=false;pl.inv.splice(pl.inv.indexOf(o),1);if(pr&&pr.type==="window")pr.revealed=true;

@@ -704,6 +704,101 @@ function matchNext(){const M=U.match;if(!M||M.done)return;M.n++;M.ready=[false,f
   if(M.mode==="ai"){startAIGame(M.cur[0],M.cur[1]);return}
   if(U.net&&U.net.role==="host"){U.net.deck=M.cur[0];newOnlineGame(M.cur[1],U.net.gname||"Guest")}}
 U.matchState=()=>U.match;
+/* ---------- Nov 25: game dock. A gear tab at the bottom right slides out a bar from the right:
+   Menu, Full screen, Sound, Game log, Help, Leave and Concede. Sound, Game log and Help slide up a panel above the bar.
+   Same on computers and tablets (it replaces the old game-log tray and the tablet Controls tray). ---------- */
+const DOCK={open:false,panel:null};
+const DOCK_CSS=`#pl-dock{position:fixed;right:0;bottom:max(12px,env(safe-area-inset-bottom,0px));z-index:76;pointer-events:none;font:600 .95rem/1 var(--body)}
+html.pl-has-game #pl-dock{display:block}#pl-dock{display:none}
+#pl-dock button{pointer-events:auto}
+#dk-tab{all:unset;box-sizing:border-box;position:absolute;right:0;bottom:0;width:54px;height:52px;display:grid;place-items:center;cursor:pointer;pointer-events:auto;
+  border-radius:14px 0 0 14px;border:2px solid #b8743a;border-right:0;background:linear-gradient(#3a2a1c,#1b130c);box-shadow:0 8px 22px rgba(0,0,0,.6);color:#f3e6cf;font-size:1.65rem;-webkit-tap-highlight-color:transparent}
+#dk-tab .g{display:inline-block;transition:transform .45s cubic-bezier(.34,1.56,.64,1)}
+#pl-dock.open #dk-tab{border-color:#ffc100;color:#ffd98a}#pl-dock.open #dk-tab .g{transform:rotate(120deg)}
+#dk-tab:hover{color:#ffd98a}#dk-tab:focus-visible{outline:2px solid #ffc100;outline-offset:2px}
+.dk-bar{position:absolute;right:54px;bottom:0;height:52px;display:flex;align-items:center;gap:6px;padding:0 8px 0 10px;white-space:nowrap;pointer-events:auto;
+  border-radius:14px 0 0 14px;border:2px solid #b8743a;border-right:0;background:linear-gradient(#2e2216,#1b130c);box-shadow:0 8px 22px rgba(0,0,0,.6);
+  transform:translateX(calc(100% + 60px));opacity:0;visibility:hidden;transition:transform .34s cubic-bezier(.34,1.3,.64,1),opacity .2s ease,visibility 0s linear .34s}
+#pl-dock.open .dk-bar{transform:none;opacity:1;visibility:visible;transition:transform .34s cubic-bezier(.34,1.3,.64,1),opacity .15s ease,visibility 0s}
+.dk-bar button{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 12px;border-radius:10px;cursor:pointer;color:#f3e6cf;
+  background:linear-gradient(#3a2a1c,#22170f);border:2px solid #8A5E40;transition:transform .12s ease,border-color .12s,color .12s}
+.dk-bar button:hover,.dk-bar button:focus-visible{border-color:#ffc100;color:#ffd98a;transform:translateY(-2px);outline:none}
+.dk-bar button[aria-expanded="true"],.dk-bar button[aria-pressed="true"]{border-color:#ffc100;color:#ffd98a;background:linear-gradient(#4a3420,#2a1c10)}
+.dk-bar button.red{background:linear-gradient(#a3261b,#6e130c);border-color:#d9483a;color:#fff}.dk-bar button.red:hover{border-color:#ff8a7a;color:#fff}
+.dk-bar button[hidden]{display:none}
+.dk-bar .ic{font-size:1.05rem;line-height:1}
+.dk-panel{position:absolute;right:12px;bottom:64px;width:min(420px,calc(100vw - 24px));max-height:min(62vh,560px);display:flex;flex-direction:column;gap:8px;padding:12px 14px 14px;pointer-events:auto;
+  border-radius:14px;border:2px solid #b8743a;background:linear-gradient(#2e2216,#1b130c);box-shadow:0 18px 44px rgba(0,0,0,.7);color:#f3e6cf;
+  transform:translateY(24px) scale(.97);transform-origin:80% 100%;opacity:0;visibility:hidden;transition:transform .3s cubic-bezier(.34,1.45,.64,1),opacity .16s ease,visibility 0s linear .3s}
+.dk-panel.on{transform:none;opacity:1;visibility:visible;transition:transform .3s cubic-bezier(.34,1.45,.64,1),opacity .14s ease,visibility 0s}
+.dk-panel h3{margin:0;font:400 1.45rem/1 "Pirata One",var(--display);color:#ffc100;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.dk-panel h3 button{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:8px;border:2px solid #8A5E40;font-size:.95rem;color:#f3e6cf}
+.dk-panel .dk-acts{display:flex;flex-wrap:wrap;gap:8px}
+.dk-panel .dk-acts .btn{flex:1 1 auto;justify-content:center}
+.dk-panel .dk-log{flex:1;min-height:120px;overflow:auto;font-size:.88rem;line-height:1.35;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.25);border:1px solid rgba(184,116,58,.5)}
+.dk-panel .dk-legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.72rem;color:#c9b190}
+.dk-panel .dk-note{margin:0;font-size:.85rem;color:#d8c3a0}
+.dk-panel .cqv-row{flex-wrap:nowrap;gap:10px}.dk-panel .cqv-tog{min-width:160px}
+.dk-panel[data-p="log"]{height:min(62vh,560px)}
+html.pl-tablet .dk-bar button{height:44px;padding:0 14px;font-size:1rem}html.pl-tablet .dk-bar,html.pl-tablet #dk-tab{height:58px}html.pl-tablet .dk-panel{bottom:70px}
+html.pl-tablet .dk-panel .btn{min-height:46px!important}
+@media (max-width:820px){.dk-bar{gap:4px;padding:0 4px 0 6px}.dk-bar button{padding:0 8px}.dk-bar .lb{display:none}.dk-bar button.red .lb,.dk-bar button[data-dk="leave"] .lb{display:inline}}
+@media (prefers-reduced-motion:reduce){.dk-bar,.dk-panel,#dk-tab .g{transition:none!important}}
+/* the old log tray and the tablet Controls tray are replaced by the dock */
+#play-root .pl-side,#play-root .pl-logshow,#pl-traytab,#pl-tbar,#pl-fstab,#pl-helpbox{display:none!important}
+#play-root .pl-hand{padding-right:64px}`;
+function dockEl(){let d=document.getElementById("pl-dock");if(d)return d;
+  const st=document.createElement("style");st.textContent=DOCK_CSS;document.head.appendChild(st);
+  d=document.createElement("div");d.id="pl-dock";
+  d.innerHTML=`<div class="dk-panel" data-p="snd" role="dialog" aria-label="Sound"></div><div class="dk-panel" data-p="log" role="dialog" aria-label="Game log"></div><div class="dk-panel" data-p="help" role="dialog" aria-label="Help"></div>
+  <div class="dk-bar" role="toolbar" aria-label="Game controls" id="dk-bar">
+    <button type="button" data-dk="menu"><span class="ic" aria-hidden="true">☰</span><span class="lb">Menu</span></button>
+    <button type="button" data-dk="fs"><span class="ic" aria-hidden="true">⛶</span><span class="lb">Full screen</span></button>
+    <button type="button" data-dk="snd" aria-expanded="false"><span class="ic" aria-hidden="true">🔊</span><span class="lb">Sound</span></button>
+    <button type="button" data-dk="log" aria-expanded="false"><span class="ic" aria-hidden="true">📜</span><span class="lb">Game log</span></button>
+    <button type="button" data-dk="help" aria-expanded="false"><span class="ic" aria-hidden="true">❔</span><span class="lb">Help</span></button>
+    <button type="button" data-dk="leave"><span class="lb">Leave</span></button>
+    <button type="button" data-dk="concede" class="red"><span class="lb">Concede</span></button>
+  </div><button type="button" id="dk-tab" aria-controls="dk-bar" aria-expanded="false" title="Game controls"><span class="g" aria-hidden="true">⚙</span><span class="sr-only">Game controls</span></button>`;
+  d.querySelector("#dk-tab").addEventListener("click",e=>{e.stopPropagation();DOCK.open=!DOCK.open;if(!DOCK.open)DOCK.panel=null;SND.play("tick");dockSync()});
+  d.querySelector(".dk-bar").addEventListener("click",e=>{const b=e.target.closest("[data-dk]");if(!b)return;e.stopPropagation();const k=b.dataset.dk;
+    if(k==="snd"||k==="log"||k==="help"){DOCK.panel=DOCK.panel===k?null:k;dockSync();if(DOCK.panel==="log"){const lg=d.querySelector(".dk-log");if(lg)lg.scrollTop=lg.scrollHeight}return}
+    DOCK.panel=null;
+    if(k==="menu"){dockMenu()}
+    else if(k==="fs"){if(window.CQTablet)CQTablet.fullscreen()}
+    else if(k==="leave"){DOCK.open=false;clickPa(U.spec?"spec-leave":"leave-ask")}
+    else if(k==="concede"){DOCK.open=false;clickPa("concede-ask")}
+    dockSync()});
+  d.addEventListener("click",e=>{if(e.target.closest(".dk-x")){DOCK.panel=null;dockSync()}});
+  document.addEventListener("pointerdown",e=>{if(!DOCK.open||!e.target.closest)return;if(e.target.closest("#pl-dock,#pl-modal,.cqv-pop,header.top"))return;DOCK.open=false;DOCK.panel=null;dockSync()},true);
+  document.addEventListener("keydown",e=>{if(e.key!=="Escape"||!DOCK.open)return;if(DOCK.panel)DOCK.panel=null;else DOCK.open=false;dockSync()});
+  ["fullscreenchange","webkitfullscreenchange"].forEach(ev=>document.addEventListener(ev,()=>dockSync()));
+  document.addEventListener("cq-vol",()=>{if(DOCK.panel==="snd"&&window.CQVol)CQVol.refresh()});
+  document.body.appendChild(d);return d}
+/* the dock's buttons reuse the Play tab's own actions (data-pa), so every rule about leaving and conceding stays in one place */
+function clickPa(k,extra){const b=document.createElement("button");b.type="button";b.dataset.pa=k;if(extra)Object.assign(b.dataset,extra);b.hidden=true;(ROOT()||document.body).appendChild(b);b.click();b.remove()}
+function dockMenu(){const R=document.documentElement,m=document.getElementById("pl-menutab");
+  if(R.classList.contains("pl-portrait")){R.classList.toggle("pl-pmenu");const h=document.querySelector("header.top");if(h)R.style.setProperty("--pl-hdrh",h.offsetHeight+"px")}else if(m)m.click()}
+function dockSync(){const d=dockEl(),s=U.s;const inGame=location.hash==="#play"&&U.mode==="game"&&!!s&&!!document.querySelector("#play-root .pl-game");
+  if(!inGame){DOCK.open=false;DOCK.panel=null}
+  d.classList.toggle("open",DOCK.open);d.querySelector("#dk-tab").setAttribute("aria-expanded",String(DOCK.open));
+  const bar=d.querySelector(".dk-bar");bar.setAttribute("aria-hidden",String(!DOCK.open));bar.inert=!DOCK.open;
+  const T=window.CQTablet,fsOn=!!(document.fullscreenElement||document.webkitFullscreenElement),fsOk=!!(T&&T.fsAvail&&T.fsAvail());
+  const fb=d.querySelector('[data-dk="fs"]');fb.hidden=!fsOk;fb.setAttribute("aria-pressed",String(fsOn));fb.querySelector(".lb").textContent=fsOn?"Full screen off":"Full screen";
+  d.querySelector('[data-dk="menu"]').setAttribute("aria-pressed",String(document.documentElement.classList.contains("pl-menu")||document.documentElement.classList.contains("pl-pmenu")));
+  const lv=d.querySelector('[data-dk="leave"]');lv.querySelector(".lb").textContent=U.spec?(U.spec.replay?"Close replay":"Stop watching"):(s&&s.over?"Exit":"Leave");
+  d.querySelector('[data-dk="concede"]').hidden=!s||!!s.over||!!U.spec;
+  ["snd","log","help"].forEach(k=>d.querySelector(`[data-dk="${k}"]`).setAttribute("aria-expanded",String(DOCK.open&&DOCK.panel===k)));
+  d.querySelectorAll(".dk-panel").forEach(p=>{const k=p.dataset.p,on=DOCK.open&&DOCK.panel===k;p.classList.toggle("on",on);p.inert=!on;if(on||k==="log")dockPanel(p,k)})}
+const dkHead=t=>`<h3>${t}<button type="button" class="dk-x" aria-label="Close">✕</button></h3>`;
+function dockPanel(p,k){const s=U.s;if(!s)return;
+  if(k==="snd"){if(!p.dataset.built){p.innerHTML=dkHead("Sound")+(window.CQVol?CQVol.row("music")+CQVol.row("sfx"):"")+`<p class="dk-note">Turn music and sound effects on or off, and set how loud each one is.</p>`;p.dataset.built="1"}else if(window.CQVol)CQVol.refresh();return}
+  if(k==="log"){if(!p.dataset.built){p.innerHTML=dkHead("Game log")+`<div class="dk-log" aria-live="polite"></div><div class="dk-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div><div class="dk-acts"><button type="button" class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button></div>`;p.dataset.built="1"}
+    const lg=p.querySelector(".dk-log");const n=s.log.length;if(lg.dataset.n===String(n)&&lg.dataset.g===String(U.gameKey))return;const atB=lg.scrollTop+lg.clientHeight>=lg.scrollHeight-20;lg.innerHTML=logHTML(s);lg.dataset.n=n;lg.dataset.g=U.gameKey;if(atB||!p.classList.contains("on"))lg.scrollTop=lg.scrollHeight;return}
+  if(k==="help"){const fix=U.dockFix||"";const give=U.net&&!U.spec?'<button class="btn" data-pa="do" data-a=\'{"type":"giveAction"}\' title="Let your opponent resolve something by hand (a card they control, a choice). Control comes back to you without using your action.">Grant opponent an action</button>':"";
+    const key=(fix?1:0)+"|"+(give?1:0)+"|"+(s.trials?1:0);if(p.dataset.key===key)return;p.dataset.key=key;
+    p.innerHTML=dkHead("Help")+`<p class="dk-note">${fix?"Fix something the game got wrong.":"Rules fix is available when it's your action in the Battle Phase."}${give?" You can also hand control to your opponent for a moment.":""}</p>
+      <div class="dk-acts">${fix?fix.replace('class="btn sm pl-fix"','class="btn pl-fix"'):'<button class="btn" disabled>Rules fix</button>'}${give}<button class="btn" data-pa="${s.trials?"trules":"rules"}">${s.trials?"Trials rules":"Rules"}</button></div>`}}
 /* ---------- win tracking for Best Decks ---------- */
 const newGid=()=>"g"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
 function deckMeta(d){return{name:(d.name||"Untitled deck").replace(/ \(starter\)$/,"").slice(0,80),heroes:d.heroes.slice(0,3),cards:Object.assign({},d.cards)}}
@@ -936,7 +1031,7 @@ const SND=(()=>{let ac=null;const on=()=>store2.get("cq.sound",true)!==false;
     death:t=>{[392,330,262,196].forEach((f,i)=>tone(f,t+i*0.14,0.32,"triangle",0.12))},
     summon:t=>{tone(220,t,0.3,"triangle",0.12,440);noise(t+0.1,0.2,0.1,600,2000)},
     pass:t=>{tone(660,t,0.1,"sine",0.08);tone(494,t+0.1,0.16,"sine",0.08)},
-    tick:t=>{noise(t,0.025,0.22,6000,2500);tone(2400,t,0.03,"square",0.035,1600)},
+    tick:t=>{noise(t,0.035,0.42,5200,2200);tone(1900,t,0.04,"triangle",0.09,1200)},
     draw:t=>{noise(t,0.1,0.12,4000,1500)},
     win:t=>{[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,t+i*0.11,0.3,"square",0.06))},
     lose:t=>{[392,370,349,262].forEach((f,i)=>tone(f,t+i*0.2,0.4,"triangle",0.1))}};
@@ -1164,7 +1259,7 @@ let fitT=null;addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(
 const trialsAccess=()=>{try{return typeof trialsOn==="function"&&trialsOn()}catch(e){return false}};
 function regLoot(){if(trialsAccess()&&typeof TRIALS_LOOT!=="undefined"&&E.addEquipRows)E.addEquipRows(TRIALS_LOOT,typeof TRIALS_LOOT_UPGRADES!=="undefined"?TRIALS_LOOT_UPGRADES:{})}
 function render(){const root=ROOT();if(!root)return;injectCSS();regLoot();
-  if(U.mode==="lobby"){MUS.sync(false);if(window.CQPop)CQPop.clear();root.innerHTML=lobbyHTML();try{window.CQTablet&&CQTablet.after()}catch(e){}return}
+  if(U.mode==="lobby"){MUS.sync(false);if(window.CQPop)CQPop.clear();root.innerHTML=lobbyHTML();try{window.CQTablet&&CQTablet.after()}catch(e){}try{dockSync()}catch(e){}return}
   if(U.mode==="room"){root.innerHTML=roomHTML();return}
   if(U.mode==="spec-wait"){root.innerHTML=`<section class="panel"><h2>Joining the game…</h2><p class="pl-note">Waiting for the player's browser to send the board.</p><div class="actions"><button class="btn" data-pa="spec-leave">Cancel</button></div></section>`;return}
   const s=view();if(!s){root.innerHTML=roomHTML();return}
@@ -1188,7 +1283,7 @@ function render(){const root=ROOT();if(!root)return;injectCSS();regLoot();
   try{const em=document.getElementById("pl-modal");if(em&&em.dataset.echo!=null&&!em.dataset.k)showEcho(+em.dataset.echo)}catch(e){}
   if(!U.spec){try{specHost();if(U.specTx)specSend()}catch(e){console.warn(e)}}
   try{if(window.CQTut&&U.tut)CQTut.after(s,root)}catch(e){console.warn(e)}
-  preloadArt();try{window.CQTablet&&CQTablet.after()}catch(e){}}
+  preloadArt();try{window.CQTablet&&CQTablet.after()}catch(e){}try{dockSync()}catch(e){console.warn(e)}}
 /* when a game starts, load and decode the art of every card in both decks, so nothing pops in while you play or drag */
 const ART_DONE=new Set();
 function preloadArt(){const s=U.s;if(!s||typeof BYID==="undefined"||typeof artSrc!=="function")return;const key=U.gameKey||"g";if(preloadArt.key===key)return;preloadArt.key=key;
@@ -1548,7 +1643,7 @@ function midHTML(s,opts){const me=U.me;const pr=s.pend[0];let prompt="",acts="",
   const posm=`<span class="posm" title="Position marker">${posL.map(([i,p])=>`<span class="${s.phase==="battle"&&s.pos===i?"on":""}${i===3?" last":""}" ${i===3?'title="An Abiding Hero acts here, after the Closer"':""}>${p}</span>`).join("")}</span>`;
   const man=pr&&pr.pid===me&&pr.type==="manual"&&!s.over?manualHTML(s,pr):"";
   return`<section class="pl-mid${wait?" wait":""}${oppActing?" opp":""}"><div class="pl-phase"><span class="ph-n">Round ${s.round||"–"} · ${phaseLabel(s)}</span>${posm}${U.net?`<span class="pl-note">Room ${esc(U.net.code)} · ${U.net.peers?"opponent online":"opponent offline"}</span>`:""}</div>
-    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}${s.over||!fixBtn?"":`<span class="pl-endcol">${helpHTML(fixBtn)}</span>`}</div>`:""}${ban?"":man}</section>`}
+    <div class="pl-prompt">${prompt}</div>${oppInfo}${ban}${(()=>{const tc=s.over||s.phase==="mull"?[]:turnCounts(s,me);return tc.length?`<div class="pl-counts"><span class="pl-note">This turn:</span>${tc.join("")}</div>`:""})()}${(U.dockFix=s.over?"":fixBtn,"")}${(acts||!s.over)&&!ban?`<div class="pl-acts">${acts}</div>`:""}${ban?"":man}</section>`}
 /* Nov 16: Menu and Full screen buttons for the game log tray (computers; tablets use the Controls tray) */
 /* Nov 20: sound and music toggles live in the bottom-right button tray */
 function sndBtnsHTML(){return`<button type="button" class="btn sm pl-snd" data-pa="snd" data-volpop="sfx" aria-label="Sound effects on or off (point at it for volume)" aria-pressed="${SND.on()}">${SND.on()?"🔊 Effects on":"🔇 Effects off"}</button><button type="button" class="btn sm pl-snd" data-pa="mus" data-volpop="music" aria-label="Music on or off (point at it for volume)" aria-pressed="${MUS.on()}">${MUS.on()?"🎵 Music on":"🎵 Music off"}</button>`}
@@ -1790,7 +1885,7 @@ function pickX(a,d,sc){const s=view();const pl=s.p[U.me];const actor=E.actorFor(
   U.xCtx={a,max}}
 
 /* ---------- events ---------- */
-document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!b)return;if(!b.closest("#play-root")&&!b.closest("#pl-modal")&&!b.closest("#pl-modtab"))return;
+document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!b)return;if(!b.closest("#play-root")&&!b.closest("#pl-modal")&&!b.closest("#pl-modtab")&&!b.closest("#pl-dock"))return;
   let k=b.dataset.pa;const s=view();
   if(k==="town-hide"){U.townHide=true;render();return}if(k==="town-show"){U.townHide=false;render();return}
   if(k==="stat"&&(U.tgt||(s&&s.pend[0]&&s.pend[0].type==="manual"&&s.pend[0].pid===U.me))){k="obj"}

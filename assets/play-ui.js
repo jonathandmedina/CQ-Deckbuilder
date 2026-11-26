@@ -1554,10 +1554,13 @@ const HK_COL={str:"#b3121a",hp:"#7f7fd8",def:"#3f9b3f"};
 /* Nov 19: a dead Hero's card back (your own Heroes): the starfield, a "Surrender Soul" name band with the class icon,
    and the three soul buttons, which light up only when you can surrender (your priority in the Battle Phase) */
 const SOUL_BTNS=[[1,"soul-aura","+2 Aura: your party gains 2 Aura"],[2,"soul-str","+2 STR: target ally gains +2 Strength this turn"],[5,"soul-def","+2 DEF: target ally gains +2 Defense this turn"]];
+/* Nov 26: each class has its own Surrender Soul buttons (art/ui/soul/<class>-aura|str|def.webp) to match its frame; other classes use the Generic set */
+const SOUL_CLS=new Set(["artificer","barbarian","bard","blacksmith","cleric","druid","generic","mage","monk","necromancer","paladin","ranger","rogue","warlock"]);
+function soulImg(cls,img){const c=String(cls||"generic").toLowerCase();const k=String(img).replace(/^soul-/,"");const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";return`${base}art/ui/soul/${SOUL_CLS.has(c)?c:"generic"}-${k}.webp?v=1`}
 function soulBackHTML(h,sopts,theirs){const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";
   const ico=`${base}ico-${String(h.cls||"generic").toLowerCase()}.png`;
   const btns=h.surr?"":SOUL_BTNS.map(([ch,img,lbl])=>{const o=sopts.find(x=>x.ch===ch);
-    return`<button type="button" class="sb-opt${o?" on":""}"${o?` data-pa="do" data-a='${esc(JSON.stringify(o))}'`:" disabled"} title="${esc(lbl)}${o?"":theirs?" (opponent's soul)":" (when you have priority)"}" aria-label="${esc(lbl)}"><img src="${base}art/ui/${img}.webp" alt="" draggable="false"></button>`}).join("");
+    return`<button type="button" class="sb-opt${o?" on":""}"${o?` data-pa="do" data-a='${esc(JSON.stringify(o))}'`:" disabled"} title="${esc(lbl)}${o?"":theirs?" (opponent's soul)":" (when you have priority)"}" aria-label="${esc(lbl)}"><img src="${soulImg(h.cls,img)}" alt="" draggable="false"></button>`}).join("");
   return`<div class="hk-nb sb-nb"><img class="hk-ci" src="${ico}" alt="${esc(h.cls)}"><span class="hk-nm">${h.surr?"Soul Surrendered":"Surrender Soul"}</span></div>
     <div class="sb-opts">${btns}</div><span class="sb-who">${esc(h.name)}${h.surr?" · can't be revived":""}</span>`}
 function heroCardHTML(s,h,d,st,extra,soul,hacts,sback){
@@ -1976,7 +1979,7 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-pa]");if(!
   if(k==="soul"){const opts=legal().filter(o=>o.type==="soul"&&(!b.dataset.h||o.hero===b.dataset.h));const heroes=[...new Set(opts.map(o=>o.hero))];
     /* Update 42: three choices, drawn as image buttons on the starfield background */
     const SIMG={1:["soul-aura","+2 Aura: your party gains 2 Aura"],2:["soul-str","+2 STR: target ally gains +2 Strength this turn"],5:["soul-def","+2 DEF: target ally gains +2 Defense this turn"]};
-    const ib=o=>{const im=SIMG[o.ch];return im?`<button type="button" class="soul-opt" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="${esc(im[1])}" aria-label="${esc(im[1])}"><img src="assets/art/ui/${im[0]}.webp" alt="${esc(im[1])}" draggable="false"></button>`:btn(o,E.SOULS[o.ch])};
+    const ib=o=>{const im=SIMG[o.ch];const hh=U.s&&E.heroByUid?E.heroByUid(U.s,o.hero):null;return im?`<button type="button" class="soul-opt" data-pa="do" data-a='${esc(JSON.stringify(o))}' title="${esc(im[1])}" aria-label="${esc(im[1])}"><img src="${soulImg(hh&&hh.cls,im[0])}" alt="${esc(im[1])}" draggable="false"></button>`:btn(o,E.SOULS[o.ch])};
     modal(`<h2>Surrender a soul</h2><p class="soul-note">A surrendered Hero can never be revived. Uses your priority; no Hero is exhausted.</p>${heroes.map(h=>`${heroes.length>1?`<h3>${esc(nameOf(h))}</h3>`:`<p class="soul-who">${esc(nameOf(h))}</p>`}<div class="soul-opts">${opts.filter(o=>o.hero===h).map(ib).join("")}</div>`).join("")}<div class="actions"><button class="btn" data-pa="close">Cancel</button></div>`,{cls:"soul-box"});return}
   if(k==="mode"){const i=+b.dataset.i;const c=U.modeCtx;const n=Math.min(c.sc.modes.n,c.sc.modes.opts.length);if(U.modeSel.includes(i))U.modeSel=U.modeSel.filter(x=>x!==i);else{if(n===1)U.modeSel=[i];else if(U.modeSel.length<n)U.modeSel.push(i)}c.draw();return}
   if(k==="band-t"){const u=b.dataset.u;U.bandSel=U.bandSel.includes(u)?U.bandSel.filter(x=>x!==u):U.bandSel.concat([u]);U.bandCtx.draw();return}

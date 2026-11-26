@@ -21,7 +21,7 @@ const CSS=`
 .pl-over-box h2{margin:0 0 4px;font-size:1.6rem}
 .pl-over-why{margin:0 0 8px;color:var(--muted,#666)}
 .pl-over-box .pl-stats{margin-top:10px}
-.pl-over-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;justify-content:flex-end}
+.pl-over-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;justify-content:flex-end}.pl-over-acts:has(.pl-next)>[data-pa=leave]{margin-right:auto}.pl-over-acts>.pl-next{margin-left:auto}
 /* Nov 24: Best-of-3 sideboarding and replays */
 .pl-match{font-size:.95rem}.pl-chbo{margin:0}
 #pl-sb{z-index:2050}.pl-sbox{max-width:min(860px,96vw)!important}
@@ -662,8 +662,8 @@ const matchPub=()=>U.match?{id:U.match.id,bo:3,n:U.match.n,wins:U.match.wins.sli
 function matchLine(s){const M=U.match;if(!M||!s)return"";const nm=i=>esc(s.p[i]?s.p[i].name:"");
   return`<p class="pl-over-why pl-match">Best of 3 · Game ${M.n} · ${nm(0)} <b>${M.wins[0]}–${M.wins[1]}</b> ${nm(1)}${M.done?` · <b>${M.wins[U.me]>=2?"You win the match!":nm(M.wins[0]>=2?0:1)+" wins the match."}</b>`:""}</p>`}
 function matchActs(){const M=U.match;if(!M||M.done)return"";const mine=M.ready&&M.ready[U.me],theirs=M.ready&&M.ready[1-U.me];
-  if(mine)return`<button class="btn go" disabled>Waiting for your opponent…</button>`;
-  return`<button class="btn go" data-pa="m-side" title="Swap cards between your deck and sideboard, then start the next game">Next game: sideboard${theirs&&U.net?" (opponent is ready)":""}</button>`}
+  if(mine)return`<button class="btn go pl-next" disabled>Waiting for your opponent…</button>`;
+  return`<button class="btn go pl-next" data-pa="m-side" title="Swap cards between your deck and sideboard, then start the next game">Next game: sideboard${theirs&&U.net?" (opponent is ready)":""}</button>`}
 /* my current list for the next game */
 function myCur(){const M=U.match;if(!M)return null;if(M.cur)return M.cur[U.me];return U.net&&U.net.deck?deckCl(U.net.deck):null}
 function myBase(){const M=U.match;if(M&&M.base)return M.base[U.me];return U.net&&U.net.base?U.net.base:myCur()}
@@ -674,14 +674,14 @@ function sbIssues(d){const out=E.validateDeck(d).concat(E.validateSide(d));const
   return out}
 function sbRender(){const st=U.sb;if(!st)return;const d=st.d,DB=E.DB||{},M=U.match;const sd=d.side;const iss=sbIssues(d);
   const tot=Object.values(d.cards).reduce((a,q)=>a+q,0),stot=sd.heroes.length+Object.values(sd.cards).reduce((a,q)=>a+q,0);
-  const row=(id,q,dir)=>`<li><span class="q">${q}</span><span class="n">${esc(id)}</span><span class="c">${esc(DB[id]&&DB[id].cls&&DB[id].cls!=="Generic"?DB[id].cls:"")}</span><button type="button" class="btn sm" data-sb="${dir}" data-id="${esc(id)}" title="${dir==="out"?"Move one to the sideboard":"Move one into the deck"}">${dir==="out"?"→":"←"}</button></li>`;
+  const row=(id,q,dir)=>`<li><span class="q">${q}</span><span class="n lgc" data-hc="${esc(id)}">${esc(id)}</span><span class="c">${esc(DB[id]&&DB[id].cls&&DB[id].cls!=="Generic"?DB[id].cls:"")}</span><button type="button" class="btn sm" data-sb="${dir}" data-id="${esc(id)}" title="${dir==="out"?"Move one to the sideboard":"Move one into the deck"}">${dir==="out"?"→":"←"}</button></li>`;
   const hn=h=>esc(String(h).replace(/^h:/,""));const sh=sd.heroes[0];
   document.getElementById("pl-sb")?.remove();const m=document.createElement("div");m.className="modal";m.id="pl-sb";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");
   m.innerHTML=`<div class="box wide pl-sbox"><h2>Sideboard for game ${(M?M.n:1)+1}</h2>
     <p class="pl-note">Move cards between your deck and sideboard. The sideboard holds up to 10 cards, and 1 of them may be a Hero. Your deck needs at least 50 cards. Changes last for the rest of the match.</p>
-    <div class="sb-heroes"><b>Party</b>${d.heroes.map((h,i)=>`<span class="sb-h">${hn(h)}${sh?`<button type="button" class="btn sm" data-sb="hswap" data-i="${i}" title="Swap with ${hn(sh)}">⇄ ${hn(sh)}</button>`:""}</span>`).join("")}${sh?"":`<span class="pl-note">No Hero in your sideboard.</span>`}</div>
+    <div class="sb-heroes"><b>Party</b>${d.heroes.map((h,i)=>`<span class="sb-h"><span class="lgc" data-hc="${hn(h)}">${hn(h)}</span>${sh?`<button type="button" class="btn sm" data-sb="hswap" data-i="${i}" title="Swap with ${hn(sh)}">⇄ ${hn(sh)}</button>`:""}</span>`).join("")}${sh?"":`<span class="pl-note">No Hero in your sideboard.</span>`}</div>
     <div class="sb-cols"><section><h3>Deck <span>${tot}</span></h3><ul>${Object.keys(d.cards).filter(id=>d.cards[id]>0).sort().map(id=>row(id,d.cards[id],"out")).join("")}</ul></section>
-      <section><h3>Sideboard <span>${stot}/10</span></h3>${sh?`<p class="sb-sh">Hero: <b>${hn(sh)}</b></p>`:""}<ul>${Object.keys(sd.cards).filter(id=>sd.cards[id]>0).sort().map(id=>row(id,sd.cards[id],"in")).join("")||`<li class="pl-note">Empty</li>`}</ul></section></div>
+      <section><h3>Sideboard <span>${stot}/10</span></h3>${sh?`<p class="sb-sh">Hero: <b class="lgc" data-hc="${hn(sh)}">${hn(sh)}</b></p>`:""}<ul>${Object.keys(sd.cards).filter(id=>sd.cards[id]>0).sort().map(id=>row(id,sd.cards[id],"in")).join("")||`<li class="pl-note">Empty</li>`}</ul></section></div>
     ${iss.length?`<ul class="issues bad">${iss.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
     <div class="actions"><button type="button" class="btn primary go" data-sb="ready"${E.validateDeck(d).length||E.validateSide(d).length?" disabled":""}>Ready</button><button type="button" class="btn" data-sb="reset">Reset to registered list</button><button type="button" class="btn" data-sb="close">Back</button></div></div>`;
   m.addEventListener("click",e=>{const b=e.target.closest("[data-sb]");if(!b)return;const k=b.dataset.sb,id=b.dataset.id;
@@ -1689,7 +1689,7 @@ function overHTML(s){if(!s.over||U.overHide||U.tut)return"";if(U.spec)return`<di
   const why=(s.conceded!=null?(s.conceded===me?"You conceded.":`${esc(s.p[s.conceded].name)} conceded.`):"")+(s.deckedOut!=null?(s.deckedOut===me?" You had to draw from an empty library.":` ${esc(s.p[s.deckedOut].name)} had to draw from an empty library.`):"");
   if(U.match&&U.match.tal)matchTally();
   return`<div class="pl-over" role="dialog" aria-modal="true" aria-label="Game over"><div class="pl-over-box"><h2>${head}</h2>${why?`<p class="pl-over-why">${why.trim()}</p>`:""}${matchLine(s)}${statsHTML(s)}
-  <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button>${U.match?matchActs():U.vsAI?'<button class="btn go" data-pa="rematch">Rematch</button>':""}<button class="btn" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn" data-pa="over-hide">View the board</button></div></div></div>`}
+  <div class="pl-over-acts"><button class="btn primary" data-pa="leave">Return to Lobby</button><button class="btn" data-pa="export-log" title="Download the full game log as a text file">Export log</button><button class="btn" data-pa="over-hide">View the board</button>${U.match?matchActs():U.vsAI?'<button class="btn go pl-next" data-pa="rematch">Rematch</button>':""}</div></div></div>`}
 /* end-of-game summary */
 function statsHTML(s){if(!E.gameStats)return"";const g=E.gameStats(s);const me=U.me;
   const li=a=>a.length?`<ol>${a.map(x=>`<li>${esc(x.name)} — <b>${x.v}</b>${x.side!=null?` <span class="pl-note">(${esc(s.p[x.side].name)})</span>`:""}</li>`).join("")}</ol>`:'<p class="pl-note">None.</p>';

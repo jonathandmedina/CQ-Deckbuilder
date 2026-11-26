@@ -735,7 +735,7 @@ html.pl-has-game #pl-dock{display:block}#pl-dock{display:none}
 .dk-panel h3 button{all:unset;cursor:pointer;width:32px;height:32px;display:grid;place-items:center;border-radius:8px;border:2px solid #8A5E40;font-size:.95rem;color:#f3e6cf}
 .dk-panel .dk-acts{display:flex;flex-wrap:wrap;gap:8px}
 .dk-panel .dk-acts .btn{flex:1 1 auto;justify-content:center}
-.dk-panel .dk-log{flex:1;min-height:120px;overflow:auto;font-size:.88rem;line-height:1.35;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.25);border:1px solid rgba(184,116,58,.5)}
+.dk-panel .dk-log{color:#f3e6cf;flex:1;min-height:120px;overflow:auto;font-size:.88rem;line-height:1.35;padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.25);border:1px solid rgba(184,116,58,.5)}
 .dk-panel .dk-legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.72rem;color:#c9b190}
 .dk-panel .dk-note{margin:0;font-size:.85rem;color:#d8c3a0}
 .dk-panel .cqv-row{flex-wrap:nowrap;gap:10px}.dk-panel .cqv-tog{min-width:160px}
@@ -745,7 +745,8 @@ html.pl-tablet .dk-panel .btn{min-height:46px!important}
 @media (max-width:820px){.dk-bar{gap:4px;padding:0 4px 0 6px}.dk-bar button{padding:0 8px}.dk-bar .lb{display:none}.dk-bar button.red .lb,.dk-bar button[data-dk="leave"] .lb{display:inline}}
 @media (prefers-reduced-motion:reduce){.dk-bar,.dk-panel,#dk-tab .g{transition:none!important}}
 /* the old log tray and the tablet Controls tray are replaced by the dock */
-#play-root .pl-side,#play-root .pl-logshow,#pl-traytab,#pl-tbar,#pl-fstab,#pl-helpbox{display:none!important}
+html #play-root .pl-game .pl-side,html[data-skin="art"] #play-root .pl-game .pl-side,html[data-skin="art"] #play-root .pl-game.nolog .pl-side,html.pl-tablet #play-root .pl-game .pl-side,#play-root .pl-logshow,html #pl-traytab,html #pl-tbar,html #pl-fstab,html #pl-helpbox{display:none!important}
+html[data-skin="art"] #play-root .pl-game,html[data-skin="art"] #play-root .pl-game.nolog{grid-template-columns:minmax(0,1fr)!important}
 #play-root .pl-hand{padding-right:64px}`;
 function dockEl(){let d=document.getElementById("pl-dock");if(d)return d;
   const st=document.createElement("style");st.textContent=DOCK_CSS;document.head.appendChild(st);
@@ -759,7 +760,7 @@ function dockEl(){let d=document.getElementById("pl-dock");if(d)return d;
     <button type="button" data-dk="help" aria-expanded="false"><span class="ic" aria-hidden="true">❔</span><span class="lb">Help</span></button>
     <button type="button" data-dk="leave"><span class="lb">Leave</span></button>
     <button type="button" data-dk="concede" class="red"><span class="lb">Concede</span></button>
-  </div><button type="button" id="dk-tab" aria-controls="dk-bar" aria-expanded="false" title="Game controls"><span class="g" aria-hidden="true">⚙</span><span class="sr-only">Game controls</span></button>`;
+  </div><button type="button" id="dk-tab" aria-label="Game controls" aria-controls="dk-bar" aria-expanded="false" title="Game controls"><span class="g" aria-hidden="true">⚙</span></button>`;
   d.querySelector("#dk-tab").addEventListener("click",e=>{e.stopPropagation();DOCK.open=!DOCK.open;if(!DOCK.open)DOCK.panel=null;SND.play("tick");dockSync()});
   d.querySelector(".dk-bar").addEventListener("click",e=>{const b=e.target.closest("[data-dk]");if(!b)return;e.stopPropagation();const k=b.dataset.dk;
     if(k==="snd"||k==="log"||k==="help"){DOCK.panel=DOCK.panel===k?null:k;dockSync();if(DOCK.panel==="log"){const lg=d.querySelector(".dk-log");if(lg)lg.scrollTop=lg.scrollHeight}return}
@@ -793,7 +794,7 @@ function dockSync(){const d=dockEl(),s=U.s;const inGame=location.hash==="#play"&
 const dkHead=t=>`<h3>${t}<button type="button" class="dk-x" aria-label="Close">✕</button></h3>`;
 function dockPanel(p,k){const s=U.s;if(!s)return;
   if(k==="snd"){if(!p.dataset.built){p.innerHTML=dkHead("Sound")+(window.CQVol?CQVol.row("music")+CQVol.row("sfx"):"")+`<p class="dk-note">Turn music and sound effects on or off, and set how loud each one is.</p>`;p.dataset.built="1"}else if(window.CQVol)CQVol.refresh();return}
-  if(k==="log"){if(!p.dataset.built){p.innerHTML=dkHead("Game log")+`<div class="dk-log" aria-live="polite"></div><div class="dk-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div><div class="dk-acts"><button type="button" class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button></div>`;p.dataset.built="1"}
+  if(k==="log"){if(!p.dataset.built){p.innerHTML=dkHead("Game log")+`<div class="dk-log pl-log" aria-live="polite"></div><div class="dk-legend"><span>Green ring = Hero acting now</span><span>Red ring = can be targeted</span><span>Tilted = exhausted</span></div><div class="dk-acts"><button type="button" class="btn sm" data-pa="export-log" title="Download the full game log as a text file">Export log</button></div>`;p.dataset.built="1"}
     const lg=p.querySelector(".dk-log");const n=s.log.length;if(lg.dataset.n===String(n)&&lg.dataset.g===String(U.gameKey))return;const atB=lg.scrollTop+lg.clientHeight>=lg.scrollHeight-20;lg.innerHTML=logHTML(s);lg.dataset.n=n;lg.dataset.g=U.gameKey;if(atB||!p.classList.contains("on"))lg.scrollTop=lg.scrollHeight;return}
   if(k==="help"){const fix=U.dockFix||"";const give=U.net&&!U.spec?'<button class="btn" data-pa="do" data-a=\'{"type":"giveAction"}\' title="Let your opponent resolve something by hand (a card they control, a choice). Control comes back to you without using your action.">Grant opponent an action</button>':"";
     const key=(fix?1:0)+"|"+(give?1:0)+"|"+(s.trials?1:0);if(p.dataset.key===key)return;p.dataset.key=key;

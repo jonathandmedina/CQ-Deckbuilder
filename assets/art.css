@@ -250,20 +250,22 @@ html[data-skin="art"] .discord-btn:hover{background:#4752c4;border-color:#4752c4
 @media (prefers-reduced-motion:reduce){.on-dot{animation:none}}
 /* Update 30: your hand lifts on hover (room above so the lift isn't clipped) */
 html[data-skin="art"] .pl-hand{padding-top:8px;margin-top:-8px}
-html[data-skin="art"] .pl-hand .hc{transition:transform .16s ease,filter .16s ease;z-index:1}
-/* Update 31: the card under the pop-up is hidden while it's lifted, so only the raised card shows; no glow, a 3D tilt and a deep shadow instead */
-@media (hover:hover){html[data-skin="art"] .pl-hand .hc.lifted .card{opacity:0}}
-.hc-pop{position:fixed;z-index:70;pointer-events:none;transform-origin:50% 100%;animation:hcUp .16s ease-out both}
+html[data-skin="art"] .pl-hand .hc{transition:transform .26s cubic-bezier(.34,1.56,.64,1),filter .16s ease;z-index:1}
+/* Nov 25: the card stays in the hand and lifts 10px with a little bounce (like Crow's Nest); the bigger copy grows out of it with the same spring and shrinks back into it on the way out. Nothing turns black. */
+@media (hover:hover){html[data-skin="art"] .pl-hand .hc.lifted{transform:translateY(-10px)}}
+.hc-pop{position:fixed;z-index:70;pointer-events:none;transform-origin:50% 100%;animation:hcUp .3s cubic-bezier(.34,1.56,.64,1) both}
+.hc-pop.out{animation:hcDown .14s ease-in both}
 .hc-pop .card{background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important}
 /* Update 31b: the whole card (black border included) floats with rounded corners; it tilts toward the mouse like a held card, drawn at full size so it stays sharp */
 .hc-pop{perspective:1000px}
 .hc-pop .hc-3d{position:relative;border-radius:4.5%/3.2%;overflow:hidden;transform:rotateX(var(--rx,4deg)) rotateY(var(--ry,0deg));transform-style:preserve-3d;transition:transform .08s linear;
-  box-shadow:0 2px 3px rgba(0,0,0,.6),0 14px 24px rgba(0,0,0,.55),0 30px 50px rgba(0,0,0,.4)}
+  box-shadow:0 4px 10px rgba(0,0,0,.35),0 16px 28px rgba(0,0,0,.3)}
 .hc-pop .hc-3d::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--gx,50%) var(--gy,30%),rgba(255,255,255,.16),transparent 55%);mix-blend-mode:screen}
 .hc-pop .hc-3d .card{display:block;margin:0}
 .hc-pop .zoom,.hc-pop .flip{display:none!important}
-@keyframes hcUp{from{opacity:0;margin-top:22px}}
-@media (prefers-reduced-motion:reduce){.hc-pop{animation:none}}
+@keyframes hcUp{from{opacity:.3;transform:translateY(var(--dy,18px)) scale(var(--s0,.72))}}
+@keyframes hcDown{to{opacity:0;transform:translateY(var(--dy,18px)) scale(var(--s0,.72))}}
+@media (prefers-reduced-motion:reduce){.hc-pop,.hc-pop.out{animation:none}}
 @media (prefers-reduced-motion:reduce){html[data-skin="art"] .pl-hand .hc{transition:none}}
 /* Update 30: off-screen sheet for the deck image (PNG) */
 .png-sheet{position:fixed;left:-99999px;top:0;width:1800px;padding:48px;background:#120a07 radial-gradient(1400px 700px at 50% -200px,#2a150d,transparent);color:var(--ink);font-family:var(--body);display:grid;gap:26px}

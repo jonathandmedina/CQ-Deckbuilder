@@ -969,13 +969,13 @@ const MUS=(()=>{let el=null;const on=()=>store2.get("cq.music",true)!==false;
 document.addEventListener("cq-vol",e=>{if(e.detail&&e.detail.kind==="music")MUS.sync(!!(U.s&&U.mode!=="lobby"));if(location.hash==="#play"&&U.s){clearTimeout(MUS._rt);MUS._rt=setTimeout(()=>{try{render()}catch(err){}},120)}});
 /* Update 30: pointing at a card in your hand clicks and pops a 1.4x copy up over the Heroes (the copy ignores the mouse, so clicks still reach the card) */
 let hcPop=null,hcOn=null;
-function hcPopHide(){if(hcPop){hcPop.remove();hcPop=null}if(hcOn)hcOn.classList.remove("lifted");hcOn=null}
+function hcPopHide(){if(hcPop){const d=hcPop;hcPop=null;if(matchMedia("(prefers-reduced-motion:reduce)").matches)d.remove();else{d.classList.add("out");setTimeout(()=>d.remove(),150)}}if(hcOn)hcOn.classList.remove("lifted");hcOn=null}
 /* touch screens send a fake mouseover on every tap: no hover pop-up or tick sound for those (Nov 12, 2026, iPad proposal 3) */
 let lastTouch=0;document.addEventListener("pointerdown",e=>{if(e.pointerType==="touch"||e.pointerType==="pen")lastTouch=Date.now()},true);document.addEventListener("touchstart",()=>{lastTouch=Date.now()},{capture:true,passive:true});
 document.addEventListener("mouseover",e=>{if(Date.now()-lastTouch<1000)return;if(typeof drag!=="undefined"&&drag&&drag.on)return;const hc=e.target.closest&&e.target.closest(".pl-hand .hc");if(hc===hcOn)return;hcPopHide();if(!hc||!matchMedia("(hover:hover)").matches)return;hcOn=hc;
   SND.play("tick");const card=hc.querySelector(".card");if(!card)return;const r=card.getBoundingClientRect(),S=1.4,w=r.width*S,h=r.height*S;
   const d=document.createElement("div");d.className="hc-pop";d.innerHTML=`<div class="hc-3d">${card.outerHTML}</div>`;d.style.width=w+"px";
-  const left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)),top=Math.max(8,r.bottom-h-18);d.style.left=left+"px";d.style.top=top+"px";
+  const left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)),top=Math.max(8,r.bottom-h-18);d.style.left=left+"px";d.style.top=top+"px";d.style.setProperty("--s0",(1/S).toFixed(3));d.style.setProperty("--dy",Math.max(0,r.bottom-(top+h))+"px");
   /* drawn at the bigger size (not scaled up), so the art and text stay sharp */
   const inner=d.querySelector(".card");if(inner){inner.style.width=w+"px";inner.style.height="auto"}
   document.body.appendChild(d);hcPop=d;hc.classList.add("lifted");try{if(typeof fitArt==="function")fitArt(d)}catch(err){}},true);

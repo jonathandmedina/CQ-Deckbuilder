@@ -975,7 +975,7 @@ let lastTouch=0;document.addEventListener("pointerdown",e=>{if(e.pointerType==="
 document.addEventListener("mouseover",e=>{if(Date.now()-lastTouch<1000)return;if(typeof drag!=="undefined"&&drag&&drag.on)return;const hc=e.target.closest&&e.target.closest(".pl-hand .hc");if(hc===hcOn)return;hcPopHide();if(!hc||!matchMedia("(hover:hover)").matches)return;hcOn=hc;
   SND.play("tick");const card=hc.querySelector(".card");if(!card)return;const r=card.getBoundingClientRect(),S=1.4,w=r.width*S,h=r.height*S;
   const d=document.createElement("div");d.className="hc-pop";d.innerHTML=`<div class="hc-3d">${card.outerHTML}</div>`;d.style.width=w+"px";
-  const left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)),top=Math.max(8,r.bottom-h-18);d.style.left=left+"px";d.style.top=top+"px";d.style.setProperty("--s0",(1/S).toFixed(3));d.style.setProperty("--dy",Math.max(0,r.bottom-(top+h))+"px");
+  const left=Math.max(8,Math.min(innerWidth-w-8,r.left+r.width/2-w/2)),top=Math.max(8,r.bottom-h+4);d.style.left=left+"px";d.style.top=top+"px";d.style.setProperty("--s0",(1/S).toFixed(3));d.style.setProperty("--dy",Math.max(0,r.bottom-(top+h))+"px");
   /* drawn at the bigger size (not scaled up), so the art and text stay sharp */
   const inner=d.querySelector(".card");if(inner){inner.style.width=w+"px";inner.style.height="auto"}
   document.body.appendChild(d);hcPop=d;hc.classList.add("lifted");try{if(typeof fitArt==="function")fitArt(d)}catch(err){}},true);

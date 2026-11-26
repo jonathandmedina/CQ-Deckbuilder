@@ -252,7 +252,9 @@ html[data-skin="art"] .discord-btn:hover{background:#4752c4;border-color:#4752c4
 html[data-skin="art"] .pl-hand{padding-top:8px;margin-top:-8px}
 html[data-skin="art"] .pl-hand .hc{transition:transform .26s cubic-bezier(.34,1.56,.64,1),filter .16s ease;z-index:1}
 /* Nov 25: the card stays in the hand and lifts 10px with a little bounce (like Crow's Nest); the bigger copy grows out of it with the same spring and shrinks back into it on the way out. Nothing turns black. */
-@media (hover:hover){html[data-skin="art"] .pl-hand .hc.lifted{transform:translateY(-10px)}}
+@media (hover:hover){html[data-skin="art"] .pl-hand .hc.lifted{transform:translateY(-10px)}
+  /* the copy covers the card; once it has grown, the card under it fades out so no edge peeks from behind (it comes back at once when you move away) */
+  html[data-skin="art"] .pl-hand .hc .card{transition:opacity 0s}html[data-skin="art"] .pl-hand .hc.lifted .card{opacity:0;transition:opacity .08s linear .22s}}
 .hc-pop{position:fixed;z-index:70;pointer-events:none;transform-origin:50% 100%;animation:hcUp .3s cubic-bezier(.34,1.56,.64,1) both}
 .hc-pop.out{animation:hcDown .14s ease-in both}
 .hc-pop .card{background:transparent!important;border:0!important;box-shadow:none!important;outline:0!important}

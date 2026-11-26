@@ -260,7 +260,7 @@ function bandMembers(s,pid){const pl=P(s,pid);return[...living(pl),...pl.bf.filt
 E.hasBanding=hasBanding;E.bandMembers=bandMembers;
 const auraStat=h=>h.base.aura+h.bon.aura;
 function spellDmg(s,pid,actor){const pl=P(s,pid);let n=2*pl.bf.filter(o=>o.name==="Spell Damage Pillar").length;
-  if(actor){if(actor.name==="Ember Mage")n+=1;if(hasEqN(actor,"Apprentice's Wand"))n+=1;if(hasEqN(actor,"Ring of Power"))n+=2}return n}
+  if(actor){if(actor.name==="Ember Mage"&&actor.lvl>=3)n+=1; /* update 57: Level 3 */if(hasEqN(actor,"Apprentice's Wand"))n+=1;if(hasEqN(actor,"Ring of Power"))n+=2}return n}
 E.spellDmg=spellDmg;
 function noAttack(s,o){return o&&o.kind==="hero"&&modHas(o,"noAttack")}
 E.noAttack=noAttack;

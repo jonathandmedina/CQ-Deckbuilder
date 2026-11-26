@@ -13,7 +13,7 @@ const slot=(name,i)=>{const x=sc(name);return (x.t||(x.act&&x.act.t))[i||0]};
 /* data: text and versions */
 const row=n=>ctx.__RC.find(r=>r[1]===n);
 const want={"Lightning Bolt":["target enemy.",2],"Flame Bolt":["target enemy and burn it.",3],"Battered":["to target enemy.",4],"Pummel":["to target enemy equal",5],"Sonic Recall":["damage to target enemy.",2],"Draw Life":["Target enemy loses 2",4],
-  "Mark of Doom":["Enchant target enemy. At dusk, enchanted enemy",3],"Storm of Insight":["damage to each enemy.",3],"False Cure":["target enemy would be healed",3],"On the Job Training":["a random enemy.",2],
+  "Mark of Doom":["Enchant target enemy. At dusk, enchanted enemy",3],"Storm of Insight":["damage to each enemy.",4],"False Cure":["target enemy would be healed",3],"On the Job Training":["a random enemy.",2],
   "Snare":["When an enemy attacks",2],"Spike Pit":["When an enemy attacks",4],"Bear Trap":["When an enemy attacks",3],"Hail":["Deal 1 Ice damage to each enemy.",4]};
 for(const n in want){const r=row(n);ok(r&&r[7].includes(want[n][0])&&r[8]===want[n][1],n+" text/version: "+(r&&r[7])+" v"+(r&&r[8]));ok(r&&!/target hero|enemy hero/i.test(r[7]),n+": no Hero-only wording left")}
 const sd=ctx.__RE.find(r=>r[0]==="Staff of Doom");ok(sd[4].includes("target enemy loses")&&sd[9]===3,"Staff of Doom v3");ok(ctx.__EU["Staff of Doom"][1].includes("target enemy loses"),"Staff of Doom upgrade text");

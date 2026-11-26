@@ -60,12 +60,12 @@ def("Volt Jab",dmgCard(2,{type:"Lightning",pil:"Spell Damage Pillar",ex:1}));
 def("Lightning Lance",dmgCard(4,{type:"Lightning",pil:"Spell Damage Pillar",ex:1}));
 def("Chain Lightning",{run(c){living(c.op).forEach(h=>{if(D(c,h,4,{type:"Lightning"})>0&&!h.dead)st(c,h,"stun")});exMe(c)}});
 /* Nov 12, 2026: Flame Wave hits each enemy (Heroes and summons); Hail hits everything (every Hero and summon, both parties) */
-def("Flame Wave",{run(c){const L=c.actor&&c.actor.lvl>=6?5:3;enemies(c).forEach(h=>D(c,h,L,{type:"Fire"}));exMe(c)}});
+def("Flame Wave",{run(c){const L=c.actor&&c.actor.lvl>=6?5:2;enemies(c).forEach(h=>D(c,h,L,{type:"Fire"}));exMe(c)}});
 def("Pop Rocks",allDmg(1,{times:3,ex:1}));
 def("Hail",{run(c){enemies(c).forEach(o=>D(c,o,1,{type:"Ice"}))}}); /* Update 51: each enemy (was each hero and summon) */
 /* new card (Nov 12, 2026): Twin Bolt, 3 Aura Mage Spell: 2 Lightning damage to each of two different targets */
 def("Twin Bolt",{t:[t("any","first target"),t("any","second target",null,{distinct:true})],run(c){D(c,c.t[0],2,{type:"Lightning"});D(c,c.t[1],2,{type:"Lightning"})}});
-def("Storm of Insight",{run(c){let tot=0;enemies(c).forEach(e=>tot+=D(c,e,3,{type:"Lightning"}));exMe(c);if(tot)scry(c,tot)}});
+def("Storm of Insight",{run(c){let tot=0;enemies(c).forEach(e=>tot+=D(c,e,2,{type:"Lightning"}));exMe(c);if(tot)scry(c,tot)}});
 def("Heat Wave",{t:[ANY],run(c){st(c,c.t[0],"burn")}});
 def("Ice Ray",{t:[ANY],run(c){st(c,c.t[0],"stun")}});
 def("Sleep",{t:[HERO],run(c){if(c.t[0])E.exhaust(c.s,c.pid,c.t[0])}});
@@ -442,7 +442,7 @@ hab("Inspiration Herald",[{label:"Ready another ally",t:[t("ally","another ally"
 hab("Rage Brute",[{label:"Fatigue: +STR equal to its STR this turn (Level 3, once per turn)",ex:false,can:(s,pid,a)=>!a.fat&&a.lvl>=3&&a.fl.rageRound!==s.round,run:c=>{c.actor.fl.rageRound=c.s.round;const n=E.str(c.s,c.actor);c.actor.fat=1;buff(c.actor,{str:n});log(c,`${c.actor.name} gets a Fatigue counter and gains +${n} STR this turn (it won't ready at the next Dawn).`)}}]);
 hab("Rootbinder",[{label:"Summons +1 STR this turn",run:c=>{c.me.pm.sstr=(c.me.pm.sstr||0)+1;log(c,"Summons gain +1 STR this turn.")}}]);
 /* Echo Performer (Nov 12, 2026): passive, the first Song it plays from your hand each turn has Echo; Level 3: every Song it plays from your hand (engine) */
-hab("Storm Caller",[{label:"Deal 2 damage to each enemy Hero",cost:2,can:(s,pid,a)=>a.lvl<3,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,2,{card:true}))},{label:"Deal 3 damage to each enemy Hero",lvl:3,cost:2,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,3,{card:true}))}]);
+hab("Storm Caller",[{label:"Deal 1 damage to each enemy Hero",cost:2,can:(s,pid,a)=>a.lvl<3,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,1,{card:true}))},{label:"Deal 3 damage to each enemy Hero",lvl:3,cost:2,run:c=>living(c.op).forEach(e=>E.damage(c.s,c.actor,e,3,{card:true}))}]);
 hab("Wild Shifter",[{label:"Ready a summon you control",can:(s,pid,a)=>a.lvl<3&&s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex)],run:c=>{if(c.t[0]){c.t[0].ex=false;log(c,`${c.t[0].name} readies.`)}}},{label:"Ready up to two summons you control",lvl:3,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&o.ex),t:[t("allySummon","exhausted summon to ready",(s,o)=>o.ex),t("allySummon","second exhausted summon (optional)",(s,o)=>o.ex,{opt:true,distinct:true})],run:c=>{c.t.filter(Boolean).forEach(o=>{if(o.ex){o.ex=false;log(c,`${o.name} readies.`)}})}}]);
 hab("Rootfolk Elder",[{label:"Next summon this turn has Barkborn",can:(s,pid,a)=>a.lvl<3,run:c=>{c.me.t.nextBark=(c.me.t.nextBark||0)+1;log(c,"The next summon that enters this turn has Barkborn.")}},{label:"All summons that enter this turn have Barkborn",lvl:3,run:c=>{c.me.t.allBark=(c.me.t.allBark||0)+1;log(c,"All summons that enter this turn have Barkborn.")}}]);
 hab("Warden of the Woods",[{label:"Summon a 1/3 Squirrel",cost:1,run:c=>summon(c,"Squirrel")},{label:"Exhaust a summon: +2 STR",ex:false,can:(s,pid)=>s.p[pid].bf.some(o=>o.kind==="summon"&&!o.ex),t:[t("allySummon","ready summon",(s,o)=>!o.ex)],run:c=>{if(c.t[0])c.t[0].ex=true;buff(c.actor,{str:2})}}]);

@@ -141,7 +141,7 @@ const RAW_CARDS=[
 [2, "Lunge", "0", "", "Tactic", "Combo", "Monk", "Deal 1 damage. Combo.", 1],
 [2, "Magic Sink", "X", "", "Spell", "", "Mage", "Deal X damage to target enemy.", 1],
 [2, "Mark of Doom", "1", "", "Enchantment", "Curse", "Warlock", "Enchant target enemy. At dusk, enchanted enemy loses 1 Health Point.", 3],
-[2, "Mass Populate", "6", "", "Tactic", "", "Druid", "Duplicate all friendly summons. Exhaust this hero.", 1],
+[2, "Mass Populate", "8", "", "Tactic", "", "Druid", "Duplicate all friendly summons. Exhaust this hero.", 2],
 [2, "Mead Offering", "0", "", "Tactic", "", "Bard", "All parties gain 2 Aura.", 2],
 [2, "Medical Visit", "1", "", "Tactic", "", "Cleric", "Remove 2 status counters.", 1],
 [2, "Meditate", "1", "", "Tactic", "", "Monk", "This hero meditates. It gets +3 Defense until end of turn. (Exhaust it. At each dawn, it gets a meditation counter, then you may keep it exhausted. When it readies, remove them all; gain that much Aura, and it gets +1 Strength for each until end of turn.)", 3],
@@ -398,7 +398,7 @@ const RAW_HEROES=[
 ["Rousing Bandleader", "Bard", "1", "1", "1", "15", "Heroes you control have banding.\n{L3} Heroes you control get +1 Strength while banding.", 2],
 /* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
 ["Deeg Farsight", "Ranger", "0", "1", "2", "16", "When this hero has a Bow equipped, he may activate an arrow from your hand instead of your inventory by paying 1 more Aura.", 1],
-["Jess Naturecaller", "Druid", "0", "0", "2", "16", "{L3} When this hero reaches level 3, summon three 2/2 Wolves.\n{L6} When this hero reaches level 6, summon three 2/2 Wolves.", 1],
+["Jess Naturecaller", "Druid", "0", "0", "2", "16", "{L3} When this hero reaches level 3, summon two 2/2 Wolves.\n{L6} When this hero reaches level 6, summon two 2/2 Wolves.", 2],
 ["Wren Partsfinder", "Artificer", "0", "1", "2", "15", "Exhaust: Look at the top 3 cards of your library. You may put an item from among them into your hand. Put the rest on the bottom of your library.\n{L3} Exhaust: Search your library for an item, put it into your hand, then shuffle your library.", 4],
 ["Material Bender", "Artificer", "0", "1", "2", "15", "Double the first ability of an item this hero plays or activates each turn. (It resolves twice. Pay its costs once.)", 4],
 ["Val Craftsmith", "Artificer", "0", "1", "2", "15", "Once each turn, when this hero crafts, one of the ingredients may be any item in your inventory.", 3],

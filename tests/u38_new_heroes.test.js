@@ -27,10 +27,10 @@ ok(D["Deeg-Arrow"]&&D["Deeg-Arrow"].sub==="Arrow"&&D["Deeg-Arrow"].cls==="Ranger
  s.p[0].heroes[0].ex=true;const o=E.options(s,0).find(o=>o.type==="use"&&o.uid===c.uid);ok(o&&!o.fromHand,"Deeg-Arrow usable from inventory by any Ranger");
  const tg=s.p[1].heroes[0];const d0=tg.dmg;E.act(s,0,Object.assign({},o,{targets:[tg.uid]}));resolve(s);ok(tg.dmg-d0===1,"from inventory: 3 - 2 DEF = 1");}
 {const s=game(["Hawkeye","Deeg Farsight","Sage Monk"]);equip(s,s.p[0].heroes[0],"Multi Bow");hand(s,0,"Deeg-Arrow");ok(!E.options(s,0).some(o=>o.fromHand),"other Rangers can't use hand Arrows");}
-/* Jess: three Wolves at Level 3 and at Level 6 */
+/* Jess: two Wolves at Level 3 and at Level 6 (update 54) */
 {const s=game(["Jess Naturecaller","Hawkeye","Sage Monk"]);const j=s.p[0].heroes[0];const w=()=>s.p[0].bf.filter(o=>o.kind==="summon"&&o.name==="Wolf").length;
- E.levelUp(s,j);E.levelUp(s,j);ok(w()===0,"no Wolves at Level 2");E.levelUp(s,j);ok(w()===3,"three Wolves at Level 3");
- const wf=s.p[0].bf.find(o=>o.name==="Wolf");ok(wf&&wf.str===2&&wf.hp===2,"Wolves are 2/2");E.levelUp(s,j);E.levelUp(s,j);ok(w()===3,"none at 4-5");E.levelUp(s,j);ok(w()===6,"three more at Level 6");}
+ E.levelUp(s,j);E.levelUp(s,j);ok(w()===0,"no Wolves at Level 2");E.levelUp(s,j);ok(w()===2,"two Wolves at Level 3");
+ const wf=s.p[0].bf.find(o=>o.name==="Wolf");ok(wf&&wf.str===2&&wf.hp===2,"Wolves are 2/2");E.levelUp(s,j);E.levelUp(s,j);ok(w()===2,"none at 4-5");E.levelUp(s,j);ok(w()===4,"two more at Level 6");}
 /* JD: first Craft each turn returns an Item from the discard pile to inventory; Level 3: two */
 {const s=game(["JD Tinkersmith","Wren Partsfinder","Val Craftsmith"]);const jd=s.p[0].heroes[0];const pl=s.p[0];
  ["Potion","Antidote","Smoke Bomb"].forEach(n=>pl.disc.push({uid:uid(),id:n,owner:0}));

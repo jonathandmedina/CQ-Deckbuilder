@@ -1031,8 +1031,8 @@ function doAct(s,pid,a){const pl=P(s,pid);
 function townCost(s,pid,n){const pl=P(s,pid);if(pl.fl.freeTown){pl.fl.freeTown=false;log(s,`Skeleton Key: this Town action costs no Gold.`,pid);return 0}return n}
 function arrested(h){return(h.ench||[]).some(e=>e.name==="Arrested Development")}
 function levelUp(s,h,stat,announce){if(h.lvl>=6)return;if(arrested(h)){log(s,`${h.name} can't level up (Arrested Development).`,h.owner);return}h.lvl++;log(s,`${h.name} reaches Level ${h.lvl}.`,h.owner);
-  /* Jess Naturecaller (Update 38, Nov 18, 2026): at Level 3 and Level 6, summon three 2/2 Wolves */
-  if(h.name==="Jess Naturecaller"&&(h.lvl===3||h.lvl===6)&&!nulled(s,h.name)){log(s,`Jess Naturecaller reaches Level ${h.lvl}: summon three 2/2 Wolves.`,h.owner);for(let i=0;i<3;i++)makeSummon(s,h.owner,"Wolf",false)}
+  /* Jess Naturecaller (Update 38; two Wolves since update 54): at Level 3 and Level 6, summon two 2/2 Wolves */
+  if(h.name==="Jess Naturecaller"&&(h.lvl===3||h.lvl===6)&&!nulled(s,h.name)){log(s,`Jess Naturecaller reaches Level ${h.lvl}: summon two 2/2 Wolves.`,h.owner);for(let i=0;i<2;i++)makeSummon(s,h.owner,"Wolf",false)}
   if(h.name==="Thorncaller"&&h.lvl===6){const pl=P(s,h.owner);const sm=pl.bf.filter(o=>o.kind==="summon");if(sm.length)log(s,"Thorncaller: each friendly summon is duplicated.",h.owner);sm.forEach(o=>E.copySummon(s,h.owner,o))}
   if(h.lvl%2===0){const k=stat||"str";h.bon[k]++;log(s,`${h.name} gains +1 ${k.toUpperCase()}.`,h.owner)}
   if(h.ench.some(e=>e.name==="Memory Loss")){const pl=P(s,h.owner);if(pl.hand.length){const x=pl.hand.splice(ri(s,pl.hand.length),1)[0];pl.disc.push(x);log(s,`Memory Loss: ${pl.name} discards ${DB[x.id].name}.`)}}}

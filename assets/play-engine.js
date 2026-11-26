@@ -235,7 +235,7 @@ function strOf(s,o,vs){
     o.ench.forEach(e=>{if(e.name==="Weaken")v-=1});
     const op=P(s,oppOf(s,o.owner));if(op&&living(op).some(h=>h.name==="Whisper Knife"))v-=o.st.poison;
     if(op)v-=(op.pm.enemyStr||0);
-    if(vs){if(o.name==="Venom Dancer"&&vs.st&&vs.st.poison>0)v+=3;
+    if(vs){if(o.name==="Venom Dancer"&&vs.st&&vs.st.poison>0)v+=o.lvl>=3?3:1; /* update 56: +1, {L3} +3 */
 }
     (o.mods||[]).forEach(m=>{if(m.mulStr&&(m.until==null||m.until>=s.round))v*=m.mulStr});
     if(modHas(o,"zeroStr"))v=0;return Math.max(0,v)}

@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 25, 2026 (update 55: Arrow of Craftsmanship loses its upgrade in the discard pile)*
+*Version: November 26, 2026 (update 56: Dark Arts deprecated)*
 
 ## 1. Welcome to Riverstead
 
@@ -799,5 +799,5 @@ Quick definitions of the terms used in these rules and on cards, grouped by topi
 - **Pillar (Mage, Warlock)**: Token type made by Conjure. Rituals can sacrifice, double and destroy any Pillar.
 - **Spell Damage +X (Mage)**: Spells deal X extra damage.
 - **Spell Damage Pillar (Mage)**: Pillar token. Your next spell has +2 Spell Damage; sacrifice the Pillar after that spell resolves.
-- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026), Fortify and Pull Together (Nov 9, 2026, update 26), Campfire (Nov 10, 2026, update 28). Update 40 (Nov 19, 2026): Sanctuary, Line It Up, Quickdraw, Blunt-Point Force, Poison Dart, Rapid Shot, Call of Nature, Drawwing, Energy Stone, Entangling Roots, Evolve, Hand of the Protector, Primal Energy, Populate, Return to the Earth, Spore Calling, Tooth, Beast, Broken Blade, Cut Off, Pillage the Dead, Vigil, Protect, Take a Stand, Noble Promotion, Self Sacrifice, Brain Rot, Disorient, Mind Rend, Night Terror, Fog of Darkness, Distract, "Dazzling Melody", Drums of War, Frog in the Throat, "Lullaby", "Marching Cadence", Mirrored Chant, "Peace", "Duet", Strong Stance, Tempo Change, "Rousing Chorus", Levitate; Heroes Shadow Ranger, Beast Tracker, Verdant Sage, Rootfolk Elder, Demon Pactist, Battle Minstrel and Skullcrusher. Update 41 (Nov 19, 2026): Disarm, Ice Bath and Pitfall. Update 46 (Nov 20, 2026): Rapacious Encore.
+- **Deprecated card**: A card removed from play. It isn't legal in decks. Deprecated: Pop Rocks (Nov 1, 2026), Quick Inventory (Nov 2, 2026), Refrain (Nov 9, 2026), Fortify and Pull Together (Nov 9, 2026, update 26), Campfire (Nov 10, 2026, update 28). Update 40 (Nov 19, 2026): Sanctuary, Line It Up, Quickdraw, Blunt-Point Force, Poison Dart, Rapid Shot, Call of Nature, Drawwing, Energy Stone, Entangling Roots, Evolve, Hand of the Protector, Primal Energy, Populate, Return to the Earth, Spore Calling, Tooth, Beast, Broken Blade, Cut Off, Pillage the Dead, Vigil, Protect, Take a Stand, Noble Promotion, Self Sacrifice, Brain Rot, Disorient, Mind Rend, Night Terror, Fog of Darkness, Distract, "Dazzling Melody", Drums of War, Frog in the Throat, "Lullaby", "Marching Cadence", Mirrored Chant, "Peace", "Duet", Strong Stance, Tempo Change, "Rousing Chorus", Levitate; Heroes Shadow Ranger, Beast Tracker, Verdant Sage, Rootfolk Elder, Demon Pactist, Battle Minstrel and Skullcrusher. Update 41 (Nov 19, 2026): Disarm, Ice Bath and Pitfall. Update 46 (Nov 20, 2026): Rapacious Encore. Update 56 (Nov 26, 2026): Dark Arts.
 - **Pain Pillar (Warlock)**: At Dusk, target enemy loses 1 HP. Each Pain Pillar triggers separately, and you choose a target for each one.

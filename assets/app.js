@@ -212,7 +212,7 @@ function allowed(c,d){return c.cls==="Generic"||partyClasses(d).includes(c.cls)}
 /* ---------- Nov 24: sideboards for Best-of-3 matches (admins only while it's tested). d.side={heroes:["h:Name"],cards:{id:n}}.
    Up to 10 cards counting a Hero; at most 1 Hero. Copy limits count the deck and sideboard together. ---------- */
 const SIDE_MAX=10;
-const sideOn=()=>!!(S.access&&S.access.admin);
+const sideOn=()=>true; /* Nov 26: sideboards are open to every player */
 const sideOf=d=>{if(!d.side||typeof d.side!=="object")d.side={heroes:[],cards:{}};d.side.heroes=(d.side.heroes||[]).filter(Boolean).slice(0,1);d.side.cards=d.side.cards||{};return d.side};
 const cloneSide=x=>x&&(((x.heroes||[]).filter(Boolean).length)||Object.keys(x.cards||{}).length)?{heroes:(x.heroes||[]).filter(Boolean).slice(0,1),cards:{...(x.cards||{})}}:undefined;
 const sideTotal=d=>d&&d.side?(d.side.heroes||[]).filter(Boolean).length+Object.values(d.side.cards||{}).reduce((a,q)=>a+q,0):0;

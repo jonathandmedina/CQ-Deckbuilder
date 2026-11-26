@@ -9,13 +9,13 @@
   "seed": 7037,
   "winner": 0,
   "round": 15,
-  "logHash": "771dcdcad1e08cd038dc6252d19f2759a67fc53242bddcd4ea26048a0d379977"
+  "logHash": "d8d6ee8a9cc782de877dcc2eb37170c75f0d995103cfa7bfdcd50ace336ab570"
  },
  {
   "seed": 7074,
   "winner": 0,
-  "round": 6,
-  "logHash": "7bdc6acd4f4dc016d08142f9324569b852f972c687dea70e14476385d8228f6b"
+  "round": 9,
+  "logHash": "617a7127b27ed0f4b8fec10b334ba398d36ce0d274b7735e36a0e49e75d5a52f"
  },
  {
   "seed": 7111,
@@ -26,8 +26,8 @@
  {
   "seed": 7148,
   "winner": 0,
-  "round": 15,
-  "logHash": "1439499743ff366f165ae75496ec2933ec7dc3bb79f7a2944537da0657c55fa6"
+  "round": 19,
+  "logHash": "78118038eb1fe7aa28324813fd4a7191a59772e81fbee0cf493fe6e4312959e2"
  },
  {
   "seed": 7185,
@@ -43,9 +43,9 @@
  },
  {
   "seed": 7259,
-  "winner": 1,
+  "winner": 0,
   "round": 8,
-  "logHash": "dd1931ee2d9b64086a0d85e656e721cae34bcd777bc7f91c6c9a65163f70cf36"
+  "logHash": "e9e85a234f3471091d08dc73f4a27405dfadb1ea6e9091977f69ca158f4e8a20"
  },
  {
   "seed": 7296,
@@ -56,8 +56,8 @@
  {
   "seed": 7333,
   "winner": 0,
-  "round": 8,
-  "logHash": "1c695b7f9d9c8449f0b453186f4d33b0a67f53bf2feda1a995a9a023988278a2"
+  "round": 7,
+  "logHash": "af7620ef946eadc7a375441f1d4ae3536faccca930fc3cf550da443b131f17a8"
  },
  {
   "seed": 7370,
@@ -68,14 +68,14 @@
  {
   "seed": 7407,
   "winner": 1,
-  "round": 8,
-  "logHash": "de619c3d3c6a127a4a5645c40bd8fd2ca69100d397e87ee8cbffb00818bbbc0a"
+  "round": 9,
+  "logHash": "59566b18b65f9a76985ec3ffb0f9d6f6537b7d57dd677b9afb5206771c35106e"
  },
  {
   "seed": 7444,
   "winner": 0,
-  "round": 7,
-  "logHash": "4c77bb29c902b0fc29098c30fe1b0762da049203aedc9e05cad9ac5ac04235ee"
+  "round": 8,
+  "logHash": "6b1230bbcb4bed29088a704d0499bf98b63ed5ca7666ae71b59ccf8f5f1cf2c5"
  },
  {
   "seed": 7481,
@@ -104,8 +104,8 @@
  {
   "seed": 7629,
   "winner": 0,
-  "round": 6,
-  "logHash": "aa61c7db03b2323628b7bfb39f418687290dd8ea0749cc9a21dd4797aa51ce3d"
+  "round": 10,
+  "logHash": "729cde798a879fadff5683cd1108377d276f2d5bf63d51ce31644a784e2c573d"
  },
  {
   "seed": 7666,
@@ -127,15 +127,15 @@
  },
  {
   "seed": 7777,
-  "winner": 1,
+  "winner": 0,
   "round": 17,
-  "logHash": "a8bd6bb54e33d0a253d380941ddcf5da2596499035ec0e9aebbcd87e364990b4"
+  "logHash": "97e7148ca38d6c4e2f91967e25d424dc8ada6ac3138dde4479ccc5905c83224f"
  },
  {
   "seed": 7814,
   "winner": 1,
-  "round": 8,
-  "logHash": "651a58ec591fb9d4b9963b7953aead0fe683930e9727c08277ce4c32f1d89f5b"
+  "round": 7,
+  "logHash": "fb6ad911d806044fca7a824443a61355224ad565ccd279e78afcb967b1347721"
  },
  {
   "seed": 7851,
@@ -146,8 +146,8 @@
  {
   "seed": 7888,
   "winner": 1,
-  "round": 9,
-  "logHash": "c29b80ba7e220f6b48eee4893436f97619dd89a76d022bbf57e76eb6fddb4a9e"
+  "round": 8,
+  "logHash": "c8ca9d8392c9910c94345c85aa3fa5e53359737edabe2383a1f2b73226f47396"
  },
  {
   "seed": 7925,
@@ -159,13 +159,13 @@
   "seed": 7962,
   "winner": 0,
   "round": 15,
-  "logHash": "73a4d40abf050cecdc281dfaf7f08726a5f15e5441d09baea93135c3f6bc64fa"
+  "logHash": "35af14fc6a2f9c782f9c3d1a2e07bab6aaf39c6919c7700cdb4cf591ca143cc8"
  },
  {
   "seed": 7999,
   "winner": 1,
-  "round": 9,
-  "logHash": "bda096b74266c088681d08d33d23a0ddf9f67bcc245c208f43046d63a94de799"
+  "round": 5,
+  "logHash": "5b4b542ea145b13691377c3c06dc80d3135d012638d9c165cd27728c217a48f1"
  },
  {
   "seed": 8036,
@@ -194,8 +194,8 @@
  {
   "seed": 8184,
   "winner": 0,
-  "round": 8,
-  "logHash": "e61b7e2b90e7e3722031d174245efde47cd408cc090c0019b97732eddbd65e5e"
+  "round": 7,
+  "logHash": "f276b2adc39fd5621b9ea377d65b43aa0453d04352c25d18fd1912bf16f358d1"
  },
  {
   "seed": 8221,
@@ -207,7 +207,7 @@
   "seed": 8258,
   "winner": 0,
   "round": 8,
-  "logHash": "4e6541f44830ac215ae2dd254037d45a1faaf7dc9bd333231a28fdfc7ec85875"
+  "logHash": "997a5487638ce135c90d0ec822b3eda2fa972091479cafdd69d461162ad3fc83"
  },
  {
   "seed": 8295,
@@ -223,9 +223,9 @@
  },
  {
   "seed": 8369,
-  "winner": 1,
+  "winner": 0,
   "round": 8,
-  "logHash": "1af6f53027ad8ffea77d99f3b48e936abb75fb30e2a35f77369f5e9374f69af4"
+  "logHash": "1d3ab643b6a456a9e0370d961e4e83d65c13dfa93e76c37c465d3ac62f5a6ed7"
  },
  {
   "seed": 8406,

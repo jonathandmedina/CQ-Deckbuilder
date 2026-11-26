@@ -652,7 +652,7 @@ function replayMidHTML(s){const R=U.spec.replay;const pn=p=>esc(s.p[p]?s.p[p].na
    U.match on the host / vs-AI browser: {id,bo:3,mode,n,wins,tal,base,cur,ready}. The guest gets a public copy with each state.
    Between games each player sideboards (swaps cards, and a Hero, between deck and sideboard), then presses Ready. First to 2 wins. */
 const isAdm=()=>{const s=AS();return!!(s&&s.access&&s.access.admin)};
-const boPick=()=>isAdm()&&U.lobby.bo===3?3:1;
+const boPick=()=>U.lobby.bo===3?3:1; /* Nov 26: Best of 3 is open to every player (Best of 1 stays the default) */
 const deckCl=d=>({id:d.id,name:d.name,heroes:(d.heroes||[]).slice(),cards:Object.assign({},d.cards),side:{heroes:((d.side&&d.side.heroes)||[]).filter(Boolean).slice(0,1),cards:Object.assign({},(d.side&&d.side.cards)||{})}});
 function newMatch(mode,d0,d1){return{id:newGid(),bo:3,mode,n:1,wins:[0,0],tal:[],base:[deckCl(d0),deckCl(d1)],cur:[deckCl(d0),deckCl(d1)],ready:[false,false]}}
 const matchDone=m=>!!m&&(m.wins[0]>=2||m.wins[1]>=2);
@@ -832,7 +832,7 @@ function onlineListHTML(){const O=window.CQOnline;if(!O)return"";const L=O.list(
   const st={idle:"Online",ai:"In a game vs AI",online:"In an online game"};
   return`<section class="panel pl-players"><h2>Players online <span class="pl-note">(${L.length})</span></h2>
     ${L.length?`<ul class="pl-plist">${L.map(p=>`<li><span class="pl-pn"><b>${esc(p.name)}</b><small>${st[p.status]}</small></span>${p.status==="online"?`<button class="btn" disabled title="They're already in an online game">Busy</button>`:`<button class="btn" data-pa="challenge" data-k="${esc(p.key)}" data-n="${esc(p.name)}"${ok?"":" disabled title=\"Choose a legal deck first\""}>Challenge</button>`}</li>`).join("")}</ul>`:`<p class="pl-note">Nobody else is online right now.</p>`}
-    <p class="pl-note">Challenging someone opens a room with the deck chosen above${isAdm()?`, as <b>${boPick()===3?"Best of 3":"Best of 1"}</b>`:""}. They pick their deck when they accept.</p></section>`}
+    <p class="pl-note">Challenging someone opens a room with the deck chosen above${`, as <b>${boPick()===3?"Best of 3":"Best of 1"}</b>`}. They pick their deck when they accept.</p></section>`}
 function hookOnline(){const O=window.CQOnline;if(U.onlineHooked||!O)return;U.onlineHooked=true;
   O.onChange(()=>{if(U.mode==="lobby"&&!U.s)render()});
   O.on("challenge",p=>{
@@ -1375,7 +1375,7 @@ function lobbyHTML1(tabs){const ch=deckChoices();const resL=store2.get("cq.play.
   <div class="pl-lobby">
     <section class="panel"><h2>Your deck</h2>
       <label>Deck<select data-pa="deck">${opts(U.lobby.deck)}</select></label>
-      ${isAdm()?`<label>Match<select data-pa="bo"><option value="1"${boPick()===1?" selected":""}>Best of 1</option><option value="3"${boPick()===3?" selected":""}>Best of 3 with sideboards (admins)</option></select></label>${boPick()===3?(()=>{const d=deckById(U.lobby.deck);const n=d&&d.side?((d.side.heroes||[]).filter(Boolean).length+Object.values(d.side.cards||{}).reduce((a,q)=>a+q,0)):0;return`<p class="pl-note">Sideboard: ${n} card${n===1?"":"s"}${n?"":" (add one in the Deck Builder)"}. First to win 2 games wins the match; you can sideboard between games.</p>`})():""}`:""}
+      ${true?`<label>Match<select data-pa="bo"><option value="1"${boPick()===1?" selected":""}>Best of 1</option><option value="3"${boPick()===3?" selected":""}>Best of 3 with sideboards</option></select></label>${boPick()===3?(()=>{const d=deckById(U.lobby.deck);const n=d&&d.side?((d.side.heroes||[]).filter(Boolean).length+Object.values(d.side.cards||{}).reduce((a,q)=>a+q,0)):0;return`<p class="pl-note">Sideboard: ${n} card${n===1?"":"s"}${n?"":" (add one in the Deck Builder)"}. First to win 2 games wins the match; you can sideboard between games.</p>`})():""}`:""}
       <p class="pl-note">Your saved decks from My Decks appear here${AS()&&S.mode==="account"?" (from your account)":""}. Starter decks are ready to go.</p>
       ${!(AS()&&S.me)?`<label>Your name<input type="text" data-pa="name" maxlength="24" value="${esc(store2.get("cq.play.name",""))}" placeholder="Shown to your opponent"></label>`:""}
     </section>

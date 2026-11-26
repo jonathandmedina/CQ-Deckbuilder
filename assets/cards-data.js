@@ -282,7 +282,7 @@ const RAW_CARDS=[
 [2, "Caltrops", "2", "", "Item", "", "Ranger", "Whenever an enemy attacks a hero you control, the attacker loses 2 Health Points.", 1],
 [2, "Into the Trees", "0", "Hidden", "Item", "Trap", "Ranger", "3{A}: When an enemy attacks or targets a friendly hero, you may cancel that action.", 1],
 [2, "Arrow of Devastation", "0", "", "Item", "Arrow", "Ranger", "4{A}: Deal 5 damage to target enemy. Piercing 3.", 2],
-[2, "Arrow of Craftsmanship", "0", "", "Item", "Arrow", "Ranger", "This can't be targeted.\n1{A}: Deal 2 damage to target enemy.\nUpgrade X gold: This arrow deals +X more damage.", 2],
+[2, "Arrow of Craftsmanship", "0", "", "Item", "Arrow", "Ranger", "This can't be targeted.\n1{A}: Deal 2 damage to target enemy.\nUpgrade X gold: This arrow deals +X more damage. It loses this upgrade when it goes to your discard pile.", 3],
 /* Set 2 (Artificer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
 [2, "Copper Ingot", "1", "", "Item", "Material", "Generic", "Exile: Gain 1 Aura.", 2],
 [2, "Iron Ingot", "1", "", "Item", "Material", "Generic", "Exile: Target ally gets +2 Defense until end of turn.", 2],

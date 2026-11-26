@@ -1,7 +1,7 @@
 # Riverstead
 *Official Rules*
 
-*Version: November 24, 2026 (update 52: best-of-3 matches and sideboards)*
+*Version: November 25, 2026 (update 55: Arrow of Craftsmanship loses its upgrade in the discard pile)*
 
 ## 1. Welcome to Riverstead
 
@@ -556,7 +556,7 @@ At the Blacksmith in Town, you may upgrade any of them:
 - Pay the Gold. For an Upgrade X cost, choose X and pay X Gold.
 - Flip the card to its upgraded side (with proxies, put an upgrade counter on it and note X; Print & Play prints each piece of equipment’s upgraded side to sleeve behind it). Its Upgrade effect is now active.
 - Each object can be upgraded once. A piece of equipment has only its one upgrade.
-- **Upgrades are permanent.** An upgraded object stays upgraded for the rest of the game, even if it is destroyed, discarded, exiled or changes zones. (An upgraded Arrow is still upgraded when it comes back from your discard pile.)
+- **Upgrades are permanent.** An upgraded object stays upgraded for the rest of the game, even if it is destroyed, discarded, exiled or changes zones. The exception is a card that says otherwise: Arrow of Craftsmanship loses its upgrade when it goes to your discard pile.
 
 ## 17. Keywords
 

@@ -1495,7 +1495,9 @@ function cloakCheck(s){s.p.forEach((pl,pid)=>pl.heroes.forEach(h=>{const was=!!h
   if(h.ex&&!was&&!h.dead)eqList(h).filter(e=>e.name==="Grave Caller's Wand").forEach(()=>ask(s,pid,`Grave Caller's Wand: ${h.name} exhausted. Target player Mills 1`,[{label:`${P(s,oppOf(s,pid)).name} Mills 1`,v:oppOf(s,pid)},{label:`${P(s,pid).name} (you) Mills 1`,v:pid}],"millOne",{name:"Grave Caller's Wand"}));
   if(h.ex&&!was&&!h.dead&&hasEqN(h,"Cloak of Hate")){const ts=inPlayTargets(s).filter(o=>!stealth(s,o)||ctrl(s,o)===pid);
     eqList(h).filter(e=>e.name==="Cloak of Hate").forEach(()=>ask(s,pid,`Cloak of Hate: ${h.name} is exhausted, target enemy loses 1 Health Point`,targetOpts(s,pid,ts.filter(o=>!sameTeam(s,ctrl(s,o),pid)&&!cardProof(s,o,true)),1),"loseTo",{n:1,name:"Cloak of Hate"}))}}))}
-function settle(s){let guard=0;
+/* Update 55: Arrow of Craftsmanship loses its upgrade when it goes to the discard pile (every other upgrade is permanent) */
+function dropDiscUpg(s){if(!s.upg)return;for(const pl of s.p)for(const c of pl.disc){if(s.upg[c.uid]!=null&&(DB[c.id]||{}).name==="Arrow of Craftsmanship"){delete s.upg[c.uid];log(s,"Arrow of Craftsmanship loses its upgrade in the discard pile.",c.owner)}}}
+function settle(s){let guard=0;dropDiscUpg(s);
   while(!s.over&&guard++<200){
     if(s.phase==="battle")cloakCheck(s);
     if(s.pend.length){

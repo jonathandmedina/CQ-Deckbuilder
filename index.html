@@ -229,6 +229,24 @@ button.card:hover{border-color:var(--cc)}
 .c-ctrl .q{font-variant-numeric:tabular-nums;font-weight:700;min-width:3ch;text-align:center}
 .c-ctrl .btn{padding:2px 10px}
 .c-ctrl .sp{flex:1}
+/* Nov 26: Main Deck / Sideboard switches (Deck Builder). The knob covers the side that's off; the label you see is where cards go. */
+.mdsb{all:unset;box-sizing:border-box;position:relative;flex:0 0 auto;display:inline-grid;grid-template-columns:1fr 1fr;align-items:center;width:52px;height:24px;border-radius:999px;cursor:pointer;
+  background:#2a1d12;border:2px solid #8A5E40;font:700 .66rem/1 var(--body);letter-spacing:.04em;color:#f3e6cf;box-shadow:inset 0 2px 4px rgba(0,0,0,.5)}
+.mdsb .l{text-align:center;position:relative;z-index:0}
+.mdsb .knob{position:absolute;top:2px;left:calc(50% + 1px);width:calc(50% - 3px);height:calc(100% - 4px);border-radius:999px;z-index:1;
+  background:linear-gradient(#ffd98a,#c79028);box-shadow:0 1px 3px rgba(0,0,0,.6);transition:left .28s cubic-bezier(.34,1.45,.64,1)}
+.mdsb.sb{background:#3b1f4a;border-color:#a77bd6}
+.mdsb.sb .knob{left:2px;background:linear-gradient(#e6d2ff,#9a6fd0)}
+.mdsb:focus-visible{outline:2px solid #ffc100;outline-offset:2px}
+.mdsb.big{width:250px;height:38px;font-size:.95rem}
+.c-ctrl.on-sb{background:linear-gradient(rgba(122,80,170,.28),rgba(122,80,170,.12))}
+.c-ctrl{gap:4px}.c-ctrl:has(.mdsb){padding-left:6px;padding-right:6px}.c-ctrl:has(.mdsb) .btn{padding:2px 7px}.c-ctrl:has(.mdsb) .add3{white-space:nowrap}.c-ctrl:has(.mdsb) .sp{display:none}
+.sb-to{align-items:center;gap:10px;flex-wrap:wrap}.sb-to .sb-cnt{margin:0}
+.sbh-box{max-width:min(1100px,96vw)!important;width:min(1100px,96vw)}
+.sbh-h{display:flex;justify-content:space-between;align-items:center;gap:10px}.sbh-h h2{margin:0}
+.sbh-grid{max-height:62vh;overflow:auto;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))!important}
+.sbh-it[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.mdsb .knob{transition:none}}
 .card.picked{outline:3px solid var(--accent);outline-offset:-1px}
 .card .slotbadge{position:absolute;top:52px;right:10px;background:var(--accent);color:var(--accent-ink);font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
 
@@ -478,8 +496,8 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 .sitebar .sb-fb{display:inline-flex;align-items:center;gap:7px}.sb-fb-i{width:20px;height:20px;flex:none}
 .sb-links{display:flex;align-items:center;gap:4px}
 </style>
-<link rel="stylesheet" href="assets/art.css?v=20261126c">
-<link rel="stylesheet" href="assets/home.css?v=20261126c">
+<link rel="stylesheet" href="assets/art.css?v=20261126d">
+<link rel="stylesheet" href="assets/home.css?v=20261126d">
 </head>
 <body>
 <header class="top"><div class="wrap">
@@ -512,25 +530,25 @@ html:is([data-skin="retro"],[data-skin="art"]) .modal .znav.prev:hover:not(:disa
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="assets/cards-data.js?v=20261126c"></script>
-<script src="assets/trials-data.js?v=20261126c"></script>
-<script src="assets/audio-prefs.js?v=20261126c"></script>
-<script src="assets/app.js?v=20261126c"></script>
-<script src="assets/home.js?v=20261126c"></script>
-<script src="assets/play-engine.js?v=20261126c"></script>
-<script src="assets/play-trials.js?v=20261126c"></script>
-<script src="assets/play-cards.js?v=20261126c"></script>
-<script src="assets/play-ai.js?v=20261126c"></script>
-<script src="assets/play-ui.js?v=20261126c"></script>
-<script src="assets/changelog-data.js?v=20261126c"></script>
-<script src="assets/changelog.js?v=20261126c"></script>
-<script src="assets/admin.js?v=20261126c"></script>
-<script src="assets/profile.js?v=20261126c"></script>
-<script src="assets/action-pop.js?v=20261126c"></script>
-<script src="assets/blog.js?v=20261126c"></script>
-<script src="assets/online.js?v=20261126c"></script>
-<script src="assets/tutorial.js?v=20261126c"></script>
-<script src="assets/play-tablet.js?v=20261126c"></script>
+<script src="assets/cards-data.js?v=20261126d"></script>
+<script src="assets/trials-data.js?v=20261126d"></script>
+<script src="assets/audio-prefs.js?v=20261126d"></script>
+<script src="assets/app.js?v=20261126d"></script>
+<script src="assets/home.js?v=20261126d"></script>
+<script src="assets/play-engine.js?v=20261126d"></script>
+<script src="assets/play-trials.js?v=20261126d"></script>
+<script src="assets/play-cards.js?v=20261126d"></script>
+<script src="assets/play-ai.js?v=20261126d"></script>
+<script src="assets/play-ui.js?v=20261126d"></script>
+<script src="assets/changelog-data.js?v=20261126d"></script>
+<script src="assets/changelog.js?v=20261126d"></script>
+<script src="assets/admin.js?v=20261126d"></script>
+<script src="assets/profile.js?v=20261126d"></script>
+<script src="assets/action-pop.js?v=20261126d"></script>
+<script src="assets/blog.js?v=20261126d"></script>
+<script src="assets/online.js?v=20261126d"></script>
+<script src="assets/tutorial.js?v=20261126d"></script>
+<script src="assets/play-tablet.js?v=20261126d"></script>
 <script>if(location.hash==="#changelog"&&window.CQLog)window.CQLog.mount(document.getElementById("view"))</script>
 <script>if(/^#blog/.test(location.hash)&&window.CQBlog)window.CQBlog.mount(document.getElementById("view"),S.blogSlug)</script>
 <script>if(location.hash==="#admin"&&window.CQAdmin)window.CQAdmin.mount(document.getElementById("view"))</script>

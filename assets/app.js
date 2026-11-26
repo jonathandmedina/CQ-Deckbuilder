@@ -568,7 +568,26 @@ document.addEventListener("contextmenu",e=>{const t=e.target.closest&&e.target.c
   const id=t.dataset.pool;if(sideMode(t)){if(!S.deck.side||!S.deck.side.cards[id])return;setDeck(d=>{const s=sideOf(d);if(s.cards[id]>1)s.cards[id]--;else delete s.cards[id]});return}
   if(!S.deck.cards[id])return;setDeck(d=>{if(d.cards[id]>1)d.cards[id]--;else delete d.cards[id]})});
 /* Nov 24: while the pool is set to Sideboard, pool clicks add to and remove from the sideboard (the deck list's own − / + still change the deck) */
-function sideMode(el){return S.b.to==="side"&&sideOn()&&!isTrialsDeck(S.deck)&&S.b.step==="cards"&&!(el&&el.closest&&el.closest(".deckpanel"))}
+/* Nov 26: each pool card has its own MD / SB switch. It starts on the big Main Deck / Sideboard switch's side; flipping the big switch resets every card to it. */
+function cardSide(id){const o=S.b.sbOv&&S.b.sbOv[id];return o?o==="sb":S.b.to==="side"}
+function sideMode(el){if(!(sideOn()&&!isTrialsDeck(S.deck)&&S.b.step==="cards")||(el&&el.closest&&el.closest(".deckpanel")))return false;
+  const host=el&&el.closest?el.closest("[data-id],[data-pool]"):null;const id=host?(host.dataset.id||host.dataset.pool):null;return id?cardSide(id):S.b.to==="side"}
+const mdsbHTML=(sb,o)=>`<button type="button" class="mdsb${o.big?" big":""}${sb?" sb":""}" role="switch" aria-checked="${sb}" data-act="${o.act}"${o.id?` data-id="${esc(o.id)}"`:""} title="${sb?"Adding to the Sideboard. Switch to add to the Main Deck":"Adding to the Main Deck. Switch to add to the Sideboard"}"><span class="l md">${o.big?"Main Deck":"MD"}</span><span class="l sbl">${o.big?"Sideboard":"SB"}</span><i class="knob" aria-hidden="true"></i></button>`;
+function setSideHero(v){if(v&&!HEROES.some(x=>x.id===v)){toast("There's no Hero by that name.");return false}
+  if(v&&S.deck.heroes.includes(v)){toast("That Hero is already in your party.");return false}
+  if(v&&!sideHero(S.deck)&&sideTotal(S.deck)>=SIDE_MAX){toast("The sideboard is full. Take a card out to add a Hero.");return false}
+  setDeck(d=>{sideOf(d).heroes=v?[v]:[]});if(v)toast(`${BYID.get(v).name} is your sideboard Hero.`);return true}
+const sideHeroPool=d=>HEROES.filter(x=>canSee(x)&&!x.dep&&!trialsHidden(x.id)&&!d.heroes.includes(x.id)).sort((a,b)=>clsOrder(a.cls)-clsOrder(b.cls)||a.name.localeCompare(b.name));
+function sideHeroModal(){document.getElementById("sbhm")?.remove();const d=S.deck;const cur=sideHero(d);
+  const m=document.createElement("div");m.className="modal";m.id="sbhm";m.setAttribute("role","dialog");m.setAttribute("aria-modal","true");m.setAttribute("aria-label","Choose Sideboard Hero");
+  m.innerHTML=`<div class="box sbh-box"><div class="sbh-h"><h2>Choose Sideboard Hero</h2><button type="button" class="btn sm" data-sbh="close">Close</button></div>
+    <p class="note">Any Hero from any class. It takes 1 of your 10 sideboard spots, and between games of a Best-of-3 match you can swap it with a Hero in your party.</p>
+    <div class="bar"><label class="field">Search <input type="search" class="sbh-q" placeholder="Hero name or class" autocomplete="off"></label>${cur?`<button type="button" class="btn sm" data-sbh="none">Remove ${esc(cur.name)}</button>`:""}</div>
+    <div class="grid sbh-grid">${sideHeroPool(d).map(h=>`<div class="sbh-it" data-n="${esc((h.name+" "+h.cls).toLowerCase())}">${cardHTML(h,{button:"sbh-pick",picked:cur&&cur.id===h.id})}</div>`).join("")}</div></div>`;
+  m.addEventListener("click",e=>{if(e.target===m){m.remove();return}const c=e.target.closest("[data-sbh]");if(c){if(c.dataset.sbh==="none")setSideHero("");m.remove();return}
+    const p=e.target.closest('[data-act="sbh-pick"]');if(p&&!e.target.closest("[data-zoom],[data-flip]")){e.preventDefault();e.stopPropagation();if(setSideHero(p.dataset.id))m.remove()}},true);
+  m.querySelector(".sbh-q").addEventListener("input",e=>{const q=e.target.value.trim().toLowerCase();m.querySelectorAll(".sbh-it").forEach(x=>{x.hidden=!!q&&!x.dataset.n.includes(q)})});
+  $("#layer").appendChild(m);try{if(typeof fitArt==="function")fitArt(m)}catch(e){}m.querySelector(".sbh-q").focus()}
 function artCardHTML(c,o,tag,attrs){
   return`<${tag} class="card art${o.picked?" picked":""}${o.maxed?" maxed":""}${c.face==="up"?" upside":""}"${c.up?` data-cid="${esc(c.face==="up"?c.id.slice(0,-3):c.id)}"`:""} style="--cc:${cc(c.cls)};--ci:${ci(c.cls)};--ct:${ct(c.cls)}" title="${esc(c.name)}${c.face==="up"?" (upgraded)":""} · ${esc(c.cls)} · v${c.ver||1}"${attrs}>
   <div class="art-frame"><img class="c-art" src="${artSrc(c)}" alt="${esc(artAlt(c))}" width="500" height="700" loading="lazy" decoding="async">${artOverlayHTML(c)}</div>${c.trialTag?`<span class="trial-tag" title="Trials module">${esc(c.trialTag)}</span>`:""}
@@ -765,7 +784,7 @@ function viewBuild(){
   ${partySlots(d)}
   <div class="split">
     <section aria-label="Card pool">
-      ${sideOn()&&!party?`<div class="bar sb-to"><span class="note">Add cards to</span><button type="button" class="chip" data-act="b-to" data-v="deck" aria-pressed="${!toSide}">Deck</button><button type="button" class="chip" data-act="b-to" data-v="side" aria-pressed="${toSide}" title="Best-of-3 sideboard: up to 10 cards, 1 of which may be a Hero">Sideboard ${sideTotal(d)}/${SIDE_MAX}</button></div>`:""}
+      ${sideOn()&&!party?`<div class="bar sb-to">${mdsbHTML(toSide,{big:1,act:"b-to"})}<span class="note sb-cnt">Sideboard ${sideTotal(d)}/${SIDE_MAX}</span><button type="button" class="btn sm sbh-btn" data-act="sbh-open">${sh||sideHero(d)?`Sideboard Hero: ${esc((sh||sideHero(d)).name)}`:"Choose Sideboard Hero"}</button></div>`:""}
       <div class="bar">${classChips(f.cls,"b-cls",[...(f.allCls?visClasses().slice():pcls).sort((a,b)=>clsOrder(a)-clsOrder(b)),"Generic"])}</div>
       <div class="bar">
         <label class="field" for="b-q">Search <input type="search" id="b-q" data-act="b-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
@@ -776,8 +795,8 @@ function viewBuild(){
         <button type="button" class="btn sm" data-act="to-heroes">Change Heroes</button>
       </div>
       <p class="note pool-tip">Click a card to add a copy, right-click to remove one. Use the magnifier to zoom in.</p>
-      <div class="grid">${gridWithGroups(pool,f,c=>{const q=toSide?(d.side.cards[c.id]||0):(d.cards[c.id]||0),m=Math.max(0,maxCopies(c)-(toSide?(d.cards[c.id]||0):((d.side&&d.side.cards[c.id])||0)));
-        return cardHTML(c,{pool:1,maxed:q>=m,ctrl:`<div class="c-ctrl"><button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><button type="button" class="btn add3" data-act="inc-max" data-id="${esc(c.id)}" ${q>=m?"disabled":""} title="Add copies up to the limit (${m})">Add ${m}</button><span class="sp"></span></div>`})})}</div>
+      <div class="grid">${gridWithGroups(pool,f,c=>{const cs=sideOn()&&!party&&cardSide(c.id);if(cs)sideOf(d);const q=cs?(d.side.cards[c.id]||0):(d.cards[c.id]||0),m=Math.max(0,maxCopies(c)-(cs?(d.cards[c.id]||0):((d.side&&d.side.cards[c.id])||0)));
+        return cardHTML(c,{pool:1,maxed:q>=m,ctrl:`<div class="c-ctrl${cs?" on-sb":""}">${sideOn()&&!party?mdsbHTML(cs,{act:"c-sw",id:c.id}):""}<button type="button" class="btn" data-act="dec" data-id="${esc(c.id)}" ${q?"":"disabled"} aria-label="Remove one ${esc(c.name)}">−</button><span class="q">${q}/${m}${q>=m?' <b class="maxtag">Max</b>':""}</span><button type="button" class="btn" data-act="inc" data-id="${esc(c.id)}" ${q>=m?"disabled":""} aria-label="Add one ${esc(c.name)}">+</button><button type="button" class="btn add3" data-act="inc-max" data-id="${esc(c.id)}" ${q>=m?"disabled":""} title="Add copies up to the limit (${m})">Add ${m}</button><span class="sp"></span></div>`})})}</div>
     </section>
     ${deckPanel(d)}
   </div>`;
@@ -818,12 +837,13 @@ function deckPanel(d){
   </aside>`;
 }
 function sidePanelHTML(d){const sd=sideOf(d),t=sideTotal(d),iss=sideIssues(d),h=sideHero(d);
-  const hs=HEROES.filter(x=>canSee(x)&&!x.dep&&!trialsHidden(x.id)&&!d.heroes.includes(x.id)).sort((a,b)=>clsOrder(a.cls)-clsOrder(b.cls)||a.name.localeCompare(b.name));
+  const hs=sideHeroPool(d);
   const list=Object.entries(sd.cards).filter(([,q])=>q>0).map(([id,q])=>({id,q,c:BYID.get(id)})).sort((a,b)=>costNum(a.c||{cost:0})-costNum(b.c||{cost:0})||a.id.localeCompare(b.id));
   return`<div class="dl side"><h4><span>Sideboard · Best of 3</span><span>${t}/${SIDE_MAX}</span></h4>
+    <label class="note sb-hero">Find a Sideboard Hero <input type="search" list="sbh-list" data-act="side-hero-q" placeholder="Type any Hero's name" autocomplete="off"><datalist id="sbh-list">${hs.map(x=>`<option value="${esc(x.name)}">${esc(x.cls)}</option>`).join("")}</datalist></label>
     <label class="note sb-hero">Sideboard Hero <select data-act="side-hero"><option value="">None</option>${hs.map(x=>`<option value="${esc(x.id)}"${h&&h.id===x.id?" selected":""}>${esc(x.name)} · ${esc(x.cls)}</option>`).join("")}</select></label>
     <ul>${list.map(e=>`<li style="--cc:${cc(e.c?e.c.cls:"")};--ci:${ci(e.c?e.c.cls:"")}"><span class="q">${e.q}</span><i class="dot"></i>${e.c?`<button type="button" class="n nlink" data-act="inspect" data-id="${esc(e.id)}" title="Click to view">${esc(e.c.name)}</button>`:`<span class="n bad">${esc(e.id)}</span>`}<span class="cst">${e.c?esc(e.c.cost):""}</span><button type="button" class="mini" data-act="sdec" data-id="${esc(e.id)}" aria-label="Remove one from the sideboard">−</button><button type="button" class="mini" data-act="sinc" data-id="${esc(e.id)}" aria-label="Add one to the sideboard">+</button></li>`).join("")}</ul>
-    ${!t?`<p class="note">Switch the pool to <b>Sideboard</b> to add cards. Up to 10 cards, and 1 of them may be a Hero. Between games of a Best-of-3 match you can swap cards (and the Hero) between your deck and sideboard.</p>`:""}
+    ${!t?`<p class="note">Flip a card's switch to <b>SB</b> (or the big switch to <b>Sideboard</b>) to add cards. Up to 10 cards, or 9 cards and 1 Hero. Between games of a Best-of-3 match you can swap cards (and the Hero) between your deck and sideboard.</p>`:""}
     ${iss.length?`<ul class="issues bad">${iss.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}</div>`}
 /* ---------- update 30: own decks from Decklists, Visual View, Deck log, deck image (PNG) ---------- */
 /* a deck in Decklists that is one of your saved decks opens that deck (no "(copy)"), so saving updates it */
@@ -1482,7 +1502,9 @@ document.addEventListener("click",async e=>{
     if(a==="sdec"){setDeck(d=>{const s=sideOf(d);if(s.cards[id]>1)s.cards[id]--;else delete s.cards[id]});return}
     if(!c||(sd.cards[id]||0)+(S.deck.cards[id]||0)>=maxCopies(c)){toast("That's the most copies allowed between deck and sideboard.");return}if(sideTotal(S.deck)>=SIDE_MAX){toast("The sideboard is full (10 cards, counting a Hero).");return}
     setDeck(d=>{const s=sideOf(d);s.cards[id]=(s.cards[id]||0)+1})}
-  else if(a==="b-to"){S.b.to=b.dataset.v==="side"?"side":"deck";render()}
+  else if(a==="b-to"){S.b.to=S.b.to==="side"?"deck":"side";S.b.sbOv={};render()}
+  else if(a==="c-sw"){S.b.sbOv=S.b.sbOv||{};const now=cardSide(id);const want=now?"md":"sb";if((want==="sb")===(S.b.to==="side"))delete S.b.sbOv[id];else S.b.sbOv[id]=want;render()}
+  else if(a==="sbh-open"){sideHeroModal()}
   else if(a==="inc-max"){const c=BYID.get(id);if(!c)return;const m=maxCopies(c),q=S.deck.cards[id]||0;if(q>=m)return;setDeck(d=>{d.cards[id]=m});toast(`${m} × ${c.name} in your deck.`)}
   else if(a==="inc"||a==="inc-close"){const c=BYID.get(id);if(!c)return;
     if((S.deck.cards[id]||0)>=maxCopies(c)){toast(c.sup==="Legendary"?"Legendary cards are limited to 1 copy.":"You can include up to 3 copies.");return}
@@ -1562,7 +1584,8 @@ document.addEventListener("change",e=>{const t=e.target,a=t.dataset&&t.dataset.a
   else if(a==="unt-sort"){S.unt.sort=t.value;render()}
   else if(a==="trv-type"){S.trv.type=t.value;render()}
   else if(a==="trv-sort"){S.trv.sort=t.value;render()}
-  else if(a==="side-hero"){const v=t.value;if(v&&sideTotal(S.deck)-((S.deck.side&&S.deck.side.heroes||[]).filter(Boolean).length)>=SIDE_MAX){toast("The sideboard is full. Take a card out to add a Hero.");render();return}setDeck(d=>{sideOf(d).heroes=v?[v]:[]})}
+  else if(a==="side-hero"){if(!setSideHero(t.value))render()}
+  else if(a==="side-hero-q"){const n=t.value.trim().toLowerCase();if(!n)return;const h=sideHeroPool(S.deck).find(x=>x.name.toLowerCase()===n);if(h)setSideHero(h.id);else{toast("Pick a Hero from the list.");}}
   else if(a==="b-allcls"){S.b.allCls=!!t.checked;if(!S.b.allCls)S.b.cls="all";render()}
   else if(a==="b-sort"){S.b.sort=t.value;render()}
   else if(a==="rules-sel"&&t.value){rulesJump(t.value);t.value=""}

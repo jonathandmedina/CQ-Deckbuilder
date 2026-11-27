@@ -34,6 +34,11 @@ E.isCrafted=d=>!!(d&&d.crafted);
 if(TOK["Remains"]&&!DB["Remains"])DB["Remains"]={id:"Remains",name:"Remains",cost:"0",sup:"",type:"Item",sub:"Token",cls:"Generic",rules:TOK["Remains"].rules,kind:"card",tok:true};
 const CLASSES=["Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock"];E.CLASSES=CLASSES;
 const STATUS=["burn","poison","wound","confuse","stun"];E.STATUS=STATUS;
+/* Set 3 Death Knight (Set Three Rules Supplement, Nov 27, 2026). Blight: a Hero whose rules start with "Blight" has no soul; a Hero killed by Blight (killing blow only) loses its soul. Neither can be revived or surrendered. */
+const BLIGHT_HEROES=new Set((_RH||[]).filter(r=>/^Blight\b/.test(r[6]||"")).map(r=>r[0]));E.BLIGHT_HEROES=BLIGHT_HEROES;
+const hasBlight=h=>!!h&&h.kind==="hero"&&BLIGHT_HEROES.has(h.name);E.hasBlight=hasBlight;
+/* Set 3 Eliazar the Fallen {L3}: can equip Paladin equipment */
+const eliazarEq=(h,cls)=>!!h&&h.kind==="hero"&&h.name==="Eliazar the Fallen"&&h.lvl>=3&&cls==="Paladin";E.eliazarEq=eliazarEq;
 E.cantStun=(s,h)=>!!h&&h.kind==="hero"&&eqList(h).some(e=>e.name==="Crag Helm"); /* Trials loot: Crag Helm, can't be Stunned */
 /* exhaust o because of pid's card or ability; Stampede Boots stops enemy cards and abilities (Trials loot) */
 E.cantExhaust=(s,o,pid)=>!!o&&o.kind==="hero"&&(pid==null||!sameTeam(s,pid,o.owner))&&eqList(o).some(e=>e.name==="Stampede Boots");
@@ -229,6 +234,7 @@ function strOf(s,o,vs){
     /* Set 2 Dagger of the Dead: activated (Nov 17, 2026; see CQ_EQACT) */
     pl.heroes.forEach(h=>{if((h!==o||hasUpN(s,h,"Drums of War"))&&!h.dead&&!h.ex&&hasEqN(h,"Drums of War"))v+=1});
     if(o.name==="Bar-Bear Ian"&&enraged(s,o))v+=o.lvl>=3?4:2;
+    /* Set 3 Hollow Blade {L3}: +2 Strength while it has a Sword equipped */if(o.name==="Hollow Blade"&&o.lvl>=3&&eqList(o).some(e=>def(e).sub==="Sword"))v+=2;
     /* Update 50 (Nov 23): with 5+ Defense (any source) it gets +2 Strength; {L3} +5 instead */if(o.name==="Radiant Sentinel"&&defOf(s,o)>=5)v+=o.lvl>=3?5:2;
     if(o.cls==="Barbarian"&&o.fl.bannerRound===s.round)v+=2*(o.fl.bannerN||1); /* Nov 17: +2 per Brute's Banner */
     if(heroIs(o,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre")v+=(x.ctr&&x.ctr.fury)||0});
@@ -297,6 +303,7 @@ function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
   if(!quiet&&got)log(s,`${pl.name} draws ${got} card${got===1?"":"s"}.`,pid);return got}
 E.draw=draw;
 function addStatus(s,o,k,n){if(!o||o.dead||!o.st)return;
+  if(o.kind==="hero"&&o.name==="Morwen Duskbane"){log(s,`${o.name} can't have status counters.`);return} /* Set 3 */
   if(o.boss&&k==="confuse"){log(s,`${o.name} can't be Confused (boss).`);return} /* Trials: Confuse does nothing to the boss */
   if(k==="stun"&&o.kind==="hero"&&E.cantStun&&E.cantStun(s,o)){log(s,`${o.name} can't be Stunned.`);return}o.st[k]=(o.st[k]||0)+(n||1);log(s,`${o.name} is ${E.STATUS_NAME[k]}${n>1?` (+${n})`:""}.`)}
 E.addStatus=addStatus;
@@ -391,7 +398,7 @@ function pay(s,pid,actor,amt){const pl=P(s,pid);pl.aura-=amt;if(amt<=0||!actor||
 E.pay=pay;
 /* " (13/16 HP)" after a life total changes */
 function hpTag(s,o){if(!o||(o.kind!=="hero"&&o.kind!=="summon"))return"";const m=maxHp(s,o);return` (${Math.max(0,m-(o.dmg||0))}/${m} HP)`}
-function loseHp(s,o,n,why){if(!o||o.dead||n<=0)return;o.dmg=(o.dmg||0)+n;log(s,`${o.name} loses ${n} HP${why?` (${why})`:""}.${hpTag(s,o)}`);checkDeaths(s)}
+function loseHp(s,o,n,why){if(!o||o.dead||n<=0)return;o.dmg=(o.dmg||0)+n;o.lastHit={blight:false,by:null}; /* Set 3: HP loss is never a Blight kill */log(s,`${o.name} loses ${n} HP${why?` (${why})`:""}.${hpTag(s,o)}`);checkDeaths(s)}
 E.loseHp=loseHp;
 /* heal: pid = player whose source makes the heal (null for the Inn). An inverted heal is not a heal. */
 function heal(s,healer,o,n,pid){
@@ -416,7 +423,13 @@ function bestDamageTarget(s,pid,n,o){o=o||{};const op=P(s,oppOf(s,pid));let best
   return best}
 E.bestDamageTarget=bestDamageTarget;
 E.heal=heal;
-/* damage: o={combat,spell,pierce,ignoreDef,card,actor,type,noTrig} returns damage dealt */
+/* Set 3 Blight is on the object: a Blight Hero's attacks, a weapon with Blight (attacks), or a card with Blight (o.blight or the resolving card's rules). A Death Knight's spell without Blight isn't Blight. */
+const BLIGHT_RX=/(^|\n)Blight\b/;
+function blightHit(s,src,o){if(o.blight)return true;
+  if(o.combat)return!!(src&&src.kind==="hero"&&(hasBlight(src)||eqList(src).some(e=>BLIGHT_RX.test(def(e).rules||""))));
+  const d=CUR_SRC&&DB[CUR_SRC];return!!(d&&d.kind!=="hero"&&BLIGHT_RX.test(d.rules||""))}
+E.blightHit=blightHit;
+/* damage: o={combat,spell,pierce,ignoreDef,card,actor,type,noTrig,blight} returns damage dealt */
 function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
   if(tgt.imp||(tgt.kind==="hero"&&hasEqN(tgt,"Dragonscale Scale"))){log(s,`${tgt.name} can't be dealt damage (Impervious).`);return 0} /* Set 2 Impervious (Revenants; a Hero wearing Dragonscale Scale) */
   if(tgt.kind==="hero"&&tgt.fl.noDmgRound===s.round&&!o.status){log(s,`${tgt.name} takes no damage (prevented).`);stat(s,"prev",tgt.owner,tgt.fl.noDmgBy||"Damage prevention",amt);return 0}
@@ -438,6 +451,7 @@ function damage(s,src,tgt,amt,o){o=o||{};if(!tgt||tgt.dead)return 0;
     if(es.length)ask(s,rp,`Rebuke: deal ${dealt} Light damage to target enemy`,es.map(e=>({label:e.name+(e.kind==="summon"?" (summon)":""),v:e.uid})),"rebuke",{n:dealt});return 0}
   if(dealt>0){const w=wardFor(s,tgt);if(w){w.prot--;log(s,`Warded Cloak prevents ${dealt} damage to ${tgt.name} (${w.prot} protection counter${w.prot===1?"":"s"} left).`);stat(s,"prev",tgt.owner,"Warded Cloak",dealt);dealt=0;a=0}}
   tgt.dmg=(tgt.dmg||0)+dealt;
+  /* Set 3: remember the last hit, so the killing blow decides Blight and Soul Harvester kills */if(dealt>0&&(tgt.kind==="hero"||tgt.kind==="summon"))tgt.lastHit={blight:blightHit(s,src,o),by:src&&src.uid!=null?src.uid:null};
   if(!o.ignoreDef&&a>dealt)creditDef(s,tgt,a-dealt);
   if(dealt>0){s.dmgTo=s.dmgTo||null;if(s.dmgTo){const sd=ctrl(s,tgt);s.dmgTo[sd]=(s.dmgTo[sd]||0)+dealt}}
   /* Scrap Metal: this Hero's damage to an enemy Hero destroys a piece of its equipment */
@@ -508,7 +522,7 @@ function checkDeaths(s){s.p.forEach(pl=>pl.heroes.forEach(h=>{if(h.med&&!h.ex&&!
       /* Trials loot: Stoneplate Mantle, the first time each game the equipped Hero would die, it stays at 1 Health Point */
       const mt=eqList(h).find(e=>e.name==="Stoneplate Mantle"&&!e.mantleUsed);if(mt){mt.mantleUsed=true;h.dmg=maxHp(s,h)-1;log(s,`Stoneplate Mantle: ${h.name} stays at 1 Health Point.`,pid);continue}
       if(dyingWindow(s,h))continue;die(s,h);again=true}
-    for(const o of pl.bf.slice())if(o.kind==="summon"&&hpOf(s,o)<=0){if(pl.t.shelter){o.dmg=maxHp(s,o)-1;log(s,`${o.name} can't be destroyed this turn (Shelter from the Storm); it stays at 1 HP.`,pid);continue}destroyObj(s,o);again=true}
+    for(const o of pl.bf.slice())if(o.kind==="summon"&&hpOf(s,o)<=0){if(pl.t.shelter){o.dmg=maxHp(s,o)-1;log(s,`${o.name} can't be destroyed this turn (Shelter from the Storm); it stays at 1 HP.`,pid);continue}soulHarvest(s,o,o.ctrl,false);destroyObj(s,o);again=true}
     for(const o of pl.inv.slice())if(o.kind==="doll"&&hpOf(s,o)<=0){destroyObj(s,o);again=true}}}
   checkWin(s)}
 E.checkDeaths=checkDeaths;
@@ -520,8 +534,9 @@ function dyingWindow(s,h){if(h.fl.dyingDone||s.over||isBoss(s,h.owner))return fa
   return false}
 function die(s,h){const pl=P(s,h.owner);h.fl.dyingDone=false;pl.t.died=(pl.t.died||[]).concat([h.uid]);
   h.dead=true;h.dmg=maxHp(s,h);h.ex=false;h.med=false;h.plus=0;h.mods=[];h.guard=0;h.gsrc=[];h.eqGuard=0;STATUS.forEach(k=>h.st[k]=0);
-  if(h.hc){h.surr=true;log(s,`☠ ${h.name} is destroyed (Hero Construct: it can't be revived or surrendered).`,h.owner)}else
-  log(s,`☠ ${h.name} dies.`,h.owner);
+  if(h.hc){h.surr=true;log(s,`☠ ${h.name} is destroyed (Hero Construct: it can't be revived or surrendered).`,h.owner)}
+  else if(hasBlight(h)||(h.lastHit&&h.lastHit.blight)){h.surr=true;h.noSoul=true;log(s,`☠ ${h.name} dies. ${hasBlight(h)?"It has no soul (Blight)":"Its soul is lost to Blight"}: it can't be revived or surrendered.`,h.owner)}
+  else log(s,`☠ ${h.name} dies.`,h.owner);
   const gear=eqList(h);for(const k in h.eq)h.eq[k]=null;
   h.ench.forEach(e=>toDisc(s,e));h.ench=[];
   const pil=s.pillage&&s.pillage.pid!==h.owner?s.pillage:null;
@@ -532,8 +547,15 @@ function die(s,h){const pl=P(s,h.owner);h.fl.dyingDone=false;pl.t.died=(pl.t.die
   if(h.hc&&h.card){pl.disc.push(h.card);h.card=null}
   if(h.name==="Verdant Sage")makeSummon(s,h.owner,"Spectral Elk");
   if(heroIs(h,"Barbarian"))pl.inv.forEach(x=>{if(!x.fd&&x.name==="Warrior's Pyre"){x.ctr=x.ctr||{};if(true){x.ctr.fury=(x.ctr.fury||0)+1;log(s,`Warrior's Pyre gets a Fury counter (${x.ctr.fury}).`,h.owner)}}});
+  soulHarvest(s,h,h.owner,true);
   s.p.forEach((_,i)=>overflow(s,i));
 }
+/* Set 3 Soul Harvester: whenever a Hero dies, it levels up; {L6} whenever it kills an enemy (Hero or summon), ready it */
+function soulHarvest(s,victim,vOwner,isHero){const kb=victim.lastHit&&victim.lastHit.by;
+  s.p.forEach(p2=>p2.heroes.forEach(x=>{if(x.dead||x.name!=="Soul Harvester")return;
+    if(kb!=null&&x.uid===kb&&x.lvl>=6&&!sameTeam(s,x.owner,vOwner)){x.ex=false;log(s,`Soul Harvester kills ${victim.name} and readies.`,x.owner)}
+    if(isHero&&x.lvl<6){log(s,`Soul Harvester: ${victim.name} died, so ${x.name} levels up.`,x.owner);levelUp(s,x,"str")}}))}
+E.soulHarvest=soulHarvest;
 function toDisc(s,o){const owner=o.owner;if(o.tok)return;const pl=P(s,owner);const d=DB[o.id];const e={uid:o.uid,id:(d&&d.made)||o.id,owner};if(d&&d.made&&d.crafted)e.cr=true; /* a Crafted item that leaves play: its Recipe goes to the discard pile, already crafted and flipped (Crafter's Choice) */pl.disc.push(e)}
 function toInv(s,pid,o){const pl=P(s,pid);pl.inv.push(o);overflow(s,pid)}
 E.toInv=toInv;E.toDisc=toDisc;
@@ -609,7 +631,7 @@ E.copySummon=(s,pid,o,bonus)=>{const c=makeSummon(s,pid,o.name);c.str=o.str+(bon
 function eqObjFromCard(s,pid,card){const d=DB[card.id];const up=d.up&&s.upg&&s.upg[card.uid]!=null?d.up:null;return{uid:card.uid,kind:"equip",id:card.id,name:d.name,cls:d.cls,region:d.region,pstr:up?up.pstr:d.pstr,pdef:up?up.pdef:d.pdef,cost:num(d.cost),owner:card.owner,tok:false,x:null}}
 E.eqObjFromCard=eqObjFromCard;
 function canUseEq(s,h,e){if(!h||h.kind!=="hero"||h.dead)return false;
-  const cls=e.cls;if(cls!=="Generic"&&!heroIs(h,cls))return false;
+  const cls=e.cls;if(cls!=="Generic"&&!heroIs(h,cls)&&!eliazarEq(h,cls))return false;
   const r=def(e).rules||"";{const lm=/Must be Level (\d)/i.exec(r);if(lm&&h.lvl<+lm[1])return false}if(/1 or more (STR|Strength)/i.test(r)&&strOf(s,h)<1)return false;return true}
 E.canUseEq=canUseEq;
 function heroIs(h,cls){if(h.cls===cls)return true;if(h.cls==="Omni"&&cls!=="Generic")return true; /* Set 2 Hero Construct (Remey): Omni = every Hero type */return eqList(h).some(e=>e.name==="Ring of Vocation"&&e.x&&e.x.cls===cls)}
@@ -629,7 +651,7 @@ E.equipTo=equipTo;
 function unequip(s,e){const f=find(s,e.uid);if(!f||f.zone!=="eq")return;f.hero.eq[f.slot]=null;if(f.slot==="H1"&&f.hero.eq.H2==="2H")f.hero.eq.H2=null;toInv(s,f.hero.owner,e);log(s,`${e.name} is unequipped from ${f.hero.name}.`)}
 E.unequip=unequip;
 function eqCost(s,h,e){let c=e.tok?(e.cost||0):num(def(e).cost);
-  if(h.name==="Blessed Champion")c-=h.lvl>=3?2:1;c+=burden(h);return Math.max(0,c)}
+  if(h.name==="Blessed Champion")c-=h.lvl>=3?2:1;if(h.name==="Hollow Blade"&&def(e).sub==="Sword")c-=1; /* Set 3 */c+=burden(h);return Math.max(0,c)}
 E.eqCost=eqCost;
 const burden=h=>h.ench.filter(e=>e.name==="Slow Down").length; /* update 21: Slow Down (old Burden text) = +1 Aura per copy */
 /* update 21: Burden = whenever that Hero plays a card, activates an ability or attacks, Fatigue it */
@@ -642,7 +664,7 @@ const confused=h=>!!(h&&((h.st&&h.st.confuse>0)||chained(h)));E.confused=confuse
 /* ---------- costs ---------- */
 /* Set 2 Mourn: if you've surrendered a soul this game, you may play the card without paying its Aura cost */
 const hasMourn=d=>/^Mourn\./.test((d&&d.rules)||"");E.hasMourn=hasMourn;
-const mourning=(s,pid)=>P(s,pid).heroes.some(h=>h.surr&&!h.hc);E.mourning=mourning;
+const mourning=(s,pid)=>P(s,pid).heroes.some(h=>h.surr&&!h.hc&&!h.noSoul); /* Set 3: a soul lost to Blight was never surrendered */E.mourning=mourning;
 /* Set 2 "As an additional cost to play this card, surrender a soul" (Remey Recipe): one of your dead Heroes whose soul can still be surrendered */
 const soulsLeft=(s,pid)=>P(s,pid).heroes.filter(h=>h.dead&&!h.surr&&!h.hc);E.soulsLeft=soulsLeft;
 E.surrenderCost=(s,pid,why,pick)=>{const l=soulsLeft(s,pid).sort((a,b)=>a.lvl-b.lvl);const h=(pick&&l.includes(pick))?pick:l[0]; /* the player chooses (target slot); fallback: lowest level */if(!h)return null;h.surr=true;log(s,`${P(s,pid).name} surrenders ${h.name}'s soul (additional cost of ${why}).`,pid);return h};
@@ -651,6 +673,7 @@ function auraFor(s,pid,d){const pl=P(s,pid);return pl.aura+(d&&d.type==="Summon"
 E.auraFor=auraFor;
 function cardCost(s,pid,actor,d,x){if(hasMourn(d)&&mourning(s,pid))return 0;let c=d.cost==="X"?(x||0):num(d.cost);const pl=P(s,pid);
   if(d.kind==="equip"&&actor&&actor.name==="Blessed Champion")c-=actor.lvl>=3?2:1;
+  if(d.kind==="equip"&&d.sub==="Sword"&&actor&&actor.name==="Hollow Blade")c-=1; /* Set 3 */
   if(d.cls==="Mage"){if(pl.fl.mageNext)c-=2;if(pl.fl.mageAll)c-=1}
   if(d.sub==="Trap"){if(pl.fl.trapNext)c-=2;if(pl.fl.trapAll)c-=1}
   if(d.type==="Song"){if(actor&&hasEqN(actor,"Silver Fiddle"))c-=1;if(pl.fl.songDisc)c-=2}
@@ -733,7 +756,7 @@ E.actorFor=actorFor;
 const canPlayCards=h=>h&&!h.st.stun&&h.name!=="Dum Dum";
 function canPlayCard(s,pid,actor,c,free){const d=DB[c.id];if(!d||!actor)return false;
   if(!canPlayCards(actor))return false;
-  if(d.cls!=="Generic"&&!heroIs(actor,d.cls))return false;
+  if(d.cls!=="Generic"&&!heroIs(actor,d.cls)&&!(d.kind==="equip"&&eliazarEq(actor,d.cls)))return false;
   if(d.type==="Item"&&P(s,pid).inv.length>=E.slots(s,pid)&&d.sup!=="Hidden")return false;
   if(d.sup==="Hidden"&&P(s,pid).inv.length>=E.slots(s,pid))return false;
   if(d.kind==="equip"){const e={cls:d.cls,id:d.id};if(!canUseEq(s,actor,Object.assign({},d,{id:d.id})))return false}
@@ -1390,11 +1413,13 @@ function resolveAttack(s,pid,cont,mods){const f=find(s,cont.att);let tgt=resolve
   let pierce=(o.pierce||0)+(att.kind==="hero"&&att.name==="Precision Fighter"&&strOf(s,att)>=3?1:0)+(P(s,pid).pm.pierce||0)+(att.kind==="hero"&&hasEqN(att,"Mithril Blade")?2:0)+(att.kind==="hero"?eqList(att).filter(e=>isUp(s,e)&&(e.name==="Sword of Riverstead"||e.name==="Long Dagger"||e.name==="Shadow Cloak")).length:0);
   /* Trials loot: Rockbreaker Maul, Piercing 2 against a target with 3 or more Defense */
   if(att.kind==="hero"&&hasEqN(att,"Rockbreaker Maul")&&defOf(s,tgt)>=3)pierce+=2;
-  const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att))||(att.kind==="hero"&&(hasEqN(att,"The Archfrost")||hasEqN(att,"The Archflame"))); /* Set 2: Piercing (ignores all Defense) */
+  const ign=o.ignoreDef||(att.kind==="hero"&&att.name==="Savage Raider"&&enraged(s,att))||(att.kind==="hero"&&(hasEqN(att,"The Archfrost")||hasEqN(att,"The Archflame")))||(att.kind==="hero"&&att.name==="Grave Lancer"&&att.lvl>=3); /* Set 3 Grave Lancer {L3}: piercing */ /* Set 2: Piercing (ignores all Defense) */
   let dealt=0;
   if(mods.noDamage){log(s,`The attack deals no damage.`)}
   else dealt=damage(s,att,tgt,Math.max(0,str),{combat:true,pierce,ignoreDef:ign,band:!!o.band});
   if(o.second){const t2=resolveTarget(s,o.second);if(t2&&!t2.dead&&!att.dead){log(s,`${att.name} also hits ${t2.name} (Hack and Slash).`);damage(s,att,t2,Math.max(0,str),{combat:true,pierce,ignoreDef:ign})}}
+  /* Set 3 Eliazar the Fallen {L6}: his attacks also deal their damage to each other enemy Hero */
+  if(!mods.noDamage&&att.kind==="hero"&&att.name==="Eliazar the Fallen"&&att.lvl>=6&&!att.dead){living(P(s,oppOf(s,pid))).filter(h=>h!==tgt&&!h.dead&&!h.boss).forEach(h=>{log(s,`Eliazar the Fallen: the attack also hits ${h.name}.`);damage(s,att,h,Math.max(0,str),{combat:true,pierce,ignoreDef:ign})})}
   if(mods.retaliate&&dealt>0&&!att.dead){log(s,`Retribution: ${att.name} takes ${dealt} damage back.`);damage(s,{name:"Retribution"},att,dealt,{card:true,noTrig:true,srcName:"Retribution"})}
   postAttack(s,pid,cont,dealt)}
 function postAttack(s,pid,cont,dealt){const f=find(s,cont.att);const o=cont.o||{};const att=f&&f.o;const tgt=resolveTarget(s,cont.tgt);

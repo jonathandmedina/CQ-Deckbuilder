@@ -24,16 +24,16 @@ const isTrialsDeck=d=>!!d&&(d.trials===true||(d.trials!==false&&Array.isArray(d.
 const HSLOTS=d=>isTrialsDeck(d)?2:3;
 const SLOT_NAMES=d=>isTrialsDeck(d)?["Lead","Closer"]:["Lead","Center","Closer"];
 const hasArt=c=>SKIN==="art"&&(ownArt(c)||blankArt(c));
-const CLASS_COLOR_CLEAN={Artificer:"#507B7F",Necromancer:"#466E6B",Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
+const CLASS_COLOR_CLEAN={"Death Knight":"#4A4458",Artificer:"#507B7F",Necromancer:"#466E6B",Barbarian:"#B0412B",Bard:"#B8467C",Cleric:"#D4AE3A",Druid:"#447F34",Mage:"#2C66C4",Monk:"#DE8A2E",Paladin:"#5E7FA6",Ranger:"#6E8130",Rogue:"#3B4658",Warlock:"#6A3C9E",Generic:"#7C766B"};
 const CLASS_TEXT_CLEAN={Cleric:"#231A00",Monk:"#2A1500"};
 /* retro colors are sampled from the class icons */
-const CLASS_COLOR_RETRO={Barbarian:"#BE1029",Bard:"#A9327C",Cleric:"#CAAF65",Druid:"#A8622F",Mage:"#0271B9",Monk:"#51A5C5",Paladin:"#DE8600",Ranger:"#567428",Rogue:"#4B6170",Warlock:"#4D1791",Generic:"#6D6F80",Artificer:"#507B7F",Blacksmith:"#673839",Necromancer:"#466E6B"};
+const CLASS_COLOR_RETRO={"Death Knight":"#4A4458",Barbarian:"#BE1029",Bard:"#A9327C",Cleric:"#CAAF65",Druid:"#A8622F",Mage:"#0271B9",Monk:"#51A5C5",Paladin:"#DE8600",Ranger:"#567428",Rogue:"#4B6170",Warlock:"#4D1791",Generic:"#6D6F80",Artificer:"#507B7F",Blacksmith:"#673839",Necromancer:"#466E6B"};
 const CLASS_TEXT_RETRO={Cleric:"#1A1206",Monk:"#06222E",Paladin:"#1E1000"};
 const CLASS_COLOR=SKIN!=="clean"?CLASS_COLOR_RETRO:CLASS_COLOR_CLEAN, CLASS_TEXT=SKIN!=="clean"?CLASS_TEXT_RETRO:CLASS_TEXT_CLEAN;
 const cc=c=>CLASS_COLOR[c]||"#777", ct=c=>CLASS_TEXT[c]||"#FFFFFF";
-const ICON_CLS=new Set(["Generic","Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock","Artificer","Blacksmith","Necromancer"]);
+const ICON_CLS=new Set(["Generic","Barbarian","Bard","Cleric","Druid","Mage","Monk","Paladin","Ranger","Rogue","Warlock","Artificer","Blacksmith","Necromancer","Death Knight"]);
 const ICON_BASE=new URL("assets/",document.baseURI).href;
-const ci=c=>ICON_CLS.has(c)?`url(${ICON_BASE}ico-${c.toLowerCase()}.png)`:"none";
+const ci=c=>ICON_CLS.has(c)?`url(${ICON_BASE}ico-${c.toLowerCase().replace(/ /g,"-")}.png)`:"none";
 const TYPES=["Spell","Tactic","Song","Item","Equipment","Enchantment","Summon"];
 
 /* Type lines read Supertype - Type - Subtype (update 35, Nov 15, 2026) */
@@ -62,9 +62,14 @@ const SET2=new Set(typeof SET2_CARDS!=="undefined"?SET2_CARDS:[]);
 [...HEROES,...CARDS,...TOKENS].forEach(c=>{if(SET2.has(c.name))c.set=2});
 const SET2_CLASSES=["Artificer","Necromancer","Monk"];
 const set2On=()=>!!(S.access&&S.access.set2);
-const visClasses=()=>set2On()?[...CLASSES,...SET2_CLASSES]:CLASSES;
+/* Set 3 (hidden playtest set, Nov 27, 2026): cards named in SET3_CARDS (cards-data.js) only show for admins, and for players with Set 3 access once my_access returns set3 */
+const SET3=new Set(typeof SET3_CARDS!=="undefined"?SET3_CARDS:[]);
+[...HEROES,...CARDS,...TOKENS].forEach(c=>{if(SET3.has(c.name))c.set=3});
+const SET3_CLASSES=["Death Knight"];
+const set3On=()=>!!(S.access&&(S.access.set3||S.access.admin));
+const visClasses=()=>[...CLASSES,...(set2On()?SET2_CLASSES:[]),...(set3On()?SET3_CLASSES:[])];
 const visTypes=()=>set2On()?[...TYPES,"Recipe"]:TYPES;
-const canSee=c=>!c||(c.set!==2||!!(S.access&&S.access.set2))&&(c.set!=="trials"||!!(S.access&&S.access.trials));
+const canSee=c=>!c||(c.set!==2||!!(S.access&&S.access.set2))&&(c.set!==3||set3On())&&(c.set!=="trials"||!!(S.access&&S.access.trials));
 const BYID=new Map([...HEROES,...CARDS,...TOKENS].map(c=>[c.id,c]));
 /* Update 40: deprecated Heroes, cards and equipment, for the Admin page's Deprecated view (not in BYID, so decks still flag them) */
 const DEP_OBJS=[...(typeof DEPRECATED_HEROES!=="undefined"?DEPRECATED_HEROES:[]).map(r=>({id:"h:"+r[0],kind:"hero",name:r[0],cls:r[1],str:r[2],def:r[3],aura:r[4],hp:r[5],rules:r[6],ver:r[7]||1,type:"Hero",sup:"",sub:"",cost:"",dep:true})),
@@ -94,7 +99,7 @@ const TRIALS_LOOT_TRIAL={};
 window.CQTrialTag=c=>c&&c.trialTag;
 const trialsOn=()=>!!(S.access&&S.access.trials);
 /* a card name or id the viewer may not see (a Trials card without Trials access) */
-const trialsHidden=id=>{const k=String(id||"").replace(/^[th]:/,"");return(TRIALS_SET.has(k)&&!trialsOn())||(SET2.has(k)&&!set2On())};
+const trialsHidden=id=>{const k=String(id||"").replace(/^[th]:/,"");return(TRIALS_SET.has(k)&&!trialsOn())||(SET2.has(k)&&!set2On())||(SET3.has(k)&&!set3On())};
 const hiddenLabel=id=>trialsHidden(id)?"A card you don't have access to":id;
 /* a deck row from someone else (Best Decks, Community, profiles): hidden when it uses a card the viewer can't see */
 /* Best Decks and Community Decks never list Trials parties (2 Heroes), with or without access */
@@ -122,7 +127,7 @@ function tokenStatLine(c){if(c.tkind==="Summon")return c.str+"/"+c.hp;if(c.tkind
 const sortName=n=>n.replace(/^"|"$/g,"").toLowerCase();
 const costNum=c=>c.cost==="X"?99:(c.cost===""?-1:+c.cost);
 const maxCopies=c=>c.sup==="Legendary"?1:3;
-const clsOrder=c=>c==="Generic"?99:CLASSES.includes(c)?CLASSES.indexOf(c):CLASSES.length+Math.max(0,SET2_CLASSES.indexOf(c));
+const clsOrder=c=>c==="Generic"?99:CLASSES.includes(c)?CLASSES.indexOf(c):CLASSES.length+(SET3_CLASSES.includes(c)?SET2_CLASSES.length+SET3_CLASSES.indexOf(c):Math.max(0,SET2_CLASSES.indexOf(c)));
 const DECK_SIZE=50;
 /* tokens a deck can make: one entry per token, count = what every copy of every source makes */
 function tokensFor(d){
@@ -208,7 +213,7 @@ function saveDraft(){store.set("cq.draft",S.deck)}
 if(fixRenames(S.deck))saveDraft();
 const deckTotal=d=>Object.values(d.cards).reduce((a,b)=>a+b,0);
 const partyClasses=d=>[...new Set(d.heroes.map(h=>BYID.get(h)?.cls).filter(Boolean))];
-function allowed(c,d){return c.cls==="Generic"||partyClasses(d).includes(c.cls)}
+function allowed(c,d){return c.cls==="Generic"||partyClasses(d).includes(c.cls)||(c.kind==="equip"&&c.cls==="Paladin"&&d.heroes.includes("h:Eliazar the Fallen"))} /* Set 3: Eliazar the Fallen can equip Paladin equipment (Level 3) */
 /* ---------- Nov 24: sideboards for Best-of-3 matches (admins only while it's tested). d.side={heroes:["h:Name"],cards:{id:n}}.
    Up to 10 cards counting a Hero; at most 1 Hero. Copy limits count the deck and sideboard together. ---------- */
 const SIDE_MAX=10;
@@ -321,14 +326,14 @@ function setSession(session){
   S.me=u?{email:u.email||"",name:(u.user_metadata&&u.user_metadata.display_name)||discordOf(u)||String(u.email||"player").split("@")[0],discord:discordOf(u),hasEmail:(u.identities||[]).some(x=>x.provider==="email")}:null;
   S.mode=u?"account":"local";
   if(S.uid===lastUid){renderAcct();return}
-  lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false,trials:false};syncTrials();showAdminLink();if(u)loadAccess();if(window.CQProf)window.CQProf.onSession();
+  lastUid=S.uid;S.commMine=undefined;S.access={admin:false,set2:false,set3:false,trials:false};syncTrials();showAdminLink();if(u)loadAccess();if(window.CQProf)window.CQProf.onSession();
   if(u)loadDecks().then(()=>{try{if(window.CQTut)window.CQTut.onAccount()}catch(e){console.warn(e)}});else{S.decks=localDecks();setTimeout(rebuildPrompt,50)}
   renderAcct();render();
 }
 /* Admin and Set 2 access (Supabase RPC my_access; see "Admin Panel SQL" in the project). Signed out or no SQL yet = no access. */
-async function loadAccess(){const uid=S.uid;let a={admin:false,set2:false,trials:false};
-  try{const{data,error}=await SB.rpc("my_access");if(!error&&data)a={admin:!!data.admin,set2:!!(data.set2||data.admin),trials:!!(data.trials||data.admin)}}catch(e){}
-  if(uid!==S.uid)return;S.access=a;syncTrials();showAdminLink();if(["catalog","build","admin","rules","quickstart","trials-rules","set2-rules","best","community","decks","changelog","leaderboard","player"].includes(S.view))render()}
+async function loadAccess(){const uid=S.uid;let a={admin:false,set2:false,set3:false,trials:false};
+  try{const{data,error}=await SB.rpc("my_access");if(!error&&data)a={admin:!!data.admin,set2:!!(data.set2||data.admin),set3:!!(data.set3||data.admin),trials:!!(data.trials||data.admin)}}catch(e){}
+  if(uid!==S.uid)return;S.access=a;syncTrials();showAdminLink();if(["catalog","build","admin","rules","quickstart","trials-rules","set2-rules","set3-rules","best","community","decks","changelog","leaderboard","player"].includes(S.view))render()}
 function showAdminLink(){const l=document.getElementById("adminTab");if(l)l.hidden=!(S.access&&S.access.admin)}
 async function loadDecks(){
   /* own decks only (the profiles update adds a public-read policy, so filter by user); is_private may not exist before the Profiles SQL runs */
@@ -599,9 +604,9 @@ function artCardHTML(c,o,tag,attrs){
 }
 const kindRank=c=>c.kind==="hero"?0:c.kind==="token"?2:1;
 /* Set filter (Nov 15): Set 1 (main game), Set 2 (hidden playtest set), Trials module. Only sets this account can see are offered. */
-const setKey=c=>c.set===2?"2":c.set==="trials"?"trials":"1";
+const setKey=c=>c.set===3?"3":c.set===2?"2":c.set==="trials"?"trials":"1";
 const trialSetOpts=()=>{const seen=new Map();TRIALS_OBJS.forEach(c=>{if(c.trial&&!seen.has(c.trial))seen.set(c.trial,c.trialTag)});return[...seen.entries()].sort((x,y)=>x[0]-y[0]).map(([t,lab])=>["trial:"+t,"· "+lab])};
-const setOpts=()=>[["all","All sets"],["1","Set 1"],...(set2On()?[["2","Set 2"]]:[]),...(trialsOn()?[["trials","Trials module (all Trials)"],...trialSetOpts()]:[])];
+const setOpts=()=>[["all","All sets"],["1","Set 1"],...(set2On()?[["2","Set 2"]]:[]),...(set3On()&&SET3.size?[["3","Set 3"]]:[]),...(trialsOn()?[["trials","Trials module (all Trials)"],...trialSetOpts()]:[])];
 const fixSet=f=>{if(f.type==="Trials"){f.type="all";f.set="trials"}if(!f.set||!setOpts().some(o=>o[0]===f.set))f.set="all"};
 const setSel=(id,f)=>setOpts().length>2?`<label class="field" for="${id}">Set ${selectHTML(id,id,f.set,setOpts())}</label>`:"";
 function filterSort(list,f){
@@ -650,6 +655,7 @@ function render(){
   else if(S.view==="rules"){v.innerHTML=viewRules();if(!S.rules)loadRules()}
   else if(S.view==="quickstart"){v.innerHTML=viewQuick();if(!S.quick)loadQuick()}
   else if(S.view==="trials-rules"){if(trialsOn()){v.innerHTML=viewTrialsRules();if(!S.trules)loadTrialsRules()}else{v.innerHTML=viewRules();if(!S.rules)loadRules()}}
+  else if(S.view==="set3-rules"){if(set3On()){v.innerHTML=viewSet3Rules();if(!S.s3rules)loadSet3Rules()}else{v.innerHTML=viewRules();if(!S.rules)loadRules()}}
   else if(S.view==="set2-rules"){if(set2On()){v.innerHTML=viewSet2Rules();if(!S.s2rules)loadSet2Rules()}else{v.innerHTML=viewRules();if(!S.rules)loadRules()}}
   else if(S.view==="play"){if(window.CQPlay)window.CQPlay.mount(v);else v.innerHTML='<p class="lede">Loading the game…</p>'}
   else if(S.view==="changelog"){if(window.CQLog)window.CQLog.mount(v);else v.innerHTML='<p class="lede">Loading the changelog…</p>'}
@@ -723,7 +729,7 @@ function viewCatalog(){
   const all=[...HEROES,...CARDS,...TOKENS];
   const list=filterSort(all,f);
   return`<div class="bhead"><h1>Cards</h1><a href="#build" class="btn primary go newdeck build-go">Build a Deck</a></div>
-  <p class="lede">Every Hero, card, piece of equipment and token in Riverstead. ${HEROES.filter(canSee).length} Heroes, ${CARDS.filter(canSee).length} deck cards, ${TOKENS.filter(canSee).length} tokens.${SET2.size&&S.access&&S.access.set2?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===2).length} Set 2 cards (hidden playtest set).`:""}${trialsOn()&&TRIALS_OBJS.length?` Includes ${TRIALS_OBJS.length} Trials module cards (hidden; pick Trials module under Set).`:""}</p>
+  <p class="lede">Every Hero, card, piece of equipment and token in Riverstead. ${HEROES.filter(canSee).length} Heroes, ${CARDS.filter(canSee).length} deck cards, ${TOKENS.filter(canSee).length} tokens.${SET2.size&&S.access&&S.access.set2?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===2).length} Set 2 cards (hidden playtest set).`:""}${SET3.size&&set3On()?` Includes ${[...HEROES,...CARDS,...TOKENS].filter(c=>c.set===3).length} Set 3 cards (hidden playtest set).`:""}${trialsOn()&&TRIALS_OBJS.length?` Includes ${TRIALS_OBJS.length} Trials module cards (hidden; pick Trials module under Set).`:""}</p>
   <div class="bar">${classChips(f.cls,"cat-cls",[...visClasses(),"Generic"])}</div>
   <div class="bar">
     <label class="field" for="cat-q">Search <input type="search" id="cat-q" data-act="cat-q" value="${esc(f.q)}" placeholder="Name or rules text"></label>
@@ -738,7 +744,7 @@ const HSTATS=[["STR","str"],["DEF","def"],["AURA","aura"],["HP","hp"]];
 function heroStatsHTML(h,cls="hstats"){return`<span class="${cls}">${HSTATS.map(([k,f])=>`<span><b>${esc(h[f])}</b><i>${k}</i></span>`).join("")}</span>`}
 /* Digital Hero Card (same look as the Play tab's compact Hero Cards): name bar + Aura gem, pixel art, STR/HP/DEF squares, Ability on hover */
 function heroDigitalHTML(h,slot){
-  const src=`${ICON_BASE}art/hero-pix/${artKey(h.name)}-pix.png?v=${ART_VER}`,ico=`${ICON_BASE}ico-${String(h.cls||"generic").toLowerCase()}.png`;
+  const src=`${ICON_BASE}art/hero-pix/${artKey(h.name)}-pix.png?v=${ART_VER}`,ico=`${ICON_BASE}ico-${String(h.cls||"generic").toLowerCase().replace(/ /g,"-")}.png`;
   const sq=(f,l,t)=>`<span class="dh-sq dh-${f}" title="${t} ${esc(h[f])}"><b>${esc(h[f])}</b><i>${l}</i></span>`;
   return`<div class="dh-card">${slot?`<span class="dh-slot">${esc(slot)}</span>`:""}
     <div class="dh-nb"><img class="dh-ci" src="${ico}" alt="${esc(h.cls)}"><span class="dh-nm${h.name.length>17?" xl":h.name.length>13?" l":""}">${esc(h.name)}</span><span class="dh-au" title="Aura ${esc(h.aura)}">${esc(h.aura)}</span></div>
@@ -919,7 +925,7 @@ function bestDeck(r){const d={id:"best:"+r.deck_key,name:r.deck_name||"Untitled 
 /* update 27: Decklists show the deck's three Heroes as pixel face avatars, with the class icon and Hero name under each (click to inspect) */
 function deckFacesHTML(hs){return`<div class="dl-faces">${hs.map(h=>`<button type="button" class="dl-face" style="--cc:${cc(h.cls)}" data-act="inspect" data-id="${esc(h.id)}" title="${esc(h.name)} · ${esc(h.cls)} Hero">
   <span class="dl-av"><img src="${ICON_BASE}art/hero-pix/${artKey(h.name)}-pix.png?v=${ART_VER}" alt="" width="207" height="167" loading="lazy" decoding="async"></span>
-  <span class="dl-fn"><img class="dl-ci" src="${ICON_BASE}ico-${String(h.cls||"generic").toLowerCase()}.png" alt="${esc(h.cls)}" width="16" height="16"><span>${esc(h.name)}</span></span></button>`).join("")}</div>`}
+  <span class="dl-fn"><img class="dl-ci" src="${ICON_BASE}ico-${String(h.cls||"generic").toLowerCase().replace(/ /g,"-")}.png" alt="${esc(h.cls)}" width="16" height="16"><span>${esc(h.name)}</span></span></button>`).join("")}</div>`}
 function bestCard(r,rank){const d=bestDeck(r);const hs=d.heroes.map(h=>BYID.get(h)).filter(Boolean);
   const players=(r.players||[]).filter(Boolean);const pl=players.slice(0,3).map(esc).join(", ")+(players.length>3?` +${players.length-3} more`:"");
   return`<article class="deck best">
@@ -1385,7 +1391,7 @@ function mdToHtml(md){
 async function loadRules(){
   try{const r=await fetch("assets/rules.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.rules=mdToHtml(await r.text());S.rulesErr=false}
   catch(e){S.rulesErr=true}
-  if(S.view==="rules"||S.view==="trials-rules"||S.view==="set2-rules")render();
+  if(S.view==="rules"||S.view==="trials-rules"||S.view==="set2-rules"||S.view==="set3-rules")render();
 }
 function viewRules(){
   if(!S.rules)return`${rulesSubtabs("rules")}<h1>Rules</h1><p class="lede">${S.rulesErr?"The rules didn't load. Check your connection and reload the page.":"Loading the rules…"}</p>`;
@@ -1402,7 +1408,7 @@ function viewRules(){
   </div>`;
 }
 /* Rules sub-menu: the full rules and the Quick Start guide (assets/quickstart.md, a separate document) */
-function rulesSubtabs(cur){return`<nav class="subtabs" aria-label="Rules pages"><a href="#rules"${cur==="rules"?' aria-current="page"':""}>Full Rules</a><a href="#quickstart"${cur==="quickstart"?' aria-current="page"':""}>Quick Start</a>${trialsOn()?`<a href="#trials-rules"${cur==="trials-rules"?' aria-current="page"':""}>Trials Supplement</a>`:""}${set2On()?`<a href="#set2-rules"${cur==="set2-rules"?' aria-current="page"':""}>Set 2 Supplement</a>`:""}</nav>`}
+function rulesSubtabs(cur){return`<nav class="subtabs" aria-label="Rules pages"><a href="#rules"${cur==="rules"?' aria-current="page"':""}>Full Rules</a><a href="#quickstart"${cur==="quickstart"?' aria-current="page"':""}>Quick Start</a>${trialsOn()?`<a href="#trials-rules"${cur==="trials-rules"?' aria-current="page"':""}>Trials Supplement</a>`:""}${set2On()?`<a href="#set2-rules"${cur==="set2-rules"?' aria-current="page"':""}>Set 2 Supplement</a>`:""}${set3On()?`<a href="#set3-rules"${cur==="set3-rules"?' aria-current="page"':""}>Set 3 Supplement</a>`:""}</nav>`}
 /* Set Two Rules Supplement (assets/set2-rules.md): only for players with Set 2 access; everyone else gets the full rules */
 S.s2rules=null;S.s2rulesErr=false;
 async function loadSet2Rules(){
@@ -1414,6 +1420,18 @@ function viewSet2Rules(){
   if(!S.s2rules)return`${rulesSubtabs("set2-rules")}<h1>Set Two Rules Supplement</h1><p class="lede">${S.s2rulesErr?"The Set 2 Supplement didn't load. Check your connection and reload the page.":"Loading…"}</p>`;
   const R=S.s2rules;
   return`${rulesSubtabs("set2-rules")}<h1>${R.title||"Set Two Rules Supplement"}</h1>${R.sub.map(x=>`<p class="lede">${x}</p>`).join("")}<article class="rules quick">${R.html}</article>`;
+}
+/* Set Three Rules Supplement (assets/set3-rules.md): only for players with Set 3 access (admins for now); everyone else gets the full rules */
+S.s3rules=null;S.s3rulesErr=false;
+async function loadSet3Rules(){
+  try{const r=await fetch("assets/set3-rules.md",{cache:"no-cache"});if(!r.ok)throw new Error(r.status);S.s3rules=mdToHtml(await r.text());S.s3rulesErr=false}
+  catch(e){S.s3rulesErr=true}
+  if(S.view==="set3-rules")render();
+}
+function viewSet3Rules(){
+  if(!S.s3rules)return`${rulesSubtabs("set3-rules")}<h1>Set Three Rules Supplement</h1><p class="lede">${S.s3rulesErr?"The Set 3 Supplement didn't load. Check your connection and reload the page.":"Loading…"}</p>`;
+  const R=S.s3rules;
+  return`${rulesSubtabs("set3-rules")}<h1>${R.title||"Set Three Rules Supplement"}</h1>${R.sub.map(x=>`<p class="lede">${x}</p>`).join("")}<article class="rules quick">${R.html}</article>`;
 }
 /* Trials Module Supplement (assets/trials-rules.md): only for players with Trials access; everyone else gets the full rules */
 S.trules=null;S.trulesErr=false;
@@ -1599,7 +1617,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){const ms=document.q
   if(e.key==="d"||e.key==="D"){e.preventDefault();handDraw()}else if(e.key==="n"||e.key==="N"){e.preventDefault();if(S.hand){dealHand(S.hand.d);renderHand()}}});
 function route(){const h=location.hash.replace("#","");const pm=/^player\/(.+)$/.exec(h);if(pm){try{S.playerName=decodeURIComponent(pm[1])}catch(e){S.playerName=pm[1]}}
   const bm=/^blog(?:\/(.+))?$/.exec(h);S.blogSlug=bm?bm[1]||"":""; /* Nov 19: Blog */
-  S.view=bm?"blog":pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","trials-rules","set2-rules","play","best","community","changelog","admin","leaderboard","thanks"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
+  S.view=bm?"blog":pm?"player":h===""?"home":["home","learn","catalog","build","decks","account","rules","quickstart","trials-rules","set2-rules","set3-rules","play","best","community","changelog","admin","leaderboard","thanks"].includes(h)?h:"catalog";if(S.view==="build"&&HN(S.deck)===3&&S.b.step!=="heroes")S.b.step="cards";render();}
 window.addEventListener("hashchange",()=>{route();scrollTo(0,0)});
 (function(){const p=new URLSearchParams(location.search).get("deck");if(!p)return;const d=readShare(p);history.replaceState(null,"",location.pathname+"#build");
   if(d){S.deck=d;S.dirty=true;saveDraft();setTimeout(()=>toast("Shared deck loaded. Press Save deck to keep a copy."),300)}})();

@@ -99,8 +99,8 @@ function siteTab(){return`<p class="lede cl-lede">Changes to the website, the ru
 /* Set 2 tab: only for accounts with Set 2 access (admins, or the Set 2 box in Admin > Users) */
 const s2on=()=>typeof S!=="undefined"&&!!(S.access&&S.access.set2);
 const S2=()=>(L().set2)||{updates:[],cards:[],site:[]};
-function set2Tab(){const d=S2(),cols=L().cols;const rs=d.cards.map(r=>{const o={};cols.forEach((c,i)=>o[c]=r[i]);return o});const by={};rs.forEach(r=>(by[r.u]=by[r.u]||[]).push(r));
-  return`<p class="lede cl-lede">Set 2 is in closed playtesting. Only accounts with Set 2 access see these entries. Rules: the Set Two Rules Supplement.</p>`+
+function set2Tab(D,label){const d=D||S2(),cols=L().cols;const rs=d.cards.map(r=>{const o={};cols.forEach((c,i)=>o[c]=r[i]);return o});const by={};rs.forEach(r=>(by[r.u]=by[r.u]||[]).push(r));
+  return`<p class="lede cl-lede">${label||"Set 2 is in closed playtesting. Only accounts with Set 2 access see these entries. Rules: the Set Two Rules Supplement."}</p>`+
   d.site.map(e=>`<section class="cl-upd cl-site"><h2>${E(e.title)} <small>${E(e.date)}${e.ver?` · v=${E(e.ver)}`:""}</small></h2>
   <ul>${e.items.map(([a,t])=>`<li><span class="cl-area a-${a.replace(/\s+/g,"").toLowerCase()}">${E(a)}</span> ${E(t)}</li>`).join("")}</ul></section>`).join("")+
   d.updates.filter(u=>by[u.id]).map(u=>`<section class="cl-upd"><h2>${E(u.title)} <small>${E(u.date)}</small></h2>
@@ -108,12 +108,16 @@ function set2Tab(){const d=S2(),cols=L().cols;const rs=d.cards.map(r=>{const o={
     ${by[u.id].map(r=>`<tr><td class="cl-n"><span class="cl-cls" style="--cc:${typeof cc==="function"?cc(r.cls):"#777"};--ci:${typeof ci==="function"?ci(r.cls):"none"}"><i class="dot"></i></span><b>${E(r.n)}</b><span class="cl-meta">${E(r.k)}${r.cls?" · "+E(r.cls):""}</span><span class="cl-tag t-${r.tag.toLowerCase()}">${TAGS[r.tag]}</span></td>
       <td class="cl-v">${E(r.v)||"—"}</td><td class="cl-o" data-h="Old">${cell(r.ch,"o")}</td><td class="cl-nw" data-h="New">${cell(r.ch,"n")}</td><td class="cl-r" data-h="Reason">${r.r?E(r.r):'<span class="cl-none">—</span>'}</td></tr>`).join("")}
     </tbody></table></div></section>`).join("")}
-const body=()=>st.tab==="set2"&&s2on()?set2Tab():st.tab==="site"?siteTab():cardsTab();
+/* Set 3 tab (Nov 27, 2026): admins, or accounts with Set 3 access */
+const s3on=()=>typeof S!=="undefined"&&!!(S.access&&(S.access.set3||S.access.admin));
+const S3=()=>(L().set3)||{updates:[],cards:[],site:[]};
+const body=()=>st.tab==="set3"&&s3on()?set2Tab(S3(),"Set 3 is in closed playtesting. Only accounts with Set 3 access see these entries. Rules: the Set Three Rules Supplement."):st.tab==="set2"&&s2on()?set2Tab():st.tab==="site"?siteTab():cardsTab();
 function view(){return`<h1>Changelog</h1><p class="lede">Every card change since the first version of the cards, and every update to this site.</p>
   <div class="chips cl-tabs" role="tablist">
     <button type="button" class="chip" role="tab" data-cl="tab" data-v="cards" aria-selected="${st.tab==="cards"}" aria-pressed="${st.tab==="cards"}">Cards Change Log</button>
     <button type="button" class="chip" role="tab" data-cl="tab" data-v="site" aria-selected="${st.tab==="site"}" aria-pressed="${st.tab==="site"}">Website Log</button>
     ${s2on()?`<button type="button" class="chip" role="tab" data-cl="tab" data-v="set2" aria-selected="${st.tab==="set2"}" aria-pressed="${st.tab==="set2"}">Set 2</button>`:""}
+    ${s3on()?`<button type="button" class="chip" role="tab" data-cl="tab" data-v="set3" aria-selected="${st.tab==="set3"}" aria-pressed="${st.tab==="set3"}">Set 3</button>`:""}
   </div><div id="cl-body">${body()}</div>`}
 
 let root=null;

@@ -1558,14 +1558,14 @@ const SOUL_BTNS=[[1,"soul-aura","+2 Aura: your party gains 2 Aura"],[2,"soul-str
 const SOUL_CLS=new Set(["artificer","barbarian","bard","blacksmith","cleric","druid","generic","mage","monk","necromancer","paladin","ranger","rogue","warlock"]);
 function soulImg(cls,img){const c=String(cls||"generic").toLowerCase();const k=String(img).replace(/^soul-/,"");const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";return`${base}art/ui/soul/${SOUL_CLS.has(c)?c:"generic"}-${k}.webp?v=1`}
 function soulBackHTML(h,sopts,theirs){const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";
-  const ico=`${base}ico-${String(h.cls||"generic").toLowerCase()}.png`;
+  const ico=`${base}ico-${String(h.cls||"generic").toLowerCase().replace(/ /g,"-")}.png`;
   const btns=h.surr?"":SOUL_BTNS.map(([ch,img,lbl])=>{const o=sopts.find(x=>x.ch===ch);
     return`<button type="button" class="sb-opt${o?" on":""}"${o?` data-pa="do" data-a='${esc(JSON.stringify(o))}'`:" disabled"} title="${esc(lbl)}${o?"":theirs?" (opponent's soul)":" (when you have priority)"}" aria-label="${esc(lbl)}"><img src="${soulImg(h.cls,img)}" alt="" draggable="false"></button>`}).join("");
-  return`<div class="hk-nb sb-nb"><img class="hk-ci" src="${ico}" alt="${esc(h.cls)}"><span class="hk-nm">${h.surr?"Soul Surrendered":"Surrender Soul"}</span></div>
+  return`<div class="hk-nb sb-nb"><img class="hk-ci" src="${ico}" alt="${esc(h.cls)}"><span class="hk-nm">${h.noSoul?"No Soul (Blight)":h.surr?"Soul Surrendered":"Surrender Soul"}</span></div>
     <div class="sb-opts">${btns}</div><span class="sb-who">${esc(h.name)}${h.surr?" · can't be revived":""}</span>`}
 function heroCardHTML(s,h,d,st,extra,soul,hacts,sback){
   const src=`${typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/"}art/hero-pix/${artKey(d.name)}-pix.png?v=${typeof ART_VER!=="undefined"?ART_VER:1}`;
-  const ico=`${typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/"}ico-${String(h.cls||d.cls||"generic").toLowerCase()}.png`;
+  const ico=`${typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/"}ico-${String(h.cls||d.cls||"generic").toLowerCase().replace(/ /g,"-")}.png`;
   /* remember what was on screen last render: newly changed numbers pulse, a Hero that just died flips over */
   if(U.heroSeenKey!==U.gameKey){U.heroSeen={};U.heroFx={};U.heroSeenKey=U.gameKey}
   const seen=U.heroSeen,fx=U.heroFx[h.uid]||(U.heroFx[h.uid]={});const prev=seen[h.uid];const now=Date.now();

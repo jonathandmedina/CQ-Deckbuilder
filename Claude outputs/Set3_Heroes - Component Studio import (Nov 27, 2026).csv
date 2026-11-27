@@ -1,0 +1,13 @@
+quantity,name,Class,STR,DEF,Aura,HP,Rules,Image,version,Hidden
+1,Eliazar the Fallen,Death Knight,1,1,1,15,"<Lvl_3_Frame/> This hero can equip Paladin equipment.
+<Lvl_6_Frame/> This hero's attacks deal damage to each enemy hero.",,v1,TRUE
+1,Grave Lancer,Death Knight,2,0,1,17,"Blight (This hero has no soul. A hero it kills loses its soul. Neither can be revived or surrendered.)
+<Lvl_3_Frame/> This hero's attacks have piercing. (Their damage ignores all Defense.)",,v1,TRUE
+1,Hollow Blade,Death Knight,1,1,1,17,"Blight (This hero has no soul. A hero it kills loses its soul. Neither can be revived or surrendered.)
+Swords this hero equips cost 1 less Aura.
+<Lvl_3_Frame/> While this hero has a Sword equipped, it gets +2 Strength.",,v1,TRUE
+1,Soul Harvester,Death Knight,1,1,1,17,"Blight (This hero has no soul. A hero it kills loses its soul. Neither can be revived or surrendered.)
+Whenever a hero dies, this hero levels up.
+<Lvl_6_Frame/> Whenever this hero kills an enemy, ready it.",,v1,TRUE
+1,Morwen Duskbane,Death Knight,1,1,1,17,"Blight (This hero has no soul. A hero it kills loses its soul. Neither can be revived or surrendered.)
+Status counters can't be put on this hero.",,v1,TRUE

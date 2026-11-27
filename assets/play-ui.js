@@ -1555,8 +1555,8 @@ const HK_COL={str:"#b3121a",hp:"#7f7fd8",def:"#3f9b3f"};
    and the three soul buttons, which light up only when you can surrender (your priority in the Battle Phase) */
 const SOUL_BTNS=[[1,"soul-aura","+2 Aura: your party gains 2 Aura"],[2,"soul-str","+2 STR: target ally gains +2 Strength this turn"],[5,"soul-def","+2 DEF: target ally gains +2 Defense this turn"]];
 /* Nov 26: each class has its own Surrender Soul buttons (art/ui/soul/<class>-aura|str|def.webp) to match its frame; other classes use the Generic set */
-const SOUL_CLS=new Set(["artificer","barbarian","bard","blacksmith","cleric","druid","generic","mage","monk","necromancer","paladin","ranger","rogue","warlock"]);
-function soulImg(cls,img){const c=String(cls||"generic").toLowerCase();const k=String(img).replace(/^soul-/,"");const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";return`${base}art/ui/soul/${SOUL_CLS.has(c)?c:"generic"}-${k}.webp?v=1`}
+const SOUL_CLS=new Set(["artificer","barbarian","bard","blacksmith","cleric","druid","generic","mage","monk","necromancer","paladin","ranger","rogue","warlock","death-knight"]);
+function soulImg(cls,img){const c=String(cls||"generic").toLowerCase().replace(/ /g,"-");const k=String(img).replace(/^soul-/,"");const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";return`${base}art/ui/soul/${SOUL_CLS.has(c)?c:"generic"}-${k}.webp?v=1`}
 function soulBackHTML(h,sopts,theirs){const base=typeof ICON_BASE!=="undefined"?ICON_BASE:"assets/";
   const ico=`${base}ico-${String(h.cls||"generic").toLowerCase().replace(/ /g,"-")}.png`;
   const btns=h.surr?"":SOUL_BTNS.map(([ch,img,lbl])=>{const o=sopts.find(x=>x.ch===ch);

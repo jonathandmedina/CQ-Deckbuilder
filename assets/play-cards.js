@@ -95,6 +95,11 @@ def("Bewilder",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} 
 def("Brain Rot",{t:[t("enemyPlayer","target player")],run(c){log(c,`${c.op.name} reveals their hand.`);E.pushChoose(c.s,c.pid,{title:"Brain Rot: discard a Tactic, Spell or Song",cards:c.op.hand.filter(x=>/Tactic|Spell|Song/.test(E.DB[x.id].type)).map(x=>x.uid),min:1,max:1,op:"opDiscard",target:E.oppOf(c.s,c.pid)})}});
 const curse=(name,tg)=>def(name,{t:[tg||HERO],run(c){const h=c.t[0];if(!h)return"stay";h.ench.push({uid:c.inst.uid,id:c.def.id,name:c.def.name,kind:"card",owner:c.pid,ctrl:c.pid,cardUid:c.inst.uid});log(c,`${c.def.name} is attached to ${h.name}.`);return"stay"}});
 ["Aura Leech","Blood Aura","Burden","Slow Down","Chains of Darkness","Distract","Memory Loss","Weaken","Life Boost","Sanctuary","Arrested Development"].forEach(n=>curse(n));
+/* ===== Set 3: Death Knight (Nov 27, 2026) ===== */
+def("Grave Drain",{t:[EN],run(c){const d=D(c,c.t[0],3);if(d>0&&c.actor)heal(c,c.actor,d)}});
+def("Into the Gloamreach",{t:[HERO],run(c){const h=c.t[0];if(!h||h.dead)return;h.lastHit={blight:true,by:c.actor?c.actor.uid:null};h.dmg=E.maxHp(c.s,h);log(c,`Into the Gloamreach: ${h.name} dies.`);E.checkDeaths(c.s)}});
+curse("Curse of Nothingness");
+["Blood Rune","Protect Rune","Sky Rune"].forEach(n=>{S[n]={}}); /* Runes are evoked by Runic weapons (engine, startAttack) */
 /* Nov 12, 2026: Mark of Doom attaches to an enemy Hero only */
 curse("Mark of Doom",t("enemy","target enemy")); /* Update 51: any enemy, summons and Trials bosses too */
 /* ===== Cleric ===== */

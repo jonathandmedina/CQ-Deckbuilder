@@ -54,4 +54,37 @@ ok(E.DB["h:Grave Lancer"].hp===17&&E.DB["h:Eliazar the Fallen"].hp===15,"Health 
  el.lvl=6;E.addMod(el,{str:4});const hps=s.p[1].heroes.map(h=>E.hp(s,h));const t=H(s,1,"Arcane Scholar");
  E.act(s,0,{type:"attack",att:el.uid,targets:[t.uid]});drain(s);const lost=s.p[1].heroes.map((h,i)=>hps[i]-E.hp(s,h));ok(lost.every(x=>x>0),"Level 6: every enemy Hero takes damage ("+lost.join(",")+")");
  ok(s.p[1].heroes.every(h=>!h.noSoul),"Eliazar's kills aren't Blight");}
+
+/* 11. Set 3 cards (Nov 27, 2026) */
+const play=(s,pid,uid,targets,actor)=>{const r=E.act(s,pid,{type:"play",uid,targets,actor});drain(s);return r};
+const give=(s,pid,name,u)=>{const c={uid:u,id:name,owner:pid};s.p[pid].hand.push(c);return c};
+{const s=mk(DK,FOES);const gl=H(s,0,"Grave Lancer"),v=H(s,1,"Dark Fang");gl.dmg=5;give(s,0,"Grave Drain","gd1");
+ const opt={type:"play",uid:"gd1",targets:[v.uid]};
+ const hp0=E.hp(s,v),me0=E.hp(s,gl);{const r=E.act(s,0,opt);ok(r.ok,"play "+opt.uid+" "+(r.err||""));drain(s)}ok(hp0-E.hp(s,v)===3&&E.hp(s,gl)-me0===3,"Grave Drain: 3 damage, caster heals 3 ("+(hp0-E.hp(s,v))+","+(E.hp(s,gl)-me0)+")");}
+{const s=mk(DK,FOES);const gl=H(s,0,"Grave Lancer"),v=H(s,1,"Dark Fang");v.dmg=E.maxHp(s,v)-2;give(s,0,"Grave Drain","gd2");
+ const opt={type:"play",uid:"gd2",targets:[v.uid]};{const r=E.act(s,0,opt);ok(r.ok,"play "+opt.uid+" "+(r.err||""));drain(s)}ok(v.dead&&v.noSoul,"Grave Drain kill is a Blight kill");}
+{const s=mk(DK,FOES);ok(E.cardCost(s,0,H(s,0,"Grave Lancer"),E.DB["Into the Gloamreach"])===12,"Gloamreach costs 12 with no missing souls");
+ E.damage(s,{name:"Fireball"},H(s,0,"Hollow Blade"),99,{card:true});ok(E.missingSouls(s)===1,"a dead Death Knight is a missing soul");
+ ok(E.cardCost(s,0,H(s,0,"Grave Lancer"),E.DB["Into the Gloamreach"])===10,"Gloamreach costs 2 less per missing soul");
+ s.p[0].aura=12;give(s,0,"Into the Gloamreach","ig1");const v=H(s,1,"Divine Knight");const opt={type:"play",uid:"ig1",targets:[v.uid]};
+ {const r=E.act(s,0,opt);ok(r.ok,"play "+opt.uid+" "+(r.err||""));drain(s)}ok(v.dead&&v.noSoul&&s.p[0].aura===2,"Gloamreach: the Hero dies and loses its soul; paid 10 Aura");}
+{const s=mk(DK,FOES);const v=H(s,1,"Arcane Scholar");give(s,0,"Curse of Nothingness","cn1");const opt={type:"play",uid:"cn1",targets:[v.uid]};
+ {const r=E.act(s,0,opt);ok(r.ok,"play "+opt.uid+" "+(r.err||""));drain(s)}ok(v.ench.some(e=>e.name==="Curse of Nothingness"),"Curse of Nothingness attaches");
+ E.damage(s,{name:"Fireball"},v,99,{card:true});ok(v.dead&&v.noSoul,"cursed Hero dies with no soul (any killer)");}
+/* The Blackblade and Runes */
+{const s=mk(DK,FOES);const hb=H(s,0,"Hollow Blade");s.p[0].heroes=[hb,H(s,0,"Grave Lancer"),H(s,0,"Soul Harvester")];
+ const bb=E.eqObjFromCard(s,0,{uid:"bb1",id:"The Blackblade",owner:0});ok(E.eqCost(s,hb,bb)===3,"The Blackblade is a Sword (Hollow Blade pays 3)");E.equipTo(s,hb,bb);
+ ["Blood Rune","Protect Rune","Sky Rune"].forEach((n,i)=>s.p[0].inv.push({uid:"rn"+i,id:n,kind:"card",fd:false,name:n,owner:0,ctr:{}}));
+ hb.dmg=6;const v=H(s,1,"Arcane Scholar");const hand0=s.p[0].hand.length;
+ E.act(s,0,{type:"attack",att:hb.uid,targets:[v.uid]});const q=s.pend[0];ok(q&&q.op==="evokeRune"&&q.opts.length===4,"Runic: asks which Rune to evoke ("+(q&&q.opts.length)+")");
+ if(q)E.act(s,0,{type:"ask",i:0});drain(s);ok(E.hp(s,hb)>E.maxHp(s,hb)-6,"Blood Rune: lifelink healed the attacker");
+ ok(s.p[0].inv.some(x=>x.name==="Blood Rune"),"the Rune stays in inventory");
+ hb.ex=false;s.prio=0;E.act(s,0,{type:"attack",att:hb.uid,targets:[v.uid]});ok(!(s.pend[0]&&s.pend[0].op==="evokeRune"),"once each turn without the upgrade");drain(s);}
+{const s=mk(DK,FOES);const hb=H(s,0,"Hollow Blade");s.p[0].heroes=[hb,H(s,0,"Grave Lancer"),H(s,0,"Soul Harvester")];
+ s.upg=s.upg||{};const bb=E.eqObjFromCard(s,0,{uid:"bb2",id:"The Blackblade",owner:0});s.upg["bb2"]=1;E.equipTo(s,hb,bb);
+ ["Protect Rune","Sky Rune"].forEach((n,i)=>s.p[0].inv.push({uid:"rp"+i,id:n,kind:"card",fd:false,name:n,owner:0,ctr:{}}));
+ const v=H(s,1,"Arcane Scholar");const hand0=s.p[0].hand.length;E.act(s,0,{type:"attack",att:hb.uid,targets:[v.uid]});
+ let asks=0;while(s.pend[0]&&s.pend[0].op==="evokeRune"){asks++;E.act(s,0,{type:"ask",i:0})}
+ ok(asks===2,"upgraded: evoke any number of Runes ("+asks+")");ok(s.p[0].hand.length===hand0+1,"Sky Rune drew a card");
+ E.addStatus(s,hb,"poison",2);ok(!hb.st.poison,"Protect Rune: no status counters this turn");drain(s);}
 console.log(`Set 3 Death Knight: ${pass} pass, ${fail} fail`);process.exit(fail?1:0);

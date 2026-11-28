@@ -345,7 +345,15 @@ const RAW_CARDS=[
 [2, "Robbed Grave", "1", "", "Spell", "", "Necromancer", "Exhume. (If this card was moved from your library to your discard pile this turn, you may play it from your discard pile.)\nDraw a card. If you played this card from your discard pile, draw 2 cards instead.", 1],
 [2, "Restless Echo", "1", "", "Tactic", "", "Necromancer", "Exhume. (If this card was moved from your library to your discard pile this turn, you may play it from your discard pile.)\nMill 2. If you played this card from your discard pile, also gain 1 Aura. (Move the top 2 cards of your library to your discard pile.)", 1],
 [2, "Soul Lantern", "4", "", "Item", "", "Necromancer", "Mourn. (If you've surrendered a soul this game, you may play this card without paying its Aura cost.)\nAt dawn, gain 1 Aura.", 1],
-[1, "Skeleton Key", "2", "Legendary", "Item", "", "Necromancer", "Exile: Your next town action costs no gold.", 1]];
+[1, "Skeleton Key", "2", "Legendary", "Item", "", "Necromancer", "Exile: Your next town action costs no gold.", 1],
+/* Set 3 (Death Knight cards and Runes, Nov 27, 2026): SET3_CARDS */
+[2, "Grave Drain", "4", "", "Spell", "", "Death Knight", "Blight (If this kills a hero, it loses its soul.)\nDeal 3 damage to target enemy. Heal this hero for the damage dealt.", 1],
+[2, "Into the Gloamreach", "12", "", "Spell", "", "Death Knight", "This spell costs 2 less Aura for each missing soul. (A hero whose soul was surrendered or lost.)\nBlight (If this kills a hero, it loses its soul.)\nTarget hero dies.", 1],
+[2, "Curse of Nothingness", "2", "", "Enchantment", "Curse", "Death Knight", "Enchant target hero. Enchanted hero has no soul. (When it dies, it can't be revived or surrendered.)", 1],
+[2, "Blood Rune", "2", "", "Item", "Rune", "Generic", "Evoke: The attacking hero has lifelink until end of turn. (Damage it deals heals it.) (A Runic weapon evokes Runes when its hero attacks. The Rune stays in your inventory.)", 1],
+[2, "Protect Rune", "2", "", "Item", "Rune", "Generic", "Evoke: Status counters can't be put on the attacking hero until end of turn. (A Runic weapon evokes Runes when its hero attacks. The Rune stays in your inventory.)", 1],
+[2, "Sky Rune", "2", "", "Item", "Rune", "Generic", "Evoke: Draw a card. (A Runic weapon evokes Runes when its hero attacks. The Rune stays in your inventory.)", 1],
+];
 const RAW_HEROES=[
 ["Arcane Scholar", "Mage", "0", "0", "2", "16", "Exhaust: The next Mage card you play costs 2 less Aura this turn.\n{L3} Exhaust: All Mage cards you play cost 1 less Aura this turn.", 2],
 ["Arnett Lifebinder", "Cleric", "1", "0", "1", "16", "1{A}, Exhaust: Heal another target for 2 Health Points.\n{L3} 2{A}, Exhaust: Heal another target for 5 Health Points.", 4],
@@ -479,7 +487,9 @@ const RAW_EQUIP=[
 /* Set 2 (Necromancer, Nov 12, 2026): only shown to accounts with Set 2 access (SET2_CARDS) */
 ["Grave Caller's Wand", "", "Wand", "Necromancer", "When this enters, summon a 1/1 Revenant with impervious. Exhaust the equipped hero. When this is upgraded, summon a 1/1 Revenant with impervious. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)\nWhenever the equipped hero exhausts, target player mills 1. (They move the top card of their library to their discard pile.)", "2", "One-Handed", "0", "0", 2],
 ["Gravedigger's Medallion", "", "Amulet", "Necromancer", "Equipped hero gets +1 Defense. When this enters, you may play a card from your discard pile, paying its Aura cost. When this is upgraded, you may play a card from your discard pile, paying its Aura cost.", "3", "Accessory", "0", "1", 2],
-["Dagger of the Dead", "", "Dagger", "Necromancer", "Exhaust 2 ready Revenants you control: The equipped hero gets +1 Strength until end of turn.", "1", "One-Handed", "0", "0", 3]
+["Dagger of the Dead", "", "Dagger", "Necromancer", "Exhaust 2 ready Revenants you control: The equipped hero gets +1 Strength until end of turn.", "1", "One-Handed", "0", "0", 3],
+/* Set 3 (Nov 27, 2026) */
+["The Blackblade", "Legendary", "Sword", "Death Knight", "Runic (Once each turn, when the equipped hero attacks, you may evoke a Rune in your inventory.)\nEquipped hero gets +3 Strength.", "4", "One-Handed", "3", "0", 1],
 ];
 const RAW_TOKENS=[
 ["Revenant King", "Summon", "Revenant", "Necromancer", "4", "", "4", "0", "", "Impervious. (It can't be dealt damage or destroyed, but it dies if it loses all its Health Points.)", "Revenant King", 1],
@@ -526,7 +536,7 @@ const CARD_RENAMES={"Siphon Life":"Draw Life","Farewell":"Catastrophe","Bloodhow
 /* Set 2: hidden playtest set. Card, Hero or token names listed here only show on the site for admins and players given Set 2 access on the Admin page.
    Note: this file is public, so anyone reading the code can still see these cards. */
 /* Set 3 (Nov 27, 2026): hidden playtest set, admins only until a Set 3 access box exists (Set Three Rules Supplement) */
-const SET3_CARDS=["Eliazar the Fallen","Grave Lancer","Hollow Blade","Soul Harvester","Morwen Duskbane"];
+const SET3_CARDS=["Eliazar the Fallen","Grave Lancer","Hollow Blade","Soul Harvester","Morwen Duskbane","Grave Drain","Into the Gloamreach","Curse of Nothingness","The Blackblade","Blood Rune","Protect Rune","Sky Rune"];
 const SET2_CARDS=["Copper Ingot", "Iron Ingot", "Mithril Ingot", "Clockwork Pair", "Iron Guardians", "Pocket Watch Recipe", "Reclamation Kit Recipe", "Blast Charge Recipe", "Gearwork Hammer Recipe", "Silver Edge Recipe", "Mithril Blade Recipe", "Quicksilver", "Warded Cloak Recipe", "Artificer A", "Artificer B", "Artificer C", "Artificer D", "Artificer E", "Tinker's Goggles", "Toolbelt", "Bellows", "Scavenger's Tongs", "Construct", "Raise Revenant", "Bone Wall", "Army of Darkness", "Devastating Ritual", "From Darkness", "Cursed Urn", "Restless Dead", "Grave Tide", "Grave Whispers", "Corpse Harvest", "Dig the Grave", "Dead March", "Ossuary", "Funeral Procession", "Grieving Thoughts", "Mourner's Offering", "Reawaken", "Grim Divination", "Rise from the Grave", "Consecrate", "Retrace the Past", "Bone Spur", "Robbed Grave", "Restless Echo", "Soul Lantern", "Skeleton Key", "Gravecaller", "Jorkev, the Pillager", "Filth Scavenger", "Xlek Grave Robber", "Necromancer E", "Grave Caller's Wand", "Gravedigger's Medallion", "Dagger of the Dead", "Revenant", "Abomination", "Remains", "Flame Pearl", "Frost Pearl", "Dragon Scale", "The Archfrost Recipe", "The Archflame Recipe", "Dragonscale Scale Recipe", "The Right Mix", "Remey Recipe", "Back in the Lab", "Wellness Rod Recipe", "Deflecting Shield Recipe", "Crafter's Choice", "Time Pearl", "Aura Pearl", "Undead's Choice", "Wren Partsfinder", "Material Bender", "Val Craftsmith", "Gadget Commander", "Cy the Builder", "JD Tinkersmith", "Recycler", "Shield of Riverstead", "Life Seed", "Frost Kat Recipe", "Time Kat Recipe", "Flame Kat Recipe", "Z Recipe", "Frost Kat", "Time Kat", "Flame Kat", "Z", "Revenant King", "Salvage", "Super Satchel", "Activate", "Sands of Time", "Time Ripple", "Displace", "Refactor", /* Update 40 (Nov 19, 2026): Ingots, Almandine and the Monk class move to Set 2 */ "Almandine", "Gold Ingot", "Silver Ingot", "Platinum Ingot", "Ascend", "Attack Reversal", "Awakened Fist", "Balanced Choice", "Breath", "Deep Contemplation", "Defend Prayer", "Finisher", "Flurry of Blows", "Focus", "Glimpse the Future", "Hand to Hand Combat", "Jab", "Look Ahead", "Lotus Jab", "Lunge", "Meditate", "Meditation Shrine", "Palm Strike", "Petal Shrine", "Rising Dragon", "Roundhouse", "Split Kick", "Stunner", "Well Trained", "Iron Hand Wraps", "Jun Lao's Headband", "Grandmaster Reece", "Monastery Stalwart", "Precision Fighter", "Sage Monk", "Trainee Vincent"];
 /* Update 40: deprecated Heroes and equipment (same row formats as RAW_HEROES / RAW_EQUIP) */
 const DEPRECATED_HEROES=[
@@ -609,6 +619,7 @@ const DEPRECATED_CARDS=[
 
 /* Equipment upgrades (update 19 weapons, update 20 all other equipment, 2026-11-04): one fixed upgrade per piece of equipment, bought at the Blacksmith in Town. name -> [Gold cost, upgraded rules, upgraded +STR, upgraded +DEF] (from Equipment_New columns M-P) */
 const EQUIP_UPGRADES={
+"The Blackblade": [5, "Runic. Each time the equipped hero attacks, you may evoke any number of Runes in your inventory.\nEquipped hero gets +4 Strength.", 4, 0],
 "Dagger of Riverstead": [3, "Equipped hero gets +2 Strength.", 2, 0],
 "Ritual Athame": [3, "Equipped hero gets +1 Strength. Once per turn, when you lose Health Points to pay a cost, target enemy loses 2 Health Points.", 1, 0],
 "Shillelagh": [3, "Equipped hero gets +2 Strength. Exhaust a summon you control: This hero gets +1 Strength until end of turn.", 2, 0],

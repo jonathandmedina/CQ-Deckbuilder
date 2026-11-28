@@ -1,7 +1,7 @@
 # Set Three Rules Supplement
 *Every rule and term that exists only in Set Three. It adds to the full Riverstead Rules; nothing here is defined in the main rules, so players without Set Three access never see it.*
 
-*Playtest · updated Nov 27, 2026*
+*Playtest · updated Nov 27, 2026 (Runes and the first Death Knight cards)*
 
 ## About This Supplement
 
@@ -46,3 +46,32 @@ Death Knights are Paladins who died and were raised by evil power. They fight li
 - **Eliazar and Paladin equipment:** from Level 3 he can equip Paladin equipment. A party with Eliazar can put Paladin equipment in its deck.
 - **Morwen Duskbane:** Poison, Burn, Wound, Confuse and Stun can't be put on her. Fatigue isn't a status counter.
 - **Hollow Blade:** a Sword is any equipment with the Sword subtype (Knight's Sword, Long Sword, Sword of Riverstead, Sword of Eliazar).
+
+## Runes and Runic
+
+- **Runes** are Generic items with the subtype Rune (Blood Rune, Protect Rune, Sky Rune). Playing one puts it in your inventory like any item, and it takes an inventory slot. A Rune does nothing by itself.
+- **Runic** *(Once each turn, when the equipped hero attacks, you may evoke a Rune in your inventory.)* is a keyword on weapons, such as The Blackblade.
+- **Evoke:** when the hero with a Runic weapon attacks, before the attack resolves, you may pick a Rune in your inventory and apply its Evoke effect. **The Rune stays in your inventory.** Effects last until end of turn.
+- A Runic weapon evokes once each turn. The upgraded Blackblade evokes any number of Runes, each time its hero attacks.
+
+| Rune | Evoke |
+|---|---|
+| Blood Rune | The attacking hero has lifelink until end of turn. |
+| Protect Rune | Status counters can't be put on the attacking hero until end of turn. |
+| Sky Rune | Draw a card. |
+
+## Death Knight Cards
+
+| Card | Cost and type | Text |
+|---|---|---|
+| Grave Drain | 4 Aura · Spell | Blight. Deal 3 damage to target enemy. Heal this hero for the damage dealt. |
+| Into the Gloamreach | 12 Aura · Spell | This spell costs 2 less Aura for each missing soul. Blight. Target hero dies. |
+| Curse of Nothingness | 2 Aura · Enchantment - Curse | Enchant target hero. Enchanted hero has no soul. |
+| The Blackblade | 4 Aura · Legendary Equipment - Sword · One-Handed · +3 Strength | Runic. Upgrade (5 Gold): +4 Strength; evoke any number of Runes each time it attacks. |
+
+## Card Rulings
+
+- **Missing soul** (Into the Gloamreach): a Hero in any party whose soul was surrendered or lost: a dead Death Knight, a Hero killed by Blight, a Hero that died with Curse of Nothingness, or a Hero whose soul was surrendered. Hero Constructs never count.
+- **Into the Gloamreach** makes the target die, so "when a hero would die" Hidden cards can still answer it. It has Blight, so the Hero's soul is lost.
+- **Grave Drain** heals only the Death Knight that cast it, and only for the damage actually dealt after Defense.
+- **Curse of Nothingness:** the enchanted Hero loses its soul however it dies, not only to Blight. It doesn't give the Hero Blight.

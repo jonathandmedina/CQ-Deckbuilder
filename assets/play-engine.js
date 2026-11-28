@@ -37,6 +37,10 @@ const STATUS=["burn","poison","wound","confuse","stun"];E.STATUS=STATUS;
 /* Set 3 Death Knight (Set Three Rules Supplement, Nov 27, 2026). Blight: a Hero whose rules start with "Blight" has no soul; a Hero killed by Blight (killing blow only) loses its soul. Neither can be revived or surrendered. */
 const BLIGHT_HEROES=new Set((_RH||[]).filter(r=>/^Blight\b/.test(r[6]||"")).map(r=>r[0]));E.BLIGHT_HEROES=BLIGHT_HEROES;
 const hasBlight=h=>!!h&&h.kind==="hero"&&BLIGHT_HEROES.has(h.name);E.hasBlight=hasBlight;
+/* Set 3 Runes (Nov 27, 2026): Item - Rune cards stay in inventory; a Runic weapon evokes them when its hero attacks (once each turn; upgraded The Blackblade: any number) */
+const isRune=d=>!!d&&d.type==="Item"&&d.sub==="Rune";E.isRune=isRune;
+/* a soul is "missing" when it was surrendered or lost (Blight, Curse of Nothingness, a dead Death Knight); Hero Constructs never had one */
+const missingSouls=s=>s.p.reduce((n,pl)=>n+pl.heroes.filter(h=>h.surr&&!h.hc).length,0);E.missingSouls=missingSouls;
 /* Set 3 Eliazar the Fallen {L3}: can equip Paladin equipment */
 const eliazarEq=(h,cls)=>!!h&&h.kind==="hero"&&h.name==="Eliazar the Fallen"&&h.lvl>=3&&cls==="Paladin";E.eliazarEq=eliazarEq;
 E.cantStun=(s,h)=>!!h&&h.kind==="hero"&&eqList(h).some(e=>e.name==="Crag Helm"); /* Trials loot: Crag Helm, can't be Stunned */
@@ -303,6 +307,7 @@ function draw(s,pid,n,quiet){const pl=P(s,pid);let got=0;
   if(!quiet&&got)log(s,`${pl.name} draws ${got} card${got===1?"":"s"}.`,pid);return got}
 E.draw=draw;
 function addStatus(s,o,k,n){if(!o||o.dead||!o.st)return;
+  if(o.kind==="hero"&&o.fl&&o.fl.noStatusRound===s.round){log(s,`${o.name} can't have status counters this turn (Protect Rune).`);return} /* Set 3 */
   if(o.kind==="hero"&&o.name==="Morwen Duskbane"){log(s,`${o.name} can't have status counters.`);return} /* Set 3 */
   if(o.boss&&k==="confuse"){log(s,`${o.name} can't be Confused (boss).`);return} /* Trials: Confuse does nothing to the boss */
   if(k==="stun"&&o.kind==="hero"&&E.cantStun&&E.cantStun(s,o)){log(s,`${o.name} can't be Stunned.`);return}o.st[k]=(o.st[k]||0)+(n||1);log(s,`${o.name} is ${E.STATUS_NAME[k]}${n>1?` (+${n})`:""}.`)}
@@ -535,7 +540,7 @@ function dyingWindow(s,h){if(h.fl.dyingDone||s.over||isBoss(s,h.owner))return fa
 function die(s,h){const pl=P(s,h.owner);h.fl.dyingDone=false;pl.t.died=(pl.t.died||[]).concat([h.uid]);
   h.dead=true;h.dmg=maxHp(s,h);h.ex=false;h.med=false;h.plus=0;h.mods=[];h.guard=0;h.gsrc=[];h.eqGuard=0;STATUS.forEach(k=>h.st[k]=0);
   if(h.hc){h.surr=true;log(s,`☠ ${h.name} is destroyed (Hero Construct: it can't be revived or surrendered).`,h.owner)}
-  else if(hasBlight(h)||(h.lastHit&&h.lastHit.blight)){h.surr=true;h.noSoul=true;log(s,`☠ ${h.name} dies. ${hasBlight(h)?"It has no soul (Blight)":"Its soul is lost to Blight"}: it can't be revived or surrendered.`,h.owner)}
+  else if(hasBlight(h)||(h.lastHit&&h.lastHit.blight)||(h.ench||[]).some(e=>e.name==="Curse of Nothingness")){h.surr=true;h.noSoul=true;log(s,`☠ ${h.name} dies. ${hasBlight(h)?"It has no soul (Blight)":"Its soul is lost to Blight"}: it can't be revived or surrendered.`,h.owner)}
   else log(s,`☠ ${h.name} dies.`,h.owner);
   const gear=eqList(h);for(const k in h.eq)h.eq[k]=null;
   h.ench.forEach(e=>toDisc(s,e));h.ench=[];
@@ -674,6 +679,7 @@ E.auraFor=auraFor;
 function cardCost(s,pid,actor,d,x){if(hasMourn(d)&&mourning(s,pid))return 0;let c=d.cost==="X"?(x||0):num(d.cost);const pl=P(s,pid);
   if(d.kind==="equip"&&actor&&actor.name==="Blessed Champion")c-=actor.lvl>=3?2:1;
   if(d.kind==="equip"&&d.sub==="Sword"&&actor&&actor.name==="Hollow Blade")c-=1; /* Set 3 */
+  if(d.name==="Into the Gloamreach")c-=2*missingSouls(s); /* Set 3: 2 less Aura for each missing soul */
   if(d.cls==="Mage"){if(pl.fl.mageNext)c-=2;if(pl.fl.mageAll)c-=1}
   if(d.sub==="Trap"){if(pl.fl.trapNext)c-=2;if(pl.fl.trapAll)c-=1}
   if(d.type==="Song"){if(actor&&hasEqN(actor,"Silver Fiddle"))c-=1;if(pl.fl.songDisc)c-=2}
@@ -1395,9 +1401,20 @@ function startAttack(s,pid,attUid,tgtUid,o){const f=find(s,attUid);if(!f)return;
   if(att.kind==="hero"&&heroIs(att,"Barbarian")){const pl=P(s,pid);pl.inv.filter(x=>!x.fd&&(x.name==="Xakro's War Horn"||x.name==="Battle Horn")).forEach(()=>{if(pl.hand.length)pre.push({title:"Xakro's War Horn: discard a card at random? Your Barbarians get +X STR this turn, where X is its Aura cost.",opts:pl.hand.length>=3?[{label:"Yes, discard at random",v:1},{label:"No",v:0}]:[{label:"No",v:0},{label:"Yes, discard at random",v:1}],op:"battleHorn",data:{name:"Xakro's War Horn"}})})}
   if(att.kind==="hero"&&att.fl.hackRound===s.round){att.fl.hackRound=null;const cs=candidates(s,pid,{k:"enemy"},{attack:true,actor:att}).filter(u=>u!==tgtUid).map(u=>resolveTarget(s,u)).filter(Boolean);
     if(cs.length)pre.push({title:"Hack and Slash: choose a second target for this attack",opts:targetOpts(s,pid,cs,strOf(s,att)).concat([{label:"No second target",v:null}]),op:"hack",data:{name:"Hack and Slash"}})}
+  /* Set 3 Runic: evoke Runes from your inventory as the attack starts */
+  if(att.kind==="hero"&&!att.dead){const rw=eqList(att).find(e=>/^Runic\b/.test(def(e).rules||"")||(isUp(s,e)&&/^Runic\b/.test(((def(e).up)||{}).rules||"")));
+    if(rw){const pl=P(s,pid);const runes=pl.inv.filter(x=>!x.fd&&isRune(DB[x.id]));const any=isUp(s,rw);
+      if(runes.length&&(any||att.fl.runeRound!==s.round)){if(any)runes.forEach(r=>pre.push({title:`${rw.name}: evoke ${r.name}?`,opts:[{label:`Evoke ${r.name}`,v:r.uid},{label:"No",v:null}],op:"evokeRune",data:{name:rw.name,att:att.uid}}));
+        else pre.push({title:`${rw.name} (Runic): evoke a Rune?`,opts:runes.map(r=>({label:`Evoke ${r.name}`,v:r.uid})).concat([{label:"No Rune",v:null}]),op:"evokeRune",data:{name:rw.name,att:att.uid}})}}}
   if(pre.length){s.pend.unshift({type:"attackGo",pid,cont,trig});pre.reverse().forEach(q=>ask(s,pid,q.title,q.opts,q.op,q.data));return}
   queueResolve(s,pid,cont,trig)}
 E.startAttack=startAttack;
+/* Set 3: evoke a Rune (it stays in your inventory). Blood: lifelink, Protect: no status counters, Sky: draw a card; all until end of turn */
+ASK.evokeRune=(s,pid,pr,v)=>{if(v==null)return;const f=find(s,pr.data.att);const att=f&&f.o;const pl=P(s,pid);const r=pl.inv.find(x=>x.uid===v);if(!att||!r)return;att.fl.runeRound=s.round;
+  log(s,`${att.name} evokes ${r.name}.`,pid);
+  if(r.name==="Blood Rune")addMod(att,{lifelink:1,src:"Blood Rune"});
+  else if(r.name==="Protect Rune")att.fl.noStatusRound=s.round;
+  else if(r.name==="Sky Rune")draw(s,pid,1)};
 /* Xakro's War Horn (was Battle Horn): +X STR to Barbarians, X = the discarded card's Aura cost (X costs count as 0) */
 ASK.battleHorn=(s,pid,pr,v)=>{if(!v)return;const pl=P(s,pid);if(!pl.hand.length)return;const x=pl.hand.splice(ri(s,pl.hand.length),1)[0];pl.disc.push(x);const n=Math.max(0,parseInt(DB[x.id].cost,10)||0);log(s,`Xakro's War Horn: ${pl.name} discards ${DB[x.id].name} at random; Barbarians get +${n} STR this turn.`,pid);if(n)living(pl).filter(h=>heroIs(h,"Barbarian")).forEach(h=>addMod(h,{str:n}))};
 ASK.hack=(s,pid,pr,v)=>{if(v==null)return;const g=s.pend.find(p=>p.type==="attackGo");if(g){g.cont.o=Object.assign({},g.cont.o,{second:v})}};

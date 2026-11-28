@@ -63,9 +63,11 @@ const give=(s,pid,name,u)=>{const c={uid:u,id:name,owner:pid};s.p[pid].hand.push
  const hp0=E.hp(s,v),me0=E.hp(s,gl);{const r=E.act(s,0,opt);ok(r.ok,"play "+opt.uid+" "+(r.err||""));drain(s)}ok(hp0-E.hp(s,v)===3&&E.hp(s,gl)-me0===3,"Grave Drain: 3 damage, caster heals 3 ("+(hp0-E.hp(s,v))+","+(E.hp(s,gl)-me0)+")");}
 {const s=mk(DK,FOES);const gl=H(s,0,"Grave Lancer"),v=H(s,1,"Dark Fang");v.dmg=E.maxHp(s,v)-2;give(s,0,"Grave Drain","gd2");
  const opt={type:"play",uid:"gd2",targets:[v.uid]};{const r=E.act(s,0,opt);ok(r.ok,"play "+opt.uid+" "+(r.err||""));drain(s)}ok(v.dead&&v.noSoul,"Grave Drain kill is a Blight kill");}
-{const s=mk(DK,FOES);ok(E.cardCost(s,0,H(s,0,"Grave Lancer"),E.DB["Into the Gloamreach"])===12,"Gloamreach costs 12 with no missing souls");
- E.damage(s,{name:"Fireball"},H(s,0,"Hollow Blade"),99,{card:true});ok(E.missingSouls(s)===1,"a dead Death Knight is a missing soul");
- ok(E.cardCost(s,0,H(s,0,"Grave Lancer"),E.DB["Into the Gloamreach"])===10,"Gloamreach costs 2 less per missing soul");
+{const s=mk(DK,FOES);ok(E.cardCost(s,0,H(s,0,"Grave Lancer"),E.DB["Into the Gloamreach"])===12,"Gloamreach costs 12 with no empty enemy slots");
+ ok(E.DB["Into the Gloamreach"].rar==="Legendary"||/Legendary/.test(JSON.stringify(E.DB["Into the Gloamreach"])),"Gloamreach is Legendary");
+ E.damage(s,{name:"Fireball"},H(s,0,"Hollow Blade"),99,{card:true});ok(E.emptyEnemySlots(s,0)===0&&E.cardCost(s,0,H(s,0,"Grave Lancer"),E.DB["Into the Gloamreach"])===12,"own dead Hero doesn't lower Gloamreach");
+ E.damage(s,{name:"Fireball"},H(s,1,"Arcane Scholar"),99,{card:true});ok(E.emptyEnemySlots(s,0)===1,"a dead enemy Hero is an empty enemy slot");
+ ok(E.cardCost(s,0,H(s,0,"Grave Lancer"),E.DB["Into the Gloamreach"])===10,"Gloamreach costs 2 less per empty enemy slot");
  s.p[0].aura=12;give(s,0,"Into the Gloamreach","ig1");const v=H(s,1,"Divine Knight");const opt={type:"play",uid:"ig1",targets:[v.uid]};
  {const r=E.act(s,0,opt);ok(r.ok,"play "+opt.uid+" "+(r.err||""));drain(s)}ok(v.dead&&v.noSoul&&s.p[0].aura===2,"Gloamreach: the Hero dies and loses its soul; paid 10 Aura");}
 {const s=mk(DK,FOES);const v=H(s,1,"Arcane Scholar");give(s,0,"Curse of Nothingness","cn1");const opt={type:"play",uid:"cn1",targets:[v.uid]};

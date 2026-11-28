@@ -65,13 +65,13 @@ Death Knights are Paladins who died and were raised by evil power. They fight li
 | Card | Cost and type | Text |
 |---|---|---|
 | Grave Drain | 4 Aura · Spell | Blight. Deal 3 damage to target enemy. Heal this hero for the damage dealt. |
-| Into the Gloamreach | 12 Aura · Spell | This spell costs 2 less Aura for each missing soul. Blight. Target hero dies. |
+| Into the Gloamreach | 12 Aura · Legendary Spell | This spell costs 2 less Aura for each empty enemy hero slot. Blight. Target hero dies. |
 | Curse of Nothingness | 2 Aura · Enchantment - Curse | Enchant target hero. Enchanted hero has no soul. |
 | The Blackblade | 4 Aura · Legendary Equipment - Sword · One-Handed · +3 Strength | Runic. Upgrade (5 Gold): +4 Strength; evoke any number of Runes each time it attacks. |
 
 ## Card Rulings
 
-- **Missing soul** (Into the Gloamreach): a Hero in any party whose soul was surrendered or lost: a dead Death Knight, a Hero killed by Blight, a Hero that died with Curse of Nothingness, or a Hero whose soul was surrendered. Hero Constructs never count.
+- **Empty enemy hero slot** (Into the Gloamreach): a slot in an enemy party whose Hero is dead. Your own dead Heroes don't count. A revived Hero fills its slot again. With one enemy Hero dead it costs 10; with two, 8.
 - **Into the Gloamreach** makes the target die, so "when a hero would die" Hidden cards can still answer it. It has Blight, so the Hero's soul is lost.
 - **Grave Drain** heals only the Death Knight that cast it, and only for the damage actually dealt after Defense.
 - **Curse of Nothingness:** the enchanted Hero loses its soul however it dies, not only to Blight. It doesn't give the Hero Blight.

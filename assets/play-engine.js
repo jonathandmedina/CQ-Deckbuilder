@@ -40,7 +40,7 @@ const hasBlight=h=>!!h&&h.kind==="hero"&&BLIGHT_HEROES.has(h.name);E.hasBlight=h
 /* Set 3 Runes (Nov 27, 2026): Item - Rune cards stay in inventory; a Runic weapon evokes them when its hero attacks (once each turn; upgraded The Blackblade: any number) */
 const isRune=d=>!!d&&d.type==="Item"&&d.sub==="Rune";E.isRune=isRune;
 /* a soul is "missing" when it was surrendered or lost (Blight, Curse of Nothingness, a dead Death Knight); Hero Constructs never had one */
-const missingSouls=s=>s.p.reduce((n,pl)=>n+pl.heroes.filter(h=>h.surr&&!h.hc).length,0);E.missingSouls=missingSouls;
+const emptyEnemySlots=(s,pid)=>s.p.reduce((n,pl,i)=>i===pid?n:n+pl.heroes.filter(h=>h.dead).length,0);E.emptyEnemySlots=emptyEnemySlots;
 /* Set 3 Eliazar the Fallen {L3}: can equip Paladin equipment */
 const eliazarEq=(h,cls)=>!!h&&h.kind==="hero"&&h.name==="Eliazar the Fallen"&&h.lvl>=3&&cls==="Paladin";E.eliazarEq=eliazarEq;
 E.cantStun=(s,h)=>!!h&&h.kind==="hero"&&eqList(h).some(e=>e.name==="Crag Helm"); /* Trials loot: Crag Helm, can't be Stunned */
@@ -679,7 +679,7 @@ E.auraFor=auraFor;
 function cardCost(s,pid,actor,d,x){if(hasMourn(d)&&mourning(s,pid))return 0;let c=d.cost==="X"?(x||0):num(d.cost);const pl=P(s,pid);
   if(d.kind==="equip"&&actor&&actor.name==="Blessed Champion")c-=actor.lvl>=3?2:1;
   if(d.kind==="equip"&&d.sub==="Sword"&&actor&&actor.name==="Hollow Blade")c-=1; /* Set 3 */
-  if(d.name==="Into the Gloamreach")c-=2*missingSouls(s); /* Set 3: 2 less Aura for each missing soul */
+  if(d.name==="Into the Gloamreach")c-=2*emptyEnemySlots(s,pid); /* Set 3: 2 less Aura for each empty enemy hero slot (dead enemy Hero) */
   if(d.cls==="Mage"){if(pl.fl.mageNext)c-=2;if(pl.fl.mageAll)c-=1}
   if(d.sub==="Trap"){if(pl.fl.trapNext)c-=2;if(pl.fl.trapAll)c-=1}
   if(d.type==="Song"){if(actor&&hasEqN(actor,"Silver Fiddle"))c-=1;if(pl.fl.songDisc)c-=2}

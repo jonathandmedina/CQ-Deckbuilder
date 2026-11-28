@@ -13,6 +13,7 @@ const ART_VER="30"; /* Nov 27: Death Knight type-line band: shadow and texture i
 const BLANK_ART={hero:new Set(["Artificer","Barbarian","Bard","Blacksmith","Cleric","Druid","Mage","Monk","Necromancer","Death Knight","Paladin","Ranger","Rogue","Warlock"]),card:new Set(["Artificer","Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Necromancer","Death Knight","Paladin","Ranger","Rogue","Warlock"]),equip:new Set(["Artificer","Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Necromancer","Death Knight","Paladin","Ranger","Rogue","Warlock"])};
 /* classes with a Legendary blank frame (gem above the title bar): <kind>-<Class>-Legendary-<side>.webp */
 const BLANK_LEG=new Set(["Artificer","Barbarian","Bard","Cleric","Druid","Generic","Mage","Monk","Necromancer","Paladin","Ranger","Rogue","Warlock"]); /* Nov 19: every class has Legendary blanks */
+const BLANK_LEG_CARD=new Set(["Death Knight"]); /* Set 3, Nov 27: Legendary tactic blank only (no Legendary equipment blank yet) */
 const ownArt=c=>!!CARD_ART[c.kind]&&CARD_ART[c.kind].has(artKey(c.name));
 const blankArt=c=>!ownArt(c)&&!!BLANK_ART[c.kind]&&BLANK_ART[c.kind].has(c.cls);
 /* Update 30: the party is 3 fixed slots (Lead, Center, Closer). In the builder d.heroes may hold null for an empty slot so the others keep their place. */
@@ -497,7 +498,7 @@ function flipHTML(c){if(isRecipe(c))return`<span class="flip" role="button" tabi
 function artSrc(c){const side=c.face==="up"?"up":"face";
   /* Nov 15, 2026: a Recipe's made side (and the made card itself) uses the made item's own art when it has some */
   if(c.backOf){const bk=c.type==="Equipment"?"equip":c.type==="Hero"?"hero":"card",k=artKey(c.name);if(CARD_ART[bk]&&CARD_ART[bk].has(k))return `${ICON_BASE}art/${bk}/${k}-face.webp?v=${ART_VER}`}
-  if(blankArt(c)){/* a Recipe's made side uses the frame of what it makes; tactic blanks have no upgraded side */const bk=c.backOf&&c.type==="Equipment"?"equip":c.kind,bs=c.backOf||bk!=="equip"?"face":side;return `${ICON_BASE}art/blank/${bk}-${String(c.cls).replace(/ /g,"-")}${c.sup==="Legendary"&&bk!=="hero"&&BLANK_LEG.has(c.cls)?"-Legendary":""}-${bs}.webp?v=${ART_VER}`}return `${ICON_BASE}art/${c.kind}/${artKey(c.name)}-${side}.webp?v=${ART_VER}`}
+  if(blankArt(c)){/* a Recipe's made side uses the frame of what it makes; tactic blanks have no upgraded side */const bk=c.backOf&&c.type==="Equipment"?"equip":c.kind,bs=c.backOf||bk!=="equip"?"face":side;return `${ICON_BASE}art/blank/${bk}-${String(c.cls).replace(/ /g,"-")}${c.sup==="Legendary"&&bk!=="hero"&&(BLANK_LEG.has(c.cls)||(bk==="card"&&BLANK_LEG_CARD.has(c.cls)))?"-Legendary":""}-${bs}.webp?v=${ART_VER}`}return `${ICON_BASE}art/${c.kind}/${artKey(c.name)}-${side}.webp?v=${ART_VER}`}
 function artAlt(c){return`${c.name}${c.face==="up"?" (upgraded)":""}: ${String(c.rules||"").replace(/\{A\}/g," Aura")}`}
 /* Card Image Template (Card Art theme): the image is a blank Component.Studio export; rules text and numbers are laid over it.
    Positions are in px of the 825x1125 export (bleed included); the image is cropped 37px each side, so the overlay box is 751x1051.

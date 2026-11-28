@@ -348,7 +348,7 @@ const RAW_CARDS=[
 [1, "Skeleton Key", "2", "Legendary", "Item", "", "Necromancer", "Exile: Your next town action costs no gold.", 1],
 /* Set 3 (Death Knight cards and Runes, Nov 27, 2026): SET3_CARDS */
 [2, "Grave Drain", "4", "", "Spell", "", "Death Knight", "Blight (If this kills a hero, it loses its soul.)\nDeal 3 damage to target enemy. Heal this hero for the damage dealt.", 1],
-[2, "Into the Gloamreach", "12", "", "Spell", "", "Death Knight", "This spell costs 2 less Aura for each missing soul. (A hero whose soul was surrendered or lost.)\nBlight (If this kills a hero, it loses its soul.)\nTarget hero dies.", 1],
+[1, "Into the Gloamreach", "12", "Legendary", "Spell", "", "Death Knight", "This spell costs 2 less Aura for each empty enemy hero slot. (A slot whose Hero is dead.)\nBlight (If this kills a hero, it loses its soul.)\nTarget hero dies.", 1],
 [2, "Curse of Nothingness", "2", "", "Enchantment", "Curse", "Death Knight", "Enchant target hero. Enchanted hero has no soul. (When it dies, it can't be revived or surrendered.)", 1],
 [2, "Blood Rune", "2", "", "Item", "Rune", "Generic", "Evoke: The attacking hero has lifelink until end of turn. (Damage it deals heals it.) (A Runic weapon evokes Runes when its hero attacks. The Rune stays in your inventory.)", 1],
 [2, "Protect Rune", "2", "", "Item", "Rune", "Generic", "Evoke: Status counters can't be put on the attacking hero until end of turn. (A Runic weapon evokes Runes when its hero attacks. The Rune stays in your inventory.)", 1],

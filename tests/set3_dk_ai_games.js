@@ -10,7 +10,7 @@ const starter=i=>({name:ST[i].name,heroes:ST[i].heroes.map(n=>"h:"+n),cards:Obje
 /* no Death Knight cards yet: Generic cards only (Long Sword and Sword of Riverstead for Hollow Blade) */
 const gen=Object.keys(E.DB).filter(k=>{const d=E.DB[k];return d.kind!=="hero"&&d.cls==="Generic"&&!d.dep&&!d.made&&d.sup!=="Legendary"&&E.isScripted&&E.isScripted(d.name)}).slice(0,25);
 const cards=Object.fromEntries(gen.map(n=>[n,2]));cards["Long Sword"]=3;cards["Sword of Riverstead"]=3;
-/* Set 3 cards (Nov 27, 2026) */Object.assign(cards,{"Grave Drain":3,"Into the Gloamreach":2,"Curse of Nothingness":3,"The Blackblade":1,"Blood Rune":2,"Protect Rune":2,"Sky Rune":2});
+/* Set 3 cards (Nov 27, 2026) */Object.assign(cards,{"Grave Drain":3,"Into the Gloamreach":1,"Curse of Nothingness":3,"The Blackblade":1,"Blood Rune":2,"Protect Rune":2,"Sky Rune":2});
 const PARTIES=[["Grave Lancer","Hollow Blade","Soul Harvester"],["Morwen Duskbane","Eliazar the Fallen","Grave Lancer"]];
 let err=0,stuck=0,wins=0,n=0,engErr=0;const tally={blight:0,noSoul:0,harvest:0,eliazar:0,rune:0,drain:0,gloam:0};
 const G=+process.argv[2]||20;

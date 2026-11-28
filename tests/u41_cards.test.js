@@ -2,7 +2,7 @@
    the Songweaver/Echo Performer saved-deck swap and the "can't challenge yourself" presence check. Run: node tests/u41_cards.test.js */
 const fs=require("fs"),vm=require("vm"),path=require("path");const A=path.join(__dirname,"..","assets");
 const ctx={console,Math,Date,JSON};ctx.window=ctx;ctx.globalThis=ctx;vm.createContext(ctx);
-vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].map(f=>fs.readFileSync(path.join(A,f),"utf8")).join("\n;\n")+"\n;this.DEP=DEPRECATED_CARDS;this.RAW_CARDS=RAW_CARDS;this.REN=CARD_RENAMES;",ctx);
+vm.runInContext(["cards-data.js","play-engine.js","play-cards.js","play-ai.js"].map(f=>fs.readFileSync(path.join(A,f),"utf8")).join("\n;\n")+"\n;this.DEP=DEPRECATED_CARDS;this.RAW_CARDS=RAW_CARDS;this.REN=CARD_RENAMES;this.SET3_CARDS=SET3_CARDS;",ctx);
 const E=ctx.CQE,D=E.DB;let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log("FAIL:",m)}};
 const filler=Object.fromEntries(["Potion","Antidote","Smoke Bomb","Revitalize","Dynamite","Precognition","Humble","Vandalize","Naturalize","Shatter","Inspiration","Snuff Out","Level Up"].map(n=>[n,3]));
 let U=1;const uid=()=>"x"+(U++);
@@ -17,7 +17,7 @@ ok(row("Xakro's War Horn")[3]==="Legendary"&&row("Xakro's War Horn")[0]===1&&row
 ["Disarm","Ice Bath","Pitfall"].forEach(n=>ok(!row(n)&&ctx.DEP.some(r=>r[1]===n)&&D[n]&&D[n].dep,n+" is deprecated (kept in the engine DB)"));
 /* every Legendary card has art (the legendary gem is baked into each image) */
 const ak=n=>n.replace(/[^A-Za-z0-9]/g,"_");
-ctx.RAW_CARDS.filter(r=>r[3]==="Legendary").forEach(r=>ok(fs.existsSync(path.join(A,"art","card",ak(r[1])+"-face.webp")),r[1]+" has card art"));
+ctx.RAW_CARDS.filter(r=>r[3]==="Legendary"&&!(ctx.SET3_CARDS||[]).includes(r[1])).forEach( /* Set 3 cards are in playtest and use blank frames until their art is made */r=>ok(fs.existsSync(path.join(A,"art","card",ak(r[1])+"-face.webp")),r[1]+" has card art"));
 /* Snuff Out: summons and Constructs (including a Hero Construct) with 3 or less HP; never a normal Hero */
 {const s=game(["Rage Brute","Savage Raider","Fury Titan"]);const c=hand(s,0,"Snuff Out");
  const w=E.makeSummon(s,1,"Wolf",true);const k=E.makeConstruct(s,1,2);const big=E.makeConstruct(s,1,5);

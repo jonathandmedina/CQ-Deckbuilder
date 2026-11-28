@@ -1,0 +1,4 @@
+quantity,name,SuperType,Type,SubType,Class,Rules,AuraCost,Region,PlusStr,PlusDef,version,UpgradeCost,UpgradeRules,UpgradePlusStr
+1,The Blackblade,Legendary,Equipment,Sword,Death Knight,"Runic (Once each turn, when the equipped hero attacks, you may evoke a Rune in your inventory.)
+Equipped hero gets +3 Strength.",4,One-Handed,3,0,v1,5,"Runic. Each time the equipped hero attacks, you may evoke any number of Runes in your inventory.
+Equipped hero gets +4 Strength.",4
